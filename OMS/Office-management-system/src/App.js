@@ -22,6 +22,7 @@ const App = () => {
   // Define subrole-based redirection
   const subroleRedirects = {
     Admin_HR: "/admin/hr",
+    Admin_Project_Manager: "/admin/project-manager",
     // Add more subrole redirects as needed
     // Admin_Finance: "/admin/finance",
     // Admin_IT: "/admin/it",
@@ -79,6 +80,17 @@ const App = () => {
             <ProtectedRoute
               allowedRoles={["Admin"]}
               allowedSubRoles={["HR"]}
+              element={<AdminPanel />}
+            />
+          }
+        />
+
+        <Route
+          path="/admin/project-manager/*"
+          element={
+            <ProtectedRoute
+              allowedRoles={["Admin"]}
+              allowedSubRoles={["Project_Manager"]}
               element={<AdminPanel />}
             />
           }
