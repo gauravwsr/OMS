@@ -1,0 +1,166 @@
+
+/* Main container */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f8f9fc; /* Light gray background */
+  padding: 20px;
+}
+
+/* Card Container */
+.login-card {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Make it responsive */
+@media (min-width: 768px) {
+  .login-card {
+    flex-direction: row;
+  }
+}
+
+/* Left Section - Form */
+.login-form-container {
+  width: 100%;
+  padding: 50px;
+}
+
+@media (min-width: 768px) {
+  .login-form-container {
+    width: 50%;
+  }
+}
+
+/* Title */
+.login-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Form Inputs */
+.login-form label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.login-form input:focus {
+  border-color: #4f46e5;
+  outline: none;
+  box-shadow: 0 0 4px rgba(79, 70, 229, 0.2);
+}
+
+/* Remember Me and Forgot Password */
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.remember-me input {
+  margin-right: 8px;
+}
+
+.forgot-password {
+  font-size: 14px;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+/* Login Button */
+.login-btn {
+  width: 100%;
+  background-color: black;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+  border: none;
+}
+
+.login-btn:hover {
+  background-color: #333;
+}
+
+/* Register Section */
+.register-text {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+}
+
+.register-text a {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-text a:hover {
+  text-decoration: underline;
+}
+
+/* Right Section - Image */
+.login-image-container {
+  display: none; /* Hide on mobile */
+  background-color: #f9f9f9;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  border-left: 1px solid #eee;
+}
+
+@media (min-width: 768px) {
+  .login-image-container {
+    display: flex;
+    width: 50%;
+  }
+}
+
+.login-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+
+
+

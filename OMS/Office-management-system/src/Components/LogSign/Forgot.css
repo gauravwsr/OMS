@@ -1,0 +1,154 @@
+/* Container */
+.forgot-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f3f4f6;
+    padding: 16px;
+  }
+  
+  /* Box */
+  .forgot-box {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    max-width: 900px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  @media (min-width: 768px) {
+    .forgot-box {
+      flex-direction: row;
+    }
+  }
+  
+  /* Form */
+  .forgot-form {
+    width: 100%;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  @media (min-width: 768px) {
+    .forgot-form {
+      width: 50%;
+    }
+  }
+  
+  /* Back to Login */
+  .back-to-login {
+    color: #6b7280;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    margin-bottom: 16px;
+  }
+  
+  .back-to-login:hover {
+    text-decoration: none;
+  }
+  
+  .arrow {
+    margin-right: 8px;
+    font-size: 18px;
+  }
+  
+  /* Title */
+  .forgot-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 16px;
+  }
+  
+  @media (min-width: 768px) {
+    .forgot-title {
+      font-size: 28px;
+    }
+  }
+  
+  /* Text */
+  .forgot-text {
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+  
+  /* Form Group */
+  .forgot-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  /* Label */
+  .forgot-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .required {
+    color: red;
+  }
+  
+  /* Input */
+  .forgot-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  
+  .forgot-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+  }
+  
+  /* Button */
+  .forgot-button {
+    width: 100%;
+    background-color: #4f46e5;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .forgot-button:hover {
+    background-color: #4338ca;
+  }
+  
+  /* Image Section */
+  .forgot-image {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  
+  .forgot-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  @media (min-width: 768px) {
+    .forgot-image {
+      display: flex;
+      width: 50%;
+    }
+  }
+  

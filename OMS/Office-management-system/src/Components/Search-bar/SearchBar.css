@@ -1,0 +1,90 @@
+.outer-container {
+  background-color: #ffffff;
+  /* padding: 15px; */
+  border-radius: 10px;
+  width: 100%;
+  position: relative;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;  /* Align search bar and icons in a line */
+  width: 100%;
+}
+
+.searchbar {
+  display: flex;
+  align-items: center;
+  flex-grow: 1; /* Allow search bar to take up available space */
+  margin-top: 0.8rem;
+}
+
+.search-input {
+  padding: 8px 15px;
+  border-radius: 30px;
+  border: 1px solid #ccc;
+  width: 100%; /* Make it responsive */
+  max-width: 300px; /* Limit max width */
+}
+
+.search-button {
+  background-color: #007bff;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  padding: 8px 12px;
+  cursor: pointer;
+  position: relative;
+  background: none;
+  border: none;
+  right: 3.1rem;
+  cursor: pointer;
+  
+}
+
+.search-button svg {
+  color: #fff;
+}
+
+.top-bar-icons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: absolute;
+  right: 1.4rem;
+}
+
+.notification-button,
+.profile-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.notification-button svg,
+.profile-button svg {
+  color: #555;
+  transition: color 0.3s;
+}
+
+.notification-button:hover svg,
+.profile-button:hover svg {
+  color: #007bff;
+}
+
+@media (max-width: 768px) {
+  .outer-container {
+    left: 2rem;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 10px;
+    width: 90%;
+    position: relative;
+}
+.top-bar-icons {
+  gap: 0px;
+  right: 0rem;
+}
+.notification-button, .profile-button {
+  padding: 10px;
+}
+}

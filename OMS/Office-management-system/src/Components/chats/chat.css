@@ -1,0 +1,400 @@
+.chat-container {
+  height: calc(100vh - 56px); /* Adjust based on your navbar height */
+}
+
+.sidebar {
+  background-color: #f8f9fa;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.chat-area {
+  height: 100%;
+  background-color: #fff;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  position: relative;
+}
+
+.avatar.online::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background-color: #28a745;
+  border-radius: 50%;
+  border: 2px solid #f8f9fa;
+}
+
+.avatar.away::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background-color: #ffc107;
+  border-radius: 50%;
+  border: 2px solid #f8f9fa;
+}
+
+.group-avatar {
+  background-color: #6c757d;
+}
+
+/* Button styles and spacing */
+.sidebar-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  gap: 15px; /* Add gap between buttons */
+}
+
+.sidebar-button {
+  padding: 8px 15px;
+  border-radius: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex: 1; /* Make buttons take equal width */
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: background-color 0.2s ease;
+}
+
+.sidebar-button:hover {
+  background-color: #0069d9;
+}
+
+.messages-container {
+  overflow-y: auto;
+  background-color: #e5ddd5;
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkEEjIZJgR2LQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAJUlEQVQ4y2NgGAWjYBTQEzAyMDAw/AeRjP8ZGBj+g1hQNlQcCgAASV8I1R5LkZkAAAAASUVORK5CYII=');
+  height: calc(100% - 70px); /* Adjust based on your input area height */
+}
+
+.message {
+  display: flex;
+  max-width: 80%;
+  margin-bottom: 12px;
+}
+
+.message.sent {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.message.received {
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+.message-content {
+  padding: 8px 12px;
+  border-radius: 18px;
+  position: relative;
+  word-break: break-word;
+}
+
+.message.sent .message-content {
+  background-color: #dcf8c6;
+}
+
+.message.received .message-content {
+  background-color: white;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: #666;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.message-input {
+  padding: 10px;
+}
+
+.message-input textarea {
+  resize: none;
+  border-radius: 20px;
+  padding: 10px 15px;
+  width: 100%;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Media Queries for Different Screen Sizes */
+
+/* Large screens (1024px and up) */
+@media (max-width: 1024px) {
+  .chat-container {
+    height: calc(100vh - 50px);
+  }
+  
+  .message {
+    max-width: 85%;
+  }
+  
+  /* Maintain button layout down to 768px */
+  .sidebar-buttons {
+    padding: 10px;
+    gap: 15px;
+  }
+  
+  .sidebar-button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Medium screens (tablets, 768px and up) */
+@media (max-width: 768px) {
+  .chat-container {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    height: auto;
+    max-height: 130px; /* Increased to accommodate buttons */
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  /* Still maintain the same button layout at 768px */
+  .sidebar-buttons {
+    padding: 10px;
+    gap: 15px;
+    justify-content: space-between;
+  }
+  
+  .sidebar-button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
+  
+  .sidebar .contact-list {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    overflow-x: auto;
+  }
+  
+  .sidebar .contact-item {
+    margin-right: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  
+  .chat-area {
+    height: calc(100vh - 180px); /* Adjusted for larger sidebar */
+  }
+  
+  .message {
+    max-width: 90%;
+  }
+}
+
+/* Small screens (landscape phones, 480px and up) */
+@media (max-width: 480px) {
+  .chat-container {
+    height: calc(100vh - 40px);
+  }
+  
+  /* Change button layout for smaller screens */
+  .sidebar-buttons {
+    padding: 8px;
+    gap: 10px;
+  }
+  
+  .sidebar-button {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    border-radius: 15px;
+  }
+  
+  .messages-container {
+    height: calc(100% - 60px);
+  }
+  
+  .avatar {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .message {
+    max-width: 95%;
+  }
+  
+  .message-content {
+    padding: 6px 10px;
+    font-size: 0.95rem;
+  }
+  
+  .message-time {
+    font-size: 0.7rem;
+  }
+  
+  .message-input textarea {
+    padding: 8px 12px;
+  }
+}
+
+/* Extra small screens (portrait phones, 375px and below) */
+@media (max-width: 375px) {
+  /* Now we change to vertical layout for very small screens */
+  .sidebar-buttons {
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px;
+  }
+  
+  .sidebar-button {
+    width: 100%;
+    max-width: none;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+  }
+  
+  .sidebar {
+    max-height: 160px; /* Increased for vertical buttons */
+  }
+  
+  .chat-area {
+    height: calc(100vh - 200px); /* Adjusted for larger sidebar */
+  }
+  
+  .avatar {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .avatar.online::after,
+  .avatar.away::after {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .message-content {
+    padding: 5px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .message-input {
+    padding: 5px;
+  }
+  
+  .message-input textarea {
+    padding: 6px 10px;
+  }
+}
+
+/* Button container styling */
+.btn-cont {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 12px;
+  gap: 15px;
+}
+
+/* Button styles - enhancing Bootstrap buttons */
+.btn-cont .btn-primary,
+.btn-cont .btn-secondary {
+  border-radius: 20px;
+  font-weight: 500;
+  padding: 8px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.btn-cont .btn-primary:hover {
+  background-color: #0069d9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.btn-cont .btn-secondary:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+/* Media Queries for Different Screen Sizes */
+
+/* Maintain layout until 480px */
+@media (max-width: 768px) {
+  .btn-cont {
+    padding: 10px;
+  }
+  
+  .btn-cont .btn-primary,
+  .btn-cont .btn-secondary {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Small screens (landscape phones, 480px and below) */
+@media (max-width: 480px) {
+  .btn-cont {
+    padding: 8px;
+    gap: 10px;
+  }
+  
+  .btn-cont .btn-primary,
+  .btn-cont .btn-secondary {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Extra small screens (portrait phones, 375px and below) */
+@media (max-width: 375px) {
+  .btn-cont {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 6px;
+  }
+  
+  .btn-cont .btn-primary,
+  .btn-cont .btn-secondary {
+    width: 100%;
+    margin-right: 0 !important; /* Override Bootstrap's me-2 */
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+}

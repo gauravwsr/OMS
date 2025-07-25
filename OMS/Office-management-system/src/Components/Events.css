@@ -1,0 +1,121 @@
+.meeting-container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  
+  }
+  .meeting-header {
+    background-image: url('../../public/Images/hii.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: inline-block; /* Ensures the background applies properly */
+    padding: 10px 20px; /* Adjust padding for better visibility */
+    color: 
+    #081A51; /* Ensure text is visible */
+    border-radius: 8px; /* Optional */
+  }
+  
+  
+  .meeting-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .meeting-table th, 
+  .meeting-table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  
+  .meeting-table th {
+    background: #f4f4f4;
+    font-size: 1rem;
+    font-weight: bold;
+  }
+  
+  .meeting-table tbody tr:nth-child(even) {
+    background: #f9f9f9;
+  }
+  
+  .meeting-table tbody tr:hover {
+    background: #e8f4ff;
+    transition: background 0.3s ease;
+  }
+  
+  .details-button {
+    padding: 8px 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .details-button:hover {
+    background: #0056b3;
+  }
+  
+
+  /* Meeting Table Container */
+.meeting-container {
+  background-color: #ffffff;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+  margin-top: 20px;
+}
+
+.meeting-header {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Meeting Table */
+.meeting-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.meeting-table th, .meeting-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.meeting-table th {
+  background-color: #ffffff;
+  color:#040000;
+}
+
+.meeting-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* View Details Button */
+.details-button {
+  background-color:#709EB1
+  ;
+  color: #ffffff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.details-button:hover {
+  background-color:#709EB1;
+}
+
+
+

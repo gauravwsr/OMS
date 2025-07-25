@@ -1,0 +1,253 @@
+/* Container styles */
+.invoice-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+  }
+  
+  .invoice-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    margin-bottom: 20px;
+  }
+  
+  /* Header styles */
+  .header {
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .main-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .section-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #444;
+  }
+  
+  /* Search section styles */
+  .search-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .search-container {
+    position: relative;
+    width: 70%;
+  }
+  
+  @media (max-width: 768px) {
+    .search-container {
+      width: 100%;
+    }
+    
+    .refresh-container {
+      width: 100%;
+      margin-top: 10px;
+    }
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  
+  .search-svg {
+    width: 18px;
+    height: 18px;
+    color: #6b7280;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 10px 10px 10px 40px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  
+  .search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+  
+  .refresh-container {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .refresh-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .refresh-button:hover {
+    background-color: #2563eb;
+  }
+  
+  .refresh-button:disabled {
+    background-color: #93c5fd;
+    cursor: not-allowed;
+  }
+  
+  .refresh-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Error message styles */
+  .error-message {
+    padding: 12px 16px;
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    color: #b91c1c;
+    margin-bottom: 20px;
+  }
+  
+  .error-details {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  
+  /* Loading styles */
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 0;
+  }
+  
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(59, 130, 246, 0.1);
+    border-radius: 50%;
+    border-top-color: #3b82f6;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* No results styles */
+  .no-results {
+    text-align: center;
+    padding: 40px 0;
+    color: #6b7280;
+  }
+  
+  .no-results-hint {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  
+  /* Table styles */
+  .table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+  
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .table-header {
+    background-color: #f3f4f6;
+  }
+  
+  .header-cell {
+    font-weight: 600;
+    color: #4b5563;
+  }
+  
+  .table-cell {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .table-row:hover {
+    background-color: #f9fafb;
+  }
+  
+  .action-column {
+    text-align: center;
+  }
+  
+  .action-cell {
+    text-align: center;
+  }
+  
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .pdf-button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .pdf-button:hover {
+    background-color: #2563eb;
+  }
+  
+  .delete-button {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .delete-button:hover {
+    background-color: #dc2626;
+  }

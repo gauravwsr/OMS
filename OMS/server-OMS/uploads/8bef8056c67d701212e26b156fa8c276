@@ -1,0 +1,52 @@
+import './Inbox.css'
+import { useNavigate } from 'react-router-dom';
+
+const SentSection = ({emails})=>{
+   const navigate = useNavigate();
+  
+    const handleEmailClick = (email) => {
+      navigate('/email-details', { state: { email } });
+    };
+    
+
+    return (
+        <div>
+             {emails.length > 0 ? (
+            emails.map((email) => (
+              <div key={email._id} className="meeting-row">
+                <div className="meeting-name">
+                  {/* <input
+                    type="checkbox"
+                    id={`email-${email._id}`}
+                    className="meeting-checkbox"
+                  /> */}
+                  <label htmlFor={`email-${email._id}`} className="meeting-label">
+                    {email.to}
+                  </label>
+                </div>
+                <div
+              className="meeting-description"
+              onClick={() => handleEmailClick(email)}
+              style={{ cursor: 'pointer' }}
+            >
+              {email.subject}
+            </div>
+                <div className="meeting-time">
+                <span>{new Date(email.date).toLocaleString()}</span>
+                </div>
+                {/* <button
+                className="delete-btn"
+                onClick={() => handleDeleteEmail(email._id)}
+            >
+                🗑️ Delete
+            </button> */}
+              </div>
+            ))
+          ) : (
+            <p>No emails to show</p>
+          )}
+        </div>
+    )
+}
+
+export default SentSection;

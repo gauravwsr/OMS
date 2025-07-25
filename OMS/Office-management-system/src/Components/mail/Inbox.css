@@ -1,0 +1,419 @@
+/* Main container */
+.main-cont {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f1f3f4;
+}
+
+/* Meetings container */
+.meetings-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+
+}
+
+/* Meetings header */
+.meetings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  height: 50px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 1rem;
+}
+
+.tab-button {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #64748b;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tab-button.active {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.tab-button:hover:not(.active) {
+  background-color: #f8fafc;
+}
+
+/* Compose button */
+.compose-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background-color: #1a73e8;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 14px;
+  color: white;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.compose-button:hover {
+  background-color: #1557b0;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+}
+
+/* Date navigation */
+.date-nav {
+  background-color: #f0f9ff;
+  background-image: url('../../../public/Images/hii.png');
+  background-size: cover;
+  background-position: center;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 7px;
+}
+
+.date-nav h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.date-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.date-nav-content-button {
+  padding: 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.date-nav-content-button:hover {
+  background-color: #e2e8f0;
+}
+
+.date-controls span {
+  font-size: 14px;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+/* Email list */
+.email-list {
+  width: 100%;
+}
+
+.email-header-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 2fr) minmax(200px, 3fr) minmax(100px, 1fr);
+  padding: 12px 16px;
+  background-color: #f8fafc;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 10px;
+}
+
+.email-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 2fr) minmax(200px, 3fr) minmax(100px, 1fr);
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  gap: 10px;
+}
+
+.email-row:hover {
+  background-color: #f8fafc;
+}
+
+.email-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.email-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  min-width: 16px;
+}
+
+.email-label {
+  font-size: 14px;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.draft-label {
+  color: #e11d48;
+  font-weight: 500;
+}
+
+.email-content {
+  font-size: 14px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+.email-time-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.email-time {
+  font-size: 14px;
+  color: #64748b;
+}
+
+/* Draft section */
+.draft-row .send-button {
+  padding: 4px 8px;
+  border: none;
+  background-color: #1a73e8;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.draft-row .send-button:hover {
+  background-color: #1557b0;
+}
+
+/* Loading and error states */
+.loading-message,
+.error-message,
+.no-emails-message {
+  padding: 20px;
+  text-align: center;
+  color: #64748b;
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+/* Column names for better semantic meaning */
+.column-name, .column-content, .column-time {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive Design for different screen sizes */
+/* Large desktops */
+@media (max-width: 1024px) {
+  .meetings-container {
+    width: 90%;
+    margin-left: 20%;
+  }
+}
+
+/* Medium screens and tablets */
+@media (max-width: 768px) {
+  .meetings-container {
+    width: 95%;
+    margin: 10px auto;
+    margin-left: auto;
+  }
+  
+  .meetings-header {
+    padding: 12px;
+  }
+  
+  .tab-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .compose-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .email-row, .email-header-row {
+    grid-template-columns: minmax(120px, 1.5fr) minmax(150px, 2fr) minmax(80px, 1fr);
+  }
+}
+
+/* Mobile view starts at 600px */
+@media (max-width: 600px) {
+  .meetings-container {
+    width: 100%;
+    border-radius: 0;
+    margin-left: 0;
+  }
+  
+  .meetings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    height: auto;
+    padding: 10px;
+  }
+  
+  .tabs {
+    width: 100%;
+    justify-content: space-between;
+    gap: 5px;
+  }
+  
+  .tab-button {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 12px;
+  }
+  
+  .compose-button {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  
+  .date-nav {
+    /* flex-direction: column; */
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .date-nav h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  
+  .date-controls {
+    width: 80%;
+    justify-content:right;
+  }
+  
+  /* Email layout for mobile - keep horizontal layout but adjust sizes */
+  .email-header-row {
+    display: none;
+  }
+  
+  .email-row {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    gap: 4px;
+  }
+  
+  .email-name {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .email-checkbox {
+    margin-right: 10px;
+  }
+  
+  .email-label {
+    font-weight: 500;
+    font-size: 14px;
+  }
+  
+  .email-time {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  
+  .email-content {
+    padding-left: 0;
+    padding-top: 5px;
+    font-size: 13px;
+    margin-left: 26px;
+  }
+  
+  .email-time-actions {
+    margin-left: 26px;
+  }
+}
+
+/* Smaller phones */
+@media (max-width: 375px) {
+  .meetings-header {
+    padding: 8px;
+  }
+  
+  .tab-button {
+    padding: 6px 0;
+    font-size: 11px;
+  }
+  
+  .compose-button {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .date-nav {
+    padding: 12px;
+  }
+  
+  .date-nav h2 {
+    font-size: 16px;
+  }
+  
+  .email-label {
+    font-size: 13px;
+  }
+
+  .email-content {
+    font-size: 12px;
+  }
+  
+  .email-time {
+    font-size: 11px;
+  }
+}

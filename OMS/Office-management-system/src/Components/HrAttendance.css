@@ -1,0 +1,134 @@
+.hr-leave-management {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.hr-leave-management h1 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.filter-controls {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.filter-controls label {
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+.filter-controls select,
+.filter-controls button {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.filter-controls button {
+    background-color: #4a6fdc;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+
+.filter-controls button:hover {
+    background-color: #3a5bb9;
+}
+
+.filter-controls button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+}
+
+.loading {
+    text-align: center;
+    margin: 20px 0;
+    color: #666;
+}
+
+.leave-applications-table {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.status {
+    font-weight: bold;
+}
+
+.status-pending {
+    color: #856404;
+    background-color: #fff3cd;
+}
+
+.status-approved {
+    color: #155724;
+    background-color: #d4edda;
+}
+
+.status-rejected {
+    color: #721c24;
+    background-color: #f8d7da;
+}
+
+.actions select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 120px;
+}
+
+@media (max-width: 768px) {
+    .filter-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .filter-controls label,
+    .filter-controls select,
+    .filter-controls button {
+        margin-bottom: 10px;
+        width: 100%;
+    }
+}
