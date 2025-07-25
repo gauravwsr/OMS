@@ -21,6 +21,9 @@ export const AuthProvider = ({ children }) => {
       try {
         const decodedToken = jwtDecode(token);
         setUser({
+          _id: decodedToken.id,
+          userId: decodedToken.userId,
+          name: decodedToken.name,
           email: decodedToken.email,
           role: decodedToken.role,
           subRole: decodedToken.subRole,
@@ -63,6 +66,9 @@ export const AuthProvider = ({ children }) => {
 
         const decodedToken = jwtDecode(token);
         setUser({
+          _id: decodedToken.id,
+          userId: decodedToken.userId,
+          name: decodedToken.name,
           email: decodedToken.email,
           role: decodedToken.role,
           subRole: decodedToken.subRole,
