@@ -90,7 +90,7 @@ const UserSchema = new mongoose.Schema({
   // Current department and position fields
   department: {
     type: String,
-    enum: ["HR", "IT", "Employee", "Project"],
+    enum: ["HR", "IT", "Information Technology", "Employee", "Project"],
   },
   position: {
     type: String,

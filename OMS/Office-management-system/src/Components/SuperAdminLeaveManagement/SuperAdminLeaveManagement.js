@@ -45,11 +45,38 @@ const SuperAdminLeaveManagement = () => {
 
   const handleLeaveAction = async (leaveId, action, comments = '') => {
     try {
-      const response = await axios.patch(`http://localhost:5000/api/leave/status/${leaveId}`, {
+      console.log('handleLeaveAction called with:', { leaveId, action, comments });
+      console.log('User object:', user);
+      console.log('User _id:', user?._id);
+      
+      if (!user || !user._id) {
+        setMessage({
+          type: 'error',
+          text: 'User information not available. Please login again.'
+        });
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      console.log('Token available:', !!token);
+      
+      const requestData = {
         status: action,
         reviewComments: comments,
         reviewedBy: user._id
+      };
+      
+      console.log('Request data:', requestData);
+      console.log('Making API call to:', `http://localhost:5000/api/leave/status/${leaveId}`);
+      
+      const response = await axios.patch(`http://localhost:5000/api/leave/status/${leaveId}`, requestData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+
+      console.log('API Response:', response.data);
 
       if (response.data.success) {
         setMessage({
@@ -57,12 +84,28 @@ const SuperAdminLeaveManagement = () => {
           text: `Leave application ${action.toLowerCase()} successfully`
         });
         fetchLeaveApplications(); // Refresh the list
+      } else {
+        console.log('API returned success: false');
+        setMessage({
+          type: 'error',
+          text: response.data.message || `Failed to ${action.toLowerCase()} leave application`
+        });
       }
     } catch (error) {
       console.error(`Error ${action.toLowerCase()}ing leave:`, error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = `${errorMessage}: ${error.message}`;
+      }
+      
       setMessage({
         type: 'error',
-        text: error.response?.data?.message || `Failed to ${action.toLowerCase()} leave application`
+        text: errorMessage
       });
     }
   };

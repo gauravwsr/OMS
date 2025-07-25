@@ -10,6 +10,9 @@ const HRLeaveApplication = () => {
   const [userLeaves, setUserLeaves] = useState([]);
   const [loadingLeaves, setLoadingLeaves] = useState(false);
   
+  // Debug: Add some sample data to test UI
+  const [showSampleData, setShowSampleData] = useState(false);
+  
   // Form states
   const [formData, setFormData] = useState({
     leaveReason: '',
@@ -22,35 +25,55 @@ const HRLeaveApplication = () => {
   });
 
   useEffect(() => {
+    console.log('HRLeaveApplication Component Mounted');
     console.log('User object in HRLeaveApplication:', user);
+    console.log('UsersId from context:', usersId);
+    
     if (user && (user.email || user._id)) {
+      console.log('User found, fetching leaves...');
       fetchUserLeaves();
     } else {
       console.log('User not available yet or missing required fields');
+      console.log('User state:', user);
     }
   }, [user]);
 
   const fetchUserLeaves = async () => {
     try {
       setLoadingLeaves(true);
+      console.log('Fetching user leaves for user:', user);
+      
       // Use both user ID and email for better reliability
       let response;
       if (user && user._id) {
+        console.log('Using user ID:', user._id);
         response = await axios.get(`http://localhost:5000/api/leave/user/${user._id}`);
       } else if (user && user.email) {
+        console.log('Using user email:', user.email);
         response = await axios.get(`http://localhost:5000/api/leave/user-by-email/${user.email}`);
       } else {
+        console.log('No user ID or email available');
         throw new Error('User information not available');
       }
       
+      console.log('API Response:', response.data);
+      
       if (response.data.success) {
+        console.log('Setting user leaves:', response.data.data);
         setUserLeaves(response.data.data);
+      } else {
+        console.log('API returned success: false');
+        setMessage({ 
+          type: 'error', 
+          text: 'No leave applications found' 
+        });
       }
     } catch (error) {
       console.error('Error fetching user leaves:', error);
+      console.error('Error response:', error.response?.data);
       setMessage({ 
         type: 'error', 
-        text: 'Failed to fetch your leave applications. Please refresh the page.' 
+        text: `Failed to fetch your leave applications: ${error.message}` 
       });
     } finally {
       setLoadingLeaves(false);
@@ -58,6 +81,8 @@ const HRLeaveApplication = () => {
   };
 
   const leaveTypes = ['Sick Leave', 'Vacation', 'Personal Leave', 'Emergency Leave', 'Other'];
+
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -121,11 +146,14 @@ const HRLeaveApplication = () => {
     }
 
     // Check if user info exists
-    if (!user || !user.email) {
-      setMessage({ type: 'error', text: 'User information not available. Please refresh and try again.' });
+    if (!user || (!user.email && !user._id)) {
+      setMessage({ type: 'error', text: 'User information not available. Please login again.' });
       setLoading(false);
       return;
     }
+
+    console.log('Form submission started with user:', user);
+    console.log('Form data:', formData);
 
     try {
       // Prepare the payload using both user ID and email for better identification
@@ -151,6 +179,8 @@ const HRLeaveApplication = () => {
 
       const response = await axios.post('http://localhost:5000/api/leave/apply', payload);
 
+      console.log('Leave application response:', response.data);
+
       if (response.data.success) {
         setMessage({ 
           type: 'success', 
@@ -169,7 +199,15 @@ const HRLeaveApplication = () => {
         });
 
         // Refresh user leaves
-        fetchUserLeaves();
+        setTimeout(() => {
+          fetchUserLeaves();
+        }, 1000); // Add delay to allow backend to process
+      } else {
+        console.log('Leave application failed:', response.data);
+        setMessage({ 
+          type: 'error', 
+          text: response.data.message || 'Failed to submit leave application'
+        });
       }
     } catch (error) {
       console.error('Error submitting leave application:', error);
@@ -242,8 +280,7 @@ const HRLeaveApplication = () => {
   return (
     <div className="hr-leave-application">
       <div className="leave-header">
-        <h1>Apply for Leave</h1>
-        <p>Submit your leave application for Super Admin approval</p>
+        <h1 >Apply for Leave</h1>
       </div>
 
       {message.text && (
@@ -349,8 +386,17 @@ const HRLeaveApplication = () => {
         <div className="leave-status-section">
           <div className="status-card">
             <h2>My Leave Applications</h2>
-            {userLeaves.length === 0 ? (
-              <p className="no-applications">No leave applications found</p>
+            <p style={{ fontSize: '12px', color: '#666' }}>
+              Total applications: {userLeaves.length} 
+              {showSampleData && ' (Sample Data)'}
+            </p>
+            
+            {loadingLeaves ? (
+              <p className="loading">Loading your leave applications...</p>
+            ) : userLeaves.length === 0 ? (
+              <div className="no-applications">
+                <p>No leave applications found</p>
+              </div>
             ) : (
               <div className="leave-applications-list">
                 {userLeaves.map((leave) => (

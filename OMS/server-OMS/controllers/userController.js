@@ -168,10 +168,12 @@ const loginUser = async (req, res) => {
     // Generate JWT token with login timestamp
     const loginTime = new Date().toISOString(); // Store login time in ISO format
     const payload = {
+      id: user._id, // Add MongoDB ObjectId
       userId: user.userId,
       email: user.email,
       role: user.role,
       subRole: user.subRole,
+      name: user.name, // Add user name
       loginTime,
     };
 
