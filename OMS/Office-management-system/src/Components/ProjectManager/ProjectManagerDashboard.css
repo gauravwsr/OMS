@@ -1134,3 +1134,91 @@
     width: 100%;
   }
 }
+
+/* New styles for API-based project display */
+.amount-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.project-info {
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.status-indicator {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.status-indicator.active {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-indicator.completed {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.status-indicator.overdue {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.status-indicator.unknown {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.project-status-info {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.status-header span:first-child {
+  font-weight: 600;
+  color: #374151;
+}
+
+.amount-display {
+  text-align: center;
+  padding: 8px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border-radius: 8px;
+  font-size: 16px;
+}

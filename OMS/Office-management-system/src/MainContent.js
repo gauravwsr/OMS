@@ -45,6 +45,9 @@ import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
 import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard.js";
+import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
+import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
+import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -127,6 +130,7 @@ const MainContent = ({ nav }) => {
         // { path: "/QuotationList", label: "Quotations", icon: <FiFileText /> },
         { path: "/Invoice", label: "Invoice", icon: <FiFileMinus /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        { path: "/super-admin-leave-management", label: "Leave Management", icon: <FiClipboard /> }
       ],
       Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -142,7 +146,41 @@ const MainContent = ({ nav }) => {
           label: "HR Attendance",
           icon: <FiClipboard />,
         },
+        { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> }
       ],
+      Admin_HR: [
+        { path: "/Db", label: "Employees", icon: <FiUsers /> },
+        {
+          path: "/hr-registration",
+          label: "Registration",
+          icon: <FiUsers />,
+        },
+        // { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
+        { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
+        { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hrAttendance",
+          label: "HR Attendance",
+          icon: <FiClipboard />,
+        },
+      ],
+      // "Admin_HR Manager": [
+      //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
+      //   {
+      //     path: "/hr-registration",
+      //     label: "Registration",
+      //     icon: <FiUsers />,
+      //   },
+        
+      //   { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
+      //   { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+      //   {
+      //     path: "/hrAttendance",
+      //     label: "HR Attendance",
+      //     icon: <FiClipboard />,
+      //   },
+      //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
+      // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
       ],
@@ -151,7 +189,28 @@ const MainContent = ({ nav }) => {
       ],
     };
 
-    return [...commonItems, ...(roleSpecificItems[user.role] || [])];
+    // Check for subrole first
+    let roleKey = user.role;
+    console.log('Debug - User role:', user.role);
+    console.log('Debug - User subRole:', user.subRole);
+    console.log('Debug - User object:', user);
+    
+    if (user.subRole) {
+      const subroleKey = `${user.role}_${user.subRole}`;
+      console.log('Debug - Checking subroleKey:', subroleKey);
+      console.log('Debug - Available roleSpecificItems keys:', Object.keys(roleSpecificItems));
+      if (roleSpecificItems[subroleKey]) {
+        roleKey = subroleKey;
+        console.log('Debug - Using subroleKey:', roleKey);
+      } else {
+        console.log('Debug - Subrole not found, using base role:', roleKey);
+      }
+    }
+
+    console.log('Debug - Final roleKey being used:', roleKey);
+    const finalMenuItems = [...commonItems, ...(roleSpecificItems[roleKey] || [])];
+    console.log('Debug - Final menu items:', finalMenuItems);
+    return finalMenuItems;
   };
 
   const menuItems = getMenuItems();
@@ -708,6 +767,8 @@ const MainContent = ({ nav }) => {
                 <AdminDashboard />
               ) : user?.role === "Admin" && user?.subRole === "Project_Manager" ? (
                 <ProjectManagerDashboard />
+              ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
+                <TeamLeadDashboard />
               ) : (
                 <Homepage />
               )
@@ -726,10 +787,16 @@ const MainContent = ({ nav }) => {
             element={
               user?.role === "Employee" && user?.subRole === "Project Manager" ? (
                 <ProjectManagerDashboard nav={nav} />
+              ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
+                <TeamLeadDashboard nav={nav} />
               ) : (
                 <ProjectList />
               )
             } 
+          />
+          <Route 
+            path="/team-lead-dashboard" 
+            element={<TeamLeadDashboard nav={nav} />} 
           />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
@@ -741,7 +808,13 @@ const MainContent = ({ nav }) => {
           <Route path="/Certificate" element={<Certificate />} />
           <Route path="/hrAttendance" element={<HrAttendance />} />
           <Route path="/Invoice" element={<Invoice />} />
+          <Route
+            path="/super-admin-leave-management"
+            element={<SuperAdminLeaveManagement />}
+            />
+            <Route path="/hr-leave-application" element={<HRLeaveApplication />} />
         </Routes>
+        
       </div>
     </>
   );

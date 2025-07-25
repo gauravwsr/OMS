@@ -27,6 +27,8 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 // const candidateRoutes = require('./routes/candidateRoutes');
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const clientProjectRoutes = require("./routes/clientProjectRoutes");
+const leaveRoutes = require("./routes/leaveRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -54,7 +56,7 @@ app.use(
   cors({
     origin: ["http://localhost:3000"],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -93,6 +95,12 @@ app.use("/api/schedule", scheduleRoutes);
 // app.use('/api/candidates', candidateRoutes);
 
 app.use("/api", projectRoutes);
+
+// Client Project management routes
+app.use("/api/client-projects", clientProjectRoutes);
+
+// Leave management routes
+app.use("/api/leave", leaveRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);

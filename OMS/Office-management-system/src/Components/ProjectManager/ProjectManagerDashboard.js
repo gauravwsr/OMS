@@ -25,7 +25,8 @@ import {
   FaEnvelope,
   FaPhone,
   FaFlag,
-  FaMilestone
+  FaMapMarkerAlt,
+  FaLock
 } from 'react-icons/fa';
 import './ProjectManagerDashboard.css';
 
@@ -87,20 +88,13 @@ const ProjectManagerDashboard = () => {
 
     const fetchTeamLeads = async () => {
       try {
-        // Try to fetch team leads from API - you can replace this URL with actual team leads API
-        const response = await fetch('https://crm-brown-gamma.vercel.app/api/team-leads');
-        
-        if (response.ok) {
-          const data = await response.json();
-          setTeamLeads(Array.isArray(data) ? data : data.teamLeads || []);
-        } else {
-          // Fallback to mock team leads
-          setTeamLeads(getMockTeamLeads());
-        }
+        const response = await fetch('http://localhost:5000/api/users/team-leads');
+        const data = await response.json();
+        const teamLeadsData = Array.isArray(data.data) ? data.data : [];
+        setTeamLeads(teamLeadsData);
       } catch (error) {
         console.error('Error fetching team leads:', error);
-        // Fallback to mock team leads
-        setTeamLeads(getMockTeamLeads());
+        setTeamLeads([]);
       }
     };
 
@@ -306,84 +300,22 @@ const ProjectManagerDashboard = () => {
     ];
   };
 
-  // Mock team leads data
-  const getMockTeamLeads = () => {
-    return [
-      {
-        id: 1,
-        name: 'Alex Rodriguez',
-        email: 'alex.rodriguez@company.com',
-        specialization: 'Full-Stack Development',
-        experience: '5 years',
-        currentProjects: 2,
-        availability: 'available',
-        skills: ['React', 'Node.js', 'Python', 'AWS']
-      },
-      {
-        id: 2,
-        name: 'Sarah Wilson',
-        email: 'sarah.wilson@company.com',
-        specialization: 'Frontend Development',
-        experience: '4 years',
-        currentProjects: 1,
-        availability: 'busy',
-        skills: ['React', 'Vue.js', 'TypeScript', 'UI/UX']
-      },
-      {
-        id: 3,
-        name: 'Emily Johnson',
-        email: 'emily.johnson@company.com',
-        specialization: 'Backend Development',
-        experience: '6 years',
-        currentProjects: 1,
-        availability: 'available',
-        skills: ['Node.js', 'Python', 'MongoDB', 'PostgreSQL']
-      },
-      {
-        id: 4,
-        name: 'Maria Garcia',
-        email: 'maria.garcia@company.com',
-        specialization: 'DevOps & Security',
-        experience: '7 years',
-        currentProjects: 2,
-        availability: 'busy',
-        skills: ['AWS', 'Docker', 'Kubernetes', 'Security']
-      },
-      {
-        id: 5,
-        name: 'James Thompson',
-        email: 'james.thompson@company.com',
-        specialization: 'Mobile Development',
-        experience: '5 years',
-        currentProjects: 0,
-        availability: 'available',
-        skills: ['React Native', 'Flutter', 'iOS', 'Android']
-      },
-      {
-        id: 6,
-        name: 'Lisa Chen',
-        email: 'lisa.chen@company.com',
-        specialization: 'Data Engineering',
-        experience: '6 years',
-        currentProjects: 1,
-        availability: 'available',
-        skills: ['Python', 'SQL', 'Big Data', 'Machine Learning']
-      }
-    ];
-  };
+
 
   // Calculate dashboard statistics
   const calculateDashboardStats = (projectsData) => {
     const totalProjects = projectsData.length;
-    const activeProjects = projectsData.filter(p => p.status === 'active').length;
-    const completedProjects = projectsData.filter(p => p.status === 'completed').length;
-    const overdueProjects = projectsData.filter(p => p.status === 'overdue').length;
+    const activeProjects = projectsData.filter(p => p.projectStatus === 'Active').length;
+    const completedProjects = projectsData.filter(p => p.projectStatus === 'Completed').length;
+    const overdueProjects = projectsData.filter(p => p.projectStatus === 'Overdue').length;
+    const totalAmount = projectsData.reduce((sum, p) => sum + (p.finalAmount || 0), 0);
 
     return {
       totalProjects,
       activeProjects,
       completedProjects,
-      overdueProjects
+      overdueProjects,
+      totalAmount
     };
   };
 
@@ -394,15 +326,15 @@ const ProjectManagerDashboard = () => {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(project =>
-        (project.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (project.client || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (project.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+        (project.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.leadName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.projectId || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply status filter
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(project => (project.status || 'unknown') === filterStatus);
+      filtered = filtered.filter(project => (project.projectStatus || 'unknown') === filterStatus);
     }
 
     // Apply sorting
@@ -481,37 +413,47 @@ const ProjectManagerDashboard = () => {
     if (!selectedTeamLead || !selectedProject) return;
 
     try {
-      // Here you would make an API call to assign the team lead
-      // const response = await fetch(`/api/projects/${selectedProject.id}/assign-lead`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ teamLeadId: selectedTeamLead })
-      // });
+      // Find the selected team lead details
+      const assignedLead = teamLeads.find(lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead));
 
-      // For now, update locally
-      const updatedProjects = projects.map(project => {
-        if (project.id === selectedProject.id) {
-          const assignedLead = teamLeads.find(lead => lead.id === parseInt(selectedTeamLead));
-          return {
-            ...project,
-            teamLeadId: parseInt(selectedTeamLead),
-            assignedTeamLead: assignedLead ? assignedLead.name : null
-          };
-        }
-        return project;
+      // Make API call to assign the team lead using the correct endpoint
+      const response = await fetch(`https://crm-brown-gamma.vercel.app/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+          teamLeadName: assignedLead?.name || ''
+        })
       });
 
-      setProjects(updatedProjects);
-      setFilteredProjects(updatedProjects);
-      setShowAssignModal(false);
-      setSelectedProject(null);
-      setSelectedTeamLead('');
+      if (response.ok) {
+        // Update local state with the assignment
+        const updatedProjects = projects.map(project => {
+          if (project._id === selectedProject._id) {
+            return {
+              ...project,
+              teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+              assignedTeamLead: assignedLead?.name || '',
+              leadName: assignedLead?.name || ''
+            };
+          }
+          return project;
+        });
 
-      // Show success message (you can implement a toast notification)
-      alert('Team lead assigned successfully!');
+        setProjects(updatedProjects);
+        setFilteredProjects(updatedProjects);
+        setShowAssignModal(false);
+        setSelectedProject(null);
+        setSelectedTeamLead('');
+        alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+      } else {
+        throw new Error('Failed to save assignment');
+      }
     } catch (error) {
-      console.error('Error assigning team lead:', error);
-      alert('Error assigning team lead. Please try again.');
+      console.error('Error saving team lead assignment:', error);
+      alert('Failed to assign team lead. Please try again.');
     }
   };
 
@@ -626,6 +568,20 @@ const ProjectManagerDashboard = () => {
             </div>
           </div>
         </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+            <FaChartLine size={32} />
+          </div>
+          <div className="stat-info">
+            <div className="stat-value">₹{dashboardStats.totalAmount ? dashboardStats.totalAmount.toLocaleString() : '0'}</div>
+            <div className="stat-title">Total Amount</div>
+            <div className="stat-trend">
+              <FaArrowUp size={12} />
+              Project value
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filter Controls */}
@@ -672,10 +628,6 @@ const ProjectManagerDashboard = () => {
           >
             {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
           </button>
-
-          <button className="add-project-btn">
-            <FaPlus /> New Project
-          </button>
         </div>
       </div>
 
@@ -687,28 +639,20 @@ const ProjectManagerDashboard = () => {
 
         <div className="projects-grid">
           {filteredProjects.map(project => (
-            <div key={project.id} className="project-card">
+            <div key={project._id} className="project-card">
               <div className="project-header">
                 <div className="project-title">
-                  <h3>{project.name || 'Untitled Project'}</h3>
+                  <h3>{project.projectId || 'Untitled Project'}</h3>
                   <div className="project-badges">
                     <span 
                       className="status-badge" 
-                      style={{ backgroundColor: getStatusColor(project.status || 'unknown') }}
+                      style={{ backgroundColor: getStatusColor(project.projectStatus || 'unknown') }}
                     >
-                      {project.status ? project.status.replace('-', ' ') : 'Unknown'}
+                      {project.projectStatus ? project.projectStatus.replace('-', ' ') : 'Unknown'}
                     </span>
-                    <span 
-                      className="priority-badge" 
-                      style={{ backgroundColor: getPriorityColor(project.priority || 'medium') }}
-                    >
-                      {project.priority || 'medium'} priority
+                    <span className="amount-badge">
+                      ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
                     </span>
-                    {isOverdue(project.endDate, project.status) && (
-                      <span className="overdue-badge">
-                        <FaClock /> Overdue
-                      </span>
-                    )}
                   </div>
                 </div>
                 <div className="project-actions">
@@ -734,18 +678,35 @@ const ProjectManagerDashboard = () => {
 
               <div className="project-details">
                 <div className="client-info">
-                  <strong>Client:</strong> {project.client || 'Unknown Client'}
+                  <strong>Client:</strong> {project.clientName || 'Unknown Client'}
                 </div>
-                <div className="project-description">
-                  {project.description || 'No description available'}
+                <div className="project-info">
+                  <div className="info-item">
+                    <strong>Project ID:</strong> {project.projectId || 'N/A'}
+                  </div>
+                  <div className="info-item">
+                    <strong>Lead Name:</strong> {project.leadName || 'Not Assigned'}
+                  </div>
+                  <div className="info-item">
+                    <strong>Final Amount:</strong> ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
+                  </div>
                 </div>
                 
                 <div className="assignment-info">
                   <div className="assignment-item">
-                    <strong>Project Manager:</strong> {project.projectManager}
+                    <strong>Project Status:</strong> 
+                    <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
+                      {project.projectStatus || 'Unknown'}
+                    </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Team Lead:</strong> 
+                    <strong>Original Lead:</strong> 
+                    <span className="original-lead">
+                      {project.leadName || 'Not Specified'}
+                    </span>
+                  </div>
+                  <div className="assignment-item">
+                    <strong>Assigned Team Lead:</strong> 
                     <span className={`team-lead-status ${project.assignedTeamLead ? 'assigned' : 'unassigned'}`}>
                       {project.assignedTeamLead || 'Not Assigned'}
                     </span>
@@ -754,7 +715,7 @@ const ProjectManagerDashboard = () => {
                         className="assign-quick-btn"
                         onClick={() => handleAssignTeamLead(project)}
                       >
-                        Assign Now
+                        Assign Team Lead
                       </button>
                     )}
                   </div>
@@ -763,33 +724,27 @@ const ProjectManagerDashboard = () => {
                 <div className="project-meta">
                   <div className="meta-item">
                     <FaCalendarAlt />
-                    <span>{formatDate(project.startDate)} - {formatDate(project.endDate)}</span>
+                    <span>Created: {formatDate(project.createdAt)}</span>
                   </div>
                   <div className="meta-item">
-                    <FaUsers />
-                    <span>{project.teamMembers || 0} team members</span>
+                    <FaCalendarAlt />
+                    <span>Updated: {formatDate(project.updatedAt)}</span>
                   </div>
-                  {project.clientContact && (
-                    <div className="meta-item">
-                      <FaEnvelope />
-                      <span>{project.clientContact.name}</span>
-                    </div>
-                  )}
+                  <div className="meta-item">
+                    <FaLock />
+                    <span>Password: {project.projectPassword || 'Not Set'}</span>
+                  </div>
                 </div>
 
-                <div className="project-progress">
-                  <div className="progress-header">
-                    <span>Progress</span>
-                    <span>{project.progress || 0}%</span>
+                <div className="project-status-info">
+                  <div className="status-header">
+                    <span>Project Status</span>
+                    <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
+                      {project.projectStatus || 'Unknown'}
+                    </span>
                   </div>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{ 
-                        width: `${project.progress || 0}%`,
-                        backgroundColor: getStatusColor(project.status || 'unknown')
-                      }}
-                    ></div>
+                  <div className="amount-display">
+                    <strong>Final Amount: ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}</strong>
                   </div>
                 </div>
 
@@ -851,7 +806,7 @@ const ProjectManagerDashboard = () => {
           <div className="no-projects">
             <FaProjectDiagram size={64} />
             <h3>No projects found</h3>
-            <p>Try adjusting your search criteria or add a new project.</p>
+            <p>Try adjusting your search criteria or check if projects are available in the system.</p>
           </div>
         )}
       </div>
@@ -868,8 +823,11 @@ const ProjectManagerDashboard = () => {
             </div>
             <div className="modal-body">
               <div className="project-info">
-                <h4>{selectedProject.name}</h4>
-                <p>Client: {selectedProject.client}</p>
+                <h4>{selectedProject.projectId}</h4>
+                <p>Client: {selectedProject.clientName}</p>
+                <p>Lead: {selectedProject.leadName}</p>
+                <p>Amount: ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</p>
+                <p>Status: {selectedProject.projectStatus}</p>
               </div>
               <div className="form-group">
                 <label htmlFor="teamLead">Select Team Lead:</label>
@@ -947,23 +905,20 @@ const ProjectManagerDashboard = () => {
             <div className="modal-body">
               <div className="project-overview">
                 <div className="overview-header">
-                  <h4>{selectedProject.name || 'Untitled Project'}</h4>
+                  <h4>{selectedProject.projectId || 'Untitled Project'}</h4>
                   <div className="project-badges">
                     <span 
                       className="status-badge" 
-                      style={{ backgroundColor: getStatusColor(selectedProject.status || 'unknown') }}
+                      style={{ backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown') }}
                     >
-                      {selectedProject.status ? selectedProject.status.replace('-', ' ') : 'Unknown'}
+                      {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
                     </span>
-                    <span 
-                      className="priority-badge" 
-                      style={{ backgroundColor: getPriorityColor(selectedProject.priority || 'medium') }}
-                    >
-                      {selectedProject.priority || 'medium'} priority
+                    <span className="amount-badge">
+                      ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}
                     </span>
                   </div>
                 </div>
-                <p className="project-description">{selectedProject.description || 'No description available'}</p>
+                <p className="project-description">Client: {selectedProject.clientName || 'Unknown Client'}</p>
               </div>
 
               <div className="details-grid">
@@ -971,50 +926,60 @@ const ProjectManagerDashboard = () => {
                   <h5><FaInfoCircle /> Basic Information</h5>
                   <div className="detail-items">
                     <div className="detail-item">
-                      <span>Client:</span>
-                      <span>{selectedProject.client || 'Unknown Client'}</span>
+                      <span>Project ID:</span>
+                      <span>{selectedProject.projectId || 'N/A'}</span>
                     </div>
                     <div className="detail-item">
-                      <span>Project Manager:</span>
-                      <span>{selectedProject.projectManager || 'Not Assigned'}</span>
+                      <span>Client Name:</span>
+                      <span>{selectedProject.clientName || 'Unknown Client'}</span>
                     </div>
                     <div className="detail-item">
-                      <span>Team Lead:</span>
+                      <span>Original Lead:</span>
+                      <span>{selectedProject.leadName || 'Not Specified'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Assigned Team Lead:</span>
                       <span>{selectedProject.assignedTeamLead || 'Not Assigned'}</span>
                     </div>
                     <div className="detail-item">
-                      <span>Start Date:</span>
-                      <span>{formatDate(selectedProject.startDate)}</span>
+                      <span>Final Amount:</span>
+                      <span>₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</span>
                     </div>
                     <div className="detail-item">
-                      <span>End Date:</span>
-                      <span>{formatDate(selectedProject.endDate)}</span>
+                      <span>Project Status:</span>
+                      <span>{selectedProject.projectStatus || 'Unknown'}</span>
                     </div>
                     <div className="detail-item">
-                      <span>Team Size:</span>
-                      <span>{selectedProject.teamMembers} members</span>
+                      <span>Created Date:</span>
+                      <span>{formatDate(selectedProject.createdAt)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Last Updated:</span>
+                      <span>{formatDate(selectedProject.updatedAt)}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Project Password:</span>
+                      <span>{selectedProject.projectPassword || 'Not Set'}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="detail-section">
-                  <h5><FaEnvelope /> Client Contact</h5>
-                  {selectedProject.clientContact && (
-                    <div className="detail-items">
-                      <div className="detail-item">
-                        <span>Contact Name:</span>
-                        <span>{selectedProject.clientContact.name}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span>Email:</span>
-                        <span>{selectedProject.clientContact.email}</span>
-                      </div>
-                      <div className="detail-item">
-                        <span>Phone:</span>
-                        <span>{selectedProject.clientContact.phone}</span>
-                      </div>
+                  <h5><FaEnvelope /> Project Information</h5>
+                  <div className="detail-items">
+                    <div className="detail-item">
+                      <span>Client Name:</span>
+                      <span>{selectedProject.clientName || 'Unknown Client'}</span>
                     </div>
-                  )}
+                    <div className="detail-item">
+                      <span>Lead Name:</span>
+                      <span>{selectedProject.leadName || 'Not Assigned'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Project ID:</span>
+                      <span>{selectedProject.projectId || 'N/A'}</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="detail-section">
@@ -1052,7 +1017,7 @@ const ProjectManagerDashboard = () => {
 
                 {selectedProject.milestones && (
                   <div className="detail-section">
-                    <h5><FaMilestone /> Milestones</h5>
+                    <h5><FaMapMarkerAlt /> Milestones</h5>
                     <div className="milestones-list">
                       {selectedProject.milestones.map((milestone, index) => (
                         <div key={index} className="milestone-item">

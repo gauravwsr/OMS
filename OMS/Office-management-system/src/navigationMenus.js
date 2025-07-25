@@ -4,6 +4,7 @@ export const navigationMenus = {
     { name: "Db", path: "/Db" },
     { name: "Employee", path: "/Db/employee" },
     { name: "Register HR Manager", path: "/hr-registration" },
+    { name: "Leave Management", path: "/super-admin-leave-management" },
     { name: "CandidateProfile", path: "/CandidateProfile" },
     { name: "Attendance", path: "/Attendance" },
     //   {name: "HRattendance", path: "/hrAttendance"},
@@ -39,6 +40,7 @@ export const navigationMenus = {
     { name: "Calender", path: "/Calender" },
     { name: "Certificate", path: "/Certificate" },
     { name: "HrAttendance", path: "/HrAttendance" },
+    { name: "Apply Leave", path: "/hr-leave-application" },
     // Department Dashboards
     { name: "HR Dashboard", path: "/hr-dashboard" },
     { name: "IT Dashboard", path: "/it-dashboard" },
