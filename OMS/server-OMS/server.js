@@ -27,6 +27,7 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 // const candidateRoutes = require('./routes/candidateRoutes');
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const leaveRoutes = require("./routes/leaveRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -93,6 +94,9 @@ app.use("/api/schedule", scheduleRoutes);
 // app.use('/api/candidates', candidateRoutes);
 
 app.use("/api", projectRoutes);
+
+// Leave management routes
+app.use("/api/leave", leaveRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);

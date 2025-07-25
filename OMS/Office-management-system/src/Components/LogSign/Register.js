@@ -31,6 +31,16 @@ const Register = () => {
   const [joiningDate, setJoiningDate] = useState("");
   const [salary, setSalary] = useState("");
 
+  // Missing state variables
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [department, setDepartment] = useState("");
+  const [position, setPosition] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [role, setRole] = useState("");
+  const [availablePositions, setAvailablePositions] = useState([]);
+  const [availableSpecializations, setAvailableSpecializations] = useState([]);
+
   // Position management functionality
   const [newPosition, setNewPosition] = useState("");
   const [positionCategory, setPositionCategory] = useState("HR");

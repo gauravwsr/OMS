@@ -126,6 +126,7 @@ const MainContent = ({ nav }) => {
         // { path: "/QuotationList", label: "Quotations", icon: <FiFileText /> },
         { path: "/Invoice", label: "Invoice", icon: <FiFileMinus /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        { path: "/super-admin-leave-management", label: "Leave Management", icon: <FiClipboard /> }
       ],
       Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -141,6 +142,7 @@ const MainContent = ({ nav }) => {
           label: "HR Attendance",
           icon: <FiClipboard />,
         },
+        { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
       ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
