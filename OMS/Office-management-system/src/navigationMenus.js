@@ -33,6 +33,7 @@ export const navigationMenus = {
     { name: "Calender", path: "/Calender" },
     { name: "Certificate", path: "/Certificate" },
     { name: "HrAttendance", path: "/HrAttendance" },
+    { name: "Apply Leave", path: "/hr-leave-application" },
   ],
   // Subrole-specific navigation for Admin
   Admin_HR: [
@@ -40,7 +41,6 @@ export const navigationMenus = {
     { name: "Employee Management", path: "/Db/employee" },
     { name: "CandidateProfile", path: "/CandidateProfile" },
     { name: "HR Registration", path: "/hr-registration" },
-    { name: "Apply Leave", path: "/hr-leave-application" },
     { name: "Attendance", path: "/Attendance" },
     { name: "HrAttendance", path: "/HrAttendance" },
     { name: "EmployeeAttendance", path: "/EmplyeAtendnc" },

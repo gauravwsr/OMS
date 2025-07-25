@@ -46,6 +46,7 @@ import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
+
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
