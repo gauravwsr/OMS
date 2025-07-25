@@ -154,7 +154,7 @@ const MainContent = ({ nav }) => {
           label: "Registration",
           icon: <FiUsers />,
         },
-        { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
+        // { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
@@ -163,22 +163,23 @@ const MainContent = ({ nav }) => {
           icon: <FiClipboard />,
         },
       ],
-      "Admin_HR Manager": [
-        { path: "/Db", label: "Employees", icon: <FiUsers /> },
-        {
-          path: "/hr-registration",
-          label: "Registration",
-          icon: <FiUsers />,
-        },
-        { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
-        { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
-        { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-        {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
-      ],
+      // "Admin_HR Manager": [
+      //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
+      //   {
+      //     path: "/hr-registration",
+      //     label: "Registration",
+      //     icon: <FiUsers />,
+      //   },
+        
+      //   { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
+      //   { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+      //   {
+      //     path: "/hrAttendance",
+      //     label: "HR Attendance",
+      //     icon: <FiClipboard />,
+      //   },
+      //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
+      // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
       ],
