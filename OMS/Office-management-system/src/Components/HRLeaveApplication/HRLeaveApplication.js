@@ -22,22 +22,36 @@ const HRLeaveApplication = () => {
   });
 
   useEffect(() => {
-    if (user && user.email) {
+    console.log('User object in HRLeaveApplication:', user);
+    if (user && (user.email || user._id)) {
       fetchUserLeaves();
+    } else {
+      console.log('User not available yet or missing required fields');
     }
   }, [user]);
 
   const fetchUserLeaves = async () => {
     try {
       setLoadingLeaves(true);
-      // Use email to find user's leaves
-      const response = await axios.get(`http://localhost:5000/api/leave/user-by-email/${user.email}`);
+      // Use both user ID and email for better reliability
+      let response;
+      if (user && user._id) {
+        response = await axios.get(`http://localhost:5000/api/leave/user/${user._id}`);
+      } else if (user && user.email) {
+        response = await axios.get(`http://localhost:5000/api/leave/user-by-email/${user.email}`);
+      } else {
+        throw new Error('User information not available');
+      }
       
       if (response.data.success) {
         setUserLeaves(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching user leaves:', error);
+      setMessage({ 
+        type: 'error', 
+        text: 'Failed to fetch your leave applications. Please refresh the page.' 
+      });
     } finally {
       setLoadingLeaves(false);
     }
@@ -114,7 +128,7 @@ const HRLeaveApplication = () => {
     }
 
     try {
-      // Prepare the payload using email for user identification
+      // Prepare the payload using both user ID and email for better identification
       const payload = {
         userEmail: user.email,
         leaveReason: formData.leaveReason.trim(),
@@ -125,6 +139,11 @@ const HRLeaveApplication = () => {
         leaveType: formData.leaveType,
         customLeaveType: formData.leaveType === 'Other' ? formData.customLeaveType.trim() : ''
       };
+
+      // Add userId if available
+      if (user._id) {
+        payload.userId = user._id;
+      }
 
       // Debug log to check all values
       console.log('Submitting leave application with data:', payload);

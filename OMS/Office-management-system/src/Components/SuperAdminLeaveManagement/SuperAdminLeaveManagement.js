@@ -14,18 +14,26 @@ const SuperAdminLeaveManagement = () => {
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
+    console.log('User object in SuperAdminLeaveManagement:', user);
     fetchLeaveApplications();
   }, []);
 
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
+      console.log('Fetching leave applications...');
       const response = await axios.get('http://localhost:5000/api/leave/all');
+      console.log('Leave applications response:', response.data);
+      
       if (response.data.success) {
         setLeaveApplications(response.data.data);
+        console.log('Leave applications set:', response.data.data);
+      } else {
+        console.log('Failed to fetch leave applications:', response.data);
       }
     } catch (error) {
       console.error('Error fetching leave applications:', error);
+      console.error('Error response:', error.response?.data);
       setMessage({
         type: 'error',
         text: 'Failed to fetch leave applications'
