@@ -3,14 +3,53 @@ const router = express.Router();
 const ScheduleEventData = require('../models/calenderModel');
 
 
-// Load all events (similar to LoadData in C#)
+// Load all events (similar to LoadData in C#) with automatic cleanup
 router.post('/GetData', async (req, res) => {
   try {
+    // First, cleanup finished events (events that ended more than 1 hour ago)
+    const oneHourAgo = new Date();
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+    
+    await ScheduleEventData.deleteMany({
+      EndTime: { $lt: oneHourAgo }
+    });
+    
+    console.log(`Cleaned up finished events older than: ${oneHourAgo}`);
+    
+    // Then return remaining events
     const events = await ScheduleEventData.find();
     res.json(events);
   } catch (err) {
     console.error('Error loading data:', err);
     res.status(500).json({ error: 'Error loading data' });
+  }
+});
+
+// Cleanup finished events - Manual cleanup endpoint
+router.delete('/cleanup-finished', async (req, res) => {
+  try {
+    const now = new Date();
+    console.log('Starting cleanup of finished events...');
+    
+    // Delete events that ended before current time
+    const result = await ScheduleEventData.deleteMany({
+      EndTime: { $lt: now }
+    });
+    
+    console.log(`Cleaned up ${result.deletedCount} finished events`);
+    
+    res.json({
+      success: true,
+      message: `Successfully cleaned up ${result.deletedCount} finished events`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error('Error during cleanup:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error during cleanup',
+      details: err.message 
+    });
   }
 });
 

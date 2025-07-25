@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./Homepage.css"; // Make sure to use this new CSS file
 
 const NewDashboard = () => {
@@ -7,6 +8,11 @@ const NewDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Upcoming Events states
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -68,8 +74,35 @@ const NewDashboard = () => {
       }
     };
 
+    const fetchUpcomingEvents = async () => {
+      setEventsLoading(true);
+      try {
+        const response = await axios.post('http://localhost:5000/GetData');
+        const allEvents = response.data || [];
+        
+        // Filter upcoming events (events that haven't ended yet)
+        const now = new Date();
+        const upcoming = allEvents
+          .filter(event => {
+            const eventEnd = new Date(event.EndTime);
+            return eventEnd >= now; // Include events that haven't ended yet
+          })
+          .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime)) // Sort by start time
+          .slice(0, 3); // Show only next 3 events for homepage
+        
+        setUpcomingEvents(upcoming);
+        setEventsError(null);
+      } catch (error) {
+        console.error("Error fetching upcoming events:", error);
+        setEventsError(error.message);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+
     fetchUserData();
     fetchLoggedInHours();
+    fetchUpcomingEvents();
 
     // Update clock every second
     const clockInterval = setInterval(() => {
@@ -79,9 +112,13 @@ const NewDashboard = () => {
     // Fetch logged-in hours every second
     const hoursInterval = setInterval(fetchLoggedInHours, 1000);
 
+    // Refresh upcoming events every 5 minutes to auto-remove finished events
+    const eventsInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
+
     return () => {
       clearInterval(clockInterval);
       clearInterval(hoursInterval);
+      clearInterval(eventsInterval);
     };
   }, []);
 
@@ -90,6 +127,49 @@ const NewDashboard = () => {
     if (hour < 12) return "Good Morning";
     if (hour < 17) return "Good Afternoon";
     return "Good Evening";
+  };
+
+  // Helper function to format date for events
+  const formatEventDate = (startTime, endTime) => {
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Check if event is currently ongoing
+    if (startDate <= now && endDate >= now) {
+      return `🔴 Ongoing`;
+    }
+    
+    // Check if event starts today
+    if (startDate.toDateString() === today.toDateString()) {
+      return `Today, ${startDate.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      })}`;
+    }
+    
+    // Check if event starts tomorrow
+    if (startDate.toDateString() === tomorrow.toDateString()) {
+      return `Tomorrow, ${startDate.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      })}`;
+    }
+    
+    // Other dates
+    return startDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const formatDate = () => {
@@ -294,6 +374,71 @@ const NewDashboard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Upcoming Events Section */}
+            <div className="activity-section">
+              <div className="section-header">
+                <h3>Upcoming Events</h3>
+              </div>
+
+              {eventsLoading ? (
+                <div className="activity-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-icon notification">⏳</div>
+                    <div className="timeline-content">
+                      <h4>Loading Events</h4>
+                      <p>Please wait while we fetch your events...</p>
+                      <span className="timeline-time">Just now</span>
+                    </div>
+                  </div>
+                </div>
+              ) : eventsError ? (
+                <div className="activity-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-icon notification">❌</div>
+                    <div className="timeline-content">
+                      <h4>Error Loading Events</h4>
+                      <p>Unable to fetch upcoming events</p>
+                      <span className="timeline-time">Just now</span>
+                    </div>
+                  </div>
+                </div>
+              ) : upcomingEvents.length === 0 ? (
+                <div className="activity-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-icon notification">📅</div>
+                    <div className="timeline-content">
+                      <h4>No Upcoming Events</h4>
+                      <p>No events scheduled for today</p>
+                      <span className="timeline-time">
+                        {new Date().toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="activity-timeline">
+                  {upcomingEvents.map((event) => (
+                    <div key={event._id} className="timeline-item">
+                      <div className="timeline-icon notification">📅</div>
+                      <div className="timeline-content">
+                        <h4>{event.Subject}</h4>
+                        <p>{event.Description || "Event scheduled"}</p>
+                        <span className="timeline-time">
+                          {formatEventDate(event.StartTime, event.EndTime)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

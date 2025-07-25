@@ -28,6 +28,7 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 
 const app = express();
 const server = http.createServer(app);
@@ -374,3 +375,25 @@ const port = process.env.PORT || 5000;
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
+// Automatic cleanup function for finished events
+const cleanupFinishedEvents = async () => {
+  try {
+    const now = new Date();
+    const result = await ScheduleEventData.deleteMany({
+      EndTime: { $lt: now }
+    });
+    
+    if (result.deletedCount > 0) {
+      console.log(`🧹 Auto-cleanup: Removed ${result.deletedCount} finished events at ${now.toLocaleString()}`);
+    }
+  } catch (error) {
+    console.error('❌ Error during auto-cleanup:', error);
+  }
+};
+
+// Run cleanup every 30 minutes
+setInterval(cleanupFinishedEvents, 30 * 60 * 1000);
+
+// Run initial cleanup on server start
+cleanupFinishedEvents();
