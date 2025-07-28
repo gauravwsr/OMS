@@ -1,3 +1,4 @@
+
 const express = require("express");
 const router = express.Router();
 const {
@@ -10,6 +11,22 @@ const User = require("../models/userModel"); // Mongoose User model
 const Position = require("../models/positionModel"); // Position model
 // const authenticate = require("../middlewares/authMiddleware"); // Authentication middleware
 const authMiddleware = require("../middlewares/authMiddleware");
+
+// GET /team-leads - Get all team leads (for dropdowns etc)
+router.get('/team-leads', async (req, res) => {
+  try {
+    const teamLeads = await User.find({
+      $or: [
+        { subRole: 'Team Lead' },
+        { subRole: 'Team Leader' }
+      ]
+    }).select('name email specialization availability experience skills currentProjects');
+    res.json({ success: true, count: teamLeads.length, data: teamLeads });
+  } catch (error) {
+    console.error('Error fetching team leads:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
 
 // POST /signup - Register a new user
 router.post("/signup", registerUser);

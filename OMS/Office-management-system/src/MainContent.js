@@ -44,9 +44,10 @@ import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
+import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard.js";
+import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
-
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -762,7 +763,15 @@ const MainContent = ({ nav }) => {
           <Route
             path="/"
             element={
-              user?.role === "Super_Admin" ? <AdminDashboard /> : <Homepage />
+              user?.role === "Super_Admin" ? (
+                <AdminDashboard />
+              ) : user?.role === "Admin" && user?.subRole === "Project_Manager" ? (
+                <ProjectManagerDashboard />
+              ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
+                <TeamLeadDashboard />
+              ) : (
+                <Homepage />
+              )
             }
           />
           <Route path="/Db" element={<Db />} />
@@ -773,7 +782,22 @@ const MainContent = ({ nav }) => {
           <Route path="/Attendance" element={<Attendance />} />
           <Route path="/EmplyeAtendnc" element={<EmployeeAttendance />} />
           <Route path="/Meeting" element={<Meeting />} />
-          <Route path="/ProjectList" element={<ProjectList nav={nav} />} />
+          <Route 
+            path="/ProjectList" 
+            element={
+              user?.role === "Employee" && user?.subRole === "Project Manager" ? (
+                <ProjectManagerDashboard nav={nav} />
+              ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
+                <TeamLeadDashboard nav={nav} />
+              ) : (
+                <ProjectList />
+              )
+            } 
+          />
+          <Route 
+            path="/team-lead-dashboard" 
+            element={<TeamLeadDashboard nav={nav} />} 
+          />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
           <Route path="/chat" element={<Chat />} />

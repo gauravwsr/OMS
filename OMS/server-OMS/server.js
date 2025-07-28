@@ -27,6 +27,7 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 // const candidateRoutes = require('./routes/candidateRoutes');
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const clientProjectRoutes = require("./routes/clientProjectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 
@@ -95,6 +96,9 @@ app.use("/api/schedule", scheduleRoutes);
 // app.use('/api/candidates', candidateRoutes);
 
 app.use("/api", projectRoutes);
+
+// Client Project management routes
+app.use("/api/client-projects", clientProjectRoutes);
 
 // Leave management routes
 app.use("/api/leave", leaveRoutes);
