@@ -52,6 +52,12 @@ const clientProjectSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  // External API tracking
+  externalId: {
+    type: String,
+    trim: true,
+    index: true, // For faster lookups when syncing
+  },
   // Additional project details
   description: {
     type: String,
@@ -85,6 +91,45 @@ const clientProjectSchema = new mongoose.Schema({
     min: 0,
     max: 100,
     default: 0,
+  },
+  // Budget tracking
+  budget: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+  spent: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
+  // Project milestones
+  milestones: [{
+    name: String,
+    status: {
+      type: String,
+      enum: ['pending', 'in-progress', 'completed'],
+      default: 'pending'
+    },
+    dueDate: Date,
+    completedDate: Date
+  }],
+  // Risk assessment
+  risks: [{
+    level: {
+      type: String,
+      enum: ['low', 'medium', 'high'],
+      default: 'medium'
+    },
+    description: String,
+    mitigationPlan: String
+  }],
+  // Task tracking
+  tasks: {
+    total: { type: Number, default: 0 },
+    completed: { type: Number, default: 0 },
+    inProgress: { type: Number, default: 0 },
+    pending: { type: Number, default: 0 }
   },
   // Contact information
   clientContact: {

@@ -362,6 +362,114 @@ const getTeamLeads = async (req, res) => {
   }
 };
 
+// @desc    Import remote projects from external API
+// @route   POST /api/client-projects/import-remote
+// @access  Private
+const importRemoteProjects = async (req, res) => {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import('node-fetch')).default;
+    
+    // Fetch data from remote API
+    const response = await fetch('https://crm-brown-gamma.vercel.app/api/client-projects');
+    
+    if (!response.ok) {
+      throw new Error(`Remote API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Fetched remote projects:', data);
+    
+    // Process the data - handle different response formats
+    const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
+    
+    if (!Array.isArray(projectsData)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid data format from remote API'
+      });
+    }
+    
+    // Import/update each project
+    const results = [];
+    let importedCount = 0;
+    let updatedCount = 0;
+    
+    for (const remoteProject of projectsData) {
+      try {
+        // Check if project already exists by external ID or project ID
+        let existingProject = await ClientProject.findOne({
+          $or: [
+            { externalId: remoteProject._id },
+            { projectId: remoteProject.projectId }
+          ]
+        });
+        
+        // Prepare project data
+        const projectData = {
+          projectId: remoteProject.projectId || `IMPORT-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+          leadName: remoteProject.leadName || 'Imported Lead',
+          clientName: remoteProject.clientName || 'Imported Client',
+          finalAmount: remoteProject.finalAmount || 0,
+          projectStatus: remoteProject.projectStatus || 'Active',
+          projectPassword: remoteProject.projectPassword || Math.random().toString(36).substring(2, 10),
+          assignedTeamLead: remoteProject.assignedTeamLead || null,
+          teamLeadId: remoteProject.teamLeadId || null,
+          externalId: remoteProject._id,
+          // Additional fields from remote
+          description: remoteProject.description || '',
+          budget: remoteProject.budget || remoteProject.finalAmount || 0,
+          progress: remoteProject.progress || 0,
+          technologies: remoteProject.technologies || [],
+          milestones: remoteProject.milestones || [],
+          risks: remoteProject.risks || [],
+          tasks: remoteProject.tasks || { total: 0, completed: 0, inProgress: 0, pending: 0 }
+        };
+        
+        if (existingProject) {
+          // Update existing project
+          Object.keys(projectData).forEach(key => {
+            if (projectData[key] !== undefined) {
+              existingProject[key] = projectData[key];
+            }
+          });
+          await existingProject.save();
+          results.push(existingProject);
+          updatedCount++;
+        } else {
+          // Create new project
+          const newProject = new ClientProject(projectData);
+          await newProject.save();
+          results.push(newProject);
+          importedCount++;
+        }
+      } catch (projectError) {
+        console.error('Error processing individual project:', projectError);
+        // Continue with other projects even if one fails
+      }
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully imported ${importedCount} new projects and updated ${updatedCount} existing projects`,
+      data: {
+        imported: importedCount,
+        updated: updatedCount,
+        total: results.length,
+        projects: results
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error importing remote projects:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to import remote projects',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllClientProjects,
   getProjectsForTeamLead,
@@ -371,5 +479,6 @@ module.exports = {
   updateClientProject,
   deleteClientProject,
   addProjectNote,
-  getTeamLeads
+  getTeamLeads,
+  importRemoteProjects
 };

@@ -9,7 +9,8 @@ const {
   updateClientProject,
   deleteClientProject,
   addProjectNote,
-  getTeamLeads
+  getTeamLeads,
+  importRemoteProjects
 } = require('../controllers/clientProjectController');
 
 // Import authentication and authorization middleware
@@ -24,6 +25,11 @@ router.use(protect);
 // @desc    Get all client projects
 // @access  Private
 router.get('/', getAllClientProjects);
+
+// @route   POST /api/client-projects/import-remote
+// @desc    Import remote projects from external API
+// @access  Private
+router.post('/import-remote', protect, clientProjectController.importRemoteProjects);
 
 // @route   GET /api/team-leads
 // @desc    Get all team leads

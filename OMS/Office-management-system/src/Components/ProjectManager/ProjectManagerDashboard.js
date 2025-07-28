@@ -55,17 +55,38 @@ const ProjectManagerDashboard = () => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://crm-brown-gamma.vercel.app/api/client-projects');
+        
+        // First, import/sync remote projects to local database
+        const token = localStorage.getItem('token');
+        try {
+          await fetch('http://localhost:5000/api/client-projects/import-remote', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (importError) {
+          console.warn('Failed to import remote projects:', importError);
+        }
+
+        // Now fetch from local database
+        const response = await fetch('http://localhost:5000/api/client-projects', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('Fetched projects:', data);
+        console.log('Fetched projects from local DB:', data);
 
-        // Process the data - assuming the API returns an array of projects
-        const projectsData = Array.isArray(data) ? data : data.projects || [];
+        // Process the data - assuming the API returns an object with data array
+        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
 
         setProjects(projectsData);
         setFilteredProjects(projectsData);
@@ -307,7 +328,6 @@ const ProjectManagerDashboard = () => {
       }
     ];
   };
-
 
 
   // Calculate dashboard statistics
