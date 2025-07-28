@@ -162,6 +162,12 @@ const clearAllNotifications = async (req, res) => {
 // Create event notification (helper function)
 const createEventNotification = async (eventData, createdBy, createdByName) => {
   try {
+    console.log('🔥 createEventNotification called:', {
+      eventTitle: eventData.title,
+      createdBy: createdByName,
+      createdById: createdBy
+    });
+
     const notification = new Notification({
       title: "New Event Scheduled",
       message: `${createdByName} (HR Manager) has scheduled a new event: "${eventData.title}"`,
@@ -178,11 +184,15 @@ const createEventNotification = async (eventData, createdBy, createdByName) => {
       priority: 'high',
     });
 
-    await notification.save();
-    console.log('Event notification created for Super Admin');
-    return notification;
+    const savedNotification = await notification.save();
+    console.log('🔥✅ Event notification saved to database:', {
+      id: savedNotification._id,
+      title: savedNotification.title,
+      targetRoles: savedNotification.targetRoles
+    });
+    return savedNotification;
   } catch (error) {
-    console.error("Error creating event notification:", error);
+    console.error("🔥❌ Error creating event notification:", error);
     throw error;
   }
 };
