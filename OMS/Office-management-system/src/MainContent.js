@@ -145,6 +145,11 @@ const MainContent = ({ nav }) => {
           label: "Apply Leave",
           icon: <FiFileText />,
         },
+        {
+          path: "/leave-management",
+          label: "Leave Management",
+          icon: <FiClipboard />,
+        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -176,6 +181,11 @@ const MainContent = ({ nav }) => {
       // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
       Intern: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
