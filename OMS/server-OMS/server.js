@@ -28,6 +28,7 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 
 const app = express();
@@ -98,6 +99,9 @@ app.use("/api", projectRoutes);
 
 // Leave management routes
 app.use("/api/leave", leaveRoutes);
+
+// Notification routes
+app.use("/api/notifications", notificationRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);

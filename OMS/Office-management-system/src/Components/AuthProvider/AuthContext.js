@@ -11,6 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [usersId, setUsersId] = useState("");
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const navigate = useNavigate();
 
   // const isAdmin = user?.role === 'admin';
@@ -237,6 +239,86 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Notification functions
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/notifications",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setNotifications(response.data.notifications || []);
+      setUnreadNotifications(response.data.unreadCount || 0);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return { notifications: [], unreadCount: 0 };
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await axios.patch(
+        `http://localhost:5000/api/notifications/${notificationId}/read`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif._id === notificationId 
+            ? { ...notif, isRead: true }
+            : notif
+        )
+      );
+      setUnreadNotifications(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const createNotification = async (notificationData) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/notifications",
+        notificationData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    try {
+      await axios.delete(
+        "http://localhost:5000/api/notifications/clear",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setNotifications([]);
+      setUnreadNotifications(0);
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -247,11 +329,17 @@ export const AuthProvider = ({ children }) => {
         usersId,
         signup,
         logout,
+        notifications,
+        unreadNotifications,
         checkSuperAdminExists,
         getAvailableSuperAdminSubRoles,
         getSuperAdminSubRoles,
         addSuperAdminSubRole,
         deleteSuperAdminSubRole,
+        fetchNotifications,
+        markNotificationAsRead,
+        createNotification,
+        clearAllNotifications,
       }}
     >
       {children}

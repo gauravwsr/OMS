@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import NotificationPopup from "./Components/NotificationPopup/NotificationPopup";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -451,7 +452,9 @@ const AdminDashboard = () => {
   const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]; // Colors for different statuses
 
   return (
-    <div className="dashboard-container">
+    <>
+      <NotificationPopup />
+      <div className="dashboard-container">
       {/* FIRST ROW: Financial Performance Summary - Full Width */}
       <div className="grid-row financial-row">
         {/* TotalRevenue Section */}
@@ -767,6 +770,7 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
