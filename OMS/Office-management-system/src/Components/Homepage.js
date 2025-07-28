@@ -223,6 +223,9 @@ const NewDashboard = () => {
 
   return (
     <>
+
+      <NotificationPopup />
+
       {/* Debug user info */}
       <div style={{
         position: 'fixed',
@@ -309,6 +312,7 @@ const NewDashboard = () => {
           Create Test Notification
         </div>
       )}
+
       
       <div className="dashboard-wrapper">
       <div className="dashboard-container-new">

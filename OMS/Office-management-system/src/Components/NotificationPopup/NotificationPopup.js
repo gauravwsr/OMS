@@ -16,12 +16,16 @@ const NotificationPopup = () => {
 
   // Fetch notifications on component mount and user login
   useEffect(() => {
+    if (user && user.role === 'Super_Admin') {
+      fetchNotifications();
+
     console.log('🔔 NotificationPopup mounted, user:', user?.name, user?.role);
     if (user && user.role === 'Super_Admin') {
       console.log('🔔 Fetching notifications for Super Admin');
       fetchNotifications();
     } else {
       console.log('🔔 User is not Super Admin or user not loaded yet');
+
     }
   }, [user]);
 
@@ -38,12 +42,14 @@ const NotificationPopup = () => {
 
   // Show popup when new notifications arrive
   useEffect(() => {
+
     console.log('🔔 Notifications changed:', {
       count: notifications?.length || 0,
       userRole: user?.role,
       notifications: notifications?.map(n => n.title) || []
     });
     
+
     if (notifications && notifications.length > 0 && user?.role === 'Super_Admin') {
       const userId = user?._id || user?.id;
       
@@ -52,6 +58,9 @@ const NotificationPopup = () => {
         return !isRead;
       });
       
+
+      if (unreadNotifs.length > 0) {
+
       console.log('🔔 Unread notifications found:', {
         total: notifications.length,
         unread: unreadNotifs.length,
@@ -60,6 +69,7 @@ const NotificationPopup = () => {
       
       if (unreadNotifs.length > 0) {
         console.log('🔔 Setting notification queue and showing popup');
+
         setNotificationQueue(unreadNotifs);
         showNextNotification(unreadNotifs);
       }
@@ -67,6 +77,10 @@ const NotificationPopup = () => {
   }, [notifications, user]);
 
   const showNextNotification = (queue) => {
+
+    if (queue.length > 0 && !isVisible) {
+      const nextNotification = queue[0];
+
     console.log('🔔 showNextNotification called:', {
       queueLength: queue.length,
       isVisible: isVisible,
@@ -76,12 +90,16 @@ const NotificationPopup = () => {
     if (queue.length > 0 && !isVisible) {
       const nextNotification = queue[0];
       console.log('🔔 Showing notification:', nextNotification.title);
+
       setCurrentNotification(nextNotification);
       setIsVisible(true);
       
       // Auto-hide after 8 seconds
       setTimeout(() => {
+
+
         console.log('🔔 Auto-hiding notification after 8 seconds');
+
         handleClose();
       }, 8000);
     }
@@ -156,6 +174,11 @@ const NotificationPopup = () => {
   };
 
   if (!isVisible || !currentNotification) {
+
+    return null;
+  }
+
+
     console.log('🔔 NotificationPopup not rendering:', {
       isVisible,
       hasCurrentNotification: !!currentNotification,
@@ -165,6 +188,7 @@ const NotificationPopup = () => {
   }
 
   console.log('🔔 NotificationPopup rendering:', currentNotification.title);
+
 
   return (
     <div className={`notification-overlay ${isVisible ? 'visible' : ''}`}>
