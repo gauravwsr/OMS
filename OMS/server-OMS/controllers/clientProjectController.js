@@ -168,23 +168,51 @@ const createClientProject = async (req, res) => {
 const assignTeamLeadToProject = async (req, res) => {
   try {
     const { teamLeadId, teamLeadName } = req.body;
-    // Update and return the populated project
-    const project = await ClientProject.findByIdAndUpdate(
-      req.params.id,
-      {
-        teamLeadId,
-        assignedTeamLead: teamLeadName,
-        leadName: teamLeadName
-      },
-      { new: true }
-    )
-    .populate('teamLeadId', 'name email subRole specialization')
-    .populate('assignedBy', 'name email');
+    const project = await ClientProject.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
-    res.json({ success: true, data: project });
+
+    // If there is a current team lead, push to history
+    if (project.teamLeadId) {
+      // Find the last assignment date from history or use project creation date
+      let assignedDate = project.teamLeadHistory.length > 0
+        ? project.teamLeadHistory[project.teamLeadHistory.length - 1].unassignedDate
+        : project.createdAt?.toISOString().slice(0, 10) || new Date().toISOString().slice(0, 10);
+
+      // Set unassigned date as today (YYYY-MM-DD)
+      const unassignedDate = new Date().toISOString().slice(0, 10);
+
+      project.teamLeadHistory.push({
+        teamLeadId: project.teamLeadId,
+        teamLeadName: project.assignedTeamLead || project.leadName || '',
+        assignedDate,
+        unassignedDate
+      });
+    }
+
+    // Assign new team lead
+    project.teamLeadId = teamLeadId;
+    project.assignedTeamLead = teamLeadName;
+    project.leadName = teamLeadName;
+
+    // Set assigned date for new team lead
+    const today = new Date().toISOString().slice(0, 10);
+    project.teamLeadHistory.push({
+      teamLeadId,
+      teamLeadName,
+      assignedDate: today,
+      unassignedDate: ''
+    });
+
+    await project.save();
+
+    const updatedProject = await ClientProject.findById(req.params.id)
+      .populate('teamLeadId', 'name email subRole specialization')
+      .populate('assignedBy', 'name email');
+
+    res.json({ success: true, data: updatedProject });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
