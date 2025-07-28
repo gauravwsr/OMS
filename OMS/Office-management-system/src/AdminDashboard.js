@@ -492,7 +492,12 @@ const AdminDashboard = () => {
 
   return (
     <>
+
       <NotificationPopup />
+
+      {/* Show NotificationPopup only for Super Admin */}
+      {user?.role === 'Super_Admin' && <NotificationPopup />}
+
       
       <div className="dashboard-container">
       {/* FIRST ROW: Financial Performance Summary - Full Width */}
