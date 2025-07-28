@@ -144,69 +144,52 @@ const createClientProject = async (req, res) => {
   }
 };
 
-// @desc    Assign team lead to project
-// @route   PUT /api/client-projects/:id/assign-team-lead
-// @access  Private (Project Manager only)
-const assignTeamLead = async (req, res) => {
-  try {
-    const { teamLeadId, teamLeadName } = req.body;
-    const projectId = req.params.id;
-    
-    // Validate team lead exists
-    const teamLead = await User.findById(teamLeadId);
-    if (!teamLead) {
-      return res.status(404).json({
-        success: false,
-        message: 'Team lead not found'
-      });
-    }
-    
-    // Check if team lead has appropriate role
-    if (teamLead.subRole !== 'Team Lead' && teamLead.subRole !== 'Team Leader') {
-      return res.status(400).json({
-        success: false,
-        message: 'Selected user is not a team lead'
-      });
-    }
-    
-    // Find and update project
-    const project = await ClientProject.findById(projectId);
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: 'Project not found'
-      });
-    }
-    
-    // Assign team lead using the model method
-    await project.assignTeamLead(
-      teamLeadName || teamLead.name,
-      teamLeadId,
-      req.user?.id // Assuming user is attached to request via auth middleware
-    );
-    
-    const updatedProject = await ClientProject.findById(projectId)
-      .populate('teamLeadId', 'name email subRole specialization')
-      .populate('assignedBy', 'name email');
-    
-    res.status(200).json({
-      success: true,
-      data: updatedProject,
-      message: `Team lead ${teamLead.name} assigned successfully`
-    });
-  } catch (error) {
-    console.error('Error assigning team lead:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server Error',
-      error: error.message
-    });
-  }
-};
+// const assignTeamLeadToProject = async (req, res) => {
+//   try {
+//     const { teamLeadId, teamLeadName } = req.body;
+//     const project = await ClientProject.findById(req.params.id);
+//     if (!project) {
+//       return res.status(404).json({ success: false, message: 'Project not found' });
+//     }
+//     project.teamLeadId = teamLeadId;
+//     project.assignedTeamLead = teamLeadName;
+//     await project.save();
+//     res.json({ success: true, data: project });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
 
 // @desc    Update client project
 // @route   PUT /api/client-projects/:id
 // @access  Private
+
+
+const assignTeamLeadToProject = async (req, res) => {
+  try {
+    const { teamLeadId, teamLeadName } = req.body;
+    // Update and return the populated project
+    const project = await ClientProject.findByIdAndUpdate(
+      req.params.id,
+      {
+        teamLeadId,
+        assignedTeamLead: teamLeadName,
+        leadName: teamLeadName
+      },
+      { new: true }
+    )
+    .populate('teamLeadId', 'name email subRole specialization')
+    .populate('assignedBy', 'name email');
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+    res.json({ success: true, data: project });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const updateClientProject = async (req, res) => {
   try {
     const project = await ClientProject.findById(req.params.id);
@@ -346,14 +329,123 @@ const getTeamLeads = async (req, res) => {
   }
 };
 
+// @desc    Import remote projects from external API
+// @route   POST /api/client-projects/import-remote
+// @access  Private
+const importRemoteProjects = async (req, res) => {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import('node-fetch')).default;
+    
+    // Fetch data from remote API
+    const response = await fetch('https://crm-brown-gamma.vercel.app/api/client-projects');
+    
+    if (!response.ok) {
+      throw new Error(`Remote API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Fetched remote projects:', data);
+    
+    // Process the data - handle different response formats
+    const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
+    
+    if (!Array.isArray(projectsData)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid data format from remote API'
+      });
+    }
+    
+    // Import/update each project
+    const results = [];
+    let importedCount = 0;
+    let updatedCount = 0;
+    
+    for (const remoteProject of projectsData) {
+      try {
+        // Check if project already exists by external ID or project ID
+        let existingProject = await ClientProject.findOne({
+          $or: [
+            { externalId: remoteProject._id },
+            { projectId: remoteProject.projectId }
+          ]
+        });
+        
+        // Prepare project data
+        const projectData = {
+          projectId: remoteProject.projectId || `IMPORT-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+          leadName: remoteProject.leadName || 'Imported Lead',
+          clientName: remoteProject.clientName || 'Imported Client',
+          finalAmount: remoteProject.finalAmount || 0,
+          projectStatus: remoteProject.projectStatus || 'Active',
+          projectPassword: remoteProject.projectPassword || Math.random().toString(36).substring(2, 10),
+          assignedTeamLead: remoteProject.assignedTeamLead || null,
+          teamLeadId: remoteProject.teamLeadId || null,
+          externalId: remoteProject._id,
+          // Additional fields from remote
+          description: remoteProject.description || '',
+          budget: remoteProject.budget || remoteProject.finalAmount || 0,
+          progress: remoteProject.progress || 0,
+          technologies: remoteProject.technologies || [],
+          milestones: remoteProject.milestones || [],
+          risks: remoteProject.risks || [],
+          tasks: remoteProject.tasks || { total: 0, completed: 0, inProgress: 0, pending: 0 }
+        };
+        
+        if (existingProject) {
+          // Update existing project
+          Object.keys(projectData).forEach(key => {
+            if (projectData[key] !== undefined) {
+              existingProject[key] = projectData[key];
+            }
+          });
+          await existingProject.save();
+          results.push(existingProject);
+          updatedCount++;
+        } else {
+          // Create new project
+          const newProject = new ClientProject(projectData);
+          await newProject.save();
+          results.push(newProject);
+          importedCount++;
+        }
+      } catch (projectError) {
+        console.error('Error processing individual project:', projectError);
+        // Continue with other projects even if one fails
+      }
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: `Successfully imported ${importedCount} new projects and updated ${updatedCount} existing projects`,
+      data: {
+        imported: importedCount,
+        updated: updatedCount,
+        total: results.length,
+        projects: results
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error importing remote projects:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to import remote projects',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllClientProjects,
   getProjectsForTeamLead,
   getClientProject,
   createClientProject,
-  assignTeamLead,
+  assignTeamLeadToProject,
   updateClientProject,
   deleteClientProject,
   addProjectNote,
-  getTeamLeads
+  getTeamLeads,
+  importRemoteProjects
 };

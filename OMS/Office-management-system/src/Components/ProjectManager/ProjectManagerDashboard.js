@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FaProjectDiagram, 
-  FaUsers, 
-  FaCalendarAlt, 
-  FaTasks, 
+import {
+  FaProjectDiagram,
+  FaUsers,
+  FaCalendarAlt,
+  FaTasks,
   FaChartLine,
   FaClock,
   FaCheckCircle,
@@ -55,27 +55,50 @@ const ProjectManagerDashboard = () => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://crm-brown-gamma.vercel.app/api/client-projects');
         
+        // First, import/sync remote projects to local database
+        const token = localStorage.getItem('token');
+        try {
+          await fetch('http://localhost:5000/api/client-projects/import-remote', {
+           
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (importError) {
+          console.warn('Failed to import remote projects:', importError);
+        }
+
+        // Now fetch from local database
+        const response = await fetch('http://localhost:5000/api/client-projects', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        console.log('Fetched projects:', data);
-        
-        // Process the data - assuming the API returns an array of projects
-        const projectsData = Array.isArray(data) ? data : data.projects || [];
-        
+        console.log('Fetched projects from local DB:', data);
+
+        // Process the data - assuming the API returns an object with data array
+        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
+
         setProjects(projectsData);
         setFilteredProjects(projectsData);
-        
+
         // Calculate dashboard statistics
         const stats = calculateDashboardStats(projectsData);
         setDashboardStats(stats);
-        
+
       } catch (error) {
         console.error('Error fetching projects:', error);
+        // Show a user-friendly error message
+        alert('Failed to fetch projects from server. Showing mock data.');
         // Fallback to mock data if API fails
         const mockProjects = getMockProjects();
         setProjects(mockProjects);
@@ -86,9 +109,16 @@ const ProjectManagerDashboard = () => {
       }
     };
 
-    const fetchTeamLeads = async () => {
+   const fetchTeamLeads = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/users/team-leads');
+        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const data = await response.json();
         const teamLeadsData = Array.isArray(data.data) ? data.data : [];
         setTeamLeads(teamLeadsData);
@@ -97,209 +127,9 @@ const ProjectManagerDashboard = () => {
         setTeamLeads([]);
       }
     };
-
     fetchProjects();
     fetchTeamLeads();
   }, []);
-
-  // Mock data fallback
-  const getMockProjects = () => {
-    return [
-      {
-        id: 1,
-        name: 'E-commerce Platform Development',
-        client: 'TechCorp Solutions',
-        status: 'active',
-        priority: 'high',
-        startDate: '2024-01-15',
-        endDate: '2024-06-15',
-        progress: 65,
-        budget: 150000,
-        spent: 97500,
-        teamMembers: 8,
-        description: 'Complete e-commerce platform with payment gateway integration',
-        technologies: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-        projectManager: 'John Smith',
-        assignedTeamLead: 'Sarah Wilson',
-        teamLeadId: 2,
-        clientContact: {
-          name: 'Michael Johnson',
-          email: 'michael@techcorp.com',
-          phone: '+1-555-0123'
-        },
-        milestones: [
-          { name: 'UI/UX Design', status: 'completed', dueDate: '2024-02-15' },
-          { name: 'Backend Development', status: 'in-progress', dueDate: '2024-04-01' },
-          { name: 'Payment Integration', status: 'pending', dueDate: '2024-05-15' },
-          { name: 'Testing & Deployment', status: 'pending', dueDate: '2024-06-10' }
-        ],
-        risks: [
-          { level: 'medium', description: 'Third-party API integration delays' },
-          { level: 'low', description: 'Resource availability during holidays' }
-        ],
-        tasks: {
-          total: 45,
-          completed: 29,
-          inProgress: 12,
-          pending: 4
-        }
-      },
-      {
-        id: 2,
-        name: 'Mobile Banking App',
-        client: 'SecureBank Ltd',
-        status: 'active',
-        priority: 'high',
-        startDate: '2024-02-01',
-        endDate: '2024-07-30',
-        progress: 40,
-        budget: 200000,
-        spent: 80000,
-        teamMembers: 10,
-        description: 'Secure mobile banking application with biometric authentication',
-        technologies: ['React Native', 'Node.js', 'PostgreSQL', 'AWS'],
-        projectManager: 'Sarah Johnson',
-        assignedTeamLead: null,
-        teamLeadId: null,
-        clientContact: {
-          name: 'David Chen',
-          email: 'david@securebank.com',
-          phone: '+1-555-0456'
-        },
-        milestones: [
-          { name: 'Security Architecture', status: 'completed', dueDate: '2024-02-20' },
-          { name: 'Core Features Development', status: 'in-progress', dueDate: '2024-05-01' },
-          { name: 'Biometric Integration', status: 'pending', dueDate: '2024-06-15' },
-          { name: 'Security Testing', status: 'pending', dueDate: '2024-07-20' }
-        ],
-        risks: [
-          { level: 'high', description: 'Regulatory compliance requirements' },
-          { level: 'medium', description: 'Complex security implementations' }
-        ],
-        tasks: {
-          total: 60,
-          completed: 24,
-          inProgress: 18,
-          pending: 18
-        }
-      },
-      {
-        id: 3,
-        name: 'Inventory Management System',
-        client: 'LogiCorp Industries',
-        status: 'completed',
-        priority: 'medium',
-        startDate: '2024-01-01',
-        endDate: '2024-04-30',
-        progress: 100,
-        budget: 80000,
-        spent: 75000,
-        teamMembers: 5,
-        description: 'Comprehensive inventory tracking and management system',
-        technologies: ['Vue.js', 'Laravel', 'MySQL', 'Docker'],
-        projectManager: 'Mike Chen',
-        assignedTeamLead: 'Alex Rodriguez',
-        teamLeadId: 1,
-        clientContact: {
-          name: 'Lisa Davis',
-          email: 'lisa@logicorp.com',
-          phone: '+1-555-0789'
-        },
-        milestones: [
-          { name: 'System Design', status: 'completed', dueDate: '2024-01-15' },
-          { name: 'Development Phase', status: 'completed', dueDate: '2024-03-15' },
-          { name: 'Testing & QA', status: 'completed', dueDate: '2024-04-15' },
-          { name: 'Deployment', status: 'completed', dueDate: '2024-04-30' }
-        ],
-        risks: [],
-        tasks: {
-          total: 35,
-          completed: 35,
-          inProgress: 0,
-          pending: 0
-        }
-      },
-      {
-        id: 4,
-        name: 'CRM Dashboard',
-        client: 'SalesForce Pro',
-        status: 'on-hold',
-        priority: 'low',
-        startDate: '2024-03-01',
-        endDate: '2024-08-15',
-        progress: 25,
-        budget: 120000,
-        spent: 30000,
-        teamMembers: 6,
-        description: 'Customer relationship management dashboard with analytics',
-        technologies: ['Angular', 'Express.js', 'MongoDB', 'Chart.js'],
-        projectManager: 'Lisa Davis',
-        assignedTeamLead: 'Emily Johnson',
-        teamLeadId: 3,
-        clientContact: {
-          name: 'Robert Smith',
-          email: 'robert@salesforcepro.com',
-          phone: '+1-555-0321'
-        },
-        milestones: [
-          { name: 'Requirements Analysis', status: 'completed', dueDate: '2024-03-15' },
-          { name: 'UI Design', status: 'in-progress', dueDate: '2024-05-01' },
-          { name: 'Development', status: 'pending', dueDate: '2024-07-01' },
-          { name: 'Integration', status: 'pending', dueDate: '2024-08-10' }
-        ],
-        risks: [
-          { level: 'high', description: 'Client budget constraints' },
-          { level: 'medium', description: 'Changing requirements' }
-        ],
-        tasks: {
-          total: 40,
-          completed: 10,
-          inProgress: 5,
-          pending: 25
-        }
-      },
-      {
-        id: 5,
-        name: 'Healthcare Portal',
-        client: 'MediCare Systems',
-        status: 'overdue',
-        priority: 'high',
-        startDate: '2023-12-01',
-        endDate: '2024-05-31',
-        progress: 80,
-        budget: 180000,
-        spent: 160000,
-        teamMembers: 12,
-        description: 'Patient management and telemedicine platform',
-        technologies: ['React', 'Python', 'PostgreSQL', 'WebRTC'],
-        projectManager: 'David Brown',
-        assignedTeamLead: 'Maria Garcia',
-        teamLeadId: 4,
-        clientContact: {
-          name: 'Dr. Jennifer Wilson',
-          email: 'jennifer@medicare.com',
-          phone: '+1-555-0654'
-        },
-        milestones: [
-          { name: 'Core Platform', status: 'completed', dueDate: '2024-02-01' },
-          { name: 'Patient Portal', status: 'completed', dueDate: '2024-04-01' },
-          { name: 'Telemedicine Features', status: 'in-progress', dueDate: '2024-05-15' },
-          { name: 'Security Compliance', status: 'pending', dueDate: '2024-06-15' }
-        ],
-        risks: [
-          { level: 'high', description: 'HIPAA compliance requirements' },
-          { level: 'high', description: 'Project timeline overrun' }
-        ],
-        tasks: {
-          total: 55,
-          completed: 44,
-          inProgress: 8,
-          pending: 3
-        }
-      }
-    ];
-  };
-
 
 
   // Calculate dashboard statistics
@@ -409,54 +239,109 @@ const ProjectManagerDashboard = () => {
     setShowAssignModal(true);
   };
 
-  const handleSaveAssignment = async () => {
-    if (!selectedTeamLead || !selectedProject) return;
 
-    try {
-      // Find the selected team lead details
-      const assignedLead = teamLeads.find(lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead));
+//   const handleSaveAssignment = async () => {
+//   if (!selectedTeamLead || !selectedProject) return;
 
-      // Make API call to assign the team lead using the correct endpoint
-      const response = await fetch(`https://crm-brown-gamma.vercel.app/api/client-projects/${selectedProject._id}/assign-team-lead`, {
-        method: 'PUT',
+//   console.log('Assigning team lead to project:', selectedProject);
+
+//   try {
+//     // Find the selected team lead details
+//     const assignedLead = teamLeads.find(
+//       lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+//     );
+
+//     // Get JWT token from localStorage (or sessionStorage)
+//     const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+
+//     // Make API call to assign the team lead using the correct endpoint
+//     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+//       method: 'PUT',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${token}`
+//       },
+//       body: JSON.stringify({
+//         teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+//         teamLeadName: assignedLead?.name || ''
+//       })
+//     });
+
+//     if (response.ok) {
+//       // Update local state with the assignment
+//       const updatedProjects = projects.map(project => {
+//         if (project._id === selectedProject._id) {
+//           return {
+//             ...project,
+//             teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+//             assignedTeamLead: assignedLead?.name || '',
+//             leadName: assignedLead?.name || ''
+//           };
+//         }
+//         return project;
+//       });
+
+//       setProjects(updatedProjects);
+//       setFilteredProjects(updatedProjects);
+//       setShowAssignModal(false);
+//       setSelectedProject(null);
+//       setSelectedTeamLead('');
+//       alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+//     } else {
+//       throw new Error('Failed to save assignment');
+//     }
+//   } catch (error) {
+//     console.error('Error saving team lead assignment:', error);
+//     alert('Failed to assign team lead. Please try again.');
+//   }
+// };
+
+const handleSaveAssignment = async () => {
+  if (!selectedTeamLead || !selectedProject) return;
+
+  try {
+    const assignedLead = teamLeads.find(
+      lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+    );
+    const token = localStorage.getItem('token');
+
+    const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+        teamLeadName: assignedLead?.name || ''
+      })
+    });
+
+    if (response.ok) {
+      // Fetch updated projects from backend to ensure persistence
+      const updatedProjectsRes = await fetch('http://localhost:5000/api/client-projects', {
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-          teamLeadName: assignedLead?.name || ''
-        })
+          'Authorization': `Bearer ${token}`
+        }
       });
+      const updatedData = await updatedProjectsRes.json();
+      const projectsData = Array.isArray(updatedData) ? updatedData : updatedData.data || updatedData.projects || [];
+      setProjects(projectsData);
+      setFilteredProjects(projectsData);
 
-      if (response.ok) {
-        // Update local state with the assignment
-        const updatedProjects = projects.map(project => {
-          if (project._id === selectedProject._id) {
-            return {
-              ...project,
-              teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-              assignedTeamLead: assignedLead?.name || '',
-              leadName: assignedLead?.name || ''
-            };
-          }
-          return project;
-        });
-
-        setProjects(updatedProjects);
-        setFilteredProjects(updatedProjects);
-        setShowAssignModal(false);
-        setSelectedProject(null);
-        setSelectedTeamLead('');
-        alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
-      } else {
-        throw new Error('Failed to save assignment');
-      }
-    } catch (error) {
-      console.error('Error saving team lead assignment:', error);
-      alert('Failed to assign team lead. Please try again.');
+      setShowAssignModal(false);
+      setSelectedProject(null);
+      setSelectedTeamLead('');
+      alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+    } else {
+      throw new Error('Failed to save assignment');
     }
-  };
-
+  } catch (error) {
+    console.error('Error saving team lead assignment:', error);
+    alert('Failed to assign team lead. Please try again.');
+  }
+};
   const handleCloseModal = () => {
     setShowAssignModal(false);
     setSelectedProject(null);
@@ -644,8 +529,8 @@ const ProjectManagerDashboard = () => {
                 <div className="project-title">
                   <h3>{project.projectId || 'Untitled Project'}</h3>
                   <div className="project-badges">
-                    <span 
-                      className="status-badge" 
+                    <span
+                      className="status-badge"
                       style={{ backgroundColor: getStatusColor(project.projectStatus || 'unknown') }}
                     >
                       {project.projectStatus ? project.projectStatus.replace('-', ' ') : 'Unknown'}
@@ -656,15 +541,15 @@ const ProjectManagerDashboard = () => {
                   </div>
                 </div>
                 <div className="project-actions">
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     onClick={() => handleViewDetails(project)}
                     title="View Details"
                   >
                     <FaEye />
                   </button>
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     onClick={() => handleAssignTeamLead(project)}
                     title="Assign Team Lead"
                   >
@@ -691,27 +576,27 @@ const ProjectManagerDashboard = () => {
                     <strong>Final Amount:</strong> ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
                   </div>
                 </div>
-                
+
                 <div className="assignment-info">
                   <div className="assignment-item">
-                    <strong>Project Status:</strong> 
+                    <strong>Project Status:</strong>
                     <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
                       {project.projectStatus || 'Unknown'}
                     </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Original Lead:</strong> 
+                    <strong>Original Lead:</strong>
                     <span className="original-lead">
                       {project.leadName || 'Not Specified'}
                     </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Assigned Team Lead:</strong> 
+                    <strong>Assigned Team Lead:</strong>
                     <span className={`team-lead-status ${project.assignedTeamLead ? 'assigned' : 'unassigned'}`}>
                       {project.assignedTeamLead || 'Not Assigned'}
                     </span>
                     {!project.assignedTeamLead && (
-                      <button 
+                      <button
                         className="assign-quick-btn"
                         onClick={() => handleAssignTeamLead(project)}
                       >
@@ -720,7 +605,7 @@ const ProjectManagerDashboard = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="project-meta">
                   <div className="meta-item">
                     <FaCalendarAlt />
@@ -814,7 +699,7 @@ const ProjectManagerDashboard = () => {
       {/* Team Lead Assignment Modal */}
       {showAssignModal && selectedProject && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content" style={{ backgroundColor: 'white' }}>
             <div className="modal-header">
               <h3>Assign Team Lead</h3>
               <button className="modal-close" onClick={handleCloseModal}>
@@ -831,15 +716,20 @@ const ProjectManagerDashboard = () => {
               </div>
               <div className="form-group">
                 <label htmlFor="teamLead">Select Team Lead:</label>
-                <select 
+                <select
                   id="teamLead"
-                  value={selectedTeamLead} 
+                  value={selectedTeamLead}
                   onChange={(e) => setSelectedTeamLead(e.target.value)}
                   className="team-lead-select"
                 >
                   <option value="">Select a team lead...</option>
-                  {teamLeads.map(lead => (
+                  {/* {teamLeads.map(lead => (
                     <option key={lead.id} value={lead.id}>
+                      {lead.name} - {lead.specialization} ({lead.availability})
+                    </option>
+                  ))} */}
+                  {teamLeads.map(lead => (
+                    <option key={lead._id || lead.id} value={lead._id || lead.id}>
                       {lead.name} - {lead.specialization} ({lead.availability})
                     </option>
                   ))}
@@ -857,7 +747,7 @@ const ProjectManagerDashboard = () => {
                         <p><strong>Specialization:</strong> {lead.specialization}</p>
                         <p><strong>Experience:</strong> {lead.experience}</p>
                         <p><strong>Current Projects:</strong> {lead.currentProjects}</p>
-                        <p><strong>Status:</strong> 
+                        <p><strong>Status:</strong>
                           <span className={`availability-badge ${lead.availability}`}>
                             {lead.availability}
                           </span>
@@ -880,8 +770,8 @@ const ProjectManagerDashboard = () => {
               <button className="btn-cancel" onClick={handleCloseModal}>
                 Cancel
               </button>
-              <button 
-                className="btn-save" 
+              <button
+                className="btn-save"
                 onClick={handleSaveAssignment}
                 disabled={!selectedTeamLead}
               >
@@ -907,8 +797,8 @@ const ProjectManagerDashboard = () => {
                 <div className="overview-header">
                   <h4>{selectedProject.projectId || 'Untitled Project'}</h4>
                   <div className="project-badges">
-                    <span 
-                      className="status-badge" 
+                    <span
+                      className="status-badge"
                       style={{ backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown') }}
                     >
                       {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
@@ -1004,9 +894,9 @@ const ProjectManagerDashboard = () => {
                   </div>
                   <div className="progress-visualization">
                     <div className="progress-bar">
-                      <div 
-                        className="progress-fill" 
-                        style={{ 
+                      <div
+                        className="progress-fill"
+                        style={{
                           width: `${selectedProject.progress || 0}%`,
                           backgroundColor: getStatusColor(selectedProject.status || 'unknown')
                         }}
@@ -1023,7 +913,7 @@ const ProjectManagerDashboard = () => {
                         <div key={index} className="milestone-item">
                           <div className="milestone-header">
                             <span className="milestone-name">{milestone.name}</span>
-                            <span 
+                            <span
                               className="milestone-status"
                               style={{ color: getMilestoneStatusColor(milestone.status || 'pending') }}
                             >
@@ -1043,7 +933,7 @@ const ProjectManagerDashboard = () => {
                     <div className="risks-list">
                       {selectedProject.risks.map((risk, index) => (
                         <div key={index} className="risk-item">
-                          <span 
+                          <span
                             className="risk-level"
                             style={{ color: getRiskLevelColor(risk.level) }}
                           >

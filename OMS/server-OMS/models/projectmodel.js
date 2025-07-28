@@ -1,45 +1,28 @@
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  description: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  startDate: {
-    type: Date,
-    required: true,
-  },
-  dueDate: {
-    type: Date,
-    required: true,
-  },
-  assignedEmployees: [
-    {
-      id: Number,
-      name: String,
-      role: String,
-    },
-  ],
+  title: { type: String, required: true, trim: true },
+  description: { type: String, required: true, trim: true },
+  startDate: { type: Date, required: true },
+  dueDate: { type: Date, required: true },
+  assignedEmployees: [{ id: Number, name: String, role: String }],
   productProcedure: String,
   ppt: String,
   coveringLetter: String,
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
+  assignTeamLead: { type: String, default: null }, // New field
+  tasks: [
+    {
+      name: String,
+      status: String,
+      dueDate: Date,
+      completed: Boolean,
+    }
+  ], // New field
+  externalId: String, // To track the original ID from remote API
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
-// Update the updatedAt field before saving
 projectSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
