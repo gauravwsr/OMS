@@ -224,6 +224,7 @@ const NewDashboard = () => {
   return (
     <>
       <NotificationPopup />
+      
       <div className="dashboard-wrapper">
       <div className="dashboard-container-new">
         <div className="dashboard-main">
