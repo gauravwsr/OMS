@@ -129,7 +129,11 @@ const MainContent = ({ nav }) => {
         // { path: "/QuotationList", label: "Quotations", icon: <FiFileText /> },
         { path: "/Invoice", label: "Invoice", icon: <FiFileMinus /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-        { path: "/super-admin-leave-management", label: "Leave Management", icon: <FiClipboard /> }
+        {
+          path: "/super-admin-leave-management",
+          label: "Leave Management",
+          icon: <FiClipboard />,
+        },
       ],
       Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -145,7 +149,11 @@ const MainContent = ({ nav }) => {
           label: "HR Attendance",
           icon: <FiClipboard />,
         },
-        { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> }
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -170,7 +178,7 @@ const MainContent = ({ nav }) => {
       //     label: "Registration",
       //     icon: <FiUsers />,
       //   },
-        
+
       //   { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
       //   { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
       //   {
@@ -190,25 +198,31 @@ const MainContent = ({ nav }) => {
 
     // Check for subrole first
     let roleKey = user.role;
-    console.log('Debug - User role:', user.role);
-    console.log('Debug - User subRole:', user.subRole);
-    console.log('Debug - User object:', user);
-    
+    console.log("Debug - User role:", user.role);
+    console.log("Debug - User subRole:", user.subRole);
+    console.log("Debug - User object:", user);
+
     if (user.subRole) {
       const subroleKey = `${user.role}_${user.subRole}`;
-      console.log('Debug - Checking subroleKey:', subroleKey);
-      console.log('Debug - Available roleSpecificItems keys:', Object.keys(roleSpecificItems));
+      console.log("Debug - Checking subroleKey:", subroleKey);
+      console.log(
+        "Debug - Available roleSpecificItems keys:",
+        Object.keys(roleSpecificItems)
+      );
       if (roleSpecificItems[subroleKey]) {
         roleKey = subroleKey;
-        console.log('Debug - Using subroleKey:', roleKey);
+        console.log("Debug - Using subroleKey:", roleKey);
       } else {
-        console.log('Debug - Subrole not found, using base role:', roleKey);
+        console.log("Debug - Subrole not found, using base role:", roleKey);
       }
     }
 
-    console.log('Debug - Final roleKey being used:', roleKey);
-    const finalMenuItems = [...commonItems, ...(roleSpecificItems[roleKey] || [])];
-    console.log('Debug - Final menu items:', finalMenuItems);
+    console.log("Debug - Final roleKey being used:", roleKey);
+    const finalMenuItems = [
+      ...commonItems,
+      ...(roleSpecificItems[roleKey] || []),
+    ];
+    console.log("Debug - Final menu items:", finalMenuItems);
     return finalMenuItems;
   };
 
@@ -787,10 +801,12 @@ const MainContent = ({ nav }) => {
           <Route
             path="/super-admin-leave-management"
             element={<SuperAdminLeaveManagement />}
-            />
-            <Route path="/hr-leave-application" element={<HRLeaveApplication />} />
+          />
+          <Route
+            path="/hr-leave-application"
+            element={<HRLeaveApplication />}
+          />
         </Routes>
-        
       </div>
     </>
   );
