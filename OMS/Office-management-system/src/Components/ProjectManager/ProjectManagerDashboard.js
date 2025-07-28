@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   FaProjectDiagram,
   FaUsers,
@@ -26,28 +26,28 @@ import {
   FaPhone,
   FaFlag,
   FaMapMarkerAlt,
-  FaLock,
-} from "react-icons/fa";
-import "./ProjectManagerDashboard.css";
+  FaLock
+} from 'react-icons/fa';
+import './ProjectManagerDashboard.css';
 
 const ProjectManagerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [teamLeads, setTeamLeads] = useState([]);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [selectedTeamLead, setSelectedTeamLead] = useState("");
+  const [selectedTeamLead, setSelectedTeamLead] = useState('');
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     totalProjects: 0,
     activeProjects: 0,
     completedProjects: 0,
-    overdueProjects: 0,
+    overdueProjects: 0
   });
 
   // Fetch projects from API
@@ -55,46 +55,38 @@ const ProjectManagerDashboard = () => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-
+        
         // First, import/sync remote projects to local database
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem('token');
         try {
-          await fetch(
-            "http://localhost:5000/api/client-projects/import-remote",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
+          await fetch('http://localhost:5000/api/client-projects/import-remote', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
             }
-          );
+          });
         } catch (importError) {
-          console.warn("Failed to import remote projects:", importError);
+          console.warn('Failed to import remote projects:', importError);
         }
 
         // Now fetch from local database
-        const response = await fetch(
-          "http://localhost:5000/api/client-projects",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch('http://localhost:5000/api/client-projects', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
-        );
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Fetched projects from local DB:", data);
+        console.log('Fetched projects from local DB:', data);
 
         // Process the data - assuming the API returns an object with data array
-        const projectsData = Array.isArray(data)
-          ? data
-          : data.data || data.projects || [];
+        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
 
         setProjects(projectsData);
         setFilteredProjects(projectsData);
@@ -102,10 +94,11 @@ const ProjectManagerDashboard = () => {
         // Calculate dashboard statistics
         const stats = calculateDashboardStats(projectsData);
         setDashboardStats(stats);
+
       } catch (error) {
-        console.error("Error fetching projects:", error);
+        console.error('Error fetching projects:', error);
         // Show a user-friendly error message
-        alert("Failed to fetch projects from server. Showing mock data.");
+        alert('Failed to fetch projects from server. Showing mock data.');
         // Fallback to mock data if API fails
         const mockProjects = getMockProjects();
         setProjects(mockProjects);
@@ -116,24 +109,21 @@ const ProjectManagerDashboard = () => {
       }
     };
 
-    const fetchTeamLeads = async () => {
+   const fetchTeamLeads = async () => {
       try {
-        const token = localStorage.getItem("token"); // or sessionStorage.getItem('token')
-        const response = await fetch(
-          "http://localhost:5000/api/client-projects/team-leads",
-          {
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           }
-        );
+        });
         const data = await response.json();
         const teamLeadsData = Array.isArray(data.data) ? data.data : [];
         setTeamLeads(teamLeadsData);
       } catch (error) {
-        console.error("Error fetching team leads:", error);
+        console.error('Error fetching team leads:', error);
         setTeamLeads([]);
       }
     };
@@ -146,279 +136,214 @@ const ProjectManagerDashboard = () => {
     return [
       {
         id: 1,
-        name: "E-commerce Platform Development",
-        client: "TechCorp Solutions",
-        status: "active",
-        priority: "high",
-        startDate: "2024-01-15",
-        endDate: "2024-06-15",
+        name: 'E-commerce Platform Development',
+        client: 'TechCorp Solutions',
+        status: 'active',
+        priority: 'high',
+        startDate: '2024-01-15',
+        endDate: '2024-06-15',
         progress: 65,
         budget: 150000,
         spent: 97500,
         teamMembers: 8,
-        description:
-          "Complete e-commerce platform with payment gateway integration",
-        technologies: ["React", "Node.js", "MongoDB", "Stripe"],
-        projectManager: "John Smith",
-        assignedTeamLead: "Sarah Wilson",
+        description: 'Complete e-commerce platform with payment gateway integration',
+        technologies: ['React', 'Node.js', 'MongoDB', 'Stripe'],
+        projectManager: 'John Smith',
+        assignedTeamLead: 'Sarah Wilson',
         teamLeadId: 2,
         clientContact: {
-          name: "Michael Johnson",
-          email: "michael@techcorp.com",
-          phone: "+1-555-0123",
+          name: 'Michael Johnson',
+          email: 'michael@techcorp.com',
+          phone: '+1-555-0123'
         },
         milestones: [
-          { name: "UI/UX Design", status: "completed", dueDate: "2024-02-15" },
-          {
-            name: "Backend Development",
-            status: "in-progress",
-            dueDate: "2024-04-01",
-          },
-          {
-            name: "Payment Integration",
-            status: "pending",
-            dueDate: "2024-05-15",
-          },
-          {
-            name: "Testing & Deployment",
-            status: "pending",
-            dueDate: "2024-06-10",
-          },
+          { name: 'UI/UX Design', status: 'completed', dueDate: '2024-02-15' },
+          { name: 'Backend Development', status: 'in-progress', dueDate: '2024-04-01' },
+          { name: 'Payment Integration', status: 'pending', dueDate: '2024-05-15' },
+          { name: 'Testing & Deployment', status: 'pending', dueDate: '2024-06-10' }
         ],
         risks: [
-          {
-            level: "medium",
-            description: "Third-party API integration delays",
-          },
-          {
-            level: "low",
-            description: "Resource availability during holidays",
-          },
+          { level: 'medium', description: 'Third-party API integration delays' },
+          { level: 'low', description: 'Resource availability during holidays' }
         ],
         tasks: {
           total: 45,
           completed: 29,
           inProgress: 12,
-          pending: 4,
-        },
+          pending: 4
+        }
       },
       {
         id: 2,
-        name: "Mobile Banking App",
-        client: "SecureBank Ltd",
-        status: "active",
-        priority: "high",
-        startDate: "2024-02-01",
-        endDate: "2024-07-30",
+        name: 'Mobile Banking App',
+        client: 'SecureBank Ltd',
+        status: 'active',
+        priority: 'high',
+        startDate: '2024-02-01',
+        endDate: '2024-07-30',
         progress: 40,
         budget: 200000,
         spent: 80000,
         teamMembers: 10,
-        description:
-          "Secure mobile banking application with biometric authentication",
-        technologies: ["React Native", "Node.js", "PostgreSQL", "AWS"],
-        projectManager: "Sarah Johnson",
+        description: 'Secure mobile banking application with biometric authentication',
+        technologies: ['React Native', 'Node.js', 'PostgreSQL', 'AWS'],
+        projectManager: 'Sarah Johnson',
         assignedTeamLead: null,
         teamLeadId: null,
         clientContact: {
-          name: "David Chen",
-          email: "david@securebank.com",
-          phone: "+1-555-0456",
+          name: 'David Chen',
+          email: 'david@securebank.com',
+          phone: '+1-555-0456'
         },
         milestones: [
-          {
-            name: "Security Architecture",
-            status: "completed",
-            dueDate: "2024-02-20",
-          },
-          {
-            name: "Core Features Development",
-            status: "in-progress",
-            dueDate: "2024-05-01",
-          },
-          {
-            name: "Biometric Integration",
-            status: "pending",
-            dueDate: "2024-06-15",
-          },
-          {
-            name: "Security Testing",
-            status: "pending",
-            dueDate: "2024-07-20",
-          },
+          { name: 'Security Architecture', status: 'completed', dueDate: '2024-02-20' },
+          { name: 'Core Features Development', status: 'in-progress', dueDate: '2024-05-01' },
+          { name: 'Biometric Integration', status: 'pending', dueDate: '2024-06-15' },
+          { name: 'Security Testing', status: 'pending', dueDate: '2024-07-20' }
         ],
         risks: [
-          { level: "high", description: "Regulatory compliance requirements" },
-          { level: "medium", description: "Complex security implementations" },
+          { level: 'high', description: 'Regulatory compliance requirements' },
+          { level: 'medium', description: 'Complex security implementations' }
         ],
         tasks: {
           total: 60,
           completed: 24,
           inProgress: 18,
-          pending: 18,
-        },
+          pending: 18
+        }
       },
       {
         id: 3,
-        name: "Inventory Management System",
-        client: "LogiCorp Industries",
-        status: "completed",
-        priority: "medium",
-        startDate: "2024-01-01",
-        endDate: "2024-04-30",
+        name: 'Inventory Management System',
+        client: 'LogiCorp Industries',
+        status: 'completed',
+        priority: 'medium',
+        startDate: '2024-01-01',
+        endDate: '2024-04-30',
         progress: 100,
         budget: 80000,
         spent: 75000,
         teamMembers: 5,
-        description: "Comprehensive inventory tracking and management system",
-        technologies: ["Vue.js", "Laravel", "MySQL", "Docker"],
-        projectManager: "Mike Chen",
-        assignedTeamLead: "Alex Rodriguez",
+        description: 'Comprehensive inventory tracking and management system',
+        technologies: ['Vue.js', 'Laravel', 'MySQL', 'Docker'],
+        projectManager: 'Mike Chen',
+        assignedTeamLead: 'Alex Rodriguez',
         teamLeadId: 1,
         clientContact: {
-          name: "Lisa Davis",
-          email: "lisa@logicorp.com",
-          phone: "+1-555-0789",
+          name: 'Lisa Davis',
+          email: 'lisa@logicorp.com',
+          phone: '+1-555-0789'
         },
         milestones: [
-          { name: "System Design", status: "completed", dueDate: "2024-01-15" },
-          {
-            name: "Development Phase",
-            status: "completed",
-            dueDate: "2024-03-15",
-          },
-          { name: "Testing & QA", status: "completed", dueDate: "2024-04-15" },
-          { name: "Deployment", status: "completed", dueDate: "2024-04-30" },
+          { name: 'System Design', status: 'completed', dueDate: '2024-01-15' },
+          { name: 'Development Phase', status: 'completed', dueDate: '2024-03-15' },
+          { name: 'Testing & QA', status: 'completed', dueDate: '2024-04-15' },
+          { name: 'Deployment', status: 'completed', dueDate: '2024-04-30' }
         ],
         risks: [],
         tasks: {
           total: 35,
           completed: 35,
           inProgress: 0,
-          pending: 0,
-        },
+          pending: 0
+        }
       },
       {
         id: 4,
-        name: "CRM Dashboard",
-        client: "SalesForce Pro",
-        status: "on-hold",
-        priority: "low",
-        startDate: "2024-03-01",
-        endDate: "2024-08-15",
+        name: 'CRM Dashboard',
+        client: 'SalesForce Pro',
+        status: 'on-hold',
+        priority: 'low',
+        startDate: '2024-03-01',
+        endDate: '2024-08-15',
         progress: 25,
         budget: 120000,
         spent: 30000,
         teamMembers: 6,
-        description:
-          "Customer relationship management dashboard with analytics",
-        technologies: ["Angular", "Express.js", "MongoDB", "Chart.js"],
-        projectManager: "Lisa Davis",
-        assignedTeamLead: "Emily Johnson",
+        description: 'Customer relationship management dashboard with analytics',
+        technologies: ['Angular', 'Express.js', 'MongoDB', 'Chart.js'],
+        projectManager: 'Lisa Davis',
+        assignedTeamLead: 'Emily Johnson',
         teamLeadId: 3,
         clientContact: {
-          name: "Robert Smith",
-          email: "robert@salesforcepro.com",
-          phone: "+1-555-0321",
+          name: 'Robert Smith',
+          email: 'robert@salesforcepro.com',
+          phone: '+1-555-0321'
         },
         milestones: [
-          {
-            name: "Requirements Analysis",
-            status: "completed",
-            dueDate: "2024-03-15",
-          },
-          { name: "UI Design", status: "in-progress", dueDate: "2024-05-01" },
-          { name: "Development", status: "pending", dueDate: "2024-07-01" },
-          { name: "Integration", status: "pending", dueDate: "2024-08-10" },
+          { name: 'Requirements Analysis', status: 'completed', dueDate: '2024-03-15' },
+          { name: 'UI Design', status: 'in-progress', dueDate: '2024-05-01' },
+          { name: 'Development', status: 'pending', dueDate: '2024-07-01' },
+          { name: 'Integration', status: 'pending', dueDate: '2024-08-10' }
         ],
         risks: [
-          { level: "high", description: "Client budget constraints" },
-          { level: "medium", description: "Changing requirements" },
+          { level: 'high', description: 'Client budget constraints' },
+          { level: 'medium', description: 'Changing requirements' }
         ],
         tasks: {
           total: 40,
           completed: 10,
           inProgress: 5,
-          pending: 25,
-        },
+          pending: 25
+        }
       },
       {
         id: 5,
-        name: "Healthcare Portal",
-        client: "MediCare Systems",
-        status: "overdue",
-        priority: "high",
-        startDate: "2023-12-01",
-        endDate: "2024-05-31",
+        name: 'Healthcare Portal',
+        client: 'MediCare Systems',
+        status: 'overdue',
+        priority: 'high',
+        startDate: '2023-12-01',
+        endDate: '2024-05-31',
         progress: 80,
         budget: 180000,
         spent: 160000,
         teamMembers: 12,
-        description: "Patient management and telemedicine platform",
-        technologies: ["React", "Python", "PostgreSQL", "WebRTC"],
-        projectManager: "David Brown",
-        assignedTeamLead: "Maria Garcia",
+        description: 'Patient management and telemedicine platform',
+        technologies: ['React', 'Python', 'PostgreSQL', 'WebRTC'],
+        projectManager: 'David Brown',
+        assignedTeamLead: 'Maria Garcia',
         teamLeadId: 4,
         clientContact: {
-          name: "Dr. Jennifer Wilson",
-          email: "jennifer@medicare.com",
-          phone: "+1-555-0654",
+          name: 'Dr. Jennifer Wilson',
+          email: 'jennifer@medicare.com',
+          phone: '+1-555-0654'
         },
         milestones: [
-          { name: "Core Platform", status: "completed", dueDate: "2024-02-01" },
-          {
-            name: "Patient Portal",
-            status: "completed",
-            dueDate: "2024-04-01",
-          },
-          {
-            name: "Telemedicine Features",
-            status: "in-progress",
-            dueDate: "2024-05-15",
-          },
-          {
-            name: "Security Compliance",
-            status: "pending",
-            dueDate: "2024-06-15",
-          },
+          { name: 'Core Platform', status: 'completed', dueDate: '2024-02-01' },
+          { name: 'Patient Portal', status: 'completed', dueDate: '2024-04-01' },
+          { name: 'Telemedicine Features', status: 'in-progress', dueDate: '2024-05-15' },
+          { name: 'Security Compliance', status: 'pending', dueDate: '2024-06-15' }
         ],
         risks: [
-          { level: "high", description: "HIPAA compliance requirements" },
-          { level: "high", description: "Project timeline overrun" },
+          { level: 'high', description: 'HIPAA compliance requirements' },
+          { level: 'high', description: 'Project timeline overrun' }
         ],
         tasks: {
           total: 55,
           completed: 44,
           inProgress: 8,
-          pending: 3,
-        },
-      },
+          pending: 3
+        }
+      }
     ];
   };
+
 
   // Calculate dashboard statistics
   const calculateDashboardStats = (projectsData) => {
     const totalProjects = projectsData.length;
-    const activeProjects = projectsData.filter(
-      (p) => p.projectStatus === "Active"
-    ).length;
-    const completedProjects = projectsData.filter(
-      (p) => p.projectStatus === "Completed"
-    ).length;
-    const overdueProjects = projectsData.filter(
-      (p) => p.projectStatus === "Overdue"
-    ).length;
-    const totalAmount = projectsData.reduce(
-      (sum, p) => sum + (p.finalAmount || 0),
-      0
-    );
+    const activeProjects = projectsData.filter(p => p.projectStatus === 'Active').length;
+    const completedProjects = projectsData.filter(p => p.projectStatus === 'Completed').length;
+    const overdueProjects = projectsData.filter(p => p.projectStatus === 'Overdue').length;
+    const totalAmount = projectsData.reduce((sum, p) => sum + (p.finalAmount || 0), 0);
 
     return {
       totalProjects,
       activeProjects,
       completedProjects,
       overdueProjects,
-      totalAmount,
+      totalAmount
     };
   };
 
@@ -428,25 +353,16 @@ const ProjectManagerDashboard = () => {
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(
-        (project) =>
-          (project.clientName || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          (project.leadName || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          (project.projectId || "")
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(project =>
+        (project.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.leadName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.projectId || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply status filter
-    if (filterStatus !== "all") {
-      filtered = filtered.filter(
-        (project) => (project.projectStatus || "unknown") === filterStatus
-      );
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(project => (project.projectStatus || 'unknown') === filterStatus);
     }
 
     // Apply sorting
@@ -454,12 +370,12 @@ const ProjectManagerDashboard = () => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
 
-      if (sortBy === "budget" || sortBy === "spent" || sortBy === "progress") {
+      if (sortBy === 'budget' || sortBy === 'spent' || sortBy === 'progress') {
         aValue = parseFloat(aValue);
         bValue = parseFloat(bValue);
       }
 
-      if (sortOrder === "asc") {
+      if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -471,53 +387,53 @@ const ProjectManagerDashboard = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      active: "#10b981",
-      completed: "#3b82f6",
-      "on-hold": "#f59e0b",
-      overdue: "#ef4444",
-      planning: "#8b5cf6",
+      'active': '#10b981',
+      'completed': '#3b82f6',
+      'on-hold': '#f59e0b',
+      'overdue': '#ef4444',
+      'planning': '#8b5cf6'
     };
-    return colors[status] || "#6b7280";
+    return colors[status] || '#6b7280';
   };
 
   const getPriorityColor = (priority) => {
     const colors = {
-      high: "#ef4444",
-      medium: "#f59e0b",
-      low: "#10b981",
+      'high': '#ef4444',
+      'medium': '#f59e0b',
+      'low': '#10b981'
     };
-    return colors[priority] || "#6b7280";
+    return colors[priority] || '#6b7280';
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
     }).format(amount);
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       });
     } catch (error) {
-      return "Invalid Date";
+      return 'Invalid Date';
     }
   };
 
   const isOverdue = (endDate, status) => {
     if (!endDate || !status) return false;
-    return status !== "completed" && new Date(endDate) < new Date();
+    return status !== 'completed' && new Date(endDate) < new Date();
   };
 
   // Handle team lead assignment
   const handleAssignTeamLead = (project) => {
     setSelectedProject(project);
-    setSelectedTeamLead(project.teamLeadId || "");
+    setSelectedTeamLead(project.teamLeadId || '');
     setShowAssignModal(true);
   };
 
@@ -570,75 +486,65 @@ const ProjectManagerDashboard = () => {
   // };
 
   const handleSaveAssignment = async () => {
-    if (!selectedTeamLead || !selectedProject) return;
+  if (!selectedTeamLead || !selectedProject) return;
 
-    console.log("Assigning team lead to project:", selectedProject);
+  console.log('Assigning team lead to project:', selectedProject);
 
-    try {
-      // Find the selected team lead details
-      const assignedLead = teamLeads.find(
-        (lead) =>
-          lead._id === selectedTeamLead ||
-          lead.id === selectedTeamLead ||
-          lead.id === parseInt(selectedTeamLead)
-      );
+  try {
+    // Find the selected team lead details
+    const assignedLead = teamLeads.find(
+      lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+    );
 
-      // Get JWT token from localStorage (or sessionStorage)
-      const token = localStorage.getItem("token"); // or sessionStorage.getItem('token')
+    // Get JWT token from localStorage (or sessionStorage)
+    const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
 
-      // Make API call to assign the team lead using the correct endpoint
-      const response = await fetch(
-        `http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            teamLeadId:
-              assignedLead?._id || assignedLead?.id || selectedTeamLead,
-            teamLeadName: assignedLead?.name || "",
-          }),
+    // Make API call to assign the team lead using the correct endpoint
+    const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+        teamLeadName: assignedLead?.name || ''
+      })
+    });
+
+    if (response.ok) {
+      // Update local state with the assignment
+      const updatedProjects = projects.map(project => {
+        if (project._id === selectedProject._id) {
+          return {
+            ...project,
+            teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+            assignedTeamLead: assignedLead?.name || '',
+            leadName: assignedLead?.name || ''
+          };
         }
-      );
+        return project;
+      });
 
-      if (response.ok) {
-        // Update local state with the assignment
-        const updatedProjects = projects.map((project) => {
-          if (project._id === selectedProject._id) {
-            return {
-              ...project,
-              teamLeadId:
-                assignedLead?._id || assignedLead?.id || selectedTeamLead,
-              assignedTeamLead: assignedLead?.name || "",
-              leadName: assignedLead?.name || "",
-            };
-          }
-          return project;
-        });
-
-        setProjects(updatedProjects);
-        setFilteredProjects(updatedProjects);
-        setShowAssignModal(false);
-        setSelectedProject(null);
-        setSelectedTeamLead("");
-        alert(
-          `Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`
-        );
-      } else {
-        throw new Error("Failed to save assignment");
-      }
-    } catch (error) {
-      console.error("Error saving team lead assignment:", error);
-      alert("Failed to assign team lead. Please try again.");
+      setProjects(updatedProjects);
+      setFilteredProjects(updatedProjects);
+      setShowAssignModal(false);
+      setSelectedProject(null);
+      setSelectedTeamLead('');
+      alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+    } else {
+      throw new Error('Failed to save assignment');
     }
-  };
+  } catch (error) {
+    console.error('Error saving team lead assignment:', error);
+    alert('Failed to assign team lead. Please try again.');
+  }
+};
 
   const handleCloseModal = () => {
     setShowAssignModal(false);
     setSelectedProject(null);
-    setSelectedTeamLead("");
+    setSelectedTeamLead('');
   };
 
   // Handle project details view
@@ -655,21 +561,21 @@ const ProjectManagerDashboard = () => {
   // Get milestone status color
   const getMilestoneStatusColor = (status) => {
     const colors = {
-      completed: "#10b981",
-      "in-progress": "#3b82f6",
-      pending: "#6b7280",
+      'completed': '#10b981',
+      'in-progress': '#3b82f6',
+      'pending': '#6b7280'
     };
-    return colors[status] || "#6b7280";
+    return colors[status] || '#6b7280';
   };
 
   // Get risk level color
   const getRiskLevelColor = (level) => {
     const colors = {
-      high: "#ef4444",
-      medium: "#f59e0b",
-      low: "#10b981",
+      'high': '#ef4444',
+      'medium': '#f59e0b',
+      'low': '#10b981'
     };
-    return colors[level] || "#6b7280";
+    return colors[level] || '#6b7280';
   };
 
   if (loading) {
@@ -692,10 +598,7 @@ const ProjectManagerDashboard = () => {
       {/* Dashboard Statistics */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div
-            className="stat-icon"
-            style={{ background: "linear-gradient(135deg, #3b82f6, #1d4ed8)" }}
-          >
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }}>
             <FaProjectDiagram size={32} />
           </div>
           <div className="stat-info">
@@ -709,10 +612,7 @@ const ProjectManagerDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div
-            className="stat-icon"
-            style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
-          >
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
             <FaPlay size={32} />
           </div>
           <div className="stat-info">
@@ -726,10 +626,7 @@ const ProjectManagerDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div
-            className="stat-icon"
-            style={{ background: "linear-gradient(135deg, #8b5cf6, #7c3aed)" }}
-          >
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}>
             <FaCheckCircle size={32} />
           </div>
           <div className="stat-info">
@@ -743,10 +640,7 @@ const ProjectManagerDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div
-            className="stat-icon"
-            style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-          >
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}>
             <FaExclamationTriangle size={32} />
           </div>
           <div className="stat-info">
@@ -760,19 +654,11 @@ const ProjectManagerDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div
-            className="stat-icon"
-            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
-          >
+          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
             <FaChartLine size={32} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">
-              ₹
-              {dashboardStats.totalAmount
-                ? dashboardStats.totalAmount.toLocaleString()
-                : "0"}
-            </div>
+            <div className="stat-value">₹{dashboardStats.totalAmount ? dashboardStats.totalAmount.toLocaleString() : '0'}</div>
             <div className="stat-title">Total Amount</div>
             <div className="stat-trend">
               <FaArrowUp size={12} />
@@ -821,10 +707,10 @@ const ProjectManagerDashboard = () => {
           </select>
 
           <button
-            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             className="sort-button"
           >
-            {sortOrder === "asc" ? <FaArrowUp /> : <FaArrowDown />}
+            {sortOrder === 'asc' ? <FaArrowUp /> : <FaArrowDown />}
           </button>
         </div>
       </div>
@@ -832,35 +718,24 @@ const ProjectManagerDashboard = () => {
       {/* Projects Grid */}
       <div className="projects-section">
         <div className="section-header">
-          <h2>
-            <FaProjectDiagram /> Projects Overview ({filteredProjects.length})
-          </h2>
+          <h2><FaProjectDiagram /> Projects Overview ({filteredProjects.length})</h2>
         </div>
 
         <div className="projects-grid">
-          {filteredProjects.map((project) => (
+          {filteredProjects.map(project => (
             <div key={project._id} className="project-card">
               <div className="project-header">
                 <div className="project-title">
-                  <h3>{project.projectId || "Untitled Project"}</h3>
+                  <h3>{project.projectId || 'Untitled Project'}</h3>
                   <div className="project-badges">
                     <span
                       className="status-badge"
-                      style={{
-                        backgroundColor: getStatusColor(
-                          project.projectStatus || "unknown"
-                        ),
-                      }}
+                      style={{ backgroundColor: getStatusColor(project.projectStatus || 'unknown') }}
                     >
-                      {project.projectStatus
-                        ? project.projectStatus.replace("-", " ")
-                        : "Unknown"}
+                      {project.projectStatus ? project.projectStatus.replace('-', ' ') : 'Unknown'}
                     </span>
                     <span className="amount-badge">
-                      ₹
-                      {project.finalAmount
-                        ? project.finalAmount.toLocaleString()
-                        : "0"}
+                      ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
                     </span>
                   </div>
                 </div>
@@ -887,52 +762,37 @@ const ProjectManagerDashboard = () => {
 
               <div className="project-details">
                 <div className="client-info">
-                  <strong>Client:</strong>{" "}
-                  {project.clientName || "Unknown Client"}
+                  <strong>Client:</strong> {project.clientName || 'Unknown Client'}
                 </div>
                 <div className="project-info">
                   <div className="info-item">
-                    <strong>Project ID:</strong> {project.projectId || "N/A"}
+                    <strong>Project ID:</strong> {project.projectId || 'N/A'}
                   </div>
                   <div className="info-item">
-                    <strong>Lead Name:</strong>{" "}
-                    {project.leadName || "Not Assigned"}
+                    <strong>Lead Name:</strong> {project.leadName || 'Not Assigned'}
                   </div>
                   <div className="info-item">
-                    <strong>Final Amount:</strong> ₹
-                    {project.finalAmount
-                      ? project.finalAmount.toLocaleString()
-                      : "0"}
+                    <strong>Final Amount:</strong> ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
                   </div>
                 </div>
 
                 <div className="assignment-info">
                   <div className="assignment-item">
                     <strong>Project Status:</strong>
-                    <span
-                      className={`status-indicator ${
-                        project.projectStatus
-                          ? project.projectStatus.toLowerCase()
-                          : "unknown"
-                      }`}
-                    >
-                      {project.projectStatus || "Unknown"}
+                    <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
+                      {project.projectStatus || 'Unknown'}
                     </span>
                   </div>
                   <div className="assignment-item">
                     <strong>Original Lead:</strong>
                     <span className="original-lead">
-                      {project.leadName || "Not Specified"}
+                      {project.leadName || 'Not Specified'}
                     </span>
                   </div>
                   <div className="assignment-item">
                     <strong>Assigned Team Lead:</strong>
-                    <span
-                      className={`team-lead-status ${
-                        project.assignedTeamLead ? "assigned" : "unassigned"
-                      }`}
-                    >
-                      {project.assignedTeamLead || "Not Assigned"}
+                    <span className={`team-lead-status ${project.assignedTeamLead ? 'assigned' : 'unassigned'}`}>
+                      {project.assignedTeamLead || 'Not Assigned'}
                     </span>
                     {!project.assignedTeamLead && (
                       <button
@@ -956,32 +816,19 @@ const ProjectManagerDashboard = () => {
                   </div>
                   <div className="meta-item">
                     <FaLock />
-                    <span>
-                      Password: {project.projectPassword || "Not Set"}
-                    </span>
+                    <span>Password: {project.projectPassword || 'Not Set'}</span>
                   </div>
                 </div>
 
                 <div className="project-status-info">
                   <div className="status-header">
                     <span>Project Status</span>
-                    <span
-                      className={`status-indicator ${
-                        project.projectStatus
-                          ? project.projectStatus.toLowerCase()
-                          : "unknown"
-                      }`}
-                    >
-                      {project.projectStatus || "Unknown"}
+                    <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
+                      {project.projectStatus || 'Unknown'}
                     </span>
                   </div>
                   <div className="amount-display">
-                    <strong>
-                      Final Amount: ₹
-                      {project.finalAmount
-                        ? project.finalAmount.toLocaleString()
-                        : "0"}
-                    </strong>
+                    <strong>Final Amount: ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}</strong>
                   </div>
                 </div>
 
@@ -996,17 +843,8 @@ const ProjectManagerDashboard = () => {
                   </div>
                   <div className="budget-item">
                     <span>Remaining:</span>
-                    <span
-                      className={
-                        (project.budget || 0) - (project.spent || 0) <
-                        (project.budget || 0) * 0.1
-                          ? "warning"
-                          : ""
-                      }
-                    >
-                      {formatCurrency(
-                        (project.budget || 0) - (project.spent || 0)
-                      )}
+                    <span className={(project.budget || 0) - (project.spent || 0) < (project.budget || 0) * 0.1 ? 'warning' : ''}>
+                      {formatCurrency((project.budget || 0) - (project.spent || 0))}
                     </span>
                   </div>
                 </div>
@@ -1038,9 +876,7 @@ const ProjectManagerDashboard = () => {
                     <div className="tech-header">Technologies:</div>
                     <div className="tech-tags">
                       {project.technologies.map((tech, index) => (
-                        <span key={index} className="tech-tag">
-                          {tech}
-                        </span>
+                        <span key={index} className="tech-tag">{tech}</span>
                       ))}
                     </div>
                   </div>
@@ -1054,10 +890,7 @@ const ProjectManagerDashboard = () => {
           <div className="no-projects">
             <FaProjectDiagram size={64} />
             <h3>No projects found</h3>
-            <p>
-              Try adjusting your search criteria or check if projects are
-              available in the system.
-            </p>
+            <p>Try adjusting your search criteria or check if projects are available in the system.</p>
           </div>
         )}
       </div>
@@ -1065,7 +898,7 @@ const ProjectManagerDashboard = () => {
       {/* Team Lead Assignment Modal */}
       {showAssignModal && selectedProject && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ backgroundColor: "white" }}>
+          <div className="modal-content" style={{ backgroundColor: 'white' }}>
             <div className="modal-header">
               <h3>Assign Team Lead</h3>
               <button className="modal-close" onClick={handleCloseModal}>
@@ -1077,12 +910,7 @@ const ProjectManagerDashboard = () => {
                 <h4>{selectedProject.projectId}</h4>
                 <p>Client: {selectedProject.clientName}</p>
                 <p>Lead: {selectedProject.leadName}</p>
-                <p>
-                  Amount: ₹
-                  {selectedProject.finalAmount
-                    ? selectedProject.finalAmount.toLocaleString()
-                    : "0"}
-                </p>
+                <p>Amount: ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</p>
                 <p>Status: {selectedProject.projectStatus}</p>
               </div>
               <div className="form-group">
@@ -1099,11 +927,8 @@ const ProjectManagerDashboard = () => {
                       {lead.name} - {lead.specialization} ({lead.availability})
                     </option>
                   ))} */}
-                  {teamLeads.map((lead) => (
-                    <option
-                      key={lead._id || lead.id}
-                      value={lead._id || lead.id}
-                    >
+                  {teamLeads.map(lead => (
+                    <option key={lead._id || lead.id} value={lead._id || lead.id}>
                       {lead.name} - {lead.specialization} ({lead.availability})
                     </option>
                   ))}
@@ -1112,33 +937,17 @@ const ProjectManagerDashboard = () => {
               {selectedTeamLead && (
                 <div className="selected-lead-info">
                   {(() => {
-                    const lead = teamLeads.find(
-                      (l) => l.id === parseInt(selectedTeamLead)
-                    );
+                    const lead = teamLeads.find(l => l.id === parseInt(selectedTeamLead));
                     return lead ? (
                       <div className="lead-details">
                         <h5>Team Lead Details:</h5>
-                        <p>
-                          <strong>Name:</strong> {lead.name}
-                        </p>
-                        <p>
-                          <strong>Email:</strong> {lead.email}
-                        </p>
-                        <p>
-                          <strong>Specialization:</strong> {lead.specialization}
-                        </p>
-                        <p>
-                          <strong>Experience:</strong> {lead.experience}
-                        </p>
-                        <p>
-                          <strong>Current Projects:</strong>{" "}
-                          {lead.currentProjects}
-                        </p>
-                        <p>
-                          <strong>Status:</strong>
-                          <span
-                            className={`availability-badge ${lead.availability}`}
-                          >
+                        <p><strong>Name:</strong> {lead.name}</p>
+                        <p><strong>Email:</strong> {lead.email}</p>
+                        <p><strong>Specialization:</strong> {lead.specialization}</p>
+                        <p><strong>Experience:</strong> {lead.experience}</p>
+                        <p><strong>Current Projects:</strong> {lead.currentProjects}</p>
+                        <p><strong>Status:</strong>
+                          <span className={`availability-badge ${lead.availability}`}>
                             {lead.availability}
                           </span>
                         </p>
@@ -1146,9 +955,7 @@ const ProjectManagerDashboard = () => {
                           <strong>Skills:</strong>
                           <div className="skill-tags">
                             {lead.skills.map((skill, index) => (
-                              <span key={index} className="skill-tag">
-                                {skill}
-                              </span>
+                              <span key={index} className="skill-tag">{skill}</span>
                             ))}
                           </div>
                         </div>
@@ -1187,71 +994,49 @@ const ProjectManagerDashboard = () => {
             <div className="modal-body">
               <div className="project-overview">
                 <div className="overview-header">
-                  <h4>{selectedProject.projectId || "Untitled Project"}</h4>
+                  <h4>{selectedProject.projectId || 'Untitled Project'}</h4>
                   <div className="project-badges">
                     <span
                       className="status-badge"
-                      style={{
-                        backgroundColor: getStatusColor(
-                          selectedProject.projectStatus || "unknown"
-                        ),
-                      }}
+                      style={{ backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown') }}
                     >
-                      {selectedProject.projectStatus
-                        ? selectedProject.projectStatus.replace("-", " ")
-                        : "Unknown"}
+                      {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
                     </span>
                     <span className="amount-badge">
-                      ₹
-                      {selectedProject.finalAmount
-                        ? selectedProject.finalAmount.toLocaleString()
-                        : "0"}
+                      ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}
                     </span>
                   </div>
                 </div>
-                <p className="project-description">
-                  Client: {selectedProject.clientName || "Unknown Client"}
-                </p>
+                <p className="project-description">Client: {selectedProject.clientName || 'Unknown Client'}</p>
               </div>
 
               <div className="details-grid">
                 <div className="detail-section">
-                  <h5>
-                    <FaInfoCircle /> Basic Information
-                  </h5>
+                  <h5><FaInfoCircle /> Basic Information</h5>
                   <div className="detail-items">
                     <div className="detail-item">
                       <span>Project ID:</span>
-                      <span>{selectedProject.projectId || "N/A"}</span>
+                      <span>{selectedProject.projectId || 'N/A'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Client Name:</span>
-                      <span>
-                        {selectedProject.clientName || "Unknown Client"}
-                      </span>
+                      <span>{selectedProject.clientName || 'Unknown Client'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Original Lead:</span>
-                      <span>{selectedProject.leadName || "Not Specified"}</span>
+                      <span>{selectedProject.leadName || 'Not Specified'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Assigned Team Lead:</span>
-                      <span>
-                        {selectedProject.assignedTeamLead || "Not Assigned"}
-                      </span>
+                      <span>{selectedProject.assignedTeamLead || 'Not Assigned'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Final Amount:</span>
-                      <span>
-                        ₹
-                        {selectedProject.finalAmount
-                          ? selectedProject.finalAmount.toLocaleString()
-                          : "0"}
-                      </span>
+                      <span>₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Project Status:</span>
-                      <span>{selectedProject.projectStatus || "Unknown"}</span>
+                      <span>{selectedProject.projectStatus || 'Unknown'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Created Date:</span>
@@ -1263,39 +1048,31 @@ const ProjectManagerDashboard = () => {
                     </div>
                     <div className="detail-item">
                       <span>Project Password:</span>
-                      <span>
-                        {selectedProject.projectPassword || "Not Set"}
-                      </span>
+                      <span>{selectedProject.projectPassword || 'Not Set'}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="detail-section">
-                  <h5>
-                    <FaEnvelope /> Project Information
-                  </h5>
+                  <h5><FaEnvelope /> Project Information</h5>
                   <div className="detail-items">
                     <div className="detail-item">
                       <span>Client Name:</span>
-                      <span>
-                        {selectedProject.clientName || "Unknown Client"}
-                      </span>
+                      <span>{selectedProject.clientName || 'Unknown Client'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Lead Name:</span>
-                      <span>{selectedProject.leadName || "Not Assigned"}</span>
+                      <span>{selectedProject.leadName || 'Not Assigned'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Project ID:</span>
-                      <span>{selectedProject.projectId || "N/A"}</span>
+                      <span>{selectedProject.projectId || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="detail-section">
-                  <h5>
-                    <FaChartLine /> Budget & Progress
-                  </h5>
+                  <h5><FaChartLine /> Budget & Progress</h5>
                   <div className="detail-items">
                     <div className="detail-item">
                       <span>Total Budget:</span>
@@ -1307,12 +1084,7 @@ const ProjectManagerDashboard = () => {
                     </div>
                     <div className="detail-item">
                       <span>Remaining:</span>
-                      <span>
-                        {formatCurrency(
-                          (selectedProject.budget || 0) -
-                            (selectedProject.spent || 0)
-                        )}
-                      </span>
+                      <span>{formatCurrency((selectedProject.budget || 0) - (selectedProject.spent || 0))}</span>
                     </div>
                     <div className="detail-item">
                       <span>Progress:</span>
@@ -1325,9 +1097,7 @@ const ProjectManagerDashboard = () => {
                         className="progress-fill"
                         style={{
                           width: `${selectedProject.progress || 0}%`,
-                          backgroundColor: getStatusColor(
-                            selectedProject.status || "unknown"
-                          ),
+                          backgroundColor: getStatusColor(selectedProject.status || 'unknown')
                         }}
                       ></div>
                     </div>
@@ -1336,32 +1106,20 @@ const ProjectManagerDashboard = () => {
 
                 {selectedProject.milestones && (
                   <div className="detail-section">
-                    <h5>
-                      <FaMapMarkerAlt /> Milestones
-                    </h5>
+                    <h5><FaMapMarkerAlt /> Milestones</h5>
                     <div className="milestones-list">
                       {selectedProject.milestones.map((milestone, index) => (
                         <div key={index} className="milestone-item">
                           <div className="milestone-header">
-                            <span className="milestone-name">
-                              {milestone.name}
-                            </span>
+                            <span className="milestone-name">{milestone.name}</span>
                             <span
                               className="milestone-status"
-                              style={{
-                                color: getMilestoneStatusColor(
-                                  milestone.status || "pending"
-                                ),
-                              }}
+                              style={{ color: getMilestoneStatusColor(milestone.status || 'pending') }}
                             >
-                              {milestone.status
-                                ? milestone.status.replace("-", " ")
-                                : "pending"}
+                              {milestone.status ? milestone.status.replace('-', ' ') : 'pending'}
                             </span>
                           </div>
-                          <div className="milestone-date">
-                            Due: {formatDate(milestone.dueDate)}
-                          </div>
+                          <div className="milestone-date">Due: {formatDate(milestone.dueDate)}</div>
                         </div>
                       ))}
                     </div>
@@ -1370,9 +1128,7 @@ const ProjectManagerDashboard = () => {
 
                 {selectedProject.risks && selectedProject.risks.length > 0 && (
                   <div className="detail-section">
-                    <h5>
-                      <FaExclamationTriangle /> Risk Assessment
-                    </h5>
+                    <h5><FaExclamationTriangle /> Risk Assessment</h5>
                     <div className="risks-list">
                       {selectedProject.risks.map((risk, index) => (
                         <div key={index} className="risk-item">
@@ -1382,9 +1138,7 @@ const ProjectManagerDashboard = () => {
                           >
                             <FaFlag /> {risk.level.toUpperCase()}
                           </span>
-                          <span className="risk-description">
-                            {risk.description}
-                          </span>
+                          <span className="risk-description">{risk.description}</span>
                         </div>
                       ))}
                     </div>
@@ -1392,26 +1146,18 @@ const ProjectManagerDashboard = () => {
                 )}
 
                 <div className="detail-section">
-                  <h5>
-                    <FaTasks /> Task Summary
-                  </h5>
+                  <h5><FaTasks /> Task Summary</h5>
                   <div className="tasks-overview">
                     <div className="task-stat completed">
-                      <span className="task-count">
-                        {selectedProject.tasks.completed}
-                      </span>
+                      <span className="task-count">{selectedProject.tasks.completed}</span>
                       <span className="task-label">Completed</span>
                     </div>
                     <div className="task-stat in-progress">
-                      <span className="task-count">
-                        {selectedProject.tasks.inProgress}
-                      </span>
+                      <span className="task-count">{selectedProject.tasks.inProgress}</span>
                       <span className="task-label">In Progress</span>
                     </div>
                     <div className="task-stat pending">
-                      <span className="task-count">
-                        {selectedProject.tasks.pending}
-                      </span>
+                      <span className="task-count">{selectedProject.tasks.pending}</span>
                       <span className="task-label">Pending</span>
                     </div>
                   </div>
@@ -1421,9 +1167,7 @@ const ProjectManagerDashboard = () => {
                   <h5>Technologies</h5>
                   <div className="tech-tags">
                     {selectedProject.technologies.map((tech, index) => (
-                      <span key={index} className="tech-tag">
-                        {tech}
-                      </span>
+                      <span key={index} className="tech-tag">{tech}</span>
                     ))}
                   </div>
                 </div>
