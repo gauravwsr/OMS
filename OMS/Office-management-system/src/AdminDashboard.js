@@ -2,9 +2,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
 import NotificationPopup from "./Components/NotificationPopup/NotificationPopup";
+import { useAuth } from "./Components/AuthProvider/AuthContext";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
+  const { user, notifications, fetchNotifications } = useAuth();
+  
   // TopDeals states
   const [topDeals, setTopDeals] = useState([]);
   const [dealsStats, setDealsStats] = useState({
@@ -65,6 +68,36 @@ const AdminDashboard = () => {
       clearInterval(eventsInterval);
     };
   }, []);
+
+  // Fetch notifications when component mounts and user is available
+  useEffect(() => {
+    if (user && user.role === 'Super_Admin') {
+      // Clean up test notifications on Super Admin login
+      cleanupTestNotifications();
+    }
+  }, [user]);
+
+  // Clean up test notifications
+  const cleanupTestNotifications = async () => {
+    try {
+      await axios.delete(
+        "http://localhost:5000/api/notifications/cleanup-test",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      // Fetch fresh notifications after cleanup
+      setTimeout(() => {
+        if (fetchNotifications) {
+          fetchNotifications();
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Error cleaning up test notifications:", error);
+    }
+  };
 
   useEffect(() => {
     // Refetch financial data when selected year changes
@@ -454,6 +487,7 @@ const AdminDashboard = () => {
   return (
     <>
       <NotificationPopup />
+      
       <div className="dashboard-container">
       {/* FIRST ROW: Financial Performance Summary - Full Width */}
       <div className="grid-row financial-row">

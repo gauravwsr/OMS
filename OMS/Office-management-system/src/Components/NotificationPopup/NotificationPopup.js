@@ -18,22 +18,29 @@ const NotificationPopup = () => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      
-      // Set up polling for new notifications every 30 seconds
+    }
+  }, [user]);
+
+  // Set up polling separately to avoid infinite calls
+  useEffect(() => {
+    if (user) {
       const interval = setInterval(() => {
         fetchNotifications();
-      }, 30000);
+      }, 30000); // Poll every 30 seconds
 
       return () => clearInterval(interval);
     }
-  }, [user, fetchNotifications]);
+  }, [user]);
 
   // Show popup when new notifications arrive
   useEffect(() => {
     if (notifications && notifications.length > 0) {
-      const unreadNotifs = notifications.filter(notif => 
-        !notif.readBy.some(reader => reader.userId === user?.id)
-      );
+      const userId = user?._id || user?.id;
+      
+      const unreadNotifs = notifications.filter(notif => {
+        const isRead = notif.readBy.some(reader => reader.userId === userId);
+        return !isRead;
+      });
       
       if (unreadNotifs.length > 0) {
         setNotificationQueue(unreadNotifs);

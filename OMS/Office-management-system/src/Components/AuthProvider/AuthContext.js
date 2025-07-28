@@ -242,19 +242,30 @@ export const AuthProvider = ({ children }) => {
   // Notification functions
   const fetchNotifications = async () => {
     try {
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        return { notifications: [], unreadCount: 0 };
+      }
+      
       const response = await axios.get(
         "http://localhost:5000/api/notifications",
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      setNotifications(response.data.notifications || []);
-      setUnreadNotifications(response.data.unreadCount || 0);
+      
+      const notificationsData = response.data.notifications || [];
+      const unreadCount = response.data.unreadCount || 0;
+      
+      setNotifications(notificationsData);
+      setUnreadNotifications(unreadCount);
+      
       return response.data;
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      console.error("Error fetching notifications:", error.response?.status, error.response?.data?.message);
       return { notifications: [], unreadCount: 0 };
     }
   };

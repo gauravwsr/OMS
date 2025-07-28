@@ -186,17 +186,43 @@ router.post('/BatchData', async (req, res) => {
             location: savedEvent.Location || 'No location specified'
           };
 
-          // Check if it's a meeting (based on subject or description keywords)
-          const isMeeting = savedEvent.Subject.toLowerCase().includes('meeting') || 
-                           savedEvent.Description?.toLowerCase().includes('meeting');
+          // Check if current user is HR Manager or Admin with HR role
+          const isHRUser = currentUser.role === 'Admin' && 
+                          (currentUser.subRole && currentUser.subRole.includes('HR'));
 
-          if (isMeeting) {
-            await createMeetingNotification(eventData, currentUser._id, currentUser.name);
-          } else {
-            await createEventNotification(eventData, currentUser._id, currentUser.name);
+          // Only create notification for current/future events by HR users
+          const eventStartTime = new Date(savedEvent.StartTime);
+          const now = new Date();
+          const isCurrentOrFutureEvent = eventStartTime >= now;
+
+          console.log('Calendar Event Creation:', {
+            user: currentUser.name,
+            role: currentUser.role,
+            subRole: currentUser.subRole,
+            isHRUser: isHRUser,
+            eventTitle: savedEvent.Subject,
+            eventStartTime: eventStartTime,
+            isCurrentOrFuture: isCurrentOrFutureEvent
+          });
+
+          // Only create notification if HR user is creating a current/future event
+          if (isHRUser && isCurrentOrFutureEvent) {
+            // Check if it's a meeting (based on subject or description keywords)
+            const isMeeting = savedEvent.Subject.toLowerCase().includes('meeting') || 
+                             savedEvent.Description?.toLowerCase().includes('meeting');
+
+            if (isMeeting) {
+              await createMeetingNotification(eventData, currentUser._id, currentUser.name);
+            } else {
+              await createEventNotification(eventData, currentUser._id, currentUser.name);
+            }
+            
+            console.log(`Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
+          } else if (!isHRUser) {
+            console.log(`Event created by non-HR user ${currentUser.name}, no notification sent to Super Admin`);
+          } else if (!isCurrentOrFutureEvent) {
+            console.log(`Past event created by HR user ${currentUser.name}, no notification sent`);
           }
-          
-          console.log(`Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by ${currentUser.name}`);
         } catch (notificationError) {
           console.error('Error creating notification:', notificationError);
           // Don't fail the event creation if notification fails

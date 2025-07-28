@@ -4,11 +4,17 @@ const User = require("../models/userModel");
 // Get notifications for current user
 const getNotifications = async (req, res) => {
   try {
-    const { role } = req.user;
+    const { role, subRole } = req.user;
+    
+    // Create role array based on user's role and subRole
+    const userRoles = [role];
+    if (role === 'Admin' && subRole && subRole.includes('HR')) {
+      userRoles.push('HR_Manager', 'HR');
+    }
     
     // Find notifications targeted at user's role
     const notifications = await Notification.find({
-      targetRoles: { $in: [role] },
+      targetRoles: { $in: userRoles },
     })
     .populate('createdBy', 'name email')
     .sort({ createdAt: -1 })
@@ -16,7 +22,7 @@ const getNotifications = async (req, res) => {
 
     // Count unread notifications for this user
     const unreadCount = await Notification.countDocuments({
-      targetRoles: { $in: [role] },
+      targetRoles: { $in: userRoles },
       'readBy.userId': { $ne: req.user.id }
     });
 
@@ -47,7 +53,7 @@ const createNotification = async (req, res) => {
       type: type || 'general',
       createdBy,
       createdByName,
-      targetRoles: targetRoles || ['Super_Admin', 'Admin'],
+      targetRoles: targetRoles || ['Super_Admin', 'Admin', 'HR_Manager', 'HR'],
       eventData,
       priority: priority || 'medium',
     });
@@ -114,13 +120,19 @@ const markAsRead = async (req, res) => {
 // Clear all notifications for user
 const clearAllNotifications = async (req, res) => {
   try {
-    const { role } = req.user;
+    const { role, subRole } = req.user;
     const userId = req.user.id;
+
+    // Create role array based on user's role and subRole
+    const userRoles = [role];
+    if (role === 'Admin' && subRole && subRole.includes('HR')) {
+      userRoles.push('HR_Manager', 'HR');
+    }
 
     // Mark all notifications as read for this user
     await Notification.updateMany(
       { 
-        targetRoles: { $in: [role] },
+        targetRoles: { $in: userRoles },
         'readBy.userId': { $ne: userId }
       },
       { 
@@ -151,12 +163,12 @@ const clearAllNotifications = async (req, res) => {
 const createEventNotification = async (eventData, createdBy, createdByName) => {
   try {
     const notification = new Notification({
-      title: "New Event Created",
-      message: `${createdByName} has created a new event: "${eventData.title}"`,
+      title: "New Event Scheduled",
+      message: `${createdByName} (HR Manager) has scheduled a new event: "${eventData.title}"`,
       type: 'event',
       createdBy,
       createdByName,
-      targetRoles: ['Super_Admin', 'Admin'],
+      targetRoles: ['Super_Admin'], // Only notify Super Admin
       eventData: {
         eventId: eventData.id,
         eventTitle: eventData.title,
@@ -167,6 +179,7 @@ const createEventNotification = async (eventData, createdBy, createdByName) => {
     });
 
     await notification.save();
+    console.log('Event notification created for Super Admin');
     return notification;
   } catch (error) {
     console.error("Error creating event notification:", error);
@@ -179,11 +192,11 @@ const createMeetingNotification = async (meetingData, createdBy, createdByName) 
   try {
     const notification = new Notification({
       title: "New Meeting Scheduled",
-      message: `${createdByName} has scheduled a new meeting: "${meetingData.title}"`,
+      message: `${createdByName} (HR Manager) has scheduled a new meeting: "${meetingData.title}"`,
       type: 'meeting',
       createdBy,
       createdByName,
-      targetRoles: ['Super_Admin', 'Admin'],
+      targetRoles: ['Super_Admin'], // Only notify Super Admin
       eventData: {
         eventId: meetingData.id,
         eventTitle: meetingData.title,
@@ -194,6 +207,7 @@ const createMeetingNotification = async (meetingData, createdBy, createdByName) 
     });
 
     await notification.save();
+    console.log('Meeting notification created for Super Admin');
     return notification;
   } catch (error) {
     console.error("Error creating meeting notification:", error);
