@@ -66,8 +66,15 @@ const User = require('../models/userModel');
 const Candidate = require('../models/Candidate');
 
 // Generate JWT
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (user) => {
+  return jwt.sign({ 
+    id: user._id,
+    userId: user.userId,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    subRole: user.subRole
+  }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
@@ -103,7 +110,7 @@ const login = async (req, res) => {
       candidateId: user.candidateId,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id)
+      token: generateToken(user)
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -139,7 +146,7 @@ const register = async (req, res) => {
       candidateId: savedUser.candidateId,
       email: savedUser.email,
       role: savedUser.role,
-      token: generateToken(savedUser._id)
+      token: generateToken(savedUser)
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -196,7 +203,7 @@ const updateUserProfile = async (req, res) => {
         candidateId: updatedUser.candidateId,
         email: updatedUser.email,
         role: updatedUser.role,
-        token: generateToken(updatedUser._id)
+        token: generateToken(updatedUser)
       });
     } else {
       res.status(404).json({ message: 'User not found' });
