@@ -60,7 +60,7 @@ const ProjectManagerDashboard = () => {
         const token = localStorage.getItem('token');
         try {
           await fetch('http://localhost:5000/api/client-projects/import-remote', {
-            method: 'POST',
+           
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
@@ -130,204 +130,6 @@ const ProjectManagerDashboard = () => {
     fetchProjects();
     fetchTeamLeads();
   }, []);
-
-  // Mock data fallback
-  const getMockProjects = () => {
-    return [
-      {
-        id: 1,
-        name: 'E-commerce Platform Development',
-        client: 'TechCorp Solutions',
-        status: 'active',
-        priority: 'high',
-        startDate: '2024-01-15',
-        endDate: '2024-06-15',
-        progress: 65,
-        budget: 150000,
-        spent: 97500,
-        teamMembers: 8,
-        description: 'Complete e-commerce platform with payment gateway integration',
-        technologies: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-        projectManager: 'John Smith',
-        assignedTeamLead: 'Sarah Wilson',
-        teamLeadId: 2,
-        clientContact: {
-          name: 'Michael Johnson',
-          email: 'michael@techcorp.com',
-          phone: '+1-555-0123'
-        },
-        milestones: [
-          { name: 'UI/UX Design', status: 'completed', dueDate: '2024-02-15' },
-          { name: 'Backend Development', status: 'in-progress', dueDate: '2024-04-01' },
-          { name: 'Payment Integration', status: 'pending', dueDate: '2024-05-15' },
-          { name: 'Testing & Deployment', status: 'pending', dueDate: '2024-06-10' }
-        ],
-        risks: [
-          { level: 'medium', description: 'Third-party API integration delays' },
-          { level: 'low', description: 'Resource availability during holidays' }
-        ],
-        tasks: {
-          total: 45,
-          completed: 29,
-          inProgress: 12,
-          pending: 4
-        }
-      },
-      {
-        id: 2,
-        name: 'Mobile Banking App',
-        client: 'SecureBank Ltd',
-        status: 'active',
-        priority: 'high',
-        startDate: '2024-02-01',
-        endDate: '2024-07-30',
-        progress: 40,
-        budget: 200000,
-        spent: 80000,
-        teamMembers: 10,
-        description: 'Secure mobile banking application with biometric authentication',
-        technologies: ['React Native', 'Node.js', 'PostgreSQL', 'AWS'],
-        projectManager: 'Sarah Johnson',
-        assignedTeamLead: null,
-        teamLeadId: null,
-        clientContact: {
-          name: 'David Chen',
-          email: 'david@securebank.com',
-          phone: '+1-555-0456'
-        },
-        milestones: [
-          { name: 'Security Architecture', status: 'completed', dueDate: '2024-02-20' },
-          { name: 'Core Features Development', status: 'in-progress', dueDate: '2024-05-01' },
-          { name: 'Biometric Integration', status: 'pending', dueDate: '2024-06-15' },
-          { name: 'Security Testing', status: 'pending', dueDate: '2024-07-20' }
-        ],
-        risks: [
-          { level: 'high', description: 'Regulatory compliance requirements' },
-          { level: 'medium', description: 'Complex security implementations' }
-        ],
-        tasks: {
-          total: 60,
-          completed: 24,
-          inProgress: 18,
-          pending: 18
-        }
-      },
-      {
-        id: 3,
-        name: 'Inventory Management System',
-        client: 'LogiCorp Industries',
-        status: 'completed',
-        priority: 'medium',
-        startDate: '2024-01-01',
-        endDate: '2024-04-30',
-        progress: 100,
-        budget: 80000,
-        spent: 75000,
-        teamMembers: 5,
-        description: 'Comprehensive inventory tracking and management system',
-        technologies: ['Vue.js', 'Laravel', 'MySQL', 'Docker'],
-        projectManager: 'Mike Chen',
-        assignedTeamLead: 'Alex Rodriguez',
-        teamLeadId: 1,
-        clientContact: {
-          name: 'Lisa Davis',
-          email: 'lisa@logicorp.com',
-          phone: '+1-555-0789'
-        },
-        milestones: [
-          { name: 'System Design', status: 'completed', dueDate: '2024-01-15' },
-          { name: 'Development Phase', status: 'completed', dueDate: '2024-03-15' },
-          { name: 'Testing & QA', status: 'completed', dueDate: '2024-04-15' },
-          { name: 'Deployment', status: 'completed', dueDate: '2024-04-30' }
-        ],
-        risks: [],
-        tasks: {
-          total: 35,
-          completed: 35,
-          inProgress: 0,
-          pending: 0
-        }
-      },
-      {
-        id: 4,
-        name: 'CRM Dashboard',
-        client: 'SalesForce Pro',
-        status: 'on-hold',
-        priority: 'low',
-        startDate: '2024-03-01',
-        endDate: '2024-08-15',
-        progress: 25,
-        budget: 120000,
-        spent: 30000,
-        teamMembers: 6,
-        description: 'Customer relationship management dashboard with analytics',
-        technologies: ['Angular', 'Express.js', 'MongoDB', 'Chart.js'],
-        projectManager: 'Lisa Davis',
-        assignedTeamLead: 'Emily Johnson',
-        teamLeadId: 3,
-        clientContact: {
-          name: 'Robert Smith',
-          email: 'robert@salesforcepro.com',
-          phone: '+1-555-0321'
-        },
-        milestones: [
-          { name: 'Requirements Analysis', status: 'completed', dueDate: '2024-03-15' },
-          { name: 'UI Design', status: 'in-progress', dueDate: '2024-05-01' },
-          { name: 'Development', status: 'pending', dueDate: '2024-07-01' },
-          { name: 'Integration', status: 'pending', dueDate: '2024-08-10' }
-        ],
-        risks: [
-          { level: 'high', description: 'Client budget constraints' },
-          { level: 'medium', description: 'Changing requirements' }
-        ],
-        tasks: {
-          total: 40,
-          completed: 10,
-          inProgress: 5,
-          pending: 25
-        }
-      },
-      {
-        id: 5,
-        name: 'Healthcare Portal',
-        client: 'MediCare Systems',
-        status: 'overdue',
-        priority: 'high',
-        startDate: '2023-12-01',
-        endDate: '2024-05-31',
-        progress: 80,
-        budget: 180000,
-        spent: 160000,
-        teamMembers: 12,
-        description: 'Patient management and telemedicine platform',
-        technologies: ['React', 'Python', 'PostgreSQL', 'WebRTC'],
-        projectManager: 'David Brown',
-        assignedTeamLead: 'Maria Garcia',
-        teamLeadId: 4,
-        clientContact: {
-          name: 'Dr. Jennifer Wilson',
-          email: 'jennifer@medicare.com',
-          phone: '+1-555-0654'
-        },
-        milestones: [
-          { name: 'Core Platform', status: 'completed', dueDate: '2024-02-01' },
-          { name: 'Patient Portal', status: 'completed', dueDate: '2024-04-01' },
-          { name: 'Telemedicine Features', status: 'in-progress', dueDate: '2024-05-15' },
-          { name: 'Security Compliance', status: 'pending', dueDate: '2024-06-15' }
-        ],
-        risks: [
-          { level: 'high', description: 'HIPAA compliance requirements' },
-          { level: 'high', description: 'Project timeline overrun' }
-        ],
-        tasks: {
-          total: 55,
-          completed: 44,
-          inProgress: 8,
-          pending: 3
-        }
-      }
-    ];
-  };
 
 
   // Calculate dashboard statistics
@@ -437,69 +239,72 @@ const ProjectManagerDashboard = () => {
     setShowAssignModal(true);
   };
 
-  // const handleSaveAssignment = async () => {
-  //   if (!selectedTeamLead || !selectedProject) return;
 
-  //   try {
-  //     // Find the selected team lead details
-  //     const assignedLead = teamLeads.find(lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead));
+//   const handleSaveAssignment = async () => {
+//   if (!selectedTeamLead || !selectedProject) return;
 
-  //     // Make API call to assign the team lead using the correct endpoint
-  //     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
-  //       method: 'PUT',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({
-  //         teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-  //         teamLeadName: assignedLead?.name || ''
-  //       })
-  //     });
+//   console.log('Assigning team lead to project:', selectedProject);
 
-  //     if (response.ok) {
-  //       // Update local state with the assignment
-  //       const updatedProjects = projects.map(project => {
-  //         if (project._id === selectedProject._id) {
-  //           return {
-  //             ...project,
-  //             teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-  //             assignedTeamLead: assignedLead?.name || '',
-  //             leadName: assignedLead?.name || ''
-  //           };
-  //         }
-  //         return project;
-  //       });
+//   try {
+//     // Find the selected team lead details
+//     const assignedLead = teamLeads.find(
+//       lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+//     );
 
-  //       setProjects(updatedProjects);
-  //       setFilteredProjects(updatedProjects);
-  //       setShowAssignModal(false);
-  //       setSelectedProject(null);
-  //       setSelectedTeamLead('');
-  //       alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
-  //     } else {
-  //       throw new Error('Failed to save assignment');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error saving team lead assignment:', error);
-  //     alert('Failed to assign team lead. Please try again.');
-  //   }
-  // };
+//     // Get JWT token from localStorage (or sessionStorage)
+//     const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
 
-  const handleSaveAssignment = async () => {
+//     // Make API call to assign the team lead using the correct endpoint
+//     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+//       method: 'PUT',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         'Authorization': `Bearer ${token}`
+//       },
+//       body: JSON.stringify({
+//         teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+//         teamLeadName: assignedLead?.name || ''
+//       })
+//     });
+
+//     if (response.ok) {
+//       // Update local state with the assignment
+//       const updatedProjects = projects.map(project => {
+//         if (project._id === selectedProject._id) {
+//           return {
+//             ...project,
+//             teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+//             assignedTeamLead: assignedLead?.name || '',
+//             leadName: assignedLead?.name || ''
+//           };
+//         }
+//         return project;
+//       });
+
+//       setProjects(updatedProjects);
+//       setFilteredProjects(updatedProjects);
+//       setShowAssignModal(false);
+//       setSelectedProject(null);
+//       setSelectedTeamLead('');
+//       alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+//     } else {
+//       throw new Error('Failed to save assignment');
+//     }
+//   } catch (error) {
+//     console.error('Error saving team lead assignment:', error);
+//     alert('Failed to assign team lead. Please try again.');
+//   }
+// };
+
+const handleSaveAssignment = async () => {
   if (!selectedTeamLead || !selectedProject) return;
 
-  console.log('Assigning team lead to project:', selectedProject);
-
   try {
-    // Find the selected team lead details
     const assignedLead = teamLeads.find(
       lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
     );
+    const token = localStorage.getItem('token');
 
-    // Get JWT token from localStorage (or sessionStorage)
-    const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
-
-    // Make API call to assign the team lead using the correct endpoint
     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
       method: 'PUT',
       headers: {
@@ -513,21 +318,18 @@ const ProjectManagerDashboard = () => {
     });
 
     if (response.ok) {
-      // Update local state with the assignment
-      const updatedProjects = projects.map(project => {
-        if (project._id === selectedProject._id) {
-          return {
-            ...project,
-            teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-            assignedTeamLead: assignedLead?.name || '',
-            leadName: assignedLead?.name || ''
-          };
+      // Fetch updated projects from backend to ensure persistence
+      const updatedProjectsRes = await fetch('http://localhost:5000/api/client-projects', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-        return project;
       });
+      const updatedData = await updatedProjectsRes.json();
+      const projectsData = Array.isArray(updatedData) ? updatedData : updatedData.data || updatedData.projects || [];
+      setProjects(projectsData);
+      setFilteredProjects(projectsData);
 
-      setProjects(updatedProjects);
-      setFilteredProjects(updatedProjects);
       setShowAssignModal(false);
       setSelectedProject(null);
       setSelectedTeamLead('');
@@ -540,7 +342,6 @@ const ProjectManagerDashboard = () => {
     alert('Failed to assign team lead. Please try again.');
   }
 };
-
   const handleCloseModal = () => {
     setShowAssignModal(false);
     setSelectedProject(null);
