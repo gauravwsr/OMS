@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import NotificationPopup from "./NotificationPopup/NotificationPopup";
 import "./Homepage.css"; // Make sure to use this new CSS file
 
 const NewDashboard = () => {
@@ -221,7 +222,10 @@ const NewDashboard = () => {
   }
 
   return (
-    <div className="dashboard-wrapper">
+    <>
+      <NotificationPopup />
+      
+      <div className="dashboard-wrapper">
       <div className="dashboard-container-new">
         <div className="dashboard-main">
           <header className="dashboard-header">
@@ -444,6 +448,7 @@ const NewDashboard = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -1,22 +1,38 @@
 const Task = require("../models/taskModel");
 
-// Get all tasks
+// Get tasks for a specific user email
 exports.getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find();
+    const { userEmail } = req.query;
+    if (!userEmail) {
+      return res.status(400).json({ message: "User email is required" });
+    }
+
+    // Get tasks assigned to this user
+    const tasks = await Task.find({ assignedTo: userEmail });
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Error fetching tasks" });
   }
 };
 
-// Add a new task
+// Add a new task with email assignment
 exports.addTask = async (req, res) => {
   try {
-    const { title } = req.body;
-    if (!title) return res.status(400).json({ message: "Title is required" });
+    const { title, assignedTo, assignedBy } = req.body;
 
-    const task = new Task({ title });
+    if (!title) return res.status(400).json({ message: "Title is required" });
+    if (!assignedTo)
+      return res.status(400).json({ message: "Assigned email is required" });
+    if (!assignedBy)
+      return res.status(400).json({ message: "Assigner email is required" });
+
+    const task = new Task({
+      title,
+      assignedTo,
+      assignedBy,
+      date: new Date().toLocaleString(),
+    });
     await task.save();
     res.status(201).json(task);
   } catch (error) {

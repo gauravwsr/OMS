@@ -21,21 +21,84 @@ import { useAuth } from "../AuthProvider/AuthContext";
 const Calender = () => {
   const scheduleObj = useRef(null);
   const [users, setUsers] = useState([]);
-  const { usersId } = useAuth(); // If needed for future use
+  const { user } = useAuth(); // Get user info to check role
 
-  // DataManager instance for Schedule Component with auto-refresh
-  const dataManager = new DataManager({
-    url: "http://localhost:5000/GetData",
-    crudUrl: "http://localhost:5000/BatchData",
-    adaptor: new UrlAdaptor(),
-    crossDomain: true,
-  });
+  // Check if current user is Super Admin
+  const isSuperAdmin = user?.role === 'Super_Admin';
+
+  // Create DataManager with custom configuration
+  const dataManager = React.useMemo(() => {
+    const token = localStorage.getItem("token");
+    console.log('Calendar DataManager - Token available:', !!token);
+    console.log('Calendar DataManager - Is Super Admin:', isSuperAdmin);
+    
+    if (isSuperAdmin) {
+      return new DataManager({
+        url: "http://localhost:5000/GetData",
+        adaptor: new UrlAdaptor(),
+        crossDomain: true,
+      });
+    }
+    
+    return new DataManager({
+      url: "http://localhost:5000/GetData",
+      crudUrl: "http://localhost:5000/BatchData",
+      adaptor: new UrlAdaptor(),
+      crossDomain: true,
+      headers: {
+        "Authorization": token ? `Bearer ${token}` : "",
+        "Content-Type": "application/json"
+      },
+      beforeSend: (dm, request, settings) => {
+        console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
+        const currentToken = localStorage.getItem("token");
+        if (currentToken) {
+          console.log('Calendar beforeSend - Setting authorization header');
+          request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
+          request.httpRequest.setRequestHeader("Content-Type", "application/json");
+        } else {
+          console.log('Calendar beforeSend - No token found');
+        }
+      },
+      actionComplete: (e) => {
+        console.log('Calendar Action Complete:', e);
+        if (e.action === 'insert' || e.action === 'batch') {
+          console.log('Calendar - Event created, notifications should be triggered');
+        }
+      }
+    });
+  }, [user, isSuperAdmin]);
 
   // Function to manually refresh calendar data
   const refreshCalendar = () => {
     if (scheduleObj.current) {
       scheduleObj.current.refreshEvents();
       console.log('📅 Calendar refreshed - finished events should be removed');
+    }
+  };
+
+  // Event handlers for Super Admin restrictions
+  const onActionBegin = (args) => {
+    // Prevent all editing actions for Super Admin
+    if (isSuperAdmin && (args.requestType === 'eventCreate' || 
+        args.requestType === 'eventChange' || 
+        args.requestType === 'eventRemove')) {
+      args.cancel = true;
+      console.log('Action prevented: Super Admin has read-only access to calendar');
+    }
+  };
+
+  const onCellClick = (args) => {
+    // Prevent cell click actions for Super Admin
+    if (isSuperAdmin) {
+      args.cancel = true;
+    }
+  };
+
+  const onEventClick = (args) => {
+    // Prevent event click editing for Super Admin
+    if (isSuperAdmin) {
+      args.cancel = true;
     }
   };
 
@@ -64,25 +127,35 @@ const Calender = () => {
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      {/* Refresh Button */}
+      {/* Refresh Button - Show for all users but with different styling for Super Admin */}
       <div style={{ 
         padding: '10px', 
         textAlign: 'right', 
-        backgroundColor: '#f8f9fa',
+        backgroundColor: isSuperAdmin ? '#fff3cd' : '#f8f9fa',
         borderBottom: '1px solid #dee2e6'
       }}>
+        {isSuperAdmin && (
+          <span style={{
+            marginRight: '15px',
+            color: '#856404',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}>
+            📋 Read-Only Mode (Super Admin View)
+          </span>
+        )}
         <button 
           onClick={refreshCalendar}
           style={{
             padding: '8px 16px',
-            backgroundColor: '#007bff',
+            backgroundColor: isSuperAdmin ? '#6c757d' : '#007bff',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '12px'
           }}
-          title="Refresh calendar and remove finished events"
+          title={isSuperAdmin ? "Refresh calendar view" : "Refresh calendar and remove finished events"}
         >
           🔄 Refresh Calendar
         </button>
@@ -94,9 +167,13 @@ const Calender = () => {
         id="schedule"
         ref={scheduleObj}
         currentView="Week"
-        group={{ allowGroupEdit: true }}
-        allowDragAndDrop={false}
+        group={{ allowGroupEdit: !isSuperAdmin }} // Disable group editing for Super Admin
+        allowDragAndDrop={!isSuperAdmin} // Disable drag and drop for Super Admin
+        readonly={isSuperAdmin} // Make entire schedule readonly for Super Admin
         eventSettings={{ dataSource: dataManager }} // Event data source
+        actionBegin={onActionBegin} // Handle action restrictions
+        cellClick={onCellClick} // Handle cell click restrictions
+        eventClick={onEventClick} // Handle event click restrictions
       >
         <ResourcesDirective>
           <ResourceDirective

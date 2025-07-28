@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ScheduleEventData = require('../models/calenderModel');
+const { createEventNotification, createMeetingNotification } = require('../controllers/notificationController');
+const { protect } = require('../middlewares/auth');
+const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
 
 
 // Load all events (similar to LoadData in C#) with automatic cleanup
@@ -124,6 +128,33 @@ router.delete('/cleanup-finished', async (req, res) => {
 router.post('/BatchData', async (req, res) => {
   const { action, key, added, changed, deleted, value } = req.body;
 
+  // Try to get user from token if available
+  let currentUser = null;
+  const authHeader = req.headers.authorization;
+  
+  console.log('BatchData called:', {
+    action,
+    authHeader: authHeader ? 'Present' : 'Missing',
+    hasAdded: !!(added && added.length > 0)
+  });
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      currentUser = await User.findById(decoded.id);
+      console.log('User authenticated:', {
+        name: currentUser?.name || 'Unknown',
+        role: currentUser?.role,
+        subRole: currentUser?.subRole
+      });
+    } catch (error) {
+      console.log('Token verification failed, proceeding without user info:', error.message);
+    }
+  } else {
+    console.log('No authorization header found');
+  }
+
   try {
     if (action === 'insert' || (action === 'batch' && added && added.length > 0)) {
       const newEvent = added && added.length > 0 ? added[0] : value;
@@ -153,7 +184,69 @@ router.post('/BatchData', async (req, res) => {
       });
 
       
-      await newEventData.save();
+      const savedEvent = await newEventData.save();
+
+      // Create notification for the new event
+      if (currentUser) {
+        try {
+          const eventData = {
+            id: savedEvent._id,
+            title: savedEvent.Subject,
+            startTime: savedEvent.StartTime,
+            location: savedEvent.Location || 'No location specified'
+          };
+
+          // Check if current user is HR Manager or Admin with HR role
+          const isHRUser = currentUser.role === 'Admin' && 
+                          (currentUser.subRole && currentUser.subRole.includes('HR'));
+
+          // Only create notification for current/future events by HR users
+          const eventStartTime = new Date(savedEvent.StartTime);
+          const now = new Date();
+          const isCurrentOrFutureEvent = eventStartTime >= now;
+
+          console.log('Notification Check:', {
+            user: currentUser.name,
+            role: currentUser.role,
+            subRole: currentUser.subRole,
+            isHRUser: isHRUser,
+            eventTitle: savedEvent.Subject,
+            eventStartTime: eventStartTime,
+            isCurrentOrFuture: isCurrentOrFutureEvent,
+            willCreateNotification: isHRUser && isCurrentOrFutureEvent
+          });
+
+          // Only create notification if HR user is creating a current/future event
+          if (isHRUser && isCurrentOrFutureEvent) {
+            // Check if it's a meeting (based on subject or description keywords)
+            const isMeeting = savedEvent.Subject.toLowerCase().includes('meeting') || 
+                             savedEvent.Description?.toLowerCase().includes('meeting');
+
+            console.log('Creating notification:', {
+              type: isMeeting ? 'meeting' : 'event',
+              title: savedEvent.Subject
+            });
+
+            if (isMeeting) {
+              await createMeetingNotification(eventData, currentUser._id, currentUser.name);
+            } else {
+              await createEventNotification(eventData, currentUser._id, currentUser.name);
+            }
+            
+            console.log(`✅ Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
+          } else if (!isHRUser) {
+            console.log(`❌ Event created by non-HR user ${currentUser.name}, no notification sent to Super Admin`);
+          } else if (!isCurrentOrFutureEvent) {
+            console.log(`❌ Past event created by HR user ${currentUser.name}, no notification sent`);
+          }
+        } catch (notificationError) {
+          console.error('Error creating notification:', notificationError);
+          // Don't fail the event creation if notification fails
+        }
+      } else {
+        console.log('No authenticated user, skipping notification creation');
+      }
+
       const allEvents = await ScheduleEventData.find();
       return res.json(allEvents);
 

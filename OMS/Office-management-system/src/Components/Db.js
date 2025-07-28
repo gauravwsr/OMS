@@ -1,36 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import './Db.css';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import "./Db.css";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const EmployeeList = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [employees, setEmployees] = useState([]);
-  const [selectedType, setSelectedType] = useState('Employee Types');
+  const [selectedType, setSelectedType] = useState("Employee Types");
   const navigate = useNavigate();
 
   // Original employee type options as specified
   const employeeTypes = [
-    'Employee Types',
-    'HR Executive',
-    'Team Leader',
-    'Project Manager',
-    'Developer',
-    'App Developer',
-    'UI/UX Designer',
-    'Digital Marketing'
+    "Employee Types",
+    "HR Executive",
+    "HR Manager",
+    "Team Leader",
+    "Project Manager",
+    "Developer",
+    "App Developer",
+    "UI/UX Designer",
+    "Digital Marketing",
   ];
 
   // Fetch candidates from the backend
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/candidates');
-        console.log('API Response:', response.data.data);
-        setEmployees(Array.isArray(response.data.data) ? response.data.data : []);
+        const response = await axios.get(
+          "http://localhost:5000/api/candidates"
+        );
+        console.log("API Response:", response.data.data);
+        setEmployees(
+          Array.isArray(response.data.data) ? response.data.data : []
+        );
       } catch (error) {
-        console.error('Error fetching employees:', error);
+        console.error("Error fetching employees:", error);
         setEmployees([]);
       }
     };
@@ -41,20 +46,22 @@ const EmployeeList = () => {
   const employeesPerPage = 10;
 
   // Modified filter function that filters by employee types (subRole) instead of role
-  const filteredEmployees = employees.filter(employee => {
+  const filteredEmployees = employees.filter((employee) => {
     // Check if employee matches search term
     const matchesSearch =
-      (employee.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.subRole?.toLowerCase().includes(searchTerm.toLowerCase()));
+      employee.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.subRole?.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Check if employee matches selected type - using subRole (employee type) field
     const matchesType =
-      selectedType === 'Employee Types' ||
+      selectedType === "Employee Types" ||
       employee.subRole?.toLowerCase() === selectedType.toLowerCase();
 
     // Debug logs
-    console.log(`Employee ${employee.fullName}: subRole=${employee.subRole}, selectedType=${selectedType}, matches=${matchesType}`);
+    console.log(
+      `Employee ${employee.fullName}: subRole=${employee.subRole}, selectedType=${selectedType}, matches=${matchesType}`
+    );
 
     return matchesSearch && matchesType;
   });
@@ -100,7 +107,7 @@ const EmployeeList = () => {
 
       // Add ellipsis after page 1 if needed
       if (startPage > 2) {
-        pageNumbers.push('...');
+        pageNumbers.push("...");
       }
 
       // Add visible page numbers
@@ -110,7 +117,7 @@ const EmployeeList = () => {
 
       // Add ellipsis before last page if needed
       if (endPage < totalPages - 1) {
-        pageNumbers.push('...');
+        pageNumbers.push("...");
       }
 
       // Always show last page
@@ -142,7 +149,7 @@ const EmployeeList = () => {
   };
 
   const handleViewDetails = (id) => {
-    navigate(`viewDetails/${id}`)
+    navigate(`viewDetails/${id}`);
   };
 
   const handleMobileEmployeeClick = (id) => {
@@ -159,34 +166,29 @@ const EmployeeList = () => {
   // Export CSV functionality
   const exportToCSV = () => {
     // Headers for CSV
-    const headers = [
-      'Full Name',
-      'Role',
-      'Employee Type',
-      'Attendance'
-    ];
+    const headers = ["Full Name", "Role", "Employee Type", "Attendance"];
 
     // Convert employees data to CSV format
-    const employeeData = filteredEmployees.map(employee => [
+    const employeeData = filteredEmployees.map((employee) => [
       employee.fullName,
       employee.role,
-      employee.subRole || 'N/A',
-      employee.attendanceMark || 'N/A'
+      employee.subRole || "N/A",
+      employee.attendanceMark || "N/A",
     ]);
 
     // Combine headers and data
     const csvContent = [
-      headers.join(','),
-      ...employeeData.map(row => row.join(','))
-    ].join('\n');
+      headers.join(","),
+      ...employeeData.map((row) => row.join(",")),
+    ].join("\n");
 
     // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'employee_list.csv');
-    link.style.visibility = 'hidden';
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "employee_list.csv");
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -226,11 +228,15 @@ const EmployeeList = () => {
                 onChange={handleTypeChange}
               >
                 {employeeTypes.map((type, index) => (
-                  <option key={index} value={type}>{type}</option>
+                  <option key={index} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
               {/* <div className="date-filter">07 Aug, 2024</div> */}
-              <button className="export-btn" onClick={exportToCSV}>Export CSV</button>
+              <button className="export-btn" onClick={exportToCSV}>
+                Export CSV
+              </button>
             </div>
           </div>
           <table className="employee-table">
@@ -249,7 +255,11 @@ const EmployeeList = () => {
                   <tr key={employee._id}>
                     <td className="employee-info">
                       <img
-                        src={employee.photoPath ? `http://localhost:5000/uploads/photos/${employee.photoPath}` : `https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`}
+                        src={
+                          employee.photoPath
+                            ? `http://localhost:5000/uploads/photos/${employee.photoPath}`
+                            : `https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
+                        }
                         alt={employee.fullName}
                         className="employee-avatar"
                       />
@@ -258,12 +268,21 @@ const EmployeeList = () => {
                     <td>{employee.role || "N/A"}</td>
                     <td>{employee.subRole || "N/A"}</td>
                     <td>
-                      <span className={`attendance-mark ${employee.attendanceMark?.toLowerCase().replace(' ', '-') || 'not-marked'}`}>
+                      <span
+                        className={`attendance-mark ${
+                          employee.attendanceMark
+                            ?.toLowerCase()
+                            .replace(" ", "-") || "not-marked"
+                        }`}
+                      >
                         {employee.attendanceMark || "N/A"}
                       </span>
                     </td>
                     <td>
-                      <button className="ViewDetails-btn" onClick={() => handleViewDetails(employee.candidateId)}>
+                      <button
+                        className="ViewDetails-btn"
+                        onClick={() => handleViewDetails(employee.candidateId)}
+                      >
                         <span></span>
                         View Details
                       </button>
@@ -273,9 +292,9 @@ const EmployeeList = () => {
               ) : (
                 <tr>
                   <td colSpan="5" className="no-employees">
-                    {selectedType !== 'Employee Types'
+                    {selectedType !== "Employee Types"
                       ? `No employees found for ${selectedType} employment type`
-                      : 'No employees found'}
+                      : "No employees found"}
                   </td>
                 </tr>
               )}
@@ -293,19 +312,26 @@ const EmployeeList = () => {
                 &lt;
               </button>
 
-              {getPageNumbers().map((pageNum, index) => (
-                pageNum === '...' ? (
-                  <span key={`ellipsis-${index}`} className="pagination-ellipsis">...</span>
+              {getPageNumbers().map((pageNum, index) =>
+                pageNum === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="pagination-ellipsis"
+                  >
+                    ...
+                  </span>
                 ) : (
                   <button
                     key={`page-${pageNum}`}
                     onClick={() => goToPage(pageNum)}
-                    className={`pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                    className={`pagination-number ${
+                      currentPage === pageNum ? "active" : ""
+                    }`}
                   >
                     {pageNum}
                   </button>
                 )
-              ))}
+              )}
 
               <button
                 onClick={nextPage}
@@ -355,12 +381,16 @@ const EmployeeList = () => {
                 onChange={handleTypeChange}
               >
                 {employeeTypes.map((type, index) => (
-                  <option key={index} value={type}>{type}</option>
+                  <option key={index} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
               <div className="mobile-actions-row">
                 {/* <span className="date-filter">07 Aug, 2024</span> */}
-                <button className="mobile-export-btn" onClick={exportToCSV}>Export</button>
+                <button className="mobile-export-btn" onClick={exportToCSV}>
+                  Export
+                </button>
               </div>
             </div>
           </div>
@@ -374,15 +404,28 @@ const EmployeeList = () => {
               >
                 <div className="mobile-employee-header">
                   <img
-                    src={employee.photoPath ? `http://localhost:5000/uploads/photos/${employee.photoPath}` : ` https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`}
+                    src={
+                      employee.photoPath
+                        ? `http://localhost:5000/uploads/photos/${employee.photoPath}`
+                        : ` https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
+                    }
                     alt={employee.fullName}
                     className="mobile-employee-avatar"
                   />
                   <div className="mobile-employee-info">
                     <h4>{employee.fullName}</h4>
-                    <span>{employee.role || "N/A"} {employee.subRole ? (`${employee.subRole}`) : ''}</span>
+                    <span>
+                      {employee.role || "N/A"}{" "}
+                      {employee.subRole ? `${employee.subRole}` : ""}
+                    </span>
                     {employee.attendanceMark && (
-                      <span className={`mobile-attendance-mark ${employee.attendanceMark?.toLowerCase().replace(' ', '-') || 'not-marked'}`}>
+                      <span
+                        className={`mobile-attendance-mark ${
+                          employee.attendanceMark
+                            ?.toLowerCase()
+                            .replace(" ", "-") || "not-marked"
+                        }`}
+                      >
                         {employee.attendanceMark}
                       </span>
                     )}
@@ -393,9 +436,9 @@ const EmployeeList = () => {
             ))
           ) : (
             <div className="no-employees-mobile">
-              {selectedType !== 'Employee Types'
+              {selectedType !== "Employee Types"
                 ? `No employees found for ${selectedType} employment type`
-                : 'No employees found'}
+                : "No employees found"}
             </div>
           )}
 
@@ -410,19 +453,26 @@ const EmployeeList = () => {
                 &lt;
               </button>
 
-              {getPageNumbers().map((pageNum, index) => (
-                pageNum === '...' ? (
-                  <span key={`mobile-ellipsis-${index}`} className="mobile-pagination-ellipsis">...</span>
+              {getPageNumbers().map((pageNum, index) =>
+                pageNum === "..." ? (
+                  <span
+                    key={`mobile-ellipsis-${index}`}
+                    className="mobile-pagination-ellipsis"
+                  >
+                    ...
+                  </span>
                 ) : (
                   <button
                     key={`mobile-page-${pageNum}`}
                     onClick={() => goToPage(pageNum)}
-                    className={`mobile-pagination-number ${currentPage === pageNum ? 'active' : ''}`}
+                    className={`mobile-pagination-number ${
+                      currentPage === pageNum ? "active" : ""
+                    }`}
                   >
                     {pageNum}
                   </button>
                 )
-              ))}
+              )}
 
               <button
                 onClick={nextPage}
