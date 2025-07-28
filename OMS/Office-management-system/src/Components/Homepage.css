@@ -933,3 +933,141 @@ body {
     font-size: 16px;
   }
 }
+
+/* Upcoming Events Section Styles */
+.upcoming-events-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+}
+
+.upcoming-events-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.upcoming-events-section .section-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.upcoming-events-section .view-all-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.upcoming-events-section .view-all-button:hover {
+  background-color: #2563eb;
+}
+
+.events-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-item.event-item {
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+  transition: all 0.2s ease;
+}
+
+.timeline-item.event-item:hover {
+  background-color: #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.timeline-icon.event {
+  background-color: #3b82f6;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.event-location {
+  font-size: 11px;
+  color: #059669;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.no-events {
+  text-align: center;
+  padding: 30px 20px;
+  color: #6b7280;
+}
+
+.no-events-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.no-events p {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+}
+
+.add-event-button {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-event-button:hover {
+  background-color: #059669;
+}
+
+.loading-text, .error-text {
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+}
+
+.loading-text {
+  color: #6b7280;
+}
+
+.error-text {
+  color: #dc2626;
+}
+
+/* Responsive adjustments for upcoming events */
+@media (max-width: 768px) {
+  .upcoming-events-section {
+    padding: 16px;
+  }
+  
+  .events-timeline {
+    gap: 10px;
+  }
+  
+  .timeline-item.event-item {
+    padding: 10px;
+  }
+}
