@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FaProjectDiagram, 
-  FaUsers, 
-  FaCalendarAlt, 
-  FaTasks, 
+import {
+  FaProjectDiagram,
+  FaUsers,
+  FaCalendarAlt,
+  FaTasks,
   FaChartLine,
   FaClock,
   FaCheckCircle,
@@ -56,26 +56,28 @@ const ProjectManagerDashboard = () => {
       try {
         setLoading(true);
         const response = await fetch('https://crm-brown-gamma.vercel.app/api/client-projects');
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         console.log('Fetched projects:', data);
-        
+
         // Process the data - assuming the API returns an array of projects
         const projectsData = Array.isArray(data) ? data : data.projects || [];
-        
+
         setProjects(projectsData);
         setFilteredProjects(projectsData);
-        
+
         // Calculate dashboard statistics
         const stats = calculateDashboardStats(projectsData);
         setDashboardStats(stats);
-        
+
       } catch (error) {
         console.error('Error fetching projects:', error);
+        // Show a user-friendly error message
+        alert('Failed to fetch projects from server. Showing mock data.');
         // Fallback to mock data if API fails
         const mockProjects = getMockProjects();
         setProjects(mockProjects);
@@ -86,9 +88,16 @@ const ProjectManagerDashboard = () => {
       }
     };
 
-    const fetchTeamLeads = async () => {
+   const fetchTeamLeads = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/users/team-leads');
+        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const data = await response.json();
         const teamLeadsData = Array.isArray(data.data) ? data.data : [];
         setTeamLeads(teamLeadsData);
@@ -97,7 +106,6 @@ const ProjectManagerDashboard = () => {
         setTeamLeads([]);
       }
     };
-
     fetchProjects();
     fetchTeamLeads();
   }, []);
@@ -409,53 +417,109 @@ const ProjectManagerDashboard = () => {
     setShowAssignModal(true);
   };
 
+  // const handleSaveAssignment = async () => {
+  //   if (!selectedTeamLead || !selectedProject) return;
+
+  //   try {
+  //     // Find the selected team lead details
+  //     const assignedLead = teamLeads.find(lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead));
+
+  //     // Make API call to assign the team lead using the correct endpoint
+  //     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+  //         teamLeadName: assignedLead?.name || ''
+  //       })
+  //     });
+
+  //     if (response.ok) {
+  //       // Update local state with the assignment
+  //       const updatedProjects = projects.map(project => {
+  //         if (project._id === selectedProject._id) {
+  //           return {
+  //             ...project,
+  //             teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+  //             assignedTeamLead: assignedLead?.name || '',
+  //             leadName: assignedLead?.name || ''
+  //           };
+  //         }
+  //         return project;
+  //       });
+
+  //       setProjects(updatedProjects);
+  //       setFilteredProjects(updatedProjects);
+  //       setShowAssignModal(false);
+  //       setSelectedProject(null);
+  //       setSelectedTeamLead('');
+  //       alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+  //     } else {
+  //       throw new Error('Failed to save assignment');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving team lead assignment:', error);
+  //     alert('Failed to assign team lead. Please try again.');
+  //   }
+  // };
+
   const handleSaveAssignment = async () => {
-    if (!selectedTeamLead || !selectedProject) return;
+  if (!selectedTeamLead || !selectedProject) return;
 
-    try {
-      // Find the selected team lead details
-      const assignedLead = teamLeads.find(lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead));
+  console.log('Assigning team lead to project:', selectedProject);
 
-      // Make API call to assign the team lead using the correct endpoint
-      const response = await fetch(`https://crm-brown-gamma.vercel.app/api/client-projects/${selectedProject._id}/assign-team-lead`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-          teamLeadName: assignedLead?.name || ''
-        })
+  try {
+    // Find the selected team lead details
+    const assignedLead = teamLeads.find(
+      lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+    );
+
+    // Get JWT token from localStorage (or sessionStorage)
+    const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+
+    // Make API call to assign the team lead using the correct endpoint
+    const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+        teamLeadName: assignedLead?.name || ''
+      })
+    });
+
+    if (response.ok) {
+      // Update local state with the assignment
+      const updatedProjects = projects.map(project => {
+        if (project._id === selectedProject._id) {
+          return {
+            ...project,
+            teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+            assignedTeamLead: assignedLead?.name || '',
+            leadName: assignedLead?.name || ''
+          };
+        }
+        return project;
       });
 
-      if (response.ok) {
-        // Update local state with the assignment
-        const updatedProjects = projects.map(project => {
-          if (project._id === selectedProject._id) {
-            return {
-              ...project,
-              teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-              assignedTeamLead: assignedLead?.name || '',
-              leadName: assignedLead?.name || ''
-            };
-          }
-          return project;
-        });
-
-        setProjects(updatedProjects);
-        setFilteredProjects(updatedProjects);
-        setShowAssignModal(false);
-        setSelectedProject(null);
-        setSelectedTeamLead('');
-        alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
-      } else {
-        throw new Error('Failed to save assignment');
-      }
-    } catch (error) {
-      console.error('Error saving team lead assignment:', error);
-      alert('Failed to assign team lead. Please try again.');
+      setProjects(updatedProjects);
+      setFilteredProjects(updatedProjects);
+      setShowAssignModal(false);
+      setSelectedProject(null);
+      setSelectedTeamLead('');
+      alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+    } else {
+      throw new Error('Failed to save assignment');
     }
-  };
+  } catch (error) {
+    console.error('Error saving team lead assignment:', error);
+    alert('Failed to assign team lead. Please try again.');
+  }
+};
 
   const handleCloseModal = () => {
     setShowAssignModal(false);
@@ -644,8 +708,8 @@ const ProjectManagerDashboard = () => {
                 <div className="project-title">
                   <h3>{project.projectId || 'Untitled Project'}</h3>
                   <div className="project-badges">
-                    <span 
-                      className="status-badge" 
+                    <span
+                      className="status-badge"
                       style={{ backgroundColor: getStatusColor(project.projectStatus || 'unknown') }}
                     >
                       {project.projectStatus ? project.projectStatus.replace('-', ' ') : 'Unknown'}
@@ -656,15 +720,15 @@ const ProjectManagerDashboard = () => {
                   </div>
                 </div>
                 <div className="project-actions">
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     onClick={() => handleViewDetails(project)}
                     title="View Details"
                   >
                     <FaEye />
                   </button>
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     onClick={() => handleAssignTeamLead(project)}
                     title="Assign Team Lead"
                   >
@@ -691,27 +755,27 @@ const ProjectManagerDashboard = () => {
                     <strong>Final Amount:</strong> ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
                   </div>
                 </div>
-                
+
                 <div className="assignment-info">
                   <div className="assignment-item">
-                    <strong>Project Status:</strong> 
+                    <strong>Project Status:</strong>
                     <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
                       {project.projectStatus || 'Unknown'}
                     </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Original Lead:</strong> 
+                    <strong>Original Lead:</strong>
                     <span className="original-lead">
                       {project.leadName || 'Not Specified'}
                     </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Assigned Team Lead:</strong> 
+                    <strong>Assigned Team Lead:</strong>
                     <span className={`team-lead-status ${project.assignedTeamLead ? 'assigned' : 'unassigned'}`}>
                       {project.assignedTeamLead || 'Not Assigned'}
                     </span>
                     {!project.assignedTeamLead && (
-                      <button 
+                      <button
                         className="assign-quick-btn"
                         onClick={() => handleAssignTeamLead(project)}
                       >
@@ -720,7 +784,7 @@ const ProjectManagerDashboard = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="project-meta">
                   <div className="meta-item">
                     <FaCalendarAlt />
@@ -814,7 +878,7 @@ const ProjectManagerDashboard = () => {
       {/* Team Lead Assignment Modal */}
       {showAssignModal && selectedProject && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content" style={{ backgroundColor: 'white' }}>
             <div className="modal-header">
               <h3>Assign Team Lead</h3>
               <button className="modal-close" onClick={handleCloseModal}>
@@ -831,15 +895,20 @@ const ProjectManagerDashboard = () => {
               </div>
               <div className="form-group">
                 <label htmlFor="teamLead">Select Team Lead:</label>
-                <select 
+                <select
                   id="teamLead"
-                  value={selectedTeamLead} 
+                  value={selectedTeamLead}
                   onChange={(e) => setSelectedTeamLead(e.target.value)}
                   className="team-lead-select"
                 >
                   <option value="">Select a team lead...</option>
-                  {teamLeads.map(lead => (
+                  {/* {teamLeads.map(lead => (
                     <option key={lead.id} value={lead.id}>
+                      {lead.name} - {lead.specialization} ({lead.availability})
+                    </option>
+                  ))} */}
+                  {teamLeads.map(lead => (
+                    <option key={lead._id || lead.id} value={lead._id || lead.id}>
                       {lead.name} - {lead.specialization} ({lead.availability})
                     </option>
                   ))}
@@ -857,7 +926,7 @@ const ProjectManagerDashboard = () => {
                         <p><strong>Specialization:</strong> {lead.specialization}</p>
                         <p><strong>Experience:</strong> {lead.experience}</p>
                         <p><strong>Current Projects:</strong> {lead.currentProjects}</p>
-                        <p><strong>Status:</strong> 
+                        <p><strong>Status:</strong>
                           <span className={`availability-badge ${lead.availability}`}>
                             {lead.availability}
                           </span>
@@ -880,8 +949,8 @@ const ProjectManagerDashboard = () => {
               <button className="btn-cancel" onClick={handleCloseModal}>
                 Cancel
               </button>
-              <button 
-                className="btn-save" 
+              <button
+                className="btn-save"
                 onClick={handleSaveAssignment}
                 disabled={!selectedTeamLead}
               >
@@ -907,8 +976,8 @@ const ProjectManagerDashboard = () => {
                 <div className="overview-header">
                   <h4>{selectedProject.projectId || 'Untitled Project'}</h4>
                   <div className="project-badges">
-                    <span 
-                      className="status-badge" 
+                    <span
+                      className="status-badge"
                       style={{ backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown') }}
                     >
                       {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
@@ -1004,9 +1073,9 @@ const ProjectManagerDashboard = () => {
                   </div>
                   <div className="progress-visualization">
                     <div className="progress-bar">
-                      <div 
-                        className="progress-fill" 
-                        style={{ 
+                      <div
+                        className="progress-fill"
+                        style={{
                           width: `${selectedProject.progress || 0}%`,
                           backgroundColor: getStatusColor(selectedProject.status || 'unknown')
                         }}
@@ -1023,7 +1092,7 @@ const ProjectManagerDashboard = () => {
                         <div key={index} className="milestone-item">
                           <div className="milestone-header">
                             <span className="milestone-name">{milestone.name}</span>
-                            <span 
+                            <span
                               className="milestone-status"
                               style={{ color: getMilestoneStatusColor(milestone.status || 'pending') }}
                             >
@@ -1043,7 +1112,7 @@ const ProjectManagerDashboard = () => {
                     <div className="risks-list">
                       {selectedProject.risks.map((risk, index) => (
                         <div key={index} className="risk-item">
-                          <span 
+                          <span
                             className="risk-level"
                             style={{ color: getRiskLevelColor(risk.level) }}
                           >
