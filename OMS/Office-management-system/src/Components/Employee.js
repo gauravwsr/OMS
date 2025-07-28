@@ -1,31 +1,63 @@
-import { useState } from "react"
-import { X, Upload } from "lucide-react"
-import { useAuth } from '../Components/AuthProvider/AuthContext';
-import axios from "axios"
-import "./Employee.css"
+import { useState } from "react";
+import { X, Upload } from "lucide-react";
+import { useAuth } from "../Components/AuthProvider/AuthContext";
+import axios from "axios";
+import "./Employee.css";
 
 const Employee = () => {
   // State variables
-  const [photo, setPhoto] = useState(null)
-  const [photoFile, setPhotoFile] = useState(null)
+  const [photo, setPhoto] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
   const [error, setError] = useState(null);
-  const [cv, setCv] = useState(null)
-  const [showModal, setShowModal] = useState(false)
-  const [role, setRole] = useState('');
-  const [subRole, setSubRole] = useState('');
-  const { signup } = useAuth();
+  const [passwordError, setPasswordError] = useState("");
+  const [cv, setCv] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [role, setRole] = useState("");
+  const [subRole, setSubRole] = useState("");
+  const { signup, user } = useAuth();
   const [credentials, setCredentials] = useState({
     candidateId: "",
     email: "",
     password: "",
-    name: ""
-  })
-  const roles = {
-    Admin: ["HR Executive"],
-    Employee: ["Team Leader", "Manager", "Developer", "App Developer", "UI/UX Designer"],
-    Intern: ["Developer", "App Developer", "UI/UX Designer"],
+    name: "",
+  });
+
+  // Define roles based on user's role - Super Admin can only register HR Managers
+  const getRolesForUser = () => {
+    if (user?.role === "Super_Admin") {
+      return {
+        Admin: ["HR Manager"],
+      };
+    }
+    // Admin with HR subrole can only create Employee and Intern accounts
+    if (user?.role === "Admin" && user?.subRole === "HR") {
+      return {
+        Employee: [
+          "Team Leader",
+          "Manager",
+          "Developer",
+          "App Developer",
+          "UI/UX Designer",
+        ],
+        Intern: ["Developer", "App Developer", "UI/UX Designer"],
+      };
+    }
+    // Default roles for other users
+    return {
+      Admin: ["HR Executive"],
+      Employee: [
+        "Team Leader",
+        "Manager",
+        "Developer",
+        "App Developer",
+        "UI/UX Designer",
+      ],
+      Intern: ["Developer", "App Developer", "UI/UX Designer"],
+    };
   };
-  const [loading, setLoading] = useState(false)
+
+  const roles = getRolesForUser();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     candidateId: "",
     fullName: "",
@@ -52,16 +84,37 @@ const Employee = () => {
     bankName: "",
     ifscCode: "",
     accountNo: "",
+    password: "",
+    confirmPassword: "",
   });
 
   // Handle form input changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
-    })
-  }
+    });
+
+    // Real-time password validation
+    if (name === "password" || name === "confirmPassword") {
+      const currentPassword = name === "password" ? value : formData.password;
+      const currentConfirmPassword =
+        name === "confirmPassword" ? value : formData.confirmPassword;
+
+      if (currentPassword && currentPassword.length < 6) {
+        setPasswordError("Password must be at least 6 characters long");
+      } else if (
+        currentPassword &&
+        currentConfirmPassword &&
+        currentPassword !== currentConfirmPassword
+      ) {
+        setPasswordError("Passwords do not match");
+      } else {
+        setPasswordError("");
+      }
+    }
+  };
 
   const MAX_SIZE_KB = 250;
 
@@ -73,7 +126,11 @@ const Employee = () => {
       const fileSizeKB = file.size / 1024;
 
       if (fileSizeKB > MAX_SIZE_KB) {
-        setError(`File size (${fileSizeKB.toFixed(2)} KB) exceeds the maximum limit of ${MAX_SIZE_KB} KB`);
+        setError(
+          `File size (${fileSizeKB.toFixed(
+            2
+          )} KB) exceeds the maximum limit of ${MAX_SIZE_KB} KB`
+        );
         return;
       }
 
@@ -90,21 +147,21 @@ const Employee = () => {
 
   // Handle CV Upload
   const handleCvUpload = (event) => {
-    const file = event.target.files[0]
+    const file = event.target.files[0];
     if (file) {
-      setCv(file)
+      setCv(file);
     }
-  }
+  };
 
   // Function to upload image to Cloudinary
   const uploadImageToCloudinary = async (imageFile) => {
     try {
-      const cloudinaryUploadPreset = 'OMS_Employee'; // Replace with your Cloudinary upload preset
-      const cloudinaryCloudName = 'dhurwdiak'; // Replace with your Cloudinary cloud name
+      const cloudinaryUploadPreset = "OMS_Employee"; // Replace with your Cloudinary upload preset
+      const cloudinaryCloudName = "dhurwdiak"; // Replace with your Cloudinary cloud name
 
       const formData = new FormData();
-      formData.append('file', imageFile);
-      formData.append('upload_preset', cloudinaryUploadPreset);
+      formData.append("file", imageFile);
+      formData.append("upload_preset", cloudinaryUploadPreset);
 
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`,
@@ -113,8 +170,8 @@ const Employee = () => {
 
       return response.data.secure_url;
     } catch (error) {
-      console.error('Error uploading to Cloudinary:', error);
-      throw new Error('Failed to upload image to Cloudinary');
+      console.error("Error uploading to Cloudinary:", error);
+      throw new Error("Failed to upload image to Cloudinary");
     }
   };
 
@@ -125,11 +182,37 @@ const Employee = () => {
 
     try {
       // Validate required fields
-      const requiredFields = ['candidateId', 'fullName', 'phoneNo', 'personalMail', 'role', 'subRole', 'gender']; // Added gender to required fields
-      const missingFields = requiredFields.filter(field => !formData[field]);
+      const requiredFields = [
+        "candidateId",
+        "fullName",
+        "phoneNo",
+        "personalMail",
+        "role",
+        "subRole",
+        "gender",
+        "password",
+        "confirmPassword",
+      ]; // Added gender and password fields to required fields
+      const missingFields = requiredFields.filter((field) => !formData[field]);
 
       if (missingFields.length > 0) {
-        alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        alert(
+          `Please fill in all required fields: ${missingFields.join(", ")}`
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Validate password match
+      if (formData.password !== formData.confirmPassword) {
+        alert("Passwords do not match. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Validate password strength
+      if (formData.password.length < 6) {
+        alert("Password must be at least 6 characters long.");
         setLoading(false);
         return;
       }
@@ -141,59 +224,70 @@ const Employee = () => {
       let imageUrl = null;
       if (photoFile) {
         imageUrl = await uploadImageToCloudinary(photoFile);
-        data.append('photoUrl', imageUrl); // Add the Cloudinary URL to form data
+        data.append("photoUrl", imageUrl); // Add the Cloudinary URL to form data
       }
 
       // Add all other form fields
-      Object.keys(formData).forEach(key => {
+      Object.keys(formData).forEach((key) => {
         if (formData[key]) {
           data.append(key, formData[key]);
         }
       });
 
       // If you still need to send the file for some other purpose
-      if (cv) data.append('cv', cv);
+      if (cv) data.append("cv", cv);
 
-      const response = await axios.post('http://localhost:5000/api/candidates', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 5000,
-        withCredentials: true
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/candidates",
+        data,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 5000,
+          withCredentials: true,
+        }
+      );
 
       if (response.status === 201) {
         setCredentials({
           candidateId: response.data.credentials.candidateId,
           name: formData.fullName,
           email: formData.officialEmail,
-          password: response.data.credentials.password,
+          password: formData.password, // Use user-provided password
           role: formData.role,
-          subRole: formData.subRole
+          subRole: formData.subRole,
         });
 
         const userData = {
           name: formData.fullName,
           email: formData.officialEmail,
-          password: response.data.credentials.password,
+          password: formData.password, // Use user-provided password
           role: formData.role,
-          subRole: formData.subRole
+          subRole: formData.subRole,
         };
 
         // Call signup function with role and subRole
-        await signup(userData.name, userData.email, userData.password, userData.role, userData.subRole);
+        await signup(
+          userData.name,
+          userData.email,
+          userData.password,
+          userData.role,
+          userData.subRole
+        );
 
         setShowModal(true);
         resetForm();
       }
     } catch (error) {
-      let errorMessage = 'Error saving candidate';
+      let errorMessage = "Error saving candidate";
 
-      if (error.code === 'ERR_NETWORK') {
-        errorMessage = 'Unable to connect to server. Please check if the server is running.';
+      if (error.code === "ERR_NETWORK") {
+        errorMessage =
+          "Unable to connect to server. Please check if the server is running.";
       } else if (error.response) {
-        errorMessage = error.response.data.message || 'Server error occurred';
+        errorMessage = error.response.data.message || "Server error occurred";
       }
 
-      console.error('Error details:', error);
+      console.error("Error details:", error);
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -203,45 +297,48 @@ const Employee = () => {
   // Add a reset form function
   const resetForm = () => {
     setFormData({
-      candidateId: '',
-      fullName: '',
-      gender: '',
-      role: '',
-      subRole: '',
-      qualification: '',
-      otherQualification: '',
-      birthDate: '',
-      address: '',
-      maritalStatus: '',
-      country: '',
-      state: '',
-      city: '',
-      phoneNo: '',
-      zipCode: '',
-      emergencyNo: '',
-      officialEmail: '',
-      personalMail: '',
-      aadharCard: '',
-      joiningDate: '',
-      panCard: '',
-      branchName: '',
-      bankName: '',
-      ifscCode: '',
-      accountNo: '',
+      candidateId: "",
+      fullName: "",
+      gender: "",
+      role: "",
+      subRole: "",
+      qualification: "",
+      otherQualification: "",
+      birthDate: "",
+      address: "",
+      maritalStatus: "",
+      country: "",
+      state: "",
+      city: "",
+      phoneNo: "",
+      zipCode: "",
+      emergencyNo: "",
+      officialEmail: "",
+      personalMail: "",
+      aadharCard: "",
+      joiningDate: "",
+      panCard: "",
+      branchName: "",
+      bankName: "",
+      ifscCode: "",
+      accountNo: "",
+      password: "",
+      confirmPassword: "",
     });
     setPhoto(null);
     setPhotoFile(null);
     setCv(null);
+    setPasswordError("");
   };
 
   const handleRegister = async () => {
     try {
       setShowModal(false);
       resetForm();
-      alert('Candidate registered successfully!');
+      alert("Candidate registered successfully!");
     } catch (error) {
-      console.error('Registration error:', error);
-      alert('Registration failed. Please try again.');
+      console.error("Registration error:", error);
+      alert("Registration failed. Please try again.");
     }
   };
 
@@ -265,7 +362,40 @@ const Employee = () => {
           </div>
 
           <div className="form-content">
-            <p className="description">Please fill out the following details to add a new Candidate to the system.</p>
+            <p className="description">
+              Please fill out the following details to add a new Candidate to
+              the system.
+            </p>
+            {user?.role === "Super_Admin" && (
+              <div
+                style={{
+                  backgroundColor: "#e3f2fd",
+                  border: "1px solid #2196f3",
+                  borderRadius: "4px",
+                  padding: "12px",
+                  marginBottom: "20px",
+                  color: "#1976d2",
+                }}
+              >
+                <strong>Note:</strong> As a Super Admin, you can only register
+                HR Managers through this form.
+              </div>
+            )}
+            {user?.role === "Admin" && user?.subRole === "HR" && (
+              <div
+                style={{
+                  backgroundColor: "#fff3e0",
+                  border: "1px solid #ff9800",
+                  borderRadius: "4px",
+                  padding: "12px",
+                  marginBottom: "20px",
+                  color: "#f57c00",
+                }}
+              >
+                <strong>Note:</strong> As an Admin HR, you can only register
+                Employees and Interns through this form.
+              </div>
+            )}
             <form onSubmit={handleSave}>
               {/* Upload Photo Section */}
               <div className="upload-container">
@@ -303,11 +433,7 @@ const Employee = () => {
                   )}
                 </div>
 
-                {error && (
-                  <div className="error-message">
-                    {error}
-                  </div>
-                )}
+                {error && <div className="error-message">{error}</div>}
 
                 <div className="upload-controls">
                   <div className="warning-text">
@@ -379,7 +505,9 @@ const Employee = () => {
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Other">Other</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
+                      <option value="Prefer not to say">
+                        Prefer not to say
+                      </option>
                     </select>
                   </div>
                   <div className="form-group">
@@ -506,7 +634,9 @@ const Employee = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="emergencyNo">Emergency Contact Number *</label>
+                    <label htmlFor="emergencyNo">
+                      Emergency Contact Number *
+                    </label>
                     <input
                       type="tel"
                       id="emergencyNo"
@@ -530,13 +660,19 @@ const Employee = () => {
                       name="role"
                       value={formData.role}
                       onChange={(e) => {
-                        setFormData({ ...formData, role: e.target.value, subRole: "" });
+                        setFormData({
+                          ...formData,
+                          role: e.target.value,
+                          subRole: "",
+                        });
                       }}
                       required
                     >
                       <option value="">Select Role</option>
                       {Object.keys(roles).map((role) => (
-                        <option key={role} value={role}>{role}</option>
+                        <option key={role} value={role}>
+                          {role}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -547,13 +683,18 @@ const Employee = () => {
                       id="subRole"
                       name="subRole"
                       value={formData.subRole}
-                      onChange={(e) => setFormData({ ...formData, subRole: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, subRole: e.target.value })
+                      }
                       required
                     >
                       <option value="">Select Sub-Role</option>
-                      {formData.role && roles[formData.role].map((sub) => (
-                        <option key={sub} value={sub}>{sub}</option>
-                      ))}
+                      {formData.role &&
+                        roles[formData.role].map((sub) => (
+                          <option key={sub} value={sub}>
+                            {sub}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 </div>
@@ -603,7 +744,9 @@ const Employee = () => {
                 <h3 className="section-title">Education Details</h3>
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="qualification">Highest Qualification *</label>
+                    <label htmlFor="qualification">
+                      Highest Qualification *
+                    </label>
                     <select
                       id="qualification"
                       name="qualification"
@@ -620,7 +763,9 @@ const Employee = () => {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label htmlFor="otherQualification">Other Qualifications</label>
+                    <label htmlFor="otherQualification">
+                      Other Qualifications
+                    </label>
                     <input
                       type="text"
                       id="otherQualification"
@@ -634,7 +779,10 @@ const Employee = () => {
                 {/* CV Upload */}
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="cv-upload" className="upload-button secondary-upload">
+                    <label
+                      htmlFor="cv-upload"
+                      className="upload-button secondary-upload"
+                    >
                       <Upload size={16} /> Upload CV
                     </label>
                     <input
@@ -642,7 +790,7 @@ const Employee = () => {
                       id="cv-upload"
                       accept=".pdf,.doc,.docx"
                       onChange={handleCvUpload}
-                      style={{ display: 'none' }}
+                      style={{ display: "none" }}
                     />
                     {cv && (
                       <div className="file-info">
@@ -744,7 +892,9 @@ const Employee = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="bankAccountName">Account Holder Name *</label>
+                    <label htmlFor="bankAccountName">
+                      Account Holder Name *
+                    </label>
                     <input
                       type="text"
                       id="bankAccountName"
@@ -757,9 +907,61 @@ const Employee = () => {
                 </div>
               </div>
 
+              {/* Login Credentials Section */}
+              <div className="form-section">
+                <h3 className="section-title">Login Credentials</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="password">Password *</label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Enter password"
+                      required
+                      minLength="6"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="confirmPassword">Confirm Password *</label>
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      placeholder="Confirm password"
+                      required
+                      minLength="6"
+                    />
+                  </div>
+                </div>
+                {passwordError && (
+                  <div
+                    style={{
+                      color: "#d32f2f",
+                      fontSize: "14px",
+                      marginTop: "8px",
+                      padding: "8px",
+                      backgroundColor: "#ffebee",
+                      border: "1px solid #ffcdd2",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    {passwordError}
+                  </div>
+                )}
+              </div>
+
               {/* Form Actions */}
               <div className="form-actions">
-                <button type="submit" className="submit-button" disabled={loading}>
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={loading}
+                >
                   {loading ? "Saving..." : "Save & Register"}
                 </button>
                 <button type="button" className="cancel-button">
@@ -777,19 +979,35 @@ const Employee = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h3>Registration Successful</h3>
-              <button onClick={() => setShowModal(false)} className="close-modal">
+              <button
+                onClick={() => setShowModal(false)}
+                className="close-modal"
+              >
                 <X size={20} />
               </button>
             </div>
             <div className="modal-body">
-              <p>Candidate has been registered successfully. Here are the login credentials:</p>
+              <p>
+                Candidate has been registered successfully. Here are the login
+                credentials:
+              </p>
               <div className="credentials-info">
-                <p><strong>Candidate ID:</strong> {credentials.candidateId}</p>
-                <p><strong>Name:</strong> {credentials.name}</p>
-                <p><strong>Email:</strong> {credentials.email}</p>
-                <p><strong>Password:</strong> {credentials.password}</p>
+                <p>
+                  <strong>Candidate ID:</strong> {credentials.candidateId}
+                </p>
+                <p>
+                  <strong>Name:</strong> {credentials.name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {credentials.email}
+                </p>
+                <p>
+                  <strong>Password:</strong> {credentials.password}
+                </p>
               </div>
-              <p className="important-note">Please save these credentials or share them with the candidate.</p>
+              <p className="important-note">
+                Please save these credentials or share them with the candidate.
+              </p>
             </div>
             <div className="modal-footer">
               <button onClick={handleRegister} className="confirm-button">
@@ -800,21 +1018,10 @@ const Employee = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Employee
-
-
-
-
-
-
-
-
-
-
-
+export default Employee;
 
 // import { useState } from "react"
 // import Navbar from "./Navbar"
@@ -873,7 +1080,6 @@ export default Employee
 
 //   const MAX_SIZE_KB = 250;
 
-
 //   const handlePhotoUpload = (e) => {
 //     setError(null);
 
@@ -907,8 +1113,6 @@ export default Employee
 //   const handleSave = async (e) => {
 //     e.preventDefault();
 //     setLoading(true);
-
-
 
 //     try {
 //       // Validate required fields
@@ -1625,7 +1829,6 @@ export default Employee
 
 // export default Employee
 
-
 // import { useState } from "react"
 // import Navbar from "./Navbar"
 // import { X, Upload } from "lucide-react"
@@ -1685,7 +1888,6 @@ export default Employee
 //   }
 
 //   const MAX_SIZE_KB = 250;
-
 
 //   const handlePhotoUpload = (e) => {
 //     setError(null);

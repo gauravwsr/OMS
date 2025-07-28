@@ -118,11 +118,6 @@ const MainContent = ({ nav }) => {
       Super_Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
         {
-          path: "/hr-registration",
-          label: "Registration",
-          icon: <FiUsers />,
-        },
-        {
           path: "/hrAttendance",
           label: "HR Attendance",
           icon: <FiClipboard />,
@@ -138,11 +133,6 @@ const MainContent = ({ nav }) => {
       ],
       Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
-        {
-          path: "/hr-registration",
-          label: "Registration",
-          icon: <FiUsers />,
-        },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
@@ -158,11 +148,6 @@ const MainContent = ({ nav }) => {
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
-        {
-          path: "/hr-registration",
-          label: "Registration",
-          icon: <FiUsers />,
-        },
         // { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
@@ -779,7 +764,8 @@ const MainContent = ({ nav }) => {
             element={
               user?.role === "Super_Admin" ? (
                 <AdminDashboard />
-              ) : user?.role === "Admin" && user?.subRole === "Project_Manager" ? (
+              ) : user?.role === "Admin" &&
+                user?.subRole === "Project_Manager" ? (
                 <ProjectManagerDashboard />
               ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
                 <TeamLeadDashboard />
@@ -796,21 +782,22 @@ const MainContent = ({ nav }) => {
           <Route path="/Attendance" element={<Attendance />} />
           <Route path="/EmplyeAtendnc" element={<EmployeeAttendance />} />
           <Route path="/Meeting" element={<Meeting />} />
-          <Route 
-            path="/ProjectList" 
+          <Route
+            path="/ProjectList"
             element={
-              user?.role === "Employee" && user?.subRole === "Project Manager" ? (
+              user?.role === "Employee" &&
+              user?.subRole === "Project Manager" ? (
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
               ) : (
                 <ProjectList />
               )
-            } 
+            }
           />
-          <Route 
-            path="/team-lead-dashboard" 
-            element={<TeamLeadDashboard nav={nav} />} 
+          <Route
+            path="/team-lead-dashboard"
+            element={<TeamLeadDashboard nav={nav} />}
           />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
