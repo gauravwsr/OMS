@@ -3,7 +3,8 @@
   background: #f9fafb;
   min-height: 100vh;
   padding-bottom: 40px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 }
 
 .todo-container {
@@ -33,7 +34,7 @@
 }
 
 .todo-card {
-  background-image: url('../../../public/Images/hii.png');
+  background-image: url("../../../public/Images/hii.png");
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -86,6 +87,91 @@
   outline: none;
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* Email input wrapper styling */
+.todo-email-input-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 200px;
+  position: relative;
+}
+
+.todo-email-input-wrapper:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.todo-email-icon {
+  color: #6b7280;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.todo-email-input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  padding: 14px 0;
+  font-size: 16px;
+  color: #6c757d;
+  outline: none;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.todo-email-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Self assignment indicator */
+.todo-self-indicator {
+  background-color: #e0e7ff;
+  color: #4338ca;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* Email dropdown styling */
+.todo-email-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.todo-email-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #374151;
+}
+
+.todo-email-option:hover {
+  background-color: #f9fafb;
+}
+
+.todo-email-option:last-child {
+  border-bottom: none;
 }
 
 .todo-add-button {
@@ -295,6 +381,14 @@
   font-size: 13px;
 }
 
+.todo-assigned-by {
+  color: #6366f1;
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
 .todo-delete-button {
   background: none;
   border: none;
@@ -320,33 +414,33 @@
   .todo-container {
     padding: 16px;
   }
-  
+
   .todo-input-wrapper {
     flex-direction: column;
   }
-  
+
   .todo-input {
     width: 100%;
   }
-  
+
   .todo-add-button {
     width: 100%;
     justify-content: center;
     height: 48px;
   }
-  
+
   /* Improve mobile task display */
   .todo-item {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .todo-item-content {
     width: 100%;
     max-width: 100%;
     margin-bottom: 8px;
   }
-  
+
   .todo-delete-button {
     align-self: flex-end;
   }
@@ -356,19 +450,19 @@
   .todo-card-header {
     padding: 16px 20px;
   }
-  
+
   .todo-input-container {
     padding: 16px;
   }
-  
+
   .todo-search-container {
     padding: 12px 16px;
   }
-  
+
   .todo-list-container {
     padding: 12px 16px 20px;
   }
-  
+
   .todo-item {
     padding: 12px;
     margin-bottom: 10px;

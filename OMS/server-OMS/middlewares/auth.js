@@ -47,4 +47,29 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+// Role-based authorization middleware
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Access denied. User not authenticated.' 
+      });
+    }
+
+    // Check if user's role or subRole matches any of the allowed roles
+    const userRoles = [req.user.role, req.user.subRole].filter(Boolean);
+    const hasAccess = roles.some(role => userRoles.includes(role));
+
+    if (!hasAccess) {
+      return res.status(403).json({ 
+        success: false,
+        message: `Access denied. Required roles: ${roles.join(', ')}. Your role: ${req.user.role}${req.user.subRole ? '/' + req.user.subRole : ''}` 
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = { protect, admin, authorize };
