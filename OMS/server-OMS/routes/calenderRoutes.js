@@ -132,10 +132,11 @@ router.post('/BatchData', async (req, res) => {
   let currentUser = null;
   const authHeader = req.headers.authorization;
   
-  console.log('BatchData called:', {
+  console.log('🔥 BatchData called:', {
     action,
     authHeader: authHeader ? 'Present' : 'Missing',
-    hasAdded: !!(added && added.length > 0)
+    hasAdded: !!(added && added.length > 0),
+    userAgent: req.headers['user-agent']?.substring(0, 50) || 'Unknown'
   });
   
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -143,16 +144,17 @@ router.post('/BatchData', async (req, res) => {
       const token = authHeader.substring(7);
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
       currentUser = await User.findById(decoded.id);
-      console.log('User authenticated:', {
+      console.log('🔥 User authenticated:', {
         name: currentUser?.name || 'Unknown',
         role: currentUser?.role,
-        subRole: currentUser?.subRole
+        subRole: currentUser?.subRole,
+        userId: currentUser?.userId
       });
     } catch (error) {
-      console.log('Token verification failed, proceeding without user info:', error.message);
+      console.log('🔥 Token verification failed:', error.message);
     }
   } else {
-    console.log('No authorization header found');
+    console.log('🔥 No authorization header found');
   }
 
   try {
@@ -205,7 +207,7 @@ router.post('/BatchData', async (req, res) => {
           const now = new Date();
           const isCurrentOrFutureEvent = eventStartTime >= now;
 
-          console.log('Notification Check:', {
+          console.log('🔥 Notification Check:', {
             user: currentUser.name,
             role: currentUser.role,
             subRole: currentUser.subRole,
@@ -222,9 +224,10 @@ router.post('/BatchData', async (req, res) => {
             const isMeeting = savedEvent.Subject.toLowerCase().includes('meeting') || 
                              savedEvent.Description?.toLowerCase().includes('meeting');
 
-            console.log('Creating notification:', {
+            console.log('🔥 Creating notification:', {
               type: isMeeting ? 'meeting' : 'event',
-              title: savedEvent.Subject
+              title: savedEvent.Subject,
+              createdBy: currentUser.name
             });
 
             if (isMeeting) {
@@ -233,11 +236,11 @@ router.post('/BatchData', async (req, res) => {
               await createEventNotification(eventData, currentUser._id, currentUser.name);
             }
             
-            console.log(`✅ Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
+            console.log(`🔥✅ Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
           } else if (!isHRUser) {
-            console.log(`❌ Event created by non-HR user ${currentUser.name}, no notification sent to Super Admin`);
+            console.log(`🔥❌ Event created by non-HR user ${currentUser.name} (Role: ${currentUser.role}, SubRole: ${currentUser.subRole}), no notification sent to Super Admin`);
           } else if (!isCurrentOrFutureEvent) {
-            console.log(`❌ Past event created by HR user ${currentUser.name}, no notification sent`);
+            console.log(`🔥❌ Past event created by HR user ${currentUser.name}, no notification sent`);
           }
         } catch (notificationError) {
           console.error('Error creating notification:', notificationError);
