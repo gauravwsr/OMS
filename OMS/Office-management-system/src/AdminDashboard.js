@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import NotificationPopup from "./Components/NotificationPopup/NotificationPopup";
+import { useAuth } from "./Components/AuthProvider/AuthContext";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
+  const { user, notifications, fetchNotifications } = useAuth();
+  
   // TopDeals states
   const [topDeals, setTopDeals] = useState([]);
   const [dealsStats, setDealsStats] = useState({
@@ -40,6 +44,11 @@ const AdminDashboard = () => {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [tasksError, setTasksError] = useState(null);
 
+  // Upcoming Events states
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState(null);
+
   const API_BASE_URL = "https://crm-brown-gamma.vercel.app/api";
 
   useEffect(() => {
@@ -50,7 +59,45 @@ const AdminDashboard = () => {
     fetchFinancialData();
     fetchMeetings();
     fetchTasks();
+    fetchUpcomingEvents();
+
+    // Set up auto-refresh for upcoming events every 5 minutes
+    const eventsInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
+
+    return () => {
+      clearInterval(eventsInterval);
+    };
   }, []);
+
+  // Fetch notifications when component mounts and user is available
+  useEffect(() => {
+    if (user && user.role === 'Super_Admin') {
+      // Clean up test notifications on Super Admin login
+      cleanupTestNotifications();
+    }
+  }, [user]);
+
+  // Clean up test notifications
+  const cleanupTestNotifications = async () => {
+    try {
+      await axios.delete(
+        "http://localhost:5000/api/notifications/cleanup-test",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      // Fetch fresh notifications after cleanup
+      setTimeout(() => {
+        if (fetchNotifications) {
+          fetchNotifications();
+        }
+      }, 500);
+    } catch (error) {
+      console.error("Error cleaning up test notifications:", error);
+    }
+  };
 
   useEffect(() => {
     // Refetch financial data when selected year changes
@@ -347,19 +394,103 @@ const AdminDashboard = () => {
     }
   };
 
+  // Upcoming Events functions
+  const fetchUpcomingEvents = async () => {
+    setEventsLoading(true);
+    console.log('Fetching upcoming events...');
+    try {
+      const response = await axios.post('http://localhost:5000/GetData');
+      console.log('Events API response:', response.data);
+      const allEvents = response.data || [];
+      console.log('All events fetched:', allEvents);
+      
+      // Filter upcoming events (events that haven't ended yet)
+      const now = new Date();
+      console.log('Current date and time:', now);
+      
+      const upcoming = allEvents
+        .filter(event => {
+          const eventEnd = new Date(event.EndTime);
+          const eventStart = new Date(event.StartTime);
+          console.log('Event:', event.Subject);
+          console.log('Event start time:', eventStart);
+          console.log('Event end time:', eventEnd);
+          console.log('Is event still active or upcoming?', eventEnd >= now);
+          return eventEnd >= now; // Include events that haven't ended yet
+        })
+        .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime)) // Sort by start time
+        .slice(0, 5); // Show only next 5 events
+      
+      console.log('Filtered upcoming events:', upcoming);
+      setUpcomingEvents(upcoming);
+      setEventsError(null);
+    } catch (error) {
+      console.error("Error fetching upcoming events:", error);
+      setEventsError(error.message);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  // Helper function to format date for events
+  const formatEventDate = (startTime, endTime) => {
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Check if event is currently ongoing
+    if (startDate <= now && endDate >= now) {
+      return `🔴 Ongoing - Ends ${endDate.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      })}`;
+    }
+    
+    // Check if event starts today
+    if (startDate.toDateString() === today.toDateString()) {
+      return `Today, ${startDate.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      })}`;
+    }
+    
+    // Check if event starts tomorrow
+    if (startDate.toDateString() === tomorrow.toDateString()) {
+      return `Tomorrow, ${startDate.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      })}`;
+    }
+    
+    // Other dates
+    return startDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   // Check if there are actual tasks with values greater than 0
   const hasTaskData = taskData.some((item) => item.value > 0);
   const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]; // Colors for different statuses
 
   return (
-    <div className="dashboard-container">
-      {/* FIRST ROW: Meeting Schedule and Financial Performance Summary */}
-      <div className="grid-row">
-        {/* MeetingNotifications Section */}
-        {/* <div className="meeting-div"> */}
-          {/* Meeting notifications content here */}
-        {/* </div> */}
-
+    <>
+      <NotificationPopup />
+      
+      <div className="dashboard-container">
+      {/* FIRST ROW: Financial Performance Summary - Full Width */}
+      <div className="grid-row financial-row">
         {/* TotalRevenue Section */}
         <div className="finance-container">
           <h2 className="finance-title">Financial Performance Summary</h2>
@@ -598,6 +729,57 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* BOTTOM ROW: Upcoming Events - With Extra Spacing */}
+      <div className="grid-row upcoming-events-row">
+        {/* Upcoming Events Section */}
+        <div className="upcoming-events-container">
+          <h2 className="section-title">Upcoming Events</h2>
+          
+          {eventsLoading ? (
+            <p className="loading-text">Loading upcoming events...</p>
+          ) : eventsError ? (
+            <p className="error-text">Error loading events: {eventsError}</p>
+          ) : upcomingEvents.length === 0 ? (
+            <div className="no-events">
+              <h4>No Upcoming Events</h4>
+                      <p>No events scheduled for today</p>
+                      <span className="timeline-time">
+                        {new Date().toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </span>
+            </div>
+          ) : (
+            <div className="events-list">
+              {upcomingEvents.map((event) => (
+                <div key={event._id} className="event-item">
+                  <div className="event-details">
+                    <h4 className="event-title">{event.Subject}</h4>
+                    <p className="event-time">{formatEventDate(event.StartTime, event.EndTime)}</p>
+                    {event.Description && (
+                      <p className="event-description">{event.Description}</p>
+                    )}
+                    {event.Location && (
+                      <p className="event-location">📍 {event.Location}</p>
+                    )}
+                    {event.Users && event.Users.length > 0 && (
+                      <div className="event-attendees">
+                        <span className="attendees-label">Attendees: </span>
+                        <span className="attendees-list">{event.Users.join(', ')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Expenses Chart Modal */}
       {showExpensesChart && (
         <div className="modal">
@@ -622,6 +804,7 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
