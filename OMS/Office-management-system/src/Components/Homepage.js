@@ -224,19 +224,7 @@ const NewDashboard = () => {
   return (
     <>
       {/* Debug user info */}
-      <div style={{
-        position: 'fixed',
-        top: '10px',
-        left: '10px',
-        zIndex: 9999,
-        background: '#28a745',
-        color: 'white',
-        padding: '8px 12px',
-        borderRadius: '5px',
-        fontSize: '11px'
-      }}>
-        User: {user?.name || 'Loading...'} | Role: {user?.role || 'N/A'}
-      </div>
+      
 
       {/* Show NotificationPopup only for Super Admin */}
       {user?.role === 'Super_Admin' && <NotificationPopup />}
