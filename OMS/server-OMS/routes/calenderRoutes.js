@@ -132,12 +132,22 @@ router.post('/BatchData', async (req, res) => {
   let currentUser = null;
   const authHeader = req.headers.authorization;
   
+  console.log('BatchData called:', {
+    action,
+    authHeader: authHeader ? 'Present' : 'Missing',
+    hasAdded: !!(added && added.length > 0)
+  });
+  
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const token = authHeader.substring(7);
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
       currentUser = await User.findById(decoded.id);
-      console.log('User authenticated:', currentUser?.name || 'Unknown');
+      console.log('User authenticated:', {
+        name: currentUser?.name || 'Unknown',
+        role: currentUser?.role,
+        subRole: currentUser?.subRole
+      });
     } catch (error) {
       console.log('Token verification failed, proceeding without user info:', error.message);
     }
@@ -195,14 +205,15 @@ router.post('/BatchData', async (req, res) => {
           const now = new Date();
           const isCurrentOrFutureEvent = eventStartTime >= now;
 
-          console.log('Calendar Event Creation:', {
+          console.log('Notification Check:', {
             user: currentUser.name,
             role: currentUser.role,
             subRole: currentUser.subRole,
             isHRUser: isHRUser,
             eventTitle: savedEvent.Subject,
             eventStartTime: eventStartTime,
-            isCurrentOrFuture: isCurrentOrFutureEvent
+            isCurrentOrFuture: isCurrentOrFutureEvent,
+            willCreateNotification: isHRUser && isCurrentOrFutureEvent
           });
 
           // Only create notification if HR user is creating a current/future event
@@ -211,17 +222,22 @@ router.post('/BatchData', async (req, res) => {
             const isMeeting = savedEvent.Subject.toLowerCase().includes('meeting') || 
                              savedEvent.Description?.toLowerCase().includes('meeting');
 
+            console.log('Creating notification:', {
+              type: isMeeting ? 'meeting' : 'event',
+              title: savedEvent.Subject
+            });
+
             if (isMeeting) {
               await createMeetingNotification(eventData, currentUser._id, currentUser.name);
             } else {
               await createEventNotification(eventData, currentUser._id, currentUser.name);
             }
             
-            console.log(`Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
+            console.log(`✅ Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
           } else if (!isHRUser) {
-            console.log(`Event created by non-HR user ${currentUser.name}, no notification sent to Super Admin`);
+            console.log(`❌ Event created by non-HR user ${currentUser.name}, no notification sent to Super Admin`);
           } else if (!isCurrentOrFutureEvent) {
-            console.log(`Past event created by HR user ${currentUser.name}, no notification sent`);
+            console.log(`❌ Past event created by HR user ${currentUser.name}, no notification sent`);
           }
         } catch (notificationError) {
           console.error('Error creating notification:', notificationError);

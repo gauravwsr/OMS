@@ -35,12 +35,14 @@ router.delete("/cleanup-test", protect, async (req, res) => {
   try {
     const Notification = require("../models/notificationModel");
     
-    // Remove notifications with "Test" in the title
+    // Remove notifications with "Test" in the title or message, or created by Nayan Nikhare
     const result = await Notification.deleteMany({
       $or: [
         { title: { $regex: /test/i } },
         { message: { $regex: /test/i } },
-        { message: { $regex: /verify notification system/i } }
+        { message: { $regex: /verify notification system/i } },
+        { createdByName: "Nayan Nikhare" },
+        { createdByName: { $regex: /test/i } }
       ]
     });
     

@@ -74,6 +74,12 @@ const AdminDashboard = () => {
     if (user && user.role === 'Super_Admin') {
       // Clean up test notifications on Super Admin login
       cleanupTestNotifications();
+      // Then fetch fresh notifications
+      setTimeout(() => {
+        if (fetchNotifications) {
+          fetchNotifications();
+        }
+      }, 1000);
     }
   }, [user]);
 
