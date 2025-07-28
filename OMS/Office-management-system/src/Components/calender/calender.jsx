@@ -29,8 +29,8 @@ const Calender = () => {
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {
     const token = localStorage.getItem("token");
-    console.log('Creating DataManager - Token available:', !!token);
-    console.log('Is Super Admin:', isSuperAdmin);
+    console.log('Calendar DataManager - Token available:', !!token);
+    console.log('Calendar DataManager - Is Super Admin:', isSuperAdmin);
     
     if (isSuperAdmin) {
       return new DataManager({
@@ -50,13 +50,20 @@ const Calender = () => {
         "Content-Type": "application/json"
       },
       beforeSend: (dm, request, settings) => {
-        console.log('beforeSend called');
+        console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
         const currentToken = localStorage.getItem("token");
         if (currentToken) {
-          console.log('Setting authorization header');
+          console.log('Calendar beforeSend - Setting authorization header');
           request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
+          request.httpRequest.setRequestHeader("Content-Type", "application/json");
         } else {
-          console.log('No token found in beforeSend');
+          console.log('Calendar beforeSend - No token found');
+        }
+      },
+      actionComplete: (e) => {
+        console.log('Calendar Action Complete:', e);
+        if (e.action === 'insert' || e.action === 'batch') {
+          console.log('Calendar - Event created, notifications should be triggered');
         }
       }
     });

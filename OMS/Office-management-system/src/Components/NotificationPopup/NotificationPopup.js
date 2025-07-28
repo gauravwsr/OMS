@@ -16,17 +16,17 @@ const NotificationPopup = () => {
 
   // Fetch notifications on component mount and user login
   useEffect(() => {
-    if (user) {
+    if (user && user.role === 'Super_Admin') {
       fetchNotifications();
     }
   }, [user]);
 
   // Set up polling separately to avoid infinite calls
   useEffect(() => {
-    if (user) {
+    if (user && user.role === 'Super_Admin') {
       const interval = setInterval(() => {
         fetchNotifications();
-      }, 30000); // Poll every 30 seconds
+      }, 15000); // Poll every 15 seconds for more responsive updates
 
       return () => clearInterval(interval);
     }
@@ -34,7 +34,7 @@ const NotificationPopup = () => {
 
   // Show popup when new notifications arrive
   useEffect(() => {
-    if (notifications && notifications.length > 0) {
+    if (notifications && notifications.length > 0 && user?.role === 'Super_Admin') {
       const userId = user?._id || user?.id;
       
       const unreadNotifs = notifications.filter(notif => {
