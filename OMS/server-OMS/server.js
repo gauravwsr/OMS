@@ -1,5 +1,12 @@
 require("dotenv").config(); // Load environment variables
 const express = require("express");
+
+// Set default JWT secret if not in environment
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'your-secret-key-for-oms-application-2024';
+}
+
+console.log('JWT_SECRET configured:', process.env.JWT_SECRET ? 'Yes' : 'No');
 const Imap = require("node-imap");
 const { simpleParser } = require("mailparser");
 const multer = require("multer");
@@ -29,6 +36,7 @@ const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const clientProjectRoutes = require("./routes/clientProjectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 
 const app = express();
@@ -102,6 +110,9 @@ app.use("/api/client-projects", clientProjectRoutes);
 
 // Leave management routes
 app.use("/api/leave", leaveRoutes);
+
+// Notification routes
+app.use("/api/notifications", notificationRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);

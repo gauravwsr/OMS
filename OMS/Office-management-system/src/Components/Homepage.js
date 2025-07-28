@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import NotificationPopup from "./NotificationPopup/NotificationPopup";
 import "./Homepage.css"; // Make sure to use this new CSS file
 
 const NewDashboard = () => {
@@ -221,7 +222,95 @@ const NewDashboard = () => {
   }
 
   return (
-    <div className="dashboard-wrapper">
+    <>
+      {/* Debug user info */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        left: '10px',
+        zIndex: 9999,
+        background: '#28a745',
+        color: 'white',
+        padding: '8px 12px',
+        borderRadius: '5px',
+        fontSize: '11px'
+      }}>
+        User: {user?.name || 'Loading...'} | Role: {user?.role || 'N/A'}
+      </div>
+
+      {/* Show NotificationPopup only for Super Admin */}
+      {user?.role === 'Super_Admin' && <NotificationPopup />}
+      
+      {/* Test button for Super Admin to create notification */}
+      {user?.role === 'Super_Admin' && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          zIndex: 9999,
+          background: '#007bff',
+          color: 'white',
+          padding: '10px 15px',
+          borderRadius: '5px',
+          fontSize: '12px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        }}
+        onClick={async () => {
+          try {
+            const token = localStorage.getItem('token');
+            console.log('Token check:', token ? 'Present' : 'Missing');
+            
+            if (!token) {
+              alert('No token found! Please login again.');
+              return;
+            }
+
+            const response = await fetch('http://localhost:5000/api/notifications', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                title: "Test Notification for Super Admin",
+                message: "Test notification created by Nayan Nikhare to verify notification system",
+                type: 'event',
+                targetRoles: ['Super_Admin'],
+                priority: 'high',
+                eventData: {
+                  eventTitle: "HR Team Meeting",
+                  eventDate: new Date(),
+                  location: "Conference Room A"
+                }
+              })
+            });
+            
+            console.log('Response status:', response.status);
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log('✅ Test notification created successfully:', result);
+              alert('Test notification created! Popup should appear soon.');
+              // Force refresh notifications after creation
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              const error = await response.text();
+              console.error('❌ Failed to create notification:', error);
+              alert('Failed to create notification: ' + error);
+            }
+          } catch (error) {
+            console.error('❌ Error creating notification:', error);
+            alert('Error: ' + error.message);
+          }
+        }}>
+          Create Test Notification
+        </div>
+      )}
+      
+      <div className="dashboard-wrapper">
       <div className="dashboard-container-new">
         <div className="dashboard-main">
           <header className="dashboard-header">
@@ -444,6 +533,7 @@ const NewDashboard = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
