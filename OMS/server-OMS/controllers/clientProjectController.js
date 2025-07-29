@@ -71,6 +71,28 @@ const getProjectsForTeamLead = async (req, res) => {
   }
 };
 
+// Get employees by sub-role
+const getEmployeesBySubRole = async (req, res) => {
+  try {
+    const { subRole } = req.params;
+    const employees = await User.find({
+      role: 'Employee',
+      subRole: subRole
+    }).select('name email subRole department phoneNumber');
+    res.status(200).json({
+      success: true,
+      count: employees.length,
+      data: employees
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching employees',
+      error: error.message
+    });
+  }
+};
+
 // @desc    Get single client project
 // @route   GET /api/client-projects/:id
 // @access  Private
@@ -471,6 +493,21 @@ const importRemoteProjects = async (req, res) => {
   }
 };
 
+const assignEmployeesToProject = async (req, res) => {
+  try {
+    const { employees } = req.body; // [{ employeeId, name, role, subRole }]
+    const project = await ClientProject.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+    project.assignedEmployees = employees;
+    await project.save();
+    res.json({ success: true, data: project });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getAllClientProjects,
   getProjectsForTeamLead,
@@ -478,8 +515,10 @@ module.exports = {
   createClientProject,
   assignTeamLeadToProject,
   updateClientProject,
+  getEmployeesBySubRole,
   deleteClientProject,
   addProjectNote,
   getTeamLeads,
-  importRemoteProjects
+  importRemoteProjects,
+  assignEmployeesToProject
 };

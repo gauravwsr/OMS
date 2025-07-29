@@ -42,6 +42,9 @@ const ProjectManagerDashboard = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedTeamLead, setSelectedTeamLead] = useState('');
+  const [selectedSubRole, setSelectedSubRole] = useState('');
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployee, setSelectedEmployee] = useState('');
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     totalProjects: 0,
@@ -49,13 +52,14 @@ const ProjectManagerDashboard = () => {
     completedProjects: 0,
     overdueProjects: 0
   });
+  const [assignedEmployees, setAssignedEmployees] = useState([]);
 
   // Fetch projects from API
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        
+
         // First, import/sync remote projects to local database
         const token = localStorage.getItem('token');
         try {
@@ -109,7 +113,7 @@ const ProjectManagerDashboard = () => {
       }
     };
 
-   const fetchTeamLeads = async () => {
+    const fetchTeamLeads = async () => {
       try {
         const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
         const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
@@ -430,115 +434,116 @@ const ProjectManagerDashboard = () => {
   };
 
   // Handle team lead assignment
-  const handleAssignTeamLead = (project) => {
-    setSelectedProject(project);
-    setSelectedTeamLead(project.teamLeadId || '');
-    setShowAssignModal(true);
-  };
+const handleAssignTeamLead = (project) => {
+  setSelectedProject(project);
+  setSelectedTeamLead(project.teamLeadId || '');
+  setAssignedEmployees(project.assignedEmployees || []); // <-- Add this line
+  setShowAssignModal(true);
+};
 
 
-//   const handleSaveAssignment = async () => {
-//   if (!selectedTeamLead || !selectedProject) return;
+  //   const handleSaveAssignment = async () => {
+  //   if (!selectedTeamLead || !selectedProject) return;
 
-//   console.log('Assigning team lead to project:', selectedProject);
+  //   console.log('Assigning team lead to project:', selectedProject);
 
-//   try {
-//     // Find the selected team lead details
-//     const assignedLead = teamLeads.find(
-//       lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
-//     );
+  //   try {
+  //     // Find the selected team lead details
+  //     const assignedLead = teamLeads.find(
+  //       lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+  //     );
 
-//     // Get JWT token from localStorage (or sessionStorage)
-//     const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+  //     // Get JWT token from localStorage (or sessionStorage)
+  //     const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
 
-//     // Make API call to assign the team lead using the correct endpoint
-//     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
-//       method: 'PUT',
-//       headers: {
-//         'Content-Type': 'application/json',
-//         'Authorization': `Bearer ${token}`
-//       },
-//       body: JSON.stringify({
-//         teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-//         teamLeadName: assignedLead?.name || ''
-//       })
-//     });
+  //     // Make API call to assign the team lead using the correct endpoint
+  //     const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+  //       method: 'PUT',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${token}`
+  //       },
+  //       body: JSON.stringify({
+  //         teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+  //         teamLeadName: assignedLead?.name || ''
+  //       })
+  //     });
 
-//     if (response.ok) {
-//       // Update local state with the assignment
-//       const updatedProjects = projects.map(project => {
-//         if (project._id === selectedProject._id) {
-//           return {
-//             ...project,
-//             teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-//             assignedTeamLead: assignedLead?.name || '',
-//             leadName: assignedLead?.name || ''
-//           };
-//         }
-//         return project;
-//       });
+  //     if (response.ok) {
+  //       // Update local state with the assignment
+  //       const updatedProjects = projects.map(project => {
+  //         if (project._id === selectedProject._id) {
+  //           return {
+  //             ...project,
+  //             teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+  //             assignedTeamLead: assignedLead?.name || '',
+  //             leadName: assignedLead?.name || ''
+  //           };
+  //         }
+  //         return project;
+  //       });
 
-//       setProjects(updatedProjects);
-//       setFilteredProjects(updatedProjects);
-//       setShowAssignModal(false);
-//       setSelectedProject(null);
-//       setSelectedTeamLead('');
-//       alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
-//     } else {
-//       throw new Error('Failed to save assignment');
-//     }
-//   } catch (error) {
-//     console.error('Error saving team lead assignment:', error);
-//     alert('Failed to assign team lead. Please try again.');
-//   }
-// };
+  //       setProjects(updatedProjects);
+  //       setFilteredProjects(updatedProjects);
+  //       setShowAssignModal(false);
+  //       setSelectedProject(null);
+  //       setSelectedTeamLead('');
+  //       alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+  //     } else {
+  //       throw new Error('Failed to save assignment');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving team lead assignment:', error);
+  //     alert('Failed to assign team lead. Please try again.');
+  //   }
+  // };
 
-const handleSaveAssignment = async () => {
-  if (!selectedTeamLead || !selectedProject) return;
+  const handleSaveAssignment = async () => {
+    if (!selectedTeamLead || !selectedProject) return;
 
-  try {
-    const assignedLead = teamLeads.find(
-      lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
-    );
-    const token = localStorage.getItem('token');
+    try {
+      const assignedLead = teamLeads.find(
+        lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+      );
+      const token = localStorage.getItem('token');
 
-    const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
-        teamLeadName: assignedLead?.name || ''
-      })
-    });
-
-    if (response.ok) {
-      // Fetch updated projects from backend to ensure persistence
-      const updatedProjectsRes = await fetch('http://localhost:5000/api/client-projects', {
+      const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+          teamLeadName: assignedLead?.name || ''
+        })
       });
-      const updatedData = await updatedProjectsRes.json();
-      const projectsData = Array.isArray(updatedData) ? updatedData : updatedData.data || updatedData.projects || [];
-      setProjects(projectsData);
-      setFilteredProjects(projectsData);
 
-      setShowAssignModal(false);
-      setSelectedProject(null);
-      setSelectedTeamLead('');
-      alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
-    } else {
-      throw new Error('Failed to save assignment');
+      if (response.ok) {
+        // Fetch updated projects from backend to ensure persistence
+        const updatedProjectsRes = await fetch('http://localhost:5000/api/client-projects', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const updatedData = await updatedProjectsRes.json();
+        const projectsData = Array.isArray(updatedData) ? updatedData : updatedData.data || updatedData.projects || [];
+        setProjects(projectsData);
+        setFilteredProjects(projectsData);
+
+        setShowAssignModal(false);
+        setSelectedProject(null);
+        setSelectedTeamLead('');
+        alert(`Successfully assigned ${assignedLead?.name} as team lead for project ${selectedProject.projectId}`);
+      } else {
+        throw new Error('Failed to save assignment');
+      }
+    } catch (error) {
+      console.error('Error saving team lead assignment:', error);
+      alert('Failed to assign team lead. Please try again.');
     }
-  } catch (error) {
-    console.error('Error saving team lead assignment:', error);
-    alert('Failed to assign team lead. Please try again.');
-  }
-};
+  };
   const handleCloseModal = () => {
     setShowAssignModal(false);
     setSelectedProject(null);
@@ -576,6 +581,73 @@ const handleSaveAssignment = async () => {
       'low': '#10b981'
     };
     return colors[level] || '#6b7280';
+  };
+
+  // Fetch employees by sub-role
+  const fetchEmployeesBySubRole = async (subRole) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/client-projects/employees/sub-role/${subRole}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      setEmployees(data.data || []);
+    } catch (error) {
+      setEmployees([]);
+    }
+  };
+
+  const handleAssignEmployee = async () => {
+    if (!selectedEmployee || !selectedProject) return;
+    const token = localStorage.getItem('token');
+    await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-employee`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        employeeId: selectedEmployee
+      })
+    });
+    // Refresh projects after assignment
+  };
+
+  const handleAddEmployee = () => {
+    if (!selectedEmployee) return;
+    const emp = employees.find(e => e._id === selectedEmployee);
+    if (!emp) return;
+    setAssignedEmployees(prev => [
+      ...prev,
+      {
+        employeeId: emp._id,
+        name: emp.name,
+        role: emp.role,
+        subRole: emp.subRole
+      }
+    ]);
+    setSelectedEmployee('');
+  };
+
+  const handleRemoveEmployee = (employeeId) => {
+    setAssignedEmployees(prev => prev.filter(e => e.employeeId !== employeeId));
+  };
+
+  const handleSaveEmployees = async () => {
+    if (!selectedProject) return;
+    const token = localStorage.getItem('token');
+    await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-employees`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ employees: assignedEmployees })
+    });
+    // Optionally refresh projects here
   };
 
   if (loading) {
@@ -926,15 +998,10 @@ const handleSaveAssignment = async () => {
                 <select
                   id="teamLead"
                   value={selectedTeamLead}
-                  onChange={(e) => setSelectedTeamLead(e.target.value)}
+                  onChange={e => setSelectedTeamLead(e.target.value)}
                   className="team-lead-select"
                 >
                   <option value="">Select a team lead...</option>
-                  {/* {teamLeads.map(lead => (
-                    <option key={lead.id} value={lead.id}>
-                      {lead.name} - {lead.specialization} ({lead.availability})
-                    </option>
-                  ))} */}
                   {teamLeads.map(lead => (
                     <option key={lead._id || lead.id} value={lead._id || lead.id}>
                       {lead.name} - {lead.specialization} ({lead.availability})
@@ -942,34 +1009,44 @@ const handleSaveAssignment = async () => {
                   ))}
                 </select>
               </div>
-              {selectedTeamLead && (
-                <div className="selected-lead-info">
-                  {(() => {
-                    const lead = teamLeads.find(l => l.id === parseInt(selectedTeamLead));
-                    return lead ? (
-                      <div className="lead-details">
-                        <h5>Team Lead Details:</h5>
-                        <p><strong>Name:</strong> {lead.name}</p>
-                        <p><strong>Email:</strong> {lead.email}</p>
-                        <p><strong>Specialization:</strong> {lead.specialization}</p>
-                        <p><strong>Experience:</strong> {lead.experience}</p>
-                        <p><strong>Current Projects:</strong> {lead.currentProjects}</p>
-                        <p><strong>Status:</strong>
-                          <span className={`availability-badge ${lead.availability}`}>
-                            {lead.availability}
-                          </span>
-                        </p>
-                        <div className="skills">
-                          <strong>Skills:</strong>
-                          <div className="skill-tags">
-                            {lead.skills.map((skill, index) => (
-                              <span key={index} className="skill-tag">{skill}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null;
-                  })()}
+              <div className="form-group">
+                <label htmlFor="subRole">Select Sub-Role:</label>
+                <select
+                  id="subRole"
+                  value={selectedSubRole}
+                  onChange={e => {
+                    setSelectedSubRole(e.target.value);
+                    fetchEmployeesBySubRole(e.target.value);
+                    setSelectedEmployee('');
+                  }}
+                  className="sub-role-select"
+                >
+                  <option value="">Select sub-role...</option>
+                  <option value="Developer">Developer</option>
+                  <option value="Designer">Designer</option>
+                  <option value="QA">QA</option>
+                  {/* Add more sub-roles as needed */}
+                </select>
+              </div>
+              {selectedSubRole && (
+                <div className="form-group">
+                  <label htmlFor="employee">Select Employee:</label>
+                  <select
+                    id="employee"
+                    value={selectedEmployee}
+                    onChange={e => setSelectedEmployee(e.target.value)}
+                    className="employee-select"
+                  >
+                    <option value="">Select employee...</option>
+                    {employees.map(emp => (
+                      <option key={emp._id} value={emp._id}>
+                        {emp.name} - {emp.email}
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={handleAddEmployee} style={{ marginLeft: 8 }}>
+                    Add Employee
+                  </button>
                 </div>
               )}
             </div>
@@ -1230,6 +1307,19 @@ const handleSaveAssignment = async () => {
                     </div>
                   )}
                 </div>
+
+                {selectedProject.assignedEmployees && selectedProject.assignedEmployees.length > 0 && (
+                  <div className="detail-section">
+                    <h5>Assigned Employees</h5>
+                    <ul>
+                      {selectedProject.assignedEmployees.map(emp => (
+                        <li key={emp.employeeId}>
+                          {emp.name} ({emp.role} - {emp.subRole})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>
