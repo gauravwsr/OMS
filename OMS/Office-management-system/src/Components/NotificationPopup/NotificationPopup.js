@@ -6,12 +6,12 @@ const NotificationPopup = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentNotification, setCurrentNotification] = useState(null);
   const [notificationQueue, setNotificationQueue] = useState([]);
-  const { 
-    notifications, 
-    unreadNotifications, 
-    fetchNotifications, 
+  const {
+    notifications,
+    unreadNotifications,
+    fetchNotifications,
     markNotificationAsRead,
-    user 
+    user
   } = useAuth();
 
   // Fetch notifications on component mount and user login
@@ -46,7 +46,7 @@ const NotificationPopup = () => {
     
     if (notifications && notifications.length > 0 && user?.role === 'Super_Admin') {
       const userId = user?._id || user?.id;
-      
+
       const unreadNotifs = notifications.filter(notif => {
         const isRead = notif.readBy.some(reader => reader.userId === userId);
         return !isRead;
@@ -166,7 +166,6 @@ const NotificationPopup = () => {
 
   console.log('🔔 NotificationPopup rendering:', currentNotification.title);
 
-
   return (
     <div className={`notification-overlay ${isVisible ? 'visible' : ''}`}>
       <div className={getNotificationStyle(currentNotification.type, currentNotification.priority)}>
@@ -180,7 +179,7 @@ const NotificationPopup = () => {
               {formatDate(currentNotification.createdAt)}
             </span>
           </div>
-          <button 
+          <button
             className="notification-close"
             onClick={handleClose}
             title="Close notification"
@@ -188,10 +187,10 @@ const NotificationPopup = () => {
             ×
           </button>
         </div>
-        
+
         <div className="notification-body">
           <p className="notification-message">{currentNotification.message}</p>
-          
+
           {currentNotification.eventData && (
             <div className="event-details">
               {currentNotification.eventData.eventDate && (
@@ -206,14 +205,14 @@ const NotificationPopup = () => {
               )}
             </div>
           )}
-          
+
           <div className="notification-creator">
             <small>Created by: {currentNotification.createdByName}</small>
           </div>
         </div>
-        
+
         <div className="notification-actions">
-          <button 
+          <button
             className="btn-mark-read"
             onClick={handleMarkAsRead}
           >

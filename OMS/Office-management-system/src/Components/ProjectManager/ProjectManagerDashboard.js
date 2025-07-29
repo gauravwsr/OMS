@@ -50,6 +50,87 @@ const ProjectManagerDashboard = () => {
     overdueProjects: 0
   });
 
+  // Fetch projects from API
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        
+        // First, import/sync remote projects to local database
+        const token = localStorage.getItem('token');
+        try {
+          await fetch('http://localhost:5000/api/client-projects/import-remote', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (importError) {
+          console.warn('Failed to import remote projects:', importError);
+        }
+
+        // Now fetch from local database
+        const response = await fetch('http://localhost:5000/api/client-projects', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched projects from local DB:', data);
+
+        // Process the data - assuming the API returns an object with data array
+        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
+
+        setProjects(projectsData);
+        setFilteredProjects(projectsData);
+
+        // Calculate dashboard statistics
+        const stats = calculateDashboardStats(projectsData);
+        setDashboardStats(stats);
+
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        // Show a user-friendly error message
+        alert('Failed to fetch projects from server. Showing mock data.');
+        // Fallback to mock data if API fails
+        const mockProjects = getMockProjects();
+        setProjects(mockProjects);
+        setFilteredProjects(mockProjects);
+        setDashboardStats(calculateDashboardStats(mockProjects));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+   const fetchTeamLeads = async () => {
+      try {
+        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        const teamLeadsData = Array.isArray(data.data) ? data.data : [];
+        setTeamLeads(teamLeadsData);
+      } catch (error) {
+        console.error('Error fetching team leads:', error);
+        setTeamLeads([]);
+      }
+    };
+    fetchProjects();
+    fetchTeamLeads();
+  }, []);
+
   // Mock data fallback
   const getMockProjects = () => {
     return [
@@ -247,87 +328,6 @@ const ProjectManagerDashboard = () => {
       }
     ];
   };
-
-  // Fetch projects from API
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        
-        // First, import/sync remote projects to local database
-        const token = localStorage.getItem('token');
-        try {
-          await fetch('http://localhost:5000/api/client-projects/import-remote', {
-           
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-        } catch (importError) {
-          console.warn('Failed to import remote projects:', importError);
-        }
-
-        // Now fetch from local database
-        const response = await fetch('http://localhost:5000/api/client-projects', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Fetched projects from local DB:', data);
-
-        // Process the data - assuming the API returns an object with data array
-        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
-
-        setProjects(projectsData);
-        setFilteredProjects(projectsData);
-
-        // Calculate dashboard statistics
-        const stats = calculateDashboardStats(projectsData);
-        setDashboardStats(stats);
-
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        // Show a user-friendly error message
-        alert('Failed to fetch projects from server. Showing mock data.');
-        // Fallback to mock data if API fails
-        const mockProjects = getMockProjects();
-        setProjects(mockProjects);
-        setFilteredProjects(mockProjects);
-        setDashboardStats(calculateDashboardStats(mockProjects));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-   const fetchTeamLeads = async () => {
-      try {
-        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
-        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await response.json();
-        const teamLeadsData = Array.isArray(data.data) ? data.data : [];
-        setTeamLeads(teamLeadsData);
-      } catch (error) {
-        console.error('Error fetching team leads:', error);
-        setTeamLeads([]);
-      }
-    };
-    fetchProjects();
-    fetchTeamLeads();
-  }, []);
 
   // Calculate dashboard statistics
   const calculateDashboardStats = (projectsData) => {
@@ -547,6 +547,8 @@ const handleSaveAssignment = async () => {
 
   // Handle project details view
   const handleViewDetails = (project) => {
+    console.log('Project data for details view:', project);
+    console.log('Team Lead History:', project.teamLeadHistory);
     setSelectedProject(project);
     setShowProjectDetails(true);
   };
@@ -800,6 +802,14 @@ const handleSaveAssignment = async () => {
                         Assign Team Lead
                       </button>
                     )}
+                    {project.assignedTeamLead && (
+                      <button
+                        className="edit-assign-btn"
+                        onClick={() => handleAssignTeamLead(project)}
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -898,7 +908,7 @@ const handleSaveAssignment = async () => {
         <div className="modal-overlay">
           <div className="modal-content" style={{ backgroundColor: 'white' }}>
             <div className="modal-header">
-              <h3>Assign Team Lead</h3>
+              <h3>{selectedProject.assignedTeamLead ? 'Edit Team Lead Assignment' : 'Assign Team Lead'}</h3>
               <button className="modal-close" onClick={handleCloseModal}>
                 <FaTimes />
               </button>
@@ -972,7 +982,7 @@ const handleSaveAssignment = async () => {
                 onClick={handleSaveAssignment}
                 disabled={!selectedTeamLead}
               >
-                <FaSave /> Assign Team Lead
+                <FaSave /> {selectedProject?.assignedTeamLead ? 'Update Team Lead' : 'Assign Team Lead'}
               </button>
             </div>
           </div>
@@ -1164,35 +1174,62 @@ const handleSaveAssignment = async () => {
                 <div className="detail-section">
                   <h5>Technologies</h5>
                   <div className="tech-tags">
-                    {selectedProject.technologies.map((tech, index) => (
+                    {selectedProject.technologies && selectedProject.technologies.map((tech, index) => (
                       <span key={index} className="tech-tag">{tech}</span>
                     ))}
                   </div>
                 </div>
 
-                {selectedProject.teamLeadHistory && selectedProject.teamLeadHistory.length > 0 && (
-                  <div className="detail-section">
-                    <h5>Team Lead History</h5>
+                {/* Debug section - remove in production */}
+                <div className="detail-section" style={{ background: '#fff3cd', padding: '10px', border: '1px solid #ffeaa7' }}>
+                  <h5>Debug Info</h5>
+                  <pre style={{ fontSize: '12px', overflow: 'auto', maxHeight: '200px' }}>
+                    {JSON.stringify({
+                      projectId: selectedProject.projectId,
+                      assignedTeamLead: selectedProject.assignedTeamLead,
+                      teamLeadHistory: selectedProject.teamLeadHistory,
+                      teamLeadHistoryLength: selectedProject.teamLeadHistory?.length
+                    }, null, 2)}
+                  </pre>
+                </div>
+
+                {/* Always show Team Lead History section, even if empty */}
+                <div className="detail-section">
+                  <h5>Team Lead History</h5>
+                  {selectedProject.teamLeadHistory && selectedProject.teamLeadHistory.length > 0 ? (
                     <table className="team-lead-history-table">
                       <thead>
                         <tr>
                           <th>Name</th>
                           <th>Assigned Date</th>
                           <th>Unassigned Date</th>
+                          <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedProject.teamLeadHistory.map((history, idx) => (
                           <tr key={idx}>
-                            <td>{history.teamLeadName}</td>
-                            <td>{history.assignedDate}</td>
-                            <td>{history.unassignedDate || '-'}</td>
+                            <td>{history.teamLeadName || 'Unknown'}</td>
+                            <td>{history.assignedDate || 'N/A'}</td>
+                            <td>{history.unassignedDate || 'Currently Assigned'}</td>
+                            <td>
+                              <span className={`status-indicator ${history.unassignedDate ? 'unassigned' : 'active'}`}>
+                                {history.unassignedDate ? 'Unassigned' : 'Active'}
+                              </span>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                )}
+                  ) : (
+                    <div className="no-history">
+                      <p>No team lead assignment history available for this project.</p>
+                      {selectedProject.assignedTeamLead && (
+                        <p>Current team lead: <strong>{selectedProject.assignedTeamLead}</strong></p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
