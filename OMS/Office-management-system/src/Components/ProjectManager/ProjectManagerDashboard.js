@@ -434,7 +434,7 @@ const ProjectManagerDashboard = () => {
   };
 
   // Handle team lead assignment
-const handleAssignTeamLead = (project) => {
+const handleAssignTeam = (project) => {
   setSelectedProject(project);
   setSelectedTeamLead(project.teamLeadId || '');
   setAssignedEmployees(project.assignedEmployees || []); // <-- Add this line
@@ -616,21 +616,40 @@ const handleAssignTeamLead = (project) => {
     // Refresh projects after assignment
   };
 
+  // const handleAddEmployee = () => {
+  //   if (!selectedEmployee) return;
+  //   const emp = employees.find(e => e._id === selectedEmployee);
+  //   if (!emp) return;
+  //   setAssignedEmployees(prev => [
+  //     ...prev,
+  //     {
+  //       employeeId: emp._id,
+  //       name: emp.name,
+  //       role: emp.role,
+  //       subRole: emp.subRole
+  //     }
+  //   ]);
+  //   setSelectedEmployee('');
+  // };
+
+
   const handleAddEmployee = () => {
-    if (!selectedEmployee) return;
-    const emp = employees.find(e => e._id === selectedEmployee);
-    if (!emp) return;
-    setAssignedEmployees(prev => [
-      ...prev,
-      {
-        employeeId: emp._id,
-        name: emp.name,
-        role: emp.role,
-        subRole: emp.subRole
-      }
-    ]);
-    setSelectedEmployee('');
-  };
+  if (!selectedEmployee) return;
+  const emp = employees.find(e => e._id === selectedEmployee);
+  if (!emp) return;
+  // Prevent duplicates
+  if (assignedEmployees.some(e => e.employeeId === emp._id)) return;
+  setAssignedEmployees(prev => [
+    ...prev,
+    {
+      employeeId: emp._id,
+      name: emp.name,
+      role: emp.role,
+      subRole: emp.subRole
+    }
+  ]);
+  setSelectedEmployee(''); // This clears the select, but the name stays in the assigned list
+};
 
   const handleRemoveEmployee = (employeeId) => {
     setAssignedEmployees(prev => prev.filter(e => e.employeeId !== employeeId));
@@ -648,6 +667,55 @@ const handleAssignTeamLead = (project) => {
       body: JSON.stringify({ employees: assignedEmployees })
     });
     // Optionally refresh projects here
+  };
+
+  const handleSaveTeam = async () => {
+    if (!selectedTeamLead || !selectedProject) return;
+    const assignedLead = teamLeads.find(
+      lead => lead._id === selectedTeamLead || lead.id === selectedTeamLead || lead.id === parseInt(selectedTeamLead)
+    );
+    const token = localStorage.getItem('token');
+
+    // Save team lead
+    await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        teamLeadId: assignedLead?._id || assignedLead?.id || selectedTeamLead,
+        teamLeadName: assignedLead?.name || ''
+      })
+    });
+
+    // Save employees
+    await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/assign-employees`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ employees: assignedEmployees })
+    });
+
+    // Refresh projects
+    const updatedProjectsRes = await fetch('http://localhost:5000/api/client-projects', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const updatedData = await updatedProjectsRes.json();
+    const projectsData = Array.isArray(updatedData) ? updatedData : updatedData.data || updatedData.projects || [];
+    setProjects(projectsData);
+    setFilteredProjects(projectsData);
+
+    setShowAssignModal(false);
+    setSelectedProject(null);
+    setSelectedTeamLead('');
+    setAssignedEmployees([]);
+    alert(`Successfully assigned team for project ${selectedProject.projectId}`);
   };
 
   if (loading) {
@@ -821,12 +889,16 @@ const handleAssignTeamLead = (project) => {
                   </button>
                   <button
                     className="action-btn"
-                    onClick={() => handleAssignTeamLead(project)}
-                    title="Assign Team Lead"
+                    onClick={() => handleAssignTeam(project)}
+                    title="Assign Team"
                   >
                     <FaUserTie />
                   </button>
-                  <button className="action-btn" title="Edit Project">
+                  <button
+                    className="action-btn"
+                    onClick={() => handleAssignTeam(project)}
+                    title="Edit Team Members"
+                  >
                     <FaEdit />
                   </button>
                 </div>
@@ -862,22 +934,22 @@ const handleAssignTeamLead = (project) => {
                     </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Assigned Team Lead:</strong>
+                    <strong>Assigned Team:</strong>
                     <span className={`team-lead-status ${project.assignedTeamLead ? 'assigned' : 'unassigned'}`}>
                       {project.assignedTeamLead || 'Not Assigned'}
                     </span>
-                    {!project.assignedTeamLead && (
+                    {!project.assignedTeam && (
                       <button
                         className="assign-quick-btn"
-                        onClick={() => handleAssignTeamLead(project)}
+                        onClick={() => handleAssignTeam(project)}
                       >
-                        Assign Team Lead
+                        Assign Team 
                       </button>
                     )}
-                    {project.assignedTeamLead && (
+                    {project.assignedTeam && (
                       <button
                         className="edit-assign-btn"
-                        onClick={() => handleAssignTeamLead(project)}
+                        onClick={() => handleAssignTeam(project)}
                       >
                         Edit
                       </button>
@@ -980,7 +1052,7 @@ const handleAssignTeamLead = (project) => {
         <div className="modal-overlay">
           <div className="modal-content" style={{ backgroundColor: 'white' }}>
             <div className="modal-header">
-              <h3>{selectedProject.assignedTeamLead ? 'Edit Team Lead Assignment' : 'Assign Team Lead'}</h3>
+              <h3>{selectedProject.assignedTeamLead ? 'Edit Team Assignment' : 'Assign Team'}</h3>
               <button className="modal-close" onClick={handleCloseModal}>
                 <FaTimes />
               </button>
@@ -1056,10 +1128,10 @@ const handleAssignTeamLead = (project) => {
               </button>
               <button
                 className="btn-save"
-                onClick={handleSaveAssignment}
+                onClick={handleSaveTeam}
                 disabled={!selectedTeamLead}
               >
-                <FaSave /> {selectedProject?.assignedTeamLead ? 'Update Team Lead' : 'Assign Team Lead'}
+                <FaSave /> {selectedProject?.assignedTeamLead ? 'Update Team' : 'Assign Team'}
               </button>
             </div>
           </div>
@@ -1147,7 +1219,7 @@ const handleAssignTeamLead = (project) => {
                     </div>
                     <div className="detail-item">
                       <span>Lead Name:</span>
-                      <span>{selectedProject.leadName || 'Not Assigned'}</span>
+                      <span>{selectedProject.clientName || 'Not Assigned'}</span>
                     </div>
                     <div className="detail-item">
                       <span>Project ID:</span>
