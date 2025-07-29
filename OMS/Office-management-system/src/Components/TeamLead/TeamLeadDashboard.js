@@ -21,6 +21,7 @@ import {
   FaUser
 } from 'react-icons/fa';
 import { useAuth } from '../AuthProvider/AuthContext';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import './TeamLeadDashboard.css';
 
 const TeamLeadDashboard = () => {
@@ -50,6 +51,8 @@ const TeamLeadDashboard = () => {
     overdueProjects: 0,
     totalAmount: 0
   });
+  const [editTask, setEditTask] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Get current user (Team Lead) info from auth context
   const currentUser = user || {
@@ -431,7 +434,17 @@ const TeamLeadDashboard = () => {
       {/* Project Details Modal */}
       {showProjectDetails && selectedProject && (
         <div className="modal-overlay" onClick={handleCloseDetails} >
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 700, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', backgroundColor: "white" }}>
+          <div className="modal-content" 
+            onClick={(e) => e.stopPropagation()} 
+            style={{ 
+              maxWidth: '90vw',           // Make modal much wider
+              width: '90vw', 
+              minHeight: 600, 
+              borderRadius: 12, 
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)', 
+              backgroundColor: "white",
+              color: "black"
+            }}>
             <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
               <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: '#3b82f6', letterSpacing: 1 }}>
                 <FaProjectDiagram style={{ marginRight: 8 }} />
@@ -479,8 +492,16 @@ const TeamLeadDashboard = () => {
               </div>
 
               {/* Info Grid */}
-              <div className="details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                {/* Left Column */}
+              <div 
+                className="details-grid" 
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '30% 70%', // 30% for left, 70% for right (Task Details)
+                  gap: 24,
+                  alignItems: 'start'
+                }}
+              >
+                {/* Left Column (Basic Info, Team Members) */}
                 <div>
                   <div className="detail-section" style={{ marginBottom: 18 }}>
                     <h5 style={{ color: '#2563eb', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
@@ -515,7 +536,7 @@ const TeamLeadDashboard = () => {
                   )}
                 </div>
 
-                {/* Right Column */}
+                {/* Right Column (Task Details, Assignment Tracker, Add Task) */}
                 <div>
                   {/* Task Details Section */}
                   {selectedProject.tasks && (
@@ -568,6 +589,53 @@ const TeamLeadDashboard = () => {
                             </li>
                           ))}
                         </ul>
+                      )}
+
+                      {/* Task Assignment Tracker */}
+                      {selectedProject.assignedEmployees && selectedProject.assignedEmployees.length > 0 && (
+                        <div style={{ marginTop: 24, marginBottom: 16, background: '#f8fafc', borderRadius: 8, padding: 12 }}>
+                          <h6 style={{ margin: 0, fontWeight: 700, color: '#3b82f6', marginBottom: 8 }}>
+                            <FaUser style={{ marginRight: 6 }} />
+                            Task Assignment Tracker
+                          </h6>
+                          <table style={{ width: '100%', fontSize: 14, background: 'white', borderRadius: 6, borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ background: '#f3f4f6' }}>
+                                <th style={{ textAlign: 'left', padding: 8, borderRadius: 6006 }}>Team Member</th>
+                                <th style={{ textAlign: 'left', padding: 8 }}>Role</th>
+                                <th style={{ textAlign: 'left', padding: 8 }}>Tasks Assigned</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {selectedProject.assignedEmployees.map(emp => {
+                                // Find tasks assigned to this employee
+                                const tasksForEmp = Array.isArray(selectedProject.tasks?.list)
+                                  ? selectedProject.tasks.list.filter(task => task.assignedTo === emp.name)
+                                  : [];
+                                return (
+                                  <tr key={emp.employeeId} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                    <td style={{ padding: 8, fontWeight: 500 }}>{emp.name}</td>
+                                    <td style={{ padding: 8, color: '#6b7280' }}>{emp.role} {emp.subRole ? `- ${emp.subRole}` : ''}</td>
+                                    <td style={{ padding: 8 }}>
+                                      {tasksForEmp.length === 0 ? (
+                                        <span style={{ color: '#ef4444' }}>No tasks</span>
+                                      ) : (
+                                        <ul style={{ margin: 0, paddingLeft: 16 }}>
+                                          {tasksForEmp.map((task, idx) => (
+                                            <li key={idx}>
+                                              <span style={{ fontWeight: 500 }}>{task.title}</span>
+                                              <span style={{ color: '#6b7280', marginLeft: 6 }}>({task.status})</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
                       )}
 
                       {/* Add Task Section */}
@@ -688,6 +756,206 @@ const TeamLeadDashboard = () => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Board: Three Columns */}
+      {selectedProject && selectedProject.tasks && Array.isArray(selectedProject.tasks.list) && (
+        <DragDropContext
+          onDragEnd={async (result) => {
+            const { source, destination, draggableId } = result;
+            if (!destination) return;
+            if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+            // Find the task being moved
+            const task = selectedProject.tasks.list.find(t => t._id === draggableId);
+            if (!task) return;
+
+            // Determine new status
+            let newStatus = destination.droppableId;
+            if (newStatus === 'Pending' || newStatus === 'In Progress' || newStatus === 'Completed') {
+              // Update status locally (optional, for instant UI)
+              task.status = newStatus;
+
+              // Update on server
+              const token = localStorage.getItem('token');
+              await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/edit-task/${task._id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...task, status: newStatus })
+              });
+              fetchAssignedProjects();
+            }
+          }}
+        >
+          <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+            {['Pending', 'In Progress', 'Completed'].map(status => (
+              <Droppable droppableId={status} key={status}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    style={{
+                      flex: 1,
+                      background: snapshot.isDraggingOver ? '#e0e7ff' : '#f9fafb',
+                      borderRadius: 8,
+                      padding: 12,
+                      minHeight: 200
+                    }}
+                  >
+                    <h6 style={{ color: status === 'Completed' ? '#059669' : status === 'In Progress' ? '#f59e0b' : '#ef4444', fontWeight: 700, marginBottom: 10 }}>
+                      {status}
+                    </h6>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {selectedProject.tasks.list
+                        .filter(task => (task.status || 'Pending') === status)
+                        .map((task, idx) => (
+                          <Draggable draggableId={task._id} index={idx} key={task._id}>
+                            {(provided, snapshot) => (
+                              <li
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                style={{
+                                  background: '#fff',
+                                  borderRadius: 6,
+                                  marginBottom: 10,
+                                  padding: 10,
+                                  boxShadow: '0 1px 4px #e5e7eb',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  ...provided.draggableProps.style
+                                }}
+                              >
+                                <div>
+                                  <strong>{task.title}</strong>
+                                  <div style={{ fontSize: 13, color: '#6b7280' }}>
+                                    {task.assignedTo} | Due: {formatDate(task.dueDate)}
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                  <button
+                                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 13 }}
+                                    onClick={() => { setSelectedTask(task); setShowTaskDetails(true); }}
+                                  >
+                                    View
+                                  </button>
+                                  <button
+                                    style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 13 }}
+                                    onClick={() => { setEditTask(task); setShowEditModal(true); }}
+                                  >
+                                    Edit
+                                  </button>
+                                </div>
+                              </li>
+                            )}
+                          </Draggable>
+                        ))}
+                      {provided.placeholder}
+                    </ul>
+                  </div>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
+      )}
+
+      {/* Edit Task Modal */}
+      {showEditModal && editTask && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 500, borderRadius: 10, background: "#fff" }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
+              <h3 style={{ margin: 0, fontWeight: 700, fontSize: 20, color: '#f59e0b' }}>
+                <FaTasks style={{ marginRight: 8 }} />
+                Edit Task
+              </h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                // Call your API to update the task here
+                const token = localStorage.getItem('token');
+                await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/edit-task/${editTask._id}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify(editTask)
+                });
+                setShowEditModal(false);
+                setEditTask(null);
+                fetchAssignedProjects();
+              }}
+              style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}
+            >
+              <input
+                type="text"
+                value={editTask.title}
+                onChange={e => setEditTask({ ...editTask, title: e.target.value })}
+                required
+                placeholder="Task Title"
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+              />
+              <textarea
+                value={editTask.description}
+                onChange={e => setEditTask({ ...editTask, description: e.target.value })}
+                placeholder="Description"
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+              />
+              <select
+                value={editTask.assignedTo}
+                onChange={e => setEditTask({ ...editTask, assignedTo: e.target.value })}
+                required
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+              >
+                <option value="">Assign to team member...</option>
+                {selectedProject.assignedEmployees && selectedProject.assignedEmployees.map(emp => (
+                  <option key={emp.employeeId} value={emp.name}>
+                    {emp.name} ({emp.role} - {emp.subRole})
+                  </option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={editTask.dueDate}
+                onChange={e => setEditTask({ ...editTask, dueDate: e.target.value })}
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+              />
+              <select
+                value={editTask.status}
+                onChange={e => setEditTask({ ...editTask, status: e.target.value })}
+                required
+                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+              >
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+              <button
+                type="submit"
+                style={{
+                  background: '#059669',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 4,
+                  padding: '8px 18px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Save Changes
+              </button>
+            </form>
           </div>
         </div>
       )}
