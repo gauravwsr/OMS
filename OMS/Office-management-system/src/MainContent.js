@@ -18,6 +18,7 @@ import {
   FiMenu,
   FiX,
   FiFileMinus,
+  FiBarChart,
 } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./Components/AuthProvider/AuthContext.js";
@@ -49,6 +50,7 @@ import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
+import AnalyticManagement from "./Components/AnalyticManagement/AnalyticManagement.js";
 
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
@@ -152,6 +154,11 @@ const MainContent = ({ nav }) => {
           label: "Leave Management",
           icon: <FiClipboard />,
         },
+        {
+          path: "/analytic-management",
+          label: "Analytic Management",
+          icon: <FiBarChart />,
+        }
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -836,6 +843,10 @@ const MainContent = ({ nav }) => {
           <Route
             path="/hr-leave-management"
             element={<HRLeaveManagement />}
+          />
+          <Route
+            path="/analytic-management"
+            element={<AnalyticManagement />}
           />
         </Routes>
       </div>
