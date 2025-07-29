@@ -280,32 +280,6 @@ const AnalyticsManagement = () => {
     }
   };
 
-  // Test analytics API directly
-  const testAnalyticsAPI = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token for API test');
-      return;
-    }
-
-    try {
-      console.log('Testing analytics API directly...');
-      const response = await axios.get('http://localhost:5000/api/analytics/leave-analytics', {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        params: {
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate
-        }
-      });
-      console.log('Direct API test successful:', response.data);
-    } catch (error) {
-      console.error('Direct API test failed:', error.response?.data || error.message);
-    }
-  };
-
   const fetchLeaveData = async (config) => {
     try {
       console.log('Fetching leave data with config:', config);
@@ -320,62 +294,6 @@ const AnalyticsManagement = () => {
       console.error('Error response:', error.response?.data);
       console.error('Error code:', error.code);
       console.error('Error message:', error.message);
-      
-      if (error.response?.status === 401) {
-        setError('Authentication failed. Please login again.');
-      } else {
-        // Always show mock data if API fails for any reason
-        console.log('API failed, using mock data');
-        setError('Backend server connection failed. Using demo data.');
-        
-        // Use mock data when server is not available
-        const mockLeaveData = [
-          {
-            _id: '1',
-            employeeName: 'John Doe',
-            employeeEmail: 'john.doe@company.com',
-            department: 'Development',
-            leaveType: 'Annual',
-            startDate: '2025-01-15',
-            endDate: '2025-01-17',
-            totalDays: 3,
-            reason: 'Family vacation',
-            status: 'Approved',
-            createdAt: '2025-01-10',
-            approvedBy: 'Manager'
-          },
-          {
-            _id: '2',
-            employeeName: 'Jane Smith',
-            employeeEmail: 'jane.smith@company.com',
-            department: 'Marketing',
-            leaveType: 'Sick',
-            startDate: '2025-01-20',
-            endDate: '2025-01-22',
-            totalDays: 3,
-            reason: 'Medical treatment',
-            status: 'Pending',
-            createdAt: '2025-01-18',
-            approvedBy: null
-          },
-          {
-            _id: '3',
-            employeeName: 'Mike Johnson',
-            employeeEmail: 'mike.johnson@company.com',
-            department: 'Sales',
-            leaveType: 'Emergency',
-            startDate: '2025-01-25',
-            endDate: '2025-01-25',
-            totalDays: 1,
-            reason: 'Emergency at home',
-            status: 'Approved',
-            createdAt: '2025-01-24',
-            approvedBy: 'HR Manager'
-          }
-        ];
-        console.log('Setting mock leave data:', mockLeaveData);
-        setLeaveData(mockLeaveData);
-      }
     }
   };
 
@@ -385,42 +303,6 @@ const AnalyticsManagement = () => {
       setAttendanceData(response.data || []);
     } catch (error) {
       console.error('Error fetching attendance data:', error);
-      
-      if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
-        // Mock attendance data
-        const mockAttendanceData = [
-          {
-            employeeName: 'John Doe',
-            email: 'john.doe@company.com',
-            department: 'Development',
-            totalDays: 22,
-            presentDays: 20,
-            absentDays: 2,
-            attendancePercentage: 91
-          },
-          {
-            employeeName: 'Jane Smith',
-            email: 'jane.smith@company.com',
-            department: 'Marketing',
-            totalDays: 22,
-            presentDays: 18,
-            absentDays: 4,
-            attendancePercentage: 82
-          },
-          {
-            employeeName: 'Mike Johnson',
-            email: 'mike.johnson@company.com',
-            department: 'Sales',
-            totalDays: 22,
-            presentDays: 21,
-            absentDays: 1,
-            attendancePercentage: 95
-          }
-        ];
-        setAttendanceData(mockAttendanceData);
-      } else {
-        setAttendanceData([]);
-      }
     }
   };
 
@@ -430,42 +312,6 @@ const AnalyticsManagement = () => {
       setCheckInOutData(response.data || []);
     } catch (error) {
       console.error('Error fetching check-in/out data:', error);
-      
-      if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
-        // Mock check-in/out data
-        const mockCheckInOutData = [
-          {
-            employeeName: 'John Doe',
-            email: 'john.doe@company.com',
-            date: '2025-01-29',
-            checkIn: '9:00 AM',
-            checkOut: '6:00 PM',
-            totalHours: '9 hrs',
-            status: 'Present'
-          },
-          {
-            employeeName: 'Jane Smith',
-            email: 'jane.smith@company.com',
-            date: '2025-01-29',
-            checkIn: '10:30 AM',
-            checkOut: '7:30 PM',
-            totalHours: '9 hrs',
-            status: 'Present'
-          },
-          {
-            employeeName: 'Mike Johnson',
-            email: 'mike.johnson@company.com',
-            date: '2025-01-29',
-            checkIn: '8:45 AM',
-            checkOut: '5:45 PM',
-            totalHours: '9 hrs',
-            status: 'Present'
-          }
-        ];
-        setCheckInOutData(mockCheckInOutData);
-      } else {
-        setCheckInOutData([]);
-      }
     }
   };
 
