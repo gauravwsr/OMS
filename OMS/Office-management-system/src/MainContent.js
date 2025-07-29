@@ -18,7 +18,6 @@ import {
   FiMenu,
   FiX,
   FiFileMinus,
-  FiBarChart,
 } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./Components/AuthProvider/AuthContext.js";
@@ -154,11 +153,6 @@ const MainContent = ({ nav }) => {
           label: "Leave Management",
           icon: <FiClipboard />,
         },
-        {
-          path: "/analytics-management",
-          label: "Analytics Management",
-          icon: <FiBarChart />,
-        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -171,6 +165,23 @@ const MainContent = ({ nav }) => {
           icon: <FiClipboard />,
         },
       ],
+      // "Admin_HR Manager": [
+      //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
+      //   {
+      //     path: "/hr-registration",
+      //     label: "Registration",
+      //     icon: <FiUsers />,
+      //   },
+
+      //   { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
+      //   { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+      //   {
+      //     path: "/hrAttendance",
+      //     label: "HR Attendance",
+      //     icon: <FiClipboard />,
+      //   },
+      //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
+      // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {

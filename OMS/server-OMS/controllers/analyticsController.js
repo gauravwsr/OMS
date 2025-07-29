@@ -1,13 +1,9 @@
-const User = require("../models/userModel.js");
-const Leave = require("../models/leaveModel.js");
+const User = require ("../models/userModel.js");
+const Leave = require ("../models/leaveModel.js");
 
 // Get Leave Analytics Data
 const getLeaveAnalytics = async (req, res) => {
   try {
-    console.log('getLeaveAnalytics - Request received');
-    console.log('User from auth middleware:', req.user ? req.user.name : 'No user');
-    console.log('Query parameters:', req.query);
-    
     const { startDate, endDate, employeeId } = req.query;
     
     // Build query based on filters
@@ -24,14 +20,10 @@ const getLeaveAnalytics = async (req, res) => {
       query.employeeId = employeeId;
     }
 
-    console.log('MongoDB query:', query);
-
     // Get leave data with employee details
     const leaves = await Leave.find(query)
       .populate('employeeId', 'name email department')
       .sort({ createdAt: -1 });
-
-    console.log('Leaves found:', leaves.length);
 
     // Format the response
     const formattedLeaves = leaves.map(leave => ({
@@ -236,11 +228,4 @@ const exportAnalyticsData = async (req, res) => {
       error: error.message 
     });
   }
-};
-
-module.exports = {
-  getLeaveAnalytics,
-  getAttendanceAnalytics,
-  getCheckInOutAnalytics,
-  exportAnalyticsData
 };
