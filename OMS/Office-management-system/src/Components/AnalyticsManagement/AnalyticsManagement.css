@@ -623,3 +623,320 @@
     border: 2px solid black;
   }
 }
+
+/* Detailed Leave Information Styles */
+.employee-details {
+  min-width: 200px;
+}
+
+.employee-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.employee-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.employee-id {
+  font-size: 0.75rem;
+  color: #4a5568;
+  font-weight: 500;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.employee-email {
+  font-size: 0.8rem;
+  color: #718096;
+  font-style: italic;
+}
+
+.employee-dept {
+  font-size: 0.75rem;
+  color: #805ad5;
+  font-weight: 600;
+  background: rgba(128, 90, 213, 0.1);
+  padding: 0.125rem 0.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  width: fit-content;
+  margin-top: 0.25rem;
+}
+
+.leave-type-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: center;
+  display: inline-block;
+  min-width: 100px;
+  text-transform: capitalize;
+}
+
+.leave-type-badge.annual-leave {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+}
+
+.leave-type-badge.sick-leave {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  color: white;
+}
+
+.leave-type-badge.emergency-leave {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
+}
+
+.leave-type-badge.maternity-leave {
+  background: linear-gradient(135deg, #9f7aea, #805ad5);
+  color: white;
+}
+
+.leave-type-badge.casual-leave {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white;
+}
+
+.leave-period {
+  min-width: 140px;
+}
+
+.date-range {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.date-range strong {
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.duration {
+  text-align: center;
+  min-width: 80px;
+}
+
+.days-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.days-count strong {
+  font-size: 1.25rem;
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.days-count small {
+  color: #718096;
+  font-size: 0.75rem;
+  margin-top: 0.125rem;
+}
+
+.reason-content {
+  max-width: 200px;
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.applied-date {
+  text-align: center;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.approval-details {
+  min-width: 180px;
+  font-size: 0.85rem;
+}
+
+.approval-info, .rejection-info {
+  line-height: 1.4;
+}
+
+.approval-info strong, .rejection-info strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.approval-comment, .rejection-comment {
+  display: block;
+  margin-top: 0.25rem;
+  color: #4a5568;
+  font-style: italic;
+  background: rgba(102, 126, 234, 0.05);
+  padding: 0.25rem;
+  border-radius: 4px;
+}
+
+.rejection-comment {
+  background: rgba(245, 101, 101, 0.05);
+  color: #e53e3e;
+}
+
+.pending-info {
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.pending-text {
+  color: #d69e2e;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.leave-balance {
+  text-align: center;
+  min-width: 80px;
+}
+
+.balance-count {
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+.balance-count.normal {
+  color: #38a169;
+  background: rgba(72, 187, 120, 0.1);
+}
+
+.balance-count.low {
+  color: #e53e3e;
+  background: rgba(245, 101, 101, 0.1);
+}
+
+.status.approved .status-badge {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.status.pending .status-badge {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.status.rejected .status-badge {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.quick-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.quick-stat {
+  font-size: 0.9rem;
+  color: #4a5568;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.quick-stat strong {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.stat-subtitle {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.stat-card.approved {
+  border-left: 4px solid #48bb78;
+}
+
+.stat-card.pending {
+  border-left: 4px solid #ed8936;
+}
+
+.stat-card.rejected {
+  border-left: 4px solid #f56565;
+}
+
+/* Responsive Design for Detailed Leave Table */
+@media (max-width: 1200px) {
+  .analytics-table {
+    font-size: 0.85rem;
+  }
+  
+  .employee-details, .approval-details {
+    min-width: 150px;
+  }
+  
+  .reason-content {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-table th, .analytics-table td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+  
+  .employee-name {
+    font-size: 0.9rem;
+  }
+  
+  .employee-id, .employee-dept {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+  }
+  
+  .leave-type-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    min-width: 80px;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .quick-stats {
+    justify-content: center;
+  }
+}

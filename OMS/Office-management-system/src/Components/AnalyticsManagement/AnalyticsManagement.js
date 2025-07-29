@@ -89,7 +89,107 @@ const AnalyticsManagement = () => {
       setLeaveData(response.data || []);
     } catch (error) {
       console.error('Error fetching leave data:', error);
-      setLeaveData([]);
+      
+      // Mock detailed leave data for demonstration
+      const mockLeaveData = [
+        {
+          _id: '1',
+          employeeName: 'John Doe',
+          employeeEmail: 'john.doe@company.com',
+          department: 'Development',
+          employeeId: 'EMP001',
+          leaveType: 'Annual Leave',
+          startDate: '2025-01-15',
+          endDate: '2025-01-17',
+          totalDays: 3,
+          reason: 'Family vacation to Goa with wife and kids',
+          status: 'Approved',
+          appliedDate: '2025-01-10',
+          approvedBy: 'Manager Smith',
+          approvedDate: '2025-01-11',
+          comments: 'Approved for family time',
+          emergencyContact: '+91 9876543210',
+          leaveBalance: 12
+        },
+        {
+          _id: '2',
+          employeeName: 'Jane Smith',
+          employeeEmail: 'jane.smith@company.com',
+          department: 'Marketing',
+          employeeId: 'EMP002',
+          leaveType: 'Sick Leave',
+          startDate: '2025-01-20',
+          endDate: '2025-01-22',
+          totalDays: 3,
+          reason: 'Fever and medical treatment required',
+          status: 'Pending',
+          appliedDate: '2025-01-18',
+          approvedBy: null,
+          approvedDate: null,
+          comments: 'Medical certificate attached',
+          emergencyContact: '+91 9876543211',
+          leaveBalance: 8
+        },
+        {
+          _id: '3',
+          employeeName: 'Mike Johnson',
+          employeeEmail: 'mike.johnson@company.com',
+          department: 'Sales',
+          employeeId: 'EMP003',
+          leaveType: 'Emergency Leave',
+          startDate: '2025-01-25',
+          endDate: '2025-01-25',
+          totalDays: 1,
+          reason: 'Family emergency - father hospitalized',
+          status: 'Approved',
+          appliedDate: '2025-01-24',
+          approvedBy: 'HR Manager',
+          approvedDate: '2025-01-24',
+          comments: 'Emergency approved immediately',
+          emergencyContact: '+91 9876543212',
+          leaveBalance: 15
+        },
+        {
+          _id: '4',
+          employeeName: 'Sarah Wilson',
+          employeeEmail: 'sarah.wilson@company.com',
+          department: 'HR',
+          employeeId: 'EMP004',
+          leaveType: 'Maternity Leave',
+          startDate: '2025-02-01',
+          endDate: '2025-04-30',
+          totalDays: 89,
+          reason: 'Maternity leave for childbirth',
+          status: 'Approved',
+          appliedDate: '2025-01-05',
+          approvedBy: 'CEO',
+          approvedDate: '2025-01-06',
+          comments: 'Full maternity benefits applicable',
+          emergencyContact: '+91 9876543213',
+          leaveBalance: 0
+        },
+        {
+          _id: '5',
+          employeeName: 'David Brown',
+          employeeEmail: 'david.brown@company.com',
+          department: 'Finance',
+          employeeId: 'EMP005',
+          leaveType: 'Casual Leave',
+          startDate: '2025-01-30',
+          endDate: '2025-01-30',
+          totalDays: 1,
+          reason: 'Personal work - bank visit',
+          status: 'Rejected',
+          appliedDate: '2025-01-28',
+          approvedBy: 'Finance Manager',
+          approvedDate: '2025-01-29',
+          comments: 'Project deadline approaching, cannot approve',
+          emergencyContact: '+91 9876543214',
+          leaveBalance: 10
+        }
+      ];
+      
+      setLeaveData(mockLeaveData);
     }
   };
 
@@ -138,18 +238,24 @@ const AnalyticsManagement = () => {
     switch (activeTab) {
       case 'leave':
         dataToExport = leaveData.map(leave => ({
-          'Employee Name': leave.employeeName || leave.name,
-          'Employee Email': leave.employeeEmail || leave.email,
+          'Employee Name': leave.employeeName || leave.name || 'Unknown',
+          'Employee ID': leave.employeeId || 'N/A',
+          'Employee Email': leave.employeeEmail || leave.email || 'N/A',
+          'Department': leave.department || 'General',
           'Leave Type': leave.leaveType,
-          'Start Date': new Date(leave.startDate).toLocaleDateString(),
-          'End Date': new Date(leave.endDate).toLocaleDateString(),
-          'Days': leave.totalDays,
+          'Start Date': new Date(leave.startDate).toLocaleDateString('en-IN'),
+          'End Date': new Date(leave.endDate).toLocaleDateString('en-IN'),
+          'Total Days': leave.totalDays,
           'Reason': leave.reason,
           'Status': leave.status,
-          'Applied Date': new Date(leave.createdAt).toLocaleDateString(),
-          'Approved By': leave.approvedBy || 'Pending'
+          'Applied Date': new Date(leave.appliedDate || leave.createdAt).toLocaleDateString('en-IN'),
+          'Approved By': leave.approvedBy || 'Pending',
+          'Approved Date': leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A',
+          'Comments': leave.comments || 'N/A',
+          'Emergency Contact': leave.emergencyContact || 'N/A',
+          'Leave Balance': leave.leaveBalance + ' days' || 'N/A'
         }));
-        fileName = 'Employee_Leave_Report';
+        fileName = 'Employee_Leave_Applications_Report';
         break;
 
       case 'attendance':
@@ -195,59 +301,163 @@ const AnalyticsManagement = () => {
 
   const renderLeaveAnalytics = () => (
     <div className="analytics-content">
-      <div className="analytics-stats">
+      {/* <div className="analytics-stats">
         <div className="stat-card">
-          <h3>Total Leaves</h3>
+          <h3>Total Leave Applications</h3>
           <p className="stat-number">{leaveData.length}</p>
+          <span className="stat-subtitle">All time applications</span>
         </div>
-        <div className="stat-card">
+        <div className="stat-card approved">
           <h3>Approved Leaves</h3>
           <p className="stat-number">{leaveData.filter(l => l.status === 'Approved').length}</p>
+          <span className="stat-subtitle">
+            {leaveData.length > 0 ? Math.round((leaveData.filter(l => l.status === 'Approved').length / leaveData.length) * 100) : 0}% approval rate
+          </span>
         </div>
-        <div className="stat-card">
-          <h3>Pending Leaves</h3>
+        <div className="stat-card pending">
+          <h3>Pending Reviews</h3>
           <p className="stat-number">{leaveData.filter(l => l.status === 'Pending').length}</p>
+          <span className="stat-subtitle">Awaiting approval</span>
         </div>
-        <div className="stat-card">
-          <h3>Rejected Leaves</h3>
+        <div className="stat-card rejected">
+          <h3>Rejected Applications</h3>
           <p className="stat-number">{leaveData.filter(l => l.status === 'Rejected').length}</p>
+          <span className="stat-subtitle">
+            {leaveData.length > 0 ? Math.round((leaveData.filter(l => l.status === 'Rejected').length / leaveData.length) * 100) : 0}% rejection rate
+          </span>
         </div>
-      </div>
+      </div> */}
 
       <div className="data-table-container">
         <div className="table-header">
           <h3>Leave Details</h3>
-          <button onClick={downloadExcel} className="download-btn">
-            📊 Download Excel
-          </button>
+          <div className="header-actions">
+            <div className="quick-stats">
+              <span className="quick-stat">
+                Most Common: <strong>{
+                  leaveData.length > 0 ? 
+                  Object.entries(leaveData.reduce((acc, leave) => {
+                    acc[leave.leaveType] = (acc[leave.leaveType] || 0) + 1;
+                    return acc;
+                  }, {})).sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A'
+                  : 'N/A'
+                }</strong>
+              </span>
+              <span className="quick-stat">
+                Avg Days: <strong>{
+                  leaveData.length > 0 ? 
+                  Math.round(leaveData.reduce((acc, leave) => acc + leave.totalDays, 0) / leaveData.length * 10) / 10
+                  : 0
+                } days</strong>
+              </span>
+            </div>
+            <button onClick={downloadExcel} className="download-btn">
+              📊 Download Excel
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="analytics-table">
             <thead>
               <tr>
-                <th>Employee</th>
+                <th>Employee Details</th>
                 <th>Leave Type</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Days</th>
-                <th>Status</th>
+                <th>Leave Period</th>
+                <th>Duration</th>
                 <th>Reason</th>
+                <th>Status</th>
+                <th>Applied Date</th>
+                <th>Approval Details</th>
+                <th>Leave Balance</th>
               </tr>
             </thead>
             <tbody>
-              {leaveData.map((leave, index) => (
-                <tr key={index}>
-                  <td>{leave.employeeName || leave.name}</td>
-                  <td>{leave.leaveType}</td>
-                  <td>{new Date(leave.startDate).toLocaleDateString()}</td>
-                  <td>{new Date(leave.endDate).toLocaleDateString()}</td>
-                  <td>{leave.totalDays}</td>
-                  <td className={`status ${leave.status.toLowerCase()}`}>
-                    {leave.status}
+              {leaveData.length > 0 ? (
+                leaveData.map((leave, index) => (
+                  <tr key={leave._id || index}>
+                    <td className="employee-details">
+                      <div className="employee-info">
+                        <strong className="employee-name">{leave.employeeName || leave.name || 'Unknown'}</strong>
+                        <span className="employee-id">ID: {leave.employeeId || 'N/A'}</span>
+                        <span className="employee-email">{leave.employeeEmail || leave.email || 'N/A'}</span>
+                        <span className="employee-dept">{leave.department || 'General'}</span>
+                      </div>
+                    </td>
+                    <td className="leave-type">
+                      <span className={`leave-type-badge ${leave.leaveType?.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {leave.leaveType}
+                      </span>
+                    </td>
+                    <td className="leave-period">
+                      <div className="date-range">
+                        <strong>From:</strong> {new Date(leave.startDate).toLocaleDateString('en-IN')}<br/>
+                        <strong>To:</strong> {new Date(leave.endDate).toLocaleDateString('en-IN')}
+                      </div>
+                    </td>
+                    <td className="duration">
+                      <span className="days-count">
+                        <strong>{leave.totalDays}</strong>
+                        <br/>
+                        <small>{leave.totalDays === 1 ? 'day' : 'days'}</small>
+                      </span>
+                    </td>
+                    <td className="reason-cell" title={leave.reason}>
+                      <div className="reason-content">
+                        {leave.reason?.length > 60 ? `${leave.reason.substring(0, 60)}...` : leave.reason}
+                      </div>
+                    </td>
+                    <td className={`status ${leave.status?.toLowerCase()}`}>
+                      <span className="status-badge">{leave.status}</span>
+                    </td>
+                    <td className="applied-date">
+                      {new Date(leave.appliedDate || leave.createdAt).toLocaleDateString('en-IN')}
+                    </td>
+                    <td className="approval-details">
+                      {leave.status === 'Approved' && (
+                        <div className="approval-info">
+                          <strong>By:</strong> {leave.approvedBy}<br/>
+                          <strong>Date:</strong> {leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A'}<br/>
+                          {leave.comments && (
+                            <small className="approval-comment" title={leave.comments}>
+                              💬 {leave.comments.length > 30 ? `${leave.comments.substring(0, 30)}...` : leave.comments}
+                            </small>
+                          )}
+                        </div>
+                      )}
+                      {leave.status === 'Pending' && (
+                        <div className="pending-info">
+                          <span className="pending-text">⏳ Under Review</span>
+                        </div>
+                      )}
+                      {leave.status === 'Rejected' && (
+                        <div className="rejection-info">
+                          <strong>By:</strong> {leave.approvedBy}<br/>
+                          <strong>Date:</strong> {leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A'}<br/>
+                          {leave.comments && (
+                            <small className="rejection-comment" title={leave.comments}>
+                              ❌ {leave.comments.length > 30 ? `${leave.comments.substring(0, 30)}...` : leave.comments}
+                            </small>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td className="leave-balance">
+                      <span className={`balance-count ${leave.leaveBalance <= 5 ? 'low' : 'normal'}`}>
+                        {leave.leaveBalance} days
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="9" className="no-data">
+                    <div className="no-data-message">
+                      <span>📋</span>
+                      <p>No leave applications found for the selected criteria</p>
+                    </div>
                   </td>
-                  <td className="reason-cell">{leave.reason}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -394,36 +604,6 @@ const AnalyticsManagement = () => {
       <div className="analytics-header">
         <h1>📊 Analytics Management</h1>
         <p>Comprehensive employee analytics and reporting</p>
-      </div>
-
-      <div className="analytics-filters">
-        <div className="filter-group">
-          <label>Date Range:</label>
-          <input
-            type="date"
-            value={dateRange.startDate}
-            onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-          />
-          <span>to</span>
-          <input
-            type="date"
-            value={dateRange.endDate}
-            onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-          />
-        </div>
-
-        <div className="filter-group">
-          <label>Employee:</label>
-          <select
-            value={selectedEmployee}
-            onChange={(e) => setSelectedEmployee(e.target.value)}
-          >
-            <option value="all">All Employees</option>
-            {employees.map(emp => (
-              <option key={emp._id} value={emp._id}>{emp.name}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className="analytics-tabs">

@@ -5,26 +5,21 @@ const Leave = require ("../models/leaveModel.js");
 const getLeaveAnalytics = async (req, res) => {
   try {
     const { startDate, endDate, employeeId } = req.query;
-    
     // Build query based on filters
     let query = {};
-    
     if (startDate && endDate) {
       query.createdAt = {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
       };
     }
-    
     if (employeeId && employeeId !== 'all') {
       query.employeeId = employeeId;
     }
-
     // Get leave data with employee details
     const leaves = await Leave.find(query)
       .populate('employeeId', 'name email department')
       .sort({ createdAt: -1 });
-
     // Format the response
     const formattedLeaves = leaves.map(leave => ({
       _id: leave._id,
@@ -228,4 +223,11 @@ const exportAnalyticsData = async (req, res) => {
       error: error.message 
     });
   }
+};
+
+module.exports = {
+  getLeaveAnalytics,
+  getAttendanceAnalytics,
+  getCheckInOutAnalytics,
+  exportAnalyticsData
 };
