@@ -213,6 +213,7 @@ clientProjectSchema.statics.getAllWithTeamLeads = function() {
   return this.find({})
     .populate('teamLeadId', 'name email subRole specialization')
     .populate('assignedBy', 'name email')
+    .populate('teamLeadHistory.teamLeadId', 'name email')
     .sort({ createdAt: -1 });
 };
 

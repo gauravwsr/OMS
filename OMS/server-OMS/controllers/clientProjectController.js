@@ -174,36 +174,41 @@ const assignTeamLeadToProject = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
 
-    // If there is a current team lead, push to history
-    if (project.teamLeadId) {
-      // Find the last assignment date from history or use project creation date
-      let assignedDate = project.teamLeadHistory.length > 0
-        ? project.teamLeadHistory[project.teamLeadHistory.length - 1].unassignedDate
-        : project.createdAt?.toISOString().slice(0, 10) || new Date().toISOString().slice(0, 10);
+    // Get today's date in YYYY-MM-DD format (no timing)
+    const today = new Date().toISOString().slice(0, 10);
 
-      // Set unassigned date as today (YYYY-MM-DD)
-      const unassignedDate = new Date().toISOString().slice(0, 10);
+    // If there is a current team lead, update their history entry with unassigned date
+    if (project.teamLeadId && project.assignedTeamLead) {
+      // Find the current active assignment in history (the one without unassignedDate)
+      const currentAssignmentIndex = project.teamLeadHistory.findIndex(
+        entry => entry.teamLeadId && entry.teamLeadId.toString() === project.teamLeadId.toString() && !entry.unassignedDate
+      );
 
-      project.teamLeadHistory.push({
-        teamLeadId: project.teamLeadId,
-        teamLeadName: project.assignedTeamLead || project.leadName || '',
-        assignedDate,
-        unassignedDate
-      });
+      if (currentAssignmentIndex !== -1) {
+        project.teamLeadHistory[currentAssignmentIndex].unassignedDate = today;
+      } else {
+        // If no active assignment found in history, create one for the current team lead
+        project.teamLeadHistory.push({
+          teamLeadId: project.teamLeadId,
+          teamLeadName: project.assignedTeamLead,
+          assignedDate: project.assignedDate ? project.assignedDate.toISOString().slice(0, 10) : today,
+          unassignedDate: today
+        });
+      }
     }
 
     // Assign new team lead
     project.teamLeadId = teamLeadId;
     project.assignedTeamLead = teamLeadName;
     project.leadName = teamLeadName;
+    project.assignedDate = new Date(today);
 
-    // Set assigned date for new team lead
-    const today = new Date().toISOString().slice(0, 10);
+    // Add new assignment to history
     project.teamLeadHistory.push({
       teamLeadId,
       teamLeadName,
       assignedDate: today,
-      unassignedDate: ''
+      unassignedDate: '' // Empty string indicates currently assigned
     });
 
     await project.save();
@@ -214,6 +219,7 @@ const assignTeamLeadToProject = async (req, res) => {
 
     res.json({ success: true, data: updatedProject });
   } catch (error) {
+    console.error('Error assigning team lead:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
