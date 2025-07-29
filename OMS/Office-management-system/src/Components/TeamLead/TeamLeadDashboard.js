@@ -34,6 +34,15 @@ const TeamLeadDashboard = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
+  const [showTaskDetails, setShowTaskDetails] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    assignedTo: '',
+    dueDate: '',
+  });
+  const [addingTask, setAddingTask] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
     totalProjects: 0,
     activeProjects: 0,
@@ -164,6 +173,41 @@ const TeamLeadDashboard = () => {
   const handleCloseDetails = () => {
     setShowProjectDetails(false);
     setSelectedProject(null);
+  };
+
+  // Handler for viewing task details inline
+  const handleViewTaskDetails = (task) => {
+    setSelectedTask(task);
+  };
+
+  // Handler for adding a new task
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+    if (!selectedProject || !newTask.title || !newTask.assignedTo) return;
+    setAddingTask(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/add-task`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newTask)
+      });
+      if (response.ok) {
+        // Refresh project details (fetch again or update state)
+        fetchAssignedProjects();
+        setNewTask({ title: '', description: '', assignedTo: '', dueDate: '' });
+      }
+    } finally {
+      setAddingTask(false);
+    }
+  };
+
+  const handleCloseTaskDetails = () => {
+    setShowTaskDetails(false);
+    setSelectedTask(null);
   };
 
   const handleSort = (field) => {
@@ -386,79 +430,261 @@ const TeamLeadDashboard = () => {
 
       {/* Project Details Modal */}
       {showProjectDetails && selectedProject && (
-        <div className="modal-overlay" onClick={handleCloseDetails}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Project Details</h3>
+        <div className="modal-overlay" onClick={handleCloseDetails} >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 700, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', backgroundColor: "white" }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
+              <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: '#3b82f6', letterSpacing: 1 }}>
+                <FaProjectDiagram style={{ marginRight: 8 }} />
+                Project Details
+              </h3>
               <button className="modal-close" onClick={handleCloseDetails}>
                 <FaTimes />
               </button>
             </div>
-            <div className="modal-body">
-              <div className="project-overview">
-                <div className="overview-header">
-                  <h4>{selectedProject.projectId || 'Untitled Project'}</h4>
-                  <div className="project-badges">
-                    <span 
-                      className="status-badge" 
-                      style={{ backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown') }}
-                    >
-                      {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
-                    </span>
-                    <span className="amount-badge">
-                      ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}
-                    </span>
-                  </div>
+            <div className="modal-body" style={{ padding: 24 }}>
+              {/* Project Overview */}
+              <div className="project-overview" style={{ marginBottom: 18 }}>
+                <div className="overview-header" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <h4 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>
+                    {selectedProject.projectId || 'Untitled Project'}
+                  </h4>
+                  <span 
+                    className="status-badge"
+                    style={{
+                      backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown'),
+                      color: '#fff',
+                      borderRadius: 8,
+                      padding: '2px 12px',
+                      fontWeight: 500,
+                      fontSize: 14
+                    }}
+                  >
+                    {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
+                  </span>
+                  <span className="amount-badge" style={{
+                    background: '#f3f4f6',
+                    color: '#111',
+                    borderRadius: 8,
+                    padding: '2px 12px',
+                    fontWeight: 500,
+                    fontSize: 14
+                  }}>
+                    ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}
+                  </span>
                 </div>
-                <p className="project-description">Client: {selectedProject.clientName || 'Unknown Client'}</p>
+                <p style={{ margin: '8px 0 0 0', color: '#6b7280', fontSize: 15 }}>
+                  <FaEnvelope style={{ marginRight: 4 }} />
+                  Client: <span style={{ fontWeight: 500 }}>{selectedProject.clientName || 'Unknown Client'}</span>
+                </p>
               </div>
 
-              <div className="details-grid">
-                <div className="detail-section">
-                  <h5><FaInfoCircle /> Project Information</h5>
-                  <div className="detail-items">
-                    <div className="detail-item">
-                      <span>Project ID:</span>
-                      <span>{selectedProject.projectId || 'N/A'}</span>
+              {/* Info Grid */}
+              <div className="details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                {/* Left Column */}
+                <div>
+                  <div className="detail-section" style={{ marginBottom: 18 }}>
+                    <h5 style={{ color: '#2563eb', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+                      <FaInfoCircle style={{ marginRight: 6 }} /> Basic Info
+                    </h5>
+                    <div className="detail-items" style={{ fontSize: 15 }}>
+                      <div><strong>Project ID:</strong> {selectedProject.projectId || 'N/A'}</div>
+                      <div><strong>Original Lead:</strong> {selectedProject.leadName || 'Not Specified'}</div>
+                      <div><strong>Assigned Team Lead:</strong> {selectedProject.assignedTeamLead || 'Not Assigned'}</div>
+                      <div><strong>Status:</strong> {selectedProject.projectStatus || 'Unknown'}</div>
+                      <div><strong>Created:</strong> {formatDate(selectedProject.createdAt)}</div>
+                      <div><strong>Updated:</strong> {formatDate(selectedProject.updatedAt)}</div>
+                      <div><strong>Password:</strong> {selectedProject.projectPassword || 'Not Set'}</div>
                     </div>
-                    <div className="detail-item">
-                      <span>Client Name:</span>
-                      <span>{selectedProject.clientName || 'Unknown Client'}</span>
+                  </div>
+
+                  {/* Assigned Team Members */}
+                  {selectedProject.assignedEmployees && selectedProject.assignedEmployees.length > 0 && (
+                    <div className="detail-section" style={{ marginBottom: 18 }}>
+                      <h5 style={{ color: '#059669', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+                        <FaUser style={{ marginRight: 6 }} /> Assigned Team Members
+                      </h5>
+                      <ul style={{ paddingLeft: 18, margin: 0 }}>
+                        {selectedProject.assignedEmployees.map(emp => (
+                          <li key={emp.employeeId} style={{ marginBottom: 2 }}>
+                            <span style={{ fontWeight: 500 }}>{emp.name}</span>
+                            <span style={{ color: '#6b7280', marginLeft: 6 }}>({emp.role} - {emp.subRole})</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <div className="detail-item">
-                      <span>Original Lead:</span>
-                      <span>{selectedProject.leadName || 'Not Specified'}</span>
+                  )}
+                </div>
+
+                {/* Right Column */}
+                <div>
+                  {/* Task Details Section */}
+                  {selectedProject.tasks && (
+                    <div className="detail-section" style={{ marginBottom: 18 }}>
+                      <h5 style={{ color: '#f59e0b', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+                        <FaTasks style={{ marginRight: 6 }} /> Task Details
+                      </h5>
+                      <div className="tasks-overview" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                        <div className="task-stat completed" style={{ background: '#e0f2fe', borderRadius: 6, padding: '6px 12px', minWidth: 80 }}>
+                          <span className="task-count" style={{ fontWeight: 700, color: '#059669' }}>{selectedProject.tasks.completed}</span>
+                          <span className="task-label" style={{ fontSize: 13, color: '#059669', marginLeft: 4 }}>Completed</span>
+                        </div>
+                        <div className="task-stat in-progress" style={{ background: '#fef9c3', borderRadius: 6, padding: '6px 12px', minWidth: 80 }}>
+                          <span className="task-count" style={{ fontWeight: 700, color: '#f59e0b' }}>{selectedProject.tasks.inProgress}</span>
+                          <span className="task-label" style={{ fontSize: 13, color: '#f59e0b', marginLeft: 4 }}>In Progress</span>
+                        </div>
+                        <div className="task-stat pending" style={{ background: '#fee2e2', borderRadius: 6, padding: '6px 12px', minWidth: 80 }}>
+                          <span className="task-count" style={{ fontWeight: 700, color: '#ef4444' }}>{selectedProject.tasks.pending}</span>
+                          <span className="task-label" style={{ fontSize: 13, color: '#ef4444', marginLeft: 4 }}>Pending</span>
+                        </div>
+                      </div>
+                      {/* Task List with always visible View Details */}
+                      {Array.isArray(selectedProject.tasks.list) && (
+                        <ul className="task-list" style={{ paddingLeft: 0, margin: 0 }}>
+                          {selectedProject.tasks.list.map((task, idx) => (
+                            <li key={idx} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', borderRadius: 6, padding: '8px 12px' }}>
+                              <div>
+                                <strong>{task.title}</strong> - {task.status}
+                                <span style={{ color: '#6b7280', marginLeft: 6 }}>
+                                  (Due: {formatDate(task.dueDate)})
+                                </span>
+                              </div>
+                              <button
+                                style={{
+                                  background: '#3b82f6',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: 4,
+                                  padding: '4px 10px',
+                                  cursor: 'pointer',
+                                  fontSize: 13
+                                }}
+                                onClick={() => {
+                                  setSelectedTask(task);
+                                  setShowTaskDetails(true);
+                                }}
+                              >
+                                View Details
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Add Task Section */}
+                      <div style={{ marginTop: 24, padding: 16, background: '#f3f4f6', borderRadius: 8 }}>
+                        <h6 style={{ margin: 0, fontWeight: 700, color: '#059669' }}>
+                          <FaTasks style={{ marginRight: 6 }} />
+                          Add New Task
+                        </h6>
+                        <form onSubmit={handleAddTask} style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <input
+                            type="text"
+                            placeholder="Task Title"
+                            value={newTask.title}
+                            onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+                            required
+                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+                          />
+                          <textarea
+                            placeholder="Description"
+                            value={newTask.description}
+                            onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+                          />
+                          <select
+                            value={newTask.assignedTo}
+                            onChange={e => setNewTask({ ...newTask, assignedTo: e.target.value })}
+                            required
+                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+                          >
+                            <option value="">Assign to team member...</option>
+                            {selectedProject.assignedEmployees && selectedProject.assignedEmployees.map(emp => (
+                              <option key={emp.employeeId} value={emp.name}>
+                                {emp.name} ({emp.role} - {emp.subRole})
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="date"
+                            value={newTask.dueDate}
+                            onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
+                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
+                          />
+                          <button
+                            type="submit"
+                            disabled={addingTask}
+                            style={{
+                              background: '#059669',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: 4,
+                              padding: '8px 18px',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {addingTask ? 'Adding...' : 'Add Task'}
+                          </button>
+                        </form>
+                      </div>
                     </div>
-                    <div className="detail-item">
-                      <span>Assigned Team Lead:</span>
-                      <span>{selectedProject.assignedTeamLead || 'Not Assigned'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span>Final Amount:</span>
-                      <span>₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span>Project Status:</span>
-                      <span>{selectedProject.projectStatus || 'Unknown'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span>Created Date:</span>
-                      <span>{formatDate(selectedProject.createdAt)}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span>Last Updated:</span>
-                      <span>{formatDate(selectedProject.updatedAt)}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span>Project Password:</span>
-                      <span>{selectedProject.projectPassword || 'Not Set'}</span>
+                  )}
+
+                  {/* Budget/Amount */}
+                  <div className="detail-section" style={{ marginBottom: 18 }}>
+                    <h5 style={{ color: '#3b82f6', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+                      <FaChartLine style={{ marginRight: 6 }} /> Budget & Value
+                    </h5>
+                    <div style={{ fontSize: 15 }}>
+                      <div><strong>Final Amount:</strong> ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</div>
+                      {/* Add more budget/progress info if available */}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={handleCloseDetails}>
+            <div className="modal-footer" style={{ borderTop: '1px solid #e5e7eb', paddingTop: 10, textAlign: 'right' }}>
+              <button className="btn-secondary" onClick={handleCloseDetails} style={{ padding: '6px 18px', borderRadius: 6 }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Details Modal (separate window) */}
+      {showTaskDetails && selectedTask && (
+        <div className="modal-overlay" onClick={handleCloseTaskDetails}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 500, borderRadius: 10, background: "#fff" }}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
+              <h3 style={{ margin: 0, fontWeight: 700, fontSize: 20, color: '#f59e0b' }}>
+                <FaTasks style={{ marginRight: 8 }} />
+                Task Details
+              </h3>
+              <button className="modal-close" onClick={handleCloseTaskDetails}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: 20 }}>
+              <div style={{ marginBottom: 12 }}>
+                <strong>Title:</strong> {selectedTask.title}
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <strong>Status:</strong> {selectedTask.status}
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <strong>Description:</strong> {selectedTask.description || 'No description'}
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <strong>Assigned To:</strong> {selectedTask.assignedTo || 'N/A'}
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <strong>Due Date:</strong> {formatDate(selectedTask.dueDate)}
+              </div>
+              {/* Add more fields as needed */}
+            </div>
+            <div className="modal-footer" style={{ borderTop: '1px solid #e5e7eb', paddingTop: 10, textAlign: 'right' }}>
+              <button className="btn-secondary" onClick={handleCloseTaskDetails} style={{ padding: '6px 18px', borderRadius: 6 }}>
                 Close
               </button>
             </div>
