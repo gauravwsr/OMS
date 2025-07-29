@@ -21,22 +21,22 @@ const SuperAdminLeaveManagement = () => {
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
-      console.log('Fetching leave applications...');
-      const response = await axios.get('http://localhost:5000/api/leave/all');
-      console.log('Leave applications response:', response.data);
+      console.log('Fetching admin/HR leave applications...');
+      const response = await axios.get('http://localhost:5000/api/leave/admin-hr');
+      console.log('Admin/HR leave applications response:', response.data);
       
       if (response.data.success) {
         setLeaveApplications(response.data.data);
-        console.log('Leave applications set:', response.data.data);
+        console.log('Admin/HR leave applications set:', response.data.data);
       } else {
-        console.log('Failed to fetch leave applications:', response.data);
+        console.log('Failed to fetch admin/HR leave applications:', response.data);
       }
     } catch (error) {
-      console.error('Error fetching leave applications:', error);
+      console.error('Error fetching admin/HR leave applications:', error);
       console.error('Error response:', error.response?.data);
       setMessage({
         type: 'error',
-        text: 'Failed to fetch leave applications'
+        text: 'Failed to fetch admin/HR leave applications'
       });
     } finally {
       setLoading(false);
@@ -167,8 +167,8 @@ const SuperAdminLeaveManagement = () => {
   return (
     <div className="super-admin-leave-management">
       <div className="page-header">
-        <h1>Leave Applications Management</h1>
-        <p>Review and manage HR Manager leave applications</p>
+        <h1>HR/Admin Leave Management</h1>
+        <p>Review and manage HR Manager and Admin leave applications</p>
       </div>
 
       {message.text && (
@@ -218,7 +218,7 @@ const SuperAdminLeaveManagement = () => {
           <div className="loading">Loading leave applications...</div>
         ) : filteredApplications.length === 0 ? (
           <div className="no-data">
-            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} leave applications found.
+            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} HR/Admin leave applications found.
           </div>
         ) : (
           <div className="applications-list">
