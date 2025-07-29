@@ -45,7 +45,7 @@ import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
-import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard.js";
+import { ProjectManagerDashboard } from './Components/ProjectManager/ProjectManagerDashboard';
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";

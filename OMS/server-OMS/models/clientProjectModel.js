@@ -7,6 +7,13 @@ const teamLeadHistorySchema = new mongoose.Schema({
   unassignedDate: String  // Format: YYYY-MM-DD
 }, { _id: false });
 
+const assignedEmployeeSchema = new mongoose.Schema({
+  employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  name: String,
+  role: String,
+  subRole: String
+}, { _id: false });
+
 const clientProjectSchema = new mongoose.Schema({
   projectId: {
     type: String,
@@ -166,6 +173,7 @@ const clientProjectSchema = new mongoose.Schema({
     },
   }],
   teamLeadHistory: [teamLeadHistorySchema], // <-- Add this line
+  assignedEmployees: [assignedEmployeeSchema], // <-- Add this line
 }, {
   timestamps: true, // Automatically adds createdAt and updatedAt
 });
