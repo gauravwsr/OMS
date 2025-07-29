@@ -38,6 +38,7 @@ const clientProjectRoutes = require("./routes/clientProjectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
+const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -110,6 +111,9 @@ app.use("/api/client-projects", clientProjectRoutes);
 
 // Leave management routes
 app.use("/api/leave", leaveRoutes);
+
+// HR Leave management routes
+app.use("/api/hr-leave", hrLeaveRoutes);
 
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
