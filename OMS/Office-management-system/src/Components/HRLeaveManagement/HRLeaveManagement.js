@@ -14,29 +14,29 @@ const HRLeaveManagement = () => {
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
-    console.log('User object in SuperAdminLeaveManagement:', user);
+    console.log('User object in HRLeaveManagement:', user);
     fetchLeaveApplications();
   }, []);
 
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
-      console.log('Fetching leave applications...');
-      const response = await axios.get('http://localhost:5000/api/hr-leave/all');
-      console.log('Leave applications response:', response.data);
+      console.log('Fetching employee leave applications...');
+      const response = await axios.get('http://localhost:5000/api/leave/employees');
+      console.log('Employee leave applications response:', response.data);
       
       if (response.data.success) {
         setLeaveApplications(response.data.data);
-        console.log('Leave applications set:', response.data.data);
+        console.log('Employee leave applications set:', response.data.data);
       } else {
-        console.log('Failed to fetch leave applications:', response.data);
+        console.log('Failed to fetch employee leave applications:', response.data);
       }
     } catch (error) {
-      console.error('Error fetching leave applications:', error);
+      console.error('Error fetching employee leave applications:', error);
       console.error('Error response:', error.response?.data);
       setMessage({
         type: 'error',
-        text: 'Failed to fetch leave applications'
+        text: 'Failed to fetch employee leave applications'
       });
     } finally {
       setLoading(false);
@@ -67,9 +67,9 @@ const HRLeaveManagement = () => {
       };
       
       console.log('Request data:', requestData);
-      console.log('Making API call to:', `http://localhost:5000/api/hr-leave/status/${leaveId}`);
+      console.log('Making API call to:', `http://localhost:5000/api/leave/status/${leaveId}`);
 
-      const response = await axios.patch(`http://localhost:5000/api/hr-leave/status/${leaveId}`, requestData, {
+      const response = await axios.patch(`http://localhost:5000/api/leave/status/${leaveId}`, requestData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -165,10 +165,10 @@ const HRLeaveManagement = () => {
   };
 
   return (
-    <div className="super-admin-leave-management">
+    <div className="hr-leave-management">
       <div className="page-header">
-        <h1>Leave Applications Management</h1>
-        <p>Review and manage HR Manager leave applications</p>
+        <h1>Employee Leave Management</h1>
+        <p>Review and manage employee leave applications</p>
       </div>
 
       {message.text && (
@@ -218,7 +218,7 @@ const HRLeaveManagement = () => {
           <div className="loading">Loading leave applications...</div>
         ) : filteredApplications.length === 0 ? (
           <div className="no-data">
-            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} leave applications found.
+            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} employee leave applications found.
           </div>
         ) : (
           <div className="applications-list">

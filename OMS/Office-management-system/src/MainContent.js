@@ -48,6 +48,8 @@ import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerD
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
+import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
+
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -146,7 +148,7 @@ const MainContent = ({ nav }) => {
           icon: <FiFileText />,
         },
         {
-          path: "/leave-management",
+          path: "/hr-leave-management",
           label: "Leave Management",
           icon: <FiClipboard />,
         },
@@ -830,6 +832,10 @@ const MainContent = ({ nav }) => {
           <Route
             path="/hr-leave-application"
             element={<HRLeaveApplication />}
+          />
+          <Route
+            path="/hr-leave-management"
+            element={<HRLeaveManagement />}
           />
         </Routes>
       </div>

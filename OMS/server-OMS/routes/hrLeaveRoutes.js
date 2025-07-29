@@ -11,24 +11,24 @@ const {
 } = require('../controllers/LeaveController-1');
 
 // Apply for leave
-router.post('/apply', applyLeaves);
+router.post('/applys', applyLeaves);
 
 // Get all leave applications (Super Admin)
-router.get('/all', getAllHrLeaveApplications);
+router.get('/alls', getAllHrLeaveApplications);
 
 // Get leave applications by user
-router.get('/user/:userId', getUserHrLeaveApplications);
+router.get('/users/:usersId', getUserHrLeaveApplications);
 
 // Get leave applications by user email
-router.get('/user-by-email/:userEmail', getUserHrLeaveApplicationsByEmail);
+router.get('/users-by-email/:usersEmail', getUserHrLeaveApplicationsByEmail);
 
 // Update leave status (Super Admin only)
-router.patch('/status/:leaveId', updateHrLeaveStatus);
+router.patch('/statu/:leavesId', updateHrLeaveStatus);
 
 // Get leave statistics
-router.get('/statistics', getHrLeaveStatistics);
+router.get('/statistic', getHrLeaveStatistics);
 
 // Delete leave application
-router.delete('/:leaveId', deleteHrLeaveApplication);
+router.delete('/:leavesId', deleteHrLeaveApplication);
 
 module.exports = router;

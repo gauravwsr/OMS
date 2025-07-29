@@ -41,6 +41,7 @@ export const navigationMenus = {
     { name: "Certificate", path: "/Certificate" },
     { name: "HrAttendance", path: "/HrAttendance" },
     { name: "Apply Leave", path: "/hr-leave-application" },
+    { name: "Leave Management", path: "/hr-leave-management" },
     // Department Dashboards
     { name: "HR Dashboard", path: "/hr-dashboard" },
     { name: "IT Dashboard", path: "/it-dashboard" },
