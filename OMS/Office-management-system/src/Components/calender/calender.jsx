@@ -23,6 +23,8 @@ const Calender = () => {
   const [users, setUsers] = useState([]);
   const { user } = useAuth(); // Get user info to check role
 
+  // Check if current user is Super Admin
+  const isSuperAdmin = user?.role === 'Super_Admin';
   // Check if current user can edit calendar (Super Admin or HR Admin)
   const canEditCalendar = user?.role === 'Super_Admin' || 
                          (user?.role === 'Admin' && user?.subRole?.includes('HR'));
@@ -56,6 +58,12 @@ const Calender = () => {
           } else {
             console.log('Calendar beforeSend - No token found');
           }
+        },
+        actionComplete: (e) => {
+          console.log('Calendar Action Complete:', e);
+          if (e.action === 'insert' || e.action === 'batch') {
+            console.log('Calendar - Event created, notifications should be triggered');
+          }
         }
       });
     }
@@ -68,6 +76,7 @@ const Calender = () => {
     });
   }, [user, canEditCalendar]);
 
+
   // Function to manually refresh calendar data
   const refreshCalendar = () => {
     if (scheduleObj.current) {
@@ -76,7 +85,8 @@ const Calender = () => {
     }
   };
 
-  // Event handlers - now both Super Admin and HR Admin can edit
+
+  // Event handlers - Allow editing for users with edit permissions
   const onActionBegin = (args) => {
     // Allow editing for Super Admin and HR Admin
     if (!canEditCalendar && (args.requestType === 'eventCreate' || 
@@ -132,22 +142,32 @@ const Calender = () => {
       <div style={{ 
         padding: '10px', 
         textAlign: 'right', 
-        backgroundColor: user?.role === 'Super_Admin' ? '#fff3cd' : '#f8f9fa',
+        backgroundColor: !canEditCalendar ? '#fff3cd' : '#f8f9fa',
         borderBottom: '1px solid #dee2e6'
       }}>
-        
+        {!canEditCalendar && (
+          <span style={{
+            marginRight: '15px',
+            color: '#856404',
+            fontSize: '14px',
+            fontWeight: 'bold'
+          }}>
+            📋 Read-Only Mode
+          </span>
+        )}
+
         <button 
           onClick={refreshCalendar}
           style={{
             padding: '8px 16px',
-            backgroundColor: user?.role === 'Super_Admin' ? '#6c757d' : '#007bff',
+            backgroundColor: !canEditCalendar ? '#6c757d' : '#007bff',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '12px'
           }}
-          title={user?.role === 'Super_Admin' ? "Refresh calendar view" : "Refresh calendar and remove finished events"}
+          title={!canEditCalendar ? "Refresh calendar view" : "Refresh calendar and remove finished events"}
         >
           🔄 Refresh Calendar
         </button>
@@ -159,13 +179,13 @@ const Calender = () => {
         id="schedule"
         ref={scheduleObj}
         currentView="Week"
-        group={{ allowGroupEdit: canEditCalendar }} // Allow group editing for Super Admin and HR
-        allowDragAndDrop={canEditCalendar} // Allow drag and drop for Super Admin and HR
-        readonly={!canEditCalendar} // Make schedule readonly for users without edit permission
-        eventSettings={{ dataSource: dataManager }} // Event data source
-        actionBegin={onActionBegin} // Handle action permissions
-        cellClick={onCellClick} // Handle cell click permissions
-        eventClick={onEventClick} // Handle event click permissions
+        group={{ allowGroupEdit: canEditCalendar }}
+        allowDragAndDrop={canEditCalendar}
+        readonly={!canEditCalendar}
+        eventSettings={{ dataSource: dataManager }}
+        actionBegin={onActionBegin}
+        cellClick={onCellClick}
+        eventClick={onEventClick}
       >
         <ResourcesDirective>
           <ResourceDirective

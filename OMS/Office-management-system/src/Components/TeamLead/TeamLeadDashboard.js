@@ -52,23 +52,19 @@ const TeamLeadDashboard = () => {
   const fetchAssignedProjects = async () => {
     try {
       setLoading(true);
-      console.log('Fetching assigned projects for team lead:', currentUser.name || currentUser.id);
-      // Use the backend endpoint to fetch only assigned projects
+      const token = localStorage.getItem('token'); // <-- Add this line
       const identifier = currentUser.id || currentUser.name || currentUser.email;
-      const response = await fetch(`https://crm-brown-gamma.vercel.app/api/client-projects/team-lead/${identifier}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch(`http://localhost:5000/api/client-projects/team-lead/${identifier}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const result = await response.json();
-      // The backend returns { success, count, data: [...] }
       const assignedProjects = Array.isArray(result.data) ? result.data : [];
-      console.log('Assigned projects for', identifier, ':', assignedProjects);
       setProjects(assignedProjects);
-      // Calculate dashboard statistics
-      const stats = calculateDashboardStats(assignedProjects);
-      setDashboardStats(stats);
+      setDashboardStats(calculateDashboardStats(assignedProjects));
     } catch (error) {
-      console.error('Error fetching assigned projects:', error);
       setProjects([]);
     } finally {
       setLoading(false);

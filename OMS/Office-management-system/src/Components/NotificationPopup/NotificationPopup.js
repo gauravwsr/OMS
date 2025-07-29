@@ -166,6 +166,7 @@ const NotificationPopup = () => {
 
   console.log('🔔 NotificationPopup rendering:', currentNotification.title);
 
+
   return (
     <div className={`notification-overlay ${isVisible ? 'visible' : ''}`}>
       <div className={getNotificationStyle(currentNotification.type, currentNotification.priority)}>

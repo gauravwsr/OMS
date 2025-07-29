@@ -144,85 +144,80 @@ const createClientProject = async (req, res) => {
   }
 };
 
-// @desc    Assign team lead to project
-// @route   PUT /api/client-projects/:id/assign-team-lead
-// @access  Private (Project Manager only)
-// const assignTeamLead = async (req, res) => {
+// const assignTeamLeadToProject = async (req, res) => {
 //   try {
 //     const { teamLeadId, teamLeadName } = req.body;
-//     const projectId = req.params.id;
-    
-//     // Validate team lead exists
-//     const teamLead = await User.findById(teamLeadId);
-//     if (!teamLead) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Team lead not found'
-//       });
-//     }
-    
-//     // Check if team lead has appropriate role
-//     if (teamLead.subRole !== 'Team Lead' && teamLead.subRole !== 'Team Leader') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Selected user is not a team lead'
-//       });
-//     }
-    
-//     // Find and update project
-//     const project = await ClientProject.findById(projectId);
+//     const project = await ClientProject.findById(req.params.id);
 //     if (!project) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Project not found'
-//       });
+//       return res.status(404).json({ success: false, message: 'Project not found' });
 //     }
-    
-//     // Assign team lead using the model method
-//     await project.assignTeamLead(
-//       teamLeadName || teamLead.name,
-//       teamLeadId,
-//       req.user?.id // Assuming user is attached to request via auth middleware
-//     );
-    
-//     const updatedProject = await ClientProject.findById(projectId)
-//       .populate('teamLeadId', 'name email subRole specialization')
-//       .populate('assignedBy', 'name email');
-    
-//     res.status(200).json({
-//       success: true,
-//       data: updatedProject,
-//       message: `Team lead ${teamLead.name} assigned successfully`
-//     });
+//     project.teamLeadId = teamLeadId;
+//     project.assignedTeamLead = teamLeadName;
+//     await project.save();
+//     res.json({ success: true, data: project });
 //   } catch (error) {
-//     console.error('Error assigning team lead:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Server Error',
-//       error: error.message
-//     });
+//     res.status(500).json({ success: false, message: error.message });
 //   }
 // };
+
+// @desc    Update client project
+// @route   PUT /api/client-projects/:id
+// @access  Private
+
 
 const assignTeamLeadToProject = async (req, res) => {
   try {
     const { teamLeadId, teamLeadName } = req.body;
     const project = await ClientProject.findById(req.params.id);
+
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
+
+    // If there is a current team lead, push to history
+    if (project.teamLeadId) {
+      // Find the last assignment date from history or use project creation date
+      let assignedDate = project.teamLeadHistory.length > 0
+        ? project.teamLeadHistory[project.teamLeadHistory.length - 1].unassignedDate
+        : project.createdAt?.toISOString().slice(0, 10) || new Date().toISOString().slice(0, 10);
+
+      // Set unassigned date as today (YYYY-MM-DD)
+      const unassignedDate = new Date().toISOString().slice(0, 10);
+
+      project.teamLeadHistory.push({
+        teamLeadId: project.teamLeadId,
+        teamLeadName: project.assignedTeamLead || project.leadName || '',
+        assignedDate,
+        unassignedDate
+      });
+    }
+
+    // Assign new team lead
     project.teamLeadId = teamLeadId;
     project.assignedTeamLead = teamLeadName;
+    project.leadName = teamLeadName;
+
+    // Set assigned date for new team lead
+    const today = new Date().toISOString().slice(0, 10);
+    project.teamLeadHistory.push({
+      teamLeadId,
+      teamLeadName,
+      assignedDate: today,
+      unassignedDate: ''
+    });
+
     await project.save();
-    res.json({ success: true, data: project });
+
+    const updatedProject = await ClientProject.findById(req.params.id)
+      .populate('teamLeadId', 'name email subRole specialization')
+      .populate('assignedBy', 'name email');
+
+    res.json({ success: true, data: updatedProject });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Update client project
-// @route   PUT /api/client-projects/:id
-// @access  Private
 const updateClientProject = async (req, res) => {
   try {
     const project = await ClientProject.findById(req.params.id);
