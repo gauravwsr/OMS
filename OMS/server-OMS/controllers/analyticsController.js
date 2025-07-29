@@ -229,3 +229,10 @@ const exportAnalyticsData = async (req, res) => {
     });
   }
 };
+
+module.exports = {
+  getLeaveAnalytics,
+  getAttendanceAnalytics,
+  getCheckInOutAnalytics,
+  exportAnalyticsData
+};
