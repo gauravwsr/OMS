@@ -50,87 +50,6 @@ const ProjectManagerDashboard = () => {
     overdueProjects: 0
   });
 
-  // Fetch projects from API
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        
-        // First, import/sync remote projects to local database
-        const token = localStorage.getItem('token');
-        try {
-          await fetch('http://localhost:5000/api/client-projects/import-remote', {
-           
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
-          });
-        } catch (importError) {
-          console.warn('Failed to import remote projects:', importError);
-        }
-
-        // Now fetch from local database
-        const response = await fetch('http://localhost:5000/api/client-projects', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Fetched projects from local DB:', data);
-
-        // Process the data - assuming the API returns an object with data array
-        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
-
-        setProjects(projectsData);
-        setFilteredProjects(projectsData);
-
-        // Calculate dashboard statistics
-        const stats = calculateDashboardStats(projectsData);
-        setDashboardStats(stats);
-
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        // Show a user-friendly error message
-        alert('Failed to fetch projects from server. Showing mock data.');
-        // Fallback to mock data if API fails
-        const mockProjects = getMockProjects();
-        setProjects(mockProjects);
-        setFilteredProjects(mockProjects);
-        setDashboardStats(calculateDashboardStats(mockProjects));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-   const fetchTeamLeads = async () => {
-      try {
-        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
-        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await response.json();
-        const teamLeadsData = Array.isArray(data.data) ? data.data : [];
-        setTeamLeads(teamLeadsData);
-      } catch (error) {
-        console.error('Error fetching team leads:', error);
-        setTeamLeads([]);
-      }
-    };
-    fetchProjects();
-    fetchTeamLeads();
-  }, []);
-
   // Mock data fallback
   const getMockProjects = () => {
     return [
@@ -329,6 +248,86 @@ const ProjectManagerDashboard = () => {
     ];
   };
 
+  // Fetch projects from API
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        
+        // First, import/sync remote projects to local database
+        const token = localStorage.getItem('token');
+        try {
+          await fetch('http://localhost:5000/api/client-projects/import-remote', {
+           
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (importError) {
+          console.warn('Failed to import remote projects:', importError);
+        }
+
+        // Now fetch from local database
+        const response = await fetch('http://localhost:5000/api/client-projects', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched projects from local DB:', data);
+
+        // Process the data - assuming the API returns an object with data array
+        const projectsData = Array.isArray(data) ? data : data.data || data.projects || [];
+
+        setProjects(projectsData);
+        setFilteredProjects(projectsData);
+
+        // Calculate dashboard statistics
+        const stats = calculateDashboardStats(projectsData);
+        setDashboardStats(stats);
+
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        // Show a user-friendly error message
+        alert('Failed to fetch projects from server. Showing mock data.');
+        // Fallback to mock data if API fails
+        const mockProjects = getMockProjects();
+        setProjects(mockProjects);
+        setFilteredProjects(mockProjects);
+        setDashboardStats(calculateDashboardStats(mockProjects));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+   const fetchTeamLeads = async () => {
+      try {
+        const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
+        const response = await fetch('http://localhost:5000/api/client-projects/team-leads', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        const teamLeadsData = Array.isArray(data.data) ? data.data : [];
+        setTeamLeads(teamLeadsData);
+      } catch (error) {
+        console.error('Error fetching team leads:', error);
+        setTeamLeads([]);
+      }
+    };
+    fetchProjects();
+    fetchTeamLeads();
+  }, []);
 
   // Calculate dashboard statistics
   const calculateDashboardStats = (projectsData) => {
