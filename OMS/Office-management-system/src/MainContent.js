@@ -50,7 +50,7 @@ import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
-import AnalyticManagement from "./Components/AnalyticManagement/AnalyticManagement.js";
+import AnalyticsManagement from "./Components/AnalyticsManagement/AnalyticsManagement.js";
 
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
@@ -155,10 +155,10 @@ const MainContent = ({ nav }) => {
           icon: <FiClipboard />,
         },
         {
-          path: "/analytic-management",
-          label: "Analytic Management",
+          path: "/analytics-management",
+          label: "Analytics Management",
           icon: <FiBarChart />,
-        }
+        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -171,23 +171,6 @@ const MainContent = ({ nav }) => {
           icon: <FiClipboard />,
         },
       ],
-      // "Admin_HR Manager": [
-      //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
-      //   {
-      //     path: "/hr-registration",
-      //     label: "Registration",
-      //     icon: <FiUsers />,
-      //   },
-
-      //   { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
-      //   { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-      //   {
-      //     path: "/hrAttendance",
-      //     label: "HR Attendance",
-      //     icon: <FiClipboard />,
-      //   },
-      //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
-      // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
@@ -837,16 +820,16 @@ const MainContent = ({ nav }) => {
             element={<SuperAdminLeaveManagement />}
           />
           <Route
+            path="/analytics-management"
+            element={<AnalyticsManagement />}
+          />
+          <Route
             path="/hr-leave-application"
             element={<HRLeaveApplication />}
           />
           <Route
             path="/hr-leave-management"
             element={<HRLeaveManagement />}
-          />
-          <Route
-            path="/analytic-management"
-            element={<AnalyticManagement />}
           />
         </Routes>
       </div>
