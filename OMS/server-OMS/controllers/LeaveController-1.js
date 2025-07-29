@@ -363,5 +363,5 @@ module.exports = {
   getUserHrLeaveApplicationsByEmail,
   updateHrLeaveStatus,
   getHrLeaveStatistics,
-  deleteHrLeaveApplication
+  deleteHrLeaveApplication,
 };

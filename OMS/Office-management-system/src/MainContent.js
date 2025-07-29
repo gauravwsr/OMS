@@ -18,6 +18,7 @@ import {
   FiMenu,
   FiX,
   FiFileMinus,
+  FiBarChart,
 } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./Components/AuthProvider/AuthContext.js";
@@ -49,6 +50,7 @@ import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
+import AnalyticsManagement from "./Components/AnalyticsManagement/AnalyticsManagement.js";
 
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
@@ -152,6 +154,11 @@ const MainContent = ({ nav }) => {
           label: "Leave Management",
           icon: <FiClipboard />,
         },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -164,23 +171,6 @@ const MainContent = ({ nav }) => {
           icon: <FiClipboard />,
         },
       ],
-      // "Admin_HR Manager": [
-      //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
-      //   {
-      //     path: "/hr-registration",
-      //     label: "Registration",
-      //     icon: <FiUsers />,
-      //   },
-
-      //   { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
-      //   { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-      //   {
-      //     path: "/hrAttendance",
-      //     label: "HR Attendance",
-      //     icon: <FiClipboard />,
-      //   },
-      //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
-      // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
@@ -828,6 +818,10 @@ const MainContent = ({ nav }) => {
           <Route
             path="/super-admin-leave-management"
             element={<SuperAdminLeaveManagement />}
+          />
+          <Route
+            path="/analytics-management"
+            element={<AnalyticsManagement />}
           />
           <Route
             path="/hr-leave-application"
