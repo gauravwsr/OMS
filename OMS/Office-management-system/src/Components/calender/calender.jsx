@@ -18,174 +18,53 @@ import {
 import axios from "axios";
 import { useAuth } from "../AuthProvider/AuthContext";
 
+
 const Calender = () => {
   const scheduleObj = useRef(null);
+  const [events, setEvents] = useState([]);
   const [users, setUsers] = useState([]);
-  const { user } = useAuth(); // Get user info to check role
 
-  // Check if current user is Super Admin
-  const isSuperAdmin = user?.role === 'Super_Admin';
-  // Check if current user can edit calendar (Super Admin or HR Admin)
-  const canEditCalendar = user?.role === 'Super_Admin' || 
-                         (user?.role === 'Admin' && user?.subRole?.includes('HR'));
-
-  // Create DataManager with custom configuration
-  const dataManager = React.useMemo(() => {
-    const token = localStorage.getItem("token");
-    console.log('Calendar DataManager - Token available:', !!token);
-    console.log('Calendar DataManager - Can Edit Calendar:', canEditCalendar);
-    console.log('Calendar DataManager - User Role:', user?.role);
-    
-    // Both Super Admin and HR Admin can edit calendar
-    if (canEditCalendar) {
-      return new DataManager({
-        url: "http://localhost:5000/GetData",
-        crudUrl: "http://localhost:5000/BatchData",
-        adaptor: new UrlAdaptor(),
-        crossDomain: true,
-        headers: {
-          "Authorization": token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json"
-        },
-        beforeSend: (dm, request, settings) => {
-          console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
-          console.log('Calendar beforeSend - User:', user?.name, user?.role);
-          const currentToken = localStorage.getItem("token");
-          if (currentToken) {
-            console.log('Calendar beforeSend - Setting authorization header');
-            request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
-            request.httpRequest.setRequestHeader("Content-Type", "application/json");
-          } else {
-            console.log('Calendar beforeSend - No token found');
-          }
-        },
-        actionComplete: (e) => {
-          console.log('Calendar Action Complete:', e);
-          if (e.action === 'insert' || e.action === 'batch') {
-            console.log('Calendar - Event created, notifications should be triggered');
-          }
-        }
-      });
-    }
-    
-    // Read-only access for other users
-    return new DataManager({
-      url: "http://localhost:5000/GetData",
-      adaptor: new UrlAdaptor(),
-      crossDomain: true,
-    });
-  }, [user, canEditCalendar]);
-
-
-  // Function to manually refresh calendar data
-  const refreshCalendar = () => {
-    if (scheduleObj.current) {
-      scheduleObj.current.refreshEvents();
-      console.log('📅 Calendar refreshed - finished events should be removed');
-    }
-  };
-
-
-  // Event handlers - Allow editing for users with edit permissions
-  const onActionBegin = (args) => {
-    // Allow editing for Super Admin and HR Admin
-    if (!canEditCalendar && (args.requestType === 'eventCreate' || 
-        args.requestType === 'eventChange' || 
-        args.requestType === 'eventRemove')) {
-      args.cancel = true;
-      console.log('Action prevented: User does not have calendar edit permissions');
-    } else if (canEditCalendar) {
-      console.log('Calendar action allowed for:', user?.role, args.requestType);
-    }
-  };
-
-  const onCellClick = (args) => {
-    // Allow cell click for users with edit permissions
-    if (!canEditCalendar) {
-      args.cancel = true;
-    }
-  };
-
-  const onEventClick = (args) => {
-    // Allow event click editing for users with edit permissions
-    if (!canEditCalendar) {
-      args.cancel = true;
-    }
-  };
-
-  // Fetch users data
   useEffect(() => {
-    const fetchRoomData = async () => {
+    const fetchEvents = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/users");
-        setUsers(response.data); // Set the room data to state
+        const response = await axios.get("http://localhost:5000/GetData");
+        setEvents(response.data);
       } catch (error) {
-        console.error("Error fetching room data:", error);
+        console.error("Error fetching calendar events:", error);
       }
     };
-
-    fetchRoomData();
-
-    // Auto-refresh calendar every 10 minutes to remove finished events
-    const refreshInterval = setInterval(() => {
-      refreshCalendar();
-    }, 10 * 60 * 1000);
-
-    return () => {
-      clearInterval(refreshInterval);
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/users");
+        setUsers(response.data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
+    fetchEvents();
+    fetchUsers();
   }, []);
+
+  // Defensive: ensure all events have Users as array of valid user IDs
+  const validUserIds = new Set(users.map(u => u._id));
+  const safeEvents = events.map(ev => {
+    let usersArr = Array.isArray(ev.Users)
+      ? ev.Users
+      : (ev.Users ? [ev.Users] : []);
+    // Only keep IDs that exist in users
+    usersArr = usersArr.filter(id => validUserIds.has(id));
+    return { ...ev, Users: usersArr };
+  });
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      {/* Refresh Button - Show for all users but with different styling for Super Admin */}
-      <div style={{ 
-        padding: '10px', 
-        textAlign: 'right', 
-        backgroundColor: !canEditCalendar ? '#fff3cd' : '#f8f9fa',
-        borderBottom: '1px solid #dee2e6'
-      }}>
-        {!canEditCalendar && (
-          <span style={{
-            marginRight: '15px',
-            color: '#856404',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }}>
-            📋 Read-Only Mode
-          </span>
-        )}
-
-        <button 
-          onClick={refreshCalendar}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: !canEditCalendar ? '#6c757d' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-          title={!canEditCalendar ? "Refresh calendar view" : "Refresh calendar and remove finished events"}
-        >
-          🔄 Refresh Calendar
-        </button>
-      </div>
-
       <ScheduleComponent
         width={"100%"}
         height={"calc(100% - 60px)"}
         id="schedule"
         ref={scheduleObj}
         currentView="Week"
-        group={{ allowGroupEdit: canEditCalendar }}
-        allowDragAndDrop={canEditCalendar}
-        readonly={!canEditCalendar}
-        eventSettings={{ dataSource: dataManager }}
-        actionBegin={onActionBegin}
-        cellClick={onCellClick}
-        eventClick={onEventClick}
+        eventSettings={{ dataSource: safeEvents, resourceColorField: "Users" }}
       >
         <ResourcesDirective>
           <ResourceDirective
@@ -212,3 +91,4 @@ const Calender = () => {
 };
 
 export default Calender;
+        
