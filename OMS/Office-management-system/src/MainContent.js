@@ -198,10 +198,20 @@ const MainContent = ({ nav }) => {
       ],
       Intern: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
       Employee_Team_Lead: [
         { path: "/team-lead-dashboard", label: "My Projects", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
     };
 
