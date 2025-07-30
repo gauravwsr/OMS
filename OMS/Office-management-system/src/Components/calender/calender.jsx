@@ -37,7 +37,11 @@ const Calender = () => {
         url: "http://localhost:5000/GetData",
         adaptor: new UrlAdaptor(),
         crossDomain: true,
-        requestType: 'POST'
+        requestType: 'POST',
+        headers: {
+      "Authorization": token ? `Bearer ${token}` : "",
+      "Content-Type": "application/json"
+    },
       });
     }
     

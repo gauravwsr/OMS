@@ -3,53 +3,40 @@ const router = express.Router();
 const ScheduleEventData = require('../models/calenderModel');
 const { createEventNotification, createMeetingNotification } = require('../controllers/notificationController');
 const { protect } = require('../middlewares/auth');
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel"); // ya jahan se User model import hota hai
 
 
 // Load all events (similar to LoadData in C#) with automatic cleanup
 router.post('/GetData', async (req, res) => {
-  try {
-    // First, cleanup finished events (events that ended more than 1 hour ago)
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+  let userId = null;
+  const authHeader = req.headers.authorization;
 
-    await ScheduleEventData.deleteMany({
-      EndTime: { $lt: oneHourAgo }
-    });
-
-    console.log(`Cleaned up finished events older than: ${oneHourAgo}`);
-
-    // Get user ID from the token (assuming 'protect' middleware already put user on req.user)
-    // If 'protect' middleware is not used, you'll need to parse the token here.
-    let userId = null;
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.substring(7);
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        userId = decoded.id;
-        console.log('User ID from token:', userId);
-      } catch (error) {
-        console.error('Error verifying token for GetData:', error.message);
-      }
-    } else {
-      console.log('No authorization header for GetData request');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      userId = decoded.id;
+      console.log('User ID from token:', userId);
+    } catch (error) {
+      console.error('Error verifying token for GetData:', error.message);
     }
+  } else {
+    console.log('No authorization header for GetData request');
+  }
 
+  try {
     let events;
     if (userId) {
-      // Show events where Users is empty (public) OR contains this user
       events = await ScheduleEventData.find({
         $or: [
-          { Users: { $size: 0 } },           // Public events
-          { Users: userId },                  // Private events for this user
-          { Users: { $elemMatch: { $eq: userId } } }, // Private events for this user (ObjectId)
+          { Users: { $size: 0 } },
+          { Users: userId },
+          { Users: { $elemMatch: { $eq: userId } } },
         ]
       });
       console.log(`Found ${events.length} events for user ID: ${userId}`);
     } else {
-      // If no user ID, show only public events
       events = await ScheduleEventData.find({
         Users: { $size: 0 }
       });
