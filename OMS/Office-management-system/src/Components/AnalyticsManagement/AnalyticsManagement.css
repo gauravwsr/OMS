@@ -416,32 +416,32 @@
   letter-spacing: 0.5px;
 }
 
-.badge-leave-type.annual-leave {
-  background: linear-gradient(135deg, #48bb78, #38a169);
+.badge-leave-type.vacation {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
   color: #fff;
 }
 .badge-leave-type.sick-leave {
   background: linear-gradient(135deg, #ed8936, #dd6b20);
   color: #fff;
 }
+.badge-leave-type.personal-leave {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  color: #fff;
+}
 .badge-leave-type.emergency-leave {
-  background: linear-gradient(135deg, #f56565, #e53e3e);
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
   color: #fff;
 }
-.badge-leave-type.maternity-leave {
-  background: linear-gradient(135deg, #9f7aea, #805ad5);
-  color: #fff;
-}
-.badge-leave-type.casual-leave {
+/* .badge-leave-type.casual-leave {
   background: linear-gradient(135deg, #4299e1, #3182ce);
   color: #fff;
 }
 .badge-leave-type.earned-leave {
   background: linear-gradient(135deg, #ecc94b, #d69e2e);
   color: #fff;
-}
+} */
 .badge-leave-type.others {
-  background: linear-gradient(135deg, #718096, #4a5568);
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
   color: #fff;
 }
 
