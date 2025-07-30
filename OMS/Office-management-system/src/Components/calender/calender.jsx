@@ -37,6 +37,7 @@ const Calender = () => {
         url: "http://localhost:5000/GetData",
         adaptor: new UrlAdaptor(),
         crossDomain: true,
+        requestType: 'POST'
       });
     }
     
@@ -45,6 +46,7 @@ const Calender = () => {
       crudUrl: "http://localhost:5000/BatchData",
       adaptor: new UrlAdaptor(),
       crossDomain: true,
+      requestType: 'POST',
       headers: {
         "Authorization": token ? `Bearer ${token}` : "",
         "Content-Type": "application/json"
@@ -68,14 +70,6 @@ const Calender = () => {
       }
     });
   }, [user, isSuperAdmin]);
-
-  // Function to manually refresh calendar data
-  const refreshCalendar = () => {
-    if (scheduleObj.current) {
-      scheduleObj.current.refreshEvents();
-      console.log('📅 Calendar refreshed - finished events should be removed');
-    }
-  };
 
   // Event handlers for Super Admin restrictions
   const onActionBegin = (args) => {
@@ -114,52 +108,10 @@ const Calender = () => {
     };
 
     fetchRoomData();
-
-    // Auto-refresh calendar every 10 minutes to remove finished events
-    const refreshInterval = setInterval(() => {
-      refreshCalendar();
-    }, 10 * 60 * 1000);
-
-    return () => {
-      clearInterval(refreshInterval);
-    };
   }, []);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-      {/* Refresh Button - Show for all users but with different styling for Super Admin */}
-      <div style={{ 
-        padding: '10px', 
-        textAlign: 'right', 
-        backgroundColor: isSuperAdmin ? '#fff3cd' : '#f8f9fa',
-        borderBottom: '1px solid #dee2e6'
-      }}>
-        {isSuperAdmin && (
-          <span style={{
-            marginRight: '15px',
-            color: '#856404',
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }}>
-            📋 Read-Only Mode (Super Admin View)
-          </span>
-        )}
-        <button 
-          onClick={refreshCalendar}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: isSuperAdmin ? '#6c757d' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-          title={isSuperAdmin ? "Refresh calendar view" : "Refresh calendar and remove finished events"}
-        >
-          🔄 Refresh Calendar
-        </button>
-      </div>
 
       <ScheduleComponent
         width={"100%"}

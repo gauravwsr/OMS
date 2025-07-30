@@ -13,15 +13,49 @@ router.post('/GetData', async (req, res) => {
     // First, cleanup finished events (events that ended more than 1 hour ago)
     const oneHourAgo = new Date();
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-    
+
     await ScheduleEventData.deleteMany({
       EndTime: { $lt: oneHourAgo }
     });
-    
+
     console.log(`Cleaned up finished events older than: ${oneHourAgo}`);
-    
-    // Then return remaining events
-    const events = await ScheduleEventData.find();
+
+    // Get user ID from the token (assuming 'protect' middleware already put user on req.user)
+    // If 'protect' middleware is not used, you'll need to parse the token here.
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        userId = decoded.id;
+        console.log('User ID from token:', userId);
+      } catch (error) {
+        console.error('Error verifying token for GetData:', error.message);
+      }
+    } else {
+      console.log('No authorization header for GetData request');
+    }
+
+    let events;
+    if (userId) {
+      // Show events where Users is empty (public) OR contains this user
+      events = await ScheduleEventData.find({
+        $or: [
+          { Users: { $size: 0 } },           // Public events
+          { Users: userId },                  // Private events for this user
+          { Users: { $elemMatch: { $eq: userId } } }, // Private events for this user (ObjectId)
+        ]
+      });
+      console.log(`Found ${events.length} events for user ID: ${userId}`);
+    } else {
+      // If no user ID, show only public events
+      events = await ScheduleEventData.find({
+        Users: { $size: 0 }
+      });
+      console.log('No user ID found, returning only public events.');
+    }
+
     res.json(events);
   } catch (err) {
     console.error('Error loading data:', err);
@@ -168,8 +202,20 @@ router.post('/BatchData', async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields in the event data' });
       }
       // Ensure CreateBy is a string, even if it comes as an array
-      const users = newEvent.Users || [];
-      const createdBy = Array.isArray(newEvent.Users) ? newEvent.Users[0] : newEvent.Users;
+
+      // Convert Users field: if any value is a name, convert to _id
+      let users = newEvent.Users || [];
+      if (!Array.isArray(users)) users = [users];
+      // Find all users from DB
+      const allUsers = await User.find({}, '_id name');
+      const nameToId = {};
+      allUsers.forEach(u => { nameToId[u.name] = u._id.toString(); });
+      users = users.map(u => {
+        // If it's already an ObjectId string, keep it; if it's a name, convert
+        if (typeof u === 'string' && nameToId[u]) return nameToId[u];
+        return u;
+      });
+      const createdBy = users.length > 0 ? users[0] : null;
 
       const newEventData = new ScheduleEventData({
         StartTime: new Date(newEvent.StartTime),
@@ -177,7 +223,7 @@ router.post('/BatchData', async (req, res) => {
         Subject: newEvent.Subject,
         Description: newEvent.Description,
         CreateBy: createdBy,  // Fix applied here
-        Users: users,  // Ensure Users is an array or null
+        Users: users,  // Always array of user IDs
         Location: newEvent.Location,
         IsAllDay: newEvent.IsAllDay || false,  
         StartTimezone: newEvent.StartTimezone || null,
@@ -268,11 +314,19 @@ router.post('/BatchData', async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields in the event data for update' });
       }
 
-      // Ensure Users exists before using it
-      const users = updatedEvent.Users || [];
-      const createdBy = Array.isArray(updatedEvent.Users) ? updatedEvent.Users[0] : updatedEvent.Users;
 
-      console.log(users)
+      // Ensure Users exists before using it, and convert names to IDs
+      let users = updatedEvent.Users || [];
+      if (!Array.isArray(users)) users = [users];
+      // Find all users from DB
+      const allUsers = await User.find({}, '_id name');
+      const nameToId = {};
+      allUsers.forEach(u => { nameToId[u.name] = u._id.toString(); });
+      users = users.map(u => {
+        if (typeof u === 'string' && nameToId[u]) return nameToId[u];
+        return u;
+      });
+      const createdBy = users.length > 0 ? users[0] : null;
 
       const event = await ScheduleEventData.findById(updatedEvent._id);
       if (event) {
@@ -282,7 +336,7 @@ router.post('/BatchData', async (req, res) => {
         event.CreateBy = createdBy;  // Fix applied here
         event.Location = updatedEvent.Location;
         event.Description = updatedEvent.Description;
-        event.Users = users;  // Ensure Users is an array or null
+        event.Users = users;  // Always array of user IDs
         event.StartTimezone = updatedEvent.StartTimezone || null;
         event.EndTimezone = updatedEvent.EndTimezone || null;
         event.RecurrenceRule = updatedEvent.RecurrenceRule || null;
