@@ -3,10 +3,10 @@ const express = require("express");
 
 // Set default JWT secret if not in environment
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'your-secret-key-for-oms-application-2024';
+  process.env.JWT_SECRET = "your-secret-key-for-oms-application-2024";
 }
 
-console.log('JWT_SECRET configured:', process.env.JWT_SECRET ? 'Yes' : 'No');
+console.log("JWT_SECRET configured:", process.env.JWT_SECRET ? "Yes" : "No");
 const Imap = require("node-imap");
 const { simpleParser } = require("mailparser");
 const multer = require("multer");
@@ -40,6 +40,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
+const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -65,7 +67,7 @@ app.use("/api/message", messageRoutes);
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -75,36 +77,33 @@ app.use(
 // Pre-flight requests
 app.options("*", cors());
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes
-app.use("/api/candidates", candidateRoutes);
+// Connect to Database
+connectDB();
 
 // Default route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// Middleware
-app.use(express.json());
-
-// Connect to Database
-connectDB();
-
+// Authentication routes
 app.use("/api/auth", authRoutes);
 
-// Routes
-app.use("/tasks", taskRoutes);
+// User routes
 app.use("/users", userRoutes);
 app.use(userRoutes);
+
+// Other routes
+app.use("/tasks", taskRoutes);
 app.use("/", calenderRoutes);
 app.use("/api/schedule", scheduleRoutes);
-// app.use('/api/candidates', candidateRoutes);
-
+app.use("/api/candidates", candidateRoutes);
 app.use("/api", projectRoutes);
 
 // Client Project management routes
@@ -121,6 +120,12 @@ app.use("/api/analytics", analyticsRoutes);
 
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
+
+// Team Lead Task management routes
+app.use("/api/team-lead", teamLeadTaskRoutes);
+
+// Employee Task management routes
+app.use("/api/employee", employeeTaskRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);
@@ -404,14 +409,18 @@ const cleanupFinishedEvents = async () => {
   try {
     const now = new Date();
     const result = await ScheduleEventData.deleteMany({
-      EndTime: { $lt: now }
+      EndTime: { $lt: now },
     });
-    
+
     if (result.deletedCount > 0) {
-      console.log(`🧹 Auto-cleanup: Removed ${result.deletedCount} finished events at ${now.toLocaleString()}`);
+      console.log(
+        `🧹 Auto-cleanup: Removed ${
+          result.deletedCount
+        } finished events at ${now.toLocaleString()}`
+      );
     }
   } catch (error) {
-    console.error('❌ Error during auto-cleanup:', error);
+    console.error("❌ Error during auto-cleanup:", error);
   }
 };
 

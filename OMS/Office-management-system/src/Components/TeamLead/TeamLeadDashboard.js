@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FaProjectDiagram, 
-  FaTasks, 
-  FaCalendarAlt, 
+import React, { useState, useEffect } from "react";
+import {
+  FaProjectDiagram,
+  FaTasks,
+  FaCalendarAlt,
   FaCheckCircle,
   FaExclamationTriangle,
   FaPause,
@@ -18,30 +18,44 @@ import {
   FaLock,
   FaTimes,
   FaClock,
-  FaUser
-} from 'react-icons/fa';
-import { useAuth } from '../AuthProvider/AuthContext';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import './TeamLeadDashboard.css';
+  FaUser,
+  FaPlus,
+} from "react-icons/fa";
+import { useAuth } from "../AuthProvider/AuthContext";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import "./TeamLeadDashboard.css";
+import "./TeamLeadTaskTracking.css";
 
 const TeamLeadDashboard = () => {
   const { user } = useAuth(); // Get current authenticated user
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('projectId');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortBy, setSortBy] = useState("projectId");
+  const [sortOrder, setSortOrder] = useState("asc");
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showTaskDetails, setShowTaskDetails] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [tasks, setTasks] = useState({
+    Pending: [],
+    "In Progress": [],
+    Completed: [],
+  });
+  const [showTaskModal, setShowTaskModal] = useState(false);
   const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    assignedTo: '',
-    dueDate: '',
+    title: "",
+    description: "",
+    assignedTo: [],
+    dueDate: "",
+    priority: "Medium",
+    taskPoints: [],
+  });
+  const [newTaskPoint, setNewTaskPoint] = useState({
+    pointTitle: "",
+    description: "",
   });
   const [addingTask, setAddingTask] = useState(false);
   const [dashboardStats, setDashboardStats] = useState({
@@ -49,33 +63,85 @@ const TeamLeadDashboard = () => {
     activeProjects: 0,
     completedProjects: 0,
     overdueProjects: 0,
-    totalAmount: 0
+    totalAmount: 0,
   });
   const [editTask, setEditTask] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editAssignment, setEditAssignment] = useState([]);
+  const [showTaskHistory, setShowTaskHistory] = useState(false);
+  const [selectedTaskForHistory, setSelectedTaskForHistory] = useState(null);
 
   // Get current user (Team Lead) info from auth context
   const currentUser = user || {
-    name: "Team Lead", 
-    id: "team-lead-id"
+    name: "Team Lead",
+    id: "team-lead-id",
   };
 
   // Fetch projects assigned to this team lead
   const fetchAssignedProjects = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token'); // <-- Add this line
-      const identifier = currentUser.id || currentUser.name || currentUser.email;
-      const response = await fetch(`http://localhost:5000/api/client-projects/team-lead/${identifier}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token"); // <-- Add this line
+      const identifier =
+        currentUser.id || currentUser.name || currentUser.email;
+      const response = await fetch(
+        `http://localhost:5000/api/client-projects/team-lead/${identifier}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
       const result = await response.json();
       const assignedProjects = Array.isArray(result.data) ? result.data : [];
-      setProjects(assignedProjects);
-      setDashboardStats(calculateDashboardStats(assignedProjects));
+
+      // Fetch task summaries for each project
+      const projectsWithTasks = await Promise.all(
+        assignedProjects.map(async (project) => {
+          try {
+            const taskResponse = await fetch(
+              `http://localhost:5000/api/team-lead/projects/${project._id}/tasks`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            const taskResult = await taskResponse.json();
+
+            if (taskResult.success) {
+              const projectTasks = {
+                Pending: taskResult.data.filter(
+                  (task) => task.status === "Pending"
+                ),
+                "In Progress": taskResult.data.filter(
+                  (task) => task.status === "In Progress"
+                ),
+                Completed: taskResult.data.filter(
+                  (task) => task.status === "Completed"
+                ),
+              };
+
+              return {
+                ...project,
+                taskSummary: projectTasks,
+              };
+            }
+            return project;
+          } catch (error) {
+            console.error(
+              `Error fetching tasks for project ${project._id}:`,
+              error
+            );
+            return project;
+          }
+        })
+      );
+
+      setProjects(projectsWithTasks);
+      setDashboardStats(calculateDashboardStats(projectsWithTasks));
     } catch (error) {
       setProjects([]);
     } finally {
@@ -86,17 +152,26 @@ const TeamLeadDashboard = () => {
   // Calculate dashboard statistics
   const calculateDashboardStats = (projectsData) => {
     const totalProjects = projectsData.length;
-    const activeProjects = projectsData.filter(p => p.projectStatus === 'Active').length;
-    const completedProjects = projectsData.filter(p => p.projectStatus === 'Completed').length;
-    const overdueProjects = projectsData.filter(p => p.projectStatus === 'Overdue').length;
-    const totalAmount = projectsData.reduce((sum, p) => sum + (p.finalAmount || 0), 0);
+    const activeProjects = projectsData.filter(
+      (p) => p.projectStatus === "Active"
+    ).length;
+    const completedProjects = projectsData.filter(
+      (p) => p.projectStatus === "Completed"
+    ).length;
+    const overdueProjects = projectsData.filter(
+      (p) => p.projectStatus === "Overdue"
+    ).length;
+    const totalAmount = projectsData.reduce(
+      (sum, p) => sum + (p.finalAmount || 0),
+      0
+    );
 
     return {
       totalProjects,
       activeProjects,
       completedProjects,
       overdueProjects,
-      totalAmount
+      totalAmount,
     };
   };
 
@@ -106,29 +181,38 @@ const TeamLeadDashboard = () => {
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(project =>
-        (project.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (project.projectId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (project.leadName || '').toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (project) =>
+          (project.clientName || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (project.projectId || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (project.leadName || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply status filter
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(project => (project.projectStatus || 'unknown') === filterStatus);
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(
+        (project) => (project.projectStatus || "unknown") === filterStatus
+      );
     }
 
     // Apply sorting
     filtered.sort((a, b) => {
-      let aVal = a[sortBy] || '';
-      let bVal = b[sortBy] || '';
-      
-      if (typeof aVal === 'string') {
+      let aVal = a[sortBy] || "";
+      let bVal = b[sortBy] || "";
+
+      if (typeof aVal === "string") {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
-      
-      if (sortOrder === 'asc') {
+
+      if (sortOrder === "asc") {
         return aVal > bVal ? 1 : -1;
       } else {
         return aVal < bVal ? 1 : -1;
@@ -145,25 +229,25 @@ const TeamLeadDashboard = () => {
 
   // Helper functions
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch (error) {
-      return 'Invalid Date';
+      return "Invalid Date";
     }
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      'active': '#10b981',
-      'completed': '#3b82f6', 
-      'overdue': '#ef4444',
-      'pending': '#f59e0b',
-      'unknown': '#6b7280'
+      active: "#10b981",
+      completed: "#3b82f6",
+      overdue: "#ef4444",
+      pending: "#f59e0b",
+      unknown: "#6b7280",
     };
     return colors[status?.toLowerCase()] || colors.unknown;
   };
@@ -171,6 +255,7 @@ const TeamLeadDashboard = () => {
   const handleViewDetails = (project) => {
     setSelectedProject(project);
     setShowProjectDetails(true);
+    fetchProjectTasks(project._id); // Fetch tasks when project is selected
   };
 
   const handleCloseDetails = () => {
@@ -183,29 +268,184 @@ const TeamLeadDashboard = () => {
     setSelectedTask(task);
   };
 
-  // Handler for adding a new task
-  const handleAddTask = async (e) => {
-    e.preventDefault();
-    if (!selectedProject || !newTask.title || !newTask.assignedTo) return;
+  // Fetch tasks for selected project
+  const fetchProjectTasks = async (projectId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/team-lead/projects/${projectId}/tasks`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        // Group tasks by status
+        const groupedTasks = {
+          Pending: result.data.filter((task) => task.status === "Pending"),
+          "In Progress": result.data.filter(
+            (task) => task.status === "In Progress"
+          ),
+          Completed: result.data.filter((task) => task.status === "Completed"),
+        };
+        setTasks(groupedTasks);
+
+        // Update project progress based on task completion
+        await updateProjectProgress(projectId, groupedTasks);
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
+  };
+
+  // Create new task
+  const createTask = async () => {
+    if (!selectedProject || !newTask.title) return;
+
     setAddingTask(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/add-task`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(newTask)
-      });
-      if (response.ok) {
-        // Refresh project details (fetch again or update state)
-        fetchAssignedProjects();
-        setNewTask({ title: '', description: '', assignedTo: '', dueDate: '' });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/team-lead/projects/${selectedProject._id}/tasks`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newTask),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        // Reset form
+        setNewTask({
+          title: "",
+          description: "",
+          assignedTo: [],
+          dueDate: "",
+          priority: "Medium",
+          taskPoints: [],
+        });
+        setShowTaskModal(false);
+        // Refresh tasks and recalculate progress
+        await fetchProjectTasks(selectedProject._id);
+        // Refresh projects to update overall dashboard
+        await fetchAssignedProjects();
+        alert("Task created successfully!");
       }
+    } catch (error) {
+      console.error("Error creating task:", error);
+      alert("Failed to create task");
     } finally {
       setAddingTask(false);
     }
+  };
+
+  // Update task assignment
+  const updateTaskAssignment = async (taskId, assignedTo) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/team-lead/tasks/${taskId}/assignment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ assignedTo }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        fetchProjectTasks(selectedProject._id);
+        fetchAssignedProjects();
+      }
+    } catch (error) {
+      console.error("Error updating task assignment:", error);
+    }
+  };
+
+  // Update task status
+  const updateTaskStatus = async (taskId, status) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/team-lead/tasks/${taskId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        fetchProjectTasks(selectedProject._id);
+        fetchAssignedProjects();
+      }
+    } catch (error) {
+      console.error("Error updating task status:", error);
+    }
+  };
+
+  // Mark task point as completed
+  const updateTaskPoint = async (taskId, pointId, isCompleted, completedBy) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/team-lead/tasks/${taskId}/points/${pointId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ isCompleted, completedBy }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        fetchProjectTasks(selectedProject._id);
+        fetchAssignedProjects();
+      }
+    } catch (error) {
+      console.error("Error updating task point:", error);
+    }
+  };
+
+  // Add task point to new task
+  const addTaskPoint = () => {
+    if (!newTaskPoint.pointTitle) return;
+
+    setNewTask((prev) => ({
+      ...prev,
+      taskPoints: [
+        ...prev.taskPoints,
+        { ...newTaskPoint, order: prev.taskPoints.length },
+      ],
+    }));
+
+    setNewTaskPoint({ pointTitle: "", description: "" });
+  };
+
+  // Remove task point from new task
+  const removeTaskPoint = (index) => {
+    setNewTask((prev) => ({
+      ...prev,
+      taskPoints: prev.taskPoints.filter((_, i) => i !== index),
+    }));
   };
 
   const handleCloseTaskDetails = () => {
@@ -213,12 +453,88 @@ const TeamLeadDashboard = () => {
     setSelectedTask(null);
   };
 
+  // Open assignment modal
+  const openAssignmentModal = (task) => {
+    setSelectedTask(task);
+    setEditAssignment(task.assignedTo || []);
+    setShowEditModal(true);
+  };
+
+  // Save assignment changes
+  const saveAssignmentChanges = async () => {
+    if (!selectedTask) return;
+
+    try {
+      await updateTaskAssignment(selectedTask._id, editAssignment);
+      setShowEditModal(false);
+      setSelectedTask(null);
+      setEditAssignment([]);
+      alert("Assignment updated successfully!");
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      alert("Failed to update assignment");
+    }
+  };
+
+  // Calculate project completion percentage
+  const calculateProjectProgress = (taskList) => {
+    const totalTasks =
+      taskList.Pending.length +
+      taskList["In Progress"].length +
+      taskList.Completed.length;
+    if (totalTasks === 0) return 0;
+
+    const completedTasks = taskList.Completed.length;
+    const inProgressTasks = taskList["In Progress"].length;
+
+    // Give 100% for completed tasks and 50% for in-progress tasks
+    const progressScore = completedTasks * 100 + inProgressTasks * 50;
+    const maxScore = totalTasks * 100;
+
+    return Math.round((progressScore / maxScore) * 100);
+  };
+
+  // View task assignment history
+  const viewTaskHistory = (task) => {
+    setSelectedTaskForHistory(task);
+    setShowTaskHistory(true);
+  };
+
+  // Update project progress when tasks change
+  const updateProjectProgress = async (projectId, taskSummary) => {
+    const newProgress = calculateProjectProgress(taskSummary);
+
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(
+        `http://localhost:5000/api/client-projects/${projectId}/progress`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ progress: newProgress }),
+        }
+      );
+
+      // Update local project state
+      setProjects((prev) =>
+        prev.map((p) =>
+          p._id === projectId ? { ...p, progress: newProgress } : p
+        )
+      );
+    } catch (error) {
+      console.error("Error updating project progress:", error);
+    }
+  };
+
   const handleSort = (field) => {
     if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortBy(field);
-      setSortOrder('asc');
+      setSortOrder("asc");
     }
   };
 
@@ -237,14 +553,23 @@ const TeamLeadDashboard = () => {
     <div className="team-lead-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <h1><FaProjectDiagram /> Team Lead Dashboard</h1>
-        <p>Welcome back, {currentUser.name || currentUser.username || 'Team Lead'}! Here are your assigned projects.</p>
+        <h1>
+          <FaProjectDiagram /> Team Lead Dashboard
+        </h1>
+        <p>
+          Welcome back,{" "}
+          {currentUser.name || currentUser.username || "Team Lead"}! Here are
+          your assigned projects.
+        </p>
       </div>
 
       {/* Statistics Grid */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}
+          >
             <FaProjectDiagram size={32} />
           </div>
           <div className="stat-info">
@@ -258,7 +583,10 @@ const TeamLeadDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+          >
             <FaCheckCircle size={32} />
           </div>
           <div className="stat-info">
@@ -272,7 +600,10 @@ const TeamLeadDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "linear-gradient(135deg, #3b82f6, #2563eb)" }}
+          >
             <FaPlay size={32} />
           </div>
           <div className="stat-info">
@@ -286,11 +617,19 @@ const TeamLeadDashboard = () => {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+          <div
+            className="stat-icon"
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)" }}
+          >
             <FaChartLine size={32} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">₹{dashboardStats.totalAmount ? dashboardStats.totalAmount.toLocaleString() : '0'}</div>
+            <div className="stat-value">
+              ₹
+              {dashboardStats.totalAmount
+                ? dashboardStats.totalAmount.toLocaleString()
+                : "0"}
+            </div>
             <div className="stat-title">Total Value</div>
             <div className="stat-trend">
               <FaArrowUp size={12} />
@@ -312,10 +651,10 @@ const TeamLeadDashboard = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <div className="filter-controls">
-            <select 
-              value={filterStatus} 
+            <select
+              value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="filter-select"
             >
@@ -332,30 +671,42 @@ const TeamLeadDashboard = () => {
       {/* Projects Section */}
       <div className="projects-section">
         <div className="section-header">
-          <h2><FaProjectDiagram /> My Assigned Projects ({filteredProjects.length})</h2>
+          <h2>
+            <FaProjectDiagram /> My Assigned Projects ({filteredProjects.length}
+            )
+          </h2>
         </div>
 
         <div className="projects-grid">
-          {filteredProjects.map(project => (
+          {filteredProjects.map((project) => (
             <div key={project._id} className="project-card">
               <div className="project-header">
                 <div className="project-title">
-                  <h3>{project.projectId || 'Untitled Project'}</h3>
+                  <h3>{project.projectId || "Untitled Project"}</h3>
                   <div className="project-badges">
-                    <span 
-                      className="status-badge" 
-                      style={{ backgroundColor: getStatusColor(project.projectStatus || 'unknown') }}
+                    <span
+                      className="status-badge"
+                      style={{
+                        backgroundColor: getStatusColor(
+                          project.projectStatus || "unknown"
+                        ),
+                      }}
                     >
-                      {project.projectStatus ? project.projectStatus.replace('-', ' ') : 'Unknown'}
+                      {project.projectStatus
+                        ? project.projectStatus.replace("-", " ")
+                        : "Unknown"}
                     </span>
                     <span className="amount-badge">
-                      ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
+                      ₹
+                      {project.finalAmount
+                        ? project.finalAmount.toLocaleString()
+                        : "0"}
                     </span>
                   </div>
                 </div>
                 <div className="project-actions">
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     onClick={() => handleViewDetails(project)}
                     title="View Details"
                   >
@@ -366,35 +717,46 @@ const TeamLeadDashboard = () => {
 
               <div className="project-details">
                 <div className="client-info">
-                  <strong>Client:</strong> {project.clientName || 'Unknown Client'}
+                  <strong>Client:</strong>{" "}
+                  {project.clientName || "Unknown Client"}
                 </div>
                 <div className="project-info">
                   <div className="info-item">
-                    <strong>Project ID:</strong> {project.projectId || 'N/A'}
+                    <strong>Project ID:</strong> {project.projectId || "N/A"}
                   </div>
                   <div className="info-item">
-                    <strong>Original Lead:</strong> {project.leadName || 'Not Specified'}
+                    <strong>Original Lead:</strong>{" "}
+                    {project.leadName || "Not Specified"}
                   </div>
                   <div className="info-item">
-                    <strong>Final Amount:</strong> ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}
+                    <strong>Final Amount:</strong> ₹
+                    {project.finalAmount
+                      ? project.finalAmount.toLocaleString()
+                      : "0"}
                   </div>
                 </div>
-                
+
                 <div className="assignment-info">
                   <div className="assignment-item">
-                    <strong>Project Status:</strong> 
-                    <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
-                      {project.projectStatus || 'Unknown'}
+                    <strong>Project Status:</strong>
+                    <span
+                      className={`status-indicator ${
+                        project.projectStatus
+                          ? project.projectStatus.toLowerCase()
+                          : "unknown"
+                      }`}
+                    >
+                      {project.projectStatus || "Unknown"}
                     </span>
                   </div>
                   <div className="assignment-item">
-                    <strong>Assigned Team Lead:</strong> 
+                    <strong>Assigned Team Lead:</strong>
                     <span className="team-lead-assigned">
-                      {project.assignedTeamLead || 'Not Assigned'}
+                      {project.assignedTeamLead || "Not Assigned"}
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="project-meta">
                   <div className="meta-item">
                     <FaCalendarAlt />
@@ -409,12 +771,148 @@ const TeamLeadDashboard = () => {
                 <div className="project-status-info">
                   <div className="status-header">
                     <span>Project Status</span>
-                    <span className={`status-indicator ${project.projectStatus ? project.projectStatus.toLowerCase() : 'unknown'}`}>
-                      {project.projectStatus || 'Unknown'}
+                    <span
+                      className={`status-indicator ${
+                        project.projectStatus
+                          ? project.projectStatus.toLowerCase()
+                          : "unknown"
+                      }`}
+                    >
+                      {project.projectStatus || "Unknown"}
                     </span>
                   </div>
                   <div className="amount-display">
-                    <strong>Project Value: ₹{project.finalAmount ? project.finalAmount.toLocaleString() : '0'}</strong>
+                    <strong>
+                      Project Value: ₹
+                      {project.finalAmount
+                        ? project.finalAmount.toLocaleString()
+                        : "0"}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Enhanced Project Summary Cards */}
+                <div className="project-summary-card">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr",
+                      gap: 12,
+                    }}
+                  >
+                    {/* Assigned Team Members */}
+                    <div>
+                      <h6 className="summary-section-header">
+                        👥 TEAM MEMBERS (
+                        {(project.assignedEmployees || []).length})
+                      </h6>
+                      {project.assignedEmployees &&
+                      project.assignedEmployees.length > 0 ? (
+                        <div className="team-members-container">
+                          {project.assignedEmployees
+                            .slice(0, 3)
+                            .map((emp, idx) => (
+                              <span key={idx} className="team-member-badge">
+                                {emp.name}
+                              </span>
+                            ))}
+                          {project.assignedEmployees.length > 3 && (
+                            <span className="team-member-more">
+                              +{project.assignedEmployees.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="no-team-assigned">
+                          No team assigned yet
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Task Summary - Show when project has tasks */}
+                    {project.taskSummary &&
+                      (project.taskSummary.Pending.length > 0 ||
+                        project.taskSummary["In Progress"].length > 0 ||
+                        project.taskSummary.Completed.length > 0) && (
+                        <div>
+                          <h6 className="summary-section-header">
+                            📋 TASK PROGRESS
+                          </h6>
+                          <div className="task-progress-indicator">
+                            <span className="task-count-pending">
+                              📋 {project.taskSummary.Pending.length} Pending
+                            </span>
+                            <span className="task-count-active">
+                              🔄 {project.taskSummary["In Progress"].length}{" "}
+                              Active
+                            </span>
+                            <span className="task-count-completed">
+                              ✅ {project.taskSummary.Completed.length} Done
+                            </span>
+                          </div>
+
+                          {/* Progress Bar */}
+                          <div className="progress-bar-container">
+                            <div className="progress-bar">
+                              <div
+                                className="progress-bar-fill"
+                                style={{ width: `${project.progress || 0}%` }}
+                              ></div>
+                            </div>
+                            <div className="progress-percentage">
+                              {project.progress || 0}% Complete
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Project Health Indicator */}
+                    <div>
+                      <h6 className="summary-section-header">
+                        🎯 PROJECT HEALTH
+                      </h6>
+                      <div className="project-health-indicator">
+                        <div
+                          className="health-status-dot"
+                          style={{
+                            background: getStatusColor(project.projectStatus),
+                          }}
+                        ></div>
+                        <span style={{ fontSize: 10, fontWeight: 500 }}>
+                          {project.projectStatus === "Active"
+                            ? "On Track"
+                            : project.projectStatus === "Completed"
+                            ? "Completed"
+                            : project.projectStatus === "Overdue"
+                            ? "Needs Attention"
+                            : "Status Unknown"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div>
+                      <h6 className="summary-section-header">
+                        ⚡ QUICK ACTIONS
+                      </h6>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <button
+                          onClick={() => handleViewDetails(project)}
+                          className="quick-action-button"
+                        >
+                          📋 Manage Tasks
+                        </button>
+                        {project.taskSummary &&
+                          project.taskSummary.Pending.length > 0 && (
+                            <button
+                              onClick={() => handleViewDetails(project)}
+                              className="quick-action-button warning"
+                            >
+                              ⚠️ {project.taskSummary.Pending.length} Pending
+                            </button>
+                          )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -426,536 +924,1942 @@ const TeamLeadDashboard = () => {
           <div className="no-projects">
             <FaProjectDiagram size={64} />
             <h3>No Projects Found</h3>
-            <p>No projects are currently assigned to you matching the selected criteria.</p>
+            <p>
+              No projects are currently assigned to you matching the selected
+              criteria.
+            </p>
           </div>
         )}
       </div>
 
-      {/* Project Details Modal */}
+      {/* Project Details Modal with Task Tracking */}
       {showProjectDetails && selectedProject && (
-        <div className="modal-overlay" onClick={handleCloseDetails} >
-          <div className="modal-content" 
-            onClick={(e) => e.stopPropagation()} 
-            style={{ 
-              maxWidth: '90vw',           // Make modal much wider
-              width: '90vw', 
-              minHeight: 600, 
-              borderRadius: 12, 
-              boxShadow: '0 8px 32px rgba(0,0,0,0.18)', 
+        <div className="modal-overlay" onClick={handleCloseDetails}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "95vw",
+              width: "95vw",
+              minHeight: 700,
+              borderRadius: 12,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
               backgroundColor: "white",
-              color: "black"
-            }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
-              <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: '#3b82f6', letterSpacing: 1 }}>
-                <FaProjectDiagram style={{ marginRight: 8 }} />
-                Project Details
-              </h3>
-              <button className="modal-close" onClick={handleCloseDetails}>
-                <FaTimes />
-              </button>
-            </div>
-            <div className="modal-body" style={{ padding: 24 }}>
-              {/* Project Overview */}
-              <div className="project-overview" style={{ marginBottom: 18 }}>
-                <div className="overview-header" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <h4 style={{ margin: 0, fontWeight: 600, fontSize: 20 }}>
-                    {selectedProject.projectId || 'Untitled Project'}
-                  </h4>
-                  <span 
-                    className="status-badge"
-                    style={{
-                      backgroundColor: getStatusColor(selectedProject.projectStatus || 'unknown'),
-                      color: '#fff',
-                      borderRadius: 8,
-                      padding: '2px 12px',
-                      fontWeight: 500,
-                      fontSize: 14
-                    }}
-                  >
-                    {selectedProject.projectStatus ? selectedProject.projectStatus.replace('-', ' ') : 'Unknown'}
-                  </span>
-                  <span className="amount-badge" style={{
-                    background: '#f3f4f6',
-                    color: '#111',
-                    borderRadius: 8,
-                    padding: '2px 12px',
-                    fontWeight: 500,
-                    fontSize: 14
-                  }}>
-                    ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}
-                  </span>
-                </div>
-                <p style={{ margin: '8px 0 0 0', color: '#6b7280', fontSize: 15 }}>
-                  <FaEnvelope style={{ marginRight: 4 }} />
-                  Client: <span style={{ fontWeight: 500 }}>{selectedProject.clientName || 'Unknown Client'}</span>
+              color: "black",
+            }}
+          >
+            <div
+              className="modal-header"
+              style={{
+                borderBottom: "1px solid #e5e7eb",
+                paddingBottom: 10,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontWeight: 700,
+                    fontSize: 22,
+                    color: "#3b82f6",
+                  }}
+                >
+                  <FaProjectDiagram style={{ marginRight: 8 }} />
+                  {selectedProject.projectId || "Untitled Project"} - Task
+                  Management
+                </h3>
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    color: "#6b7280",
+                    fontSize: 14,
+                  }}
+                >
+                  Client: {selectedProject.clientName} | Progress:{" "}
+                  {calculateProjectProgress(tasks)}% | Total Tasks:{" "}
+                  {tasks.Pending.length +
+                    tasks["In Progress"].length +
+                    tasks.Completed.length}
                 </p>
               </div>
-
-              {/* Info Grid */}
-              <div 
-                className="details-grid" 
-                style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '30% 70%', // 30% for left, 70% for right (Task Details)
-                  gap: 24,
-                  alignItems: 'start'
-                }}
-              >
-                {/* Left Column (Basic Info, Team Members) */}
-                <div>
-                  <div className="detail-section" style={{ marginBottom: 18 }}>
-                    <h5 style={{ color: '#2563eb', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
-                      <FaInfoCircle style={{ marginRight: 6 }} /> Basic Info
-                    </h5>
-                    <div className="detail-items" style={{ fontSize: 15 }}>
-                      <div><strong>Project ID:</strong> {selectedProject.projectId || 'N/A'}</div>
-                      <div><strong>Original Lead:</strong> {selectedProject.leadName || 'Not Specified'}</div>
-                      <div><strong>Assigned Team Lead:</strong> {selectedProject.assignedTeamLead || 'Not Assigned'}</div>
-                      <div><strong>Status:</strong> {selectedProject.projectStatus || 'Unknown'}</div>
-                      <div><strong>Created:</strong> {formatDate(selectedProject.createdAt)}</div>
-                      <div><strong>Updated:</strong> {formatDate(selectedProject.updatedAt)}</div>
-                      <div><strong>Password:</strong> {selectedProject.projectPassword || 'Not Set'}</div>
-                    </div>
-                  </div>
-
-                  {/* Assigned Team Members */}
-                  {selectedProject.assignedEmployees && selectedProject.assignedEmployees.length > 0 && (
-                    <div className="detail-section" style={{ marginBottom: 18 }}>
-                      <h5 style={{ color: '#059669', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
-                        <FaUser style={{ marginRight: 6 }} /> Assigned Team Members
-                      </h5>
-                      <ul style={{ paddingLeft: 18, margin: 0 }}>
-                        {selectedProject.assignedEmployees.map(emp => (
-                          <li key={emp.employeeId} style={{ marginBottom: 2 }}>
-                            <span style={{ fontWeight: 500 }}>{emp.name}</span>
-                            <span style={{ color: '#6b7280', marginLeft: 6 }}>({emp.role} - {emp.subRole})</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column (Task Details, Assignment Tracker, Add Task) */}
-                <div>
-                  {/* Task Details Section */}
-                  {selectedProject.tasks && (
-                    <div className="detail-section" style={{ marginBottom: 18 }}>
-                      <h5 style={{ color: '#f59e0b', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
-                        <FaTasks style={{ marginRight: 6 }} /> Task Details
-                      </h5>
-                      <div className="tasks-overview" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-                        <div className="task-stat completed" style={{ background: '#e0f2fe', borderRadius: 6, padding: '6px 12px', minWidth: 80 }}>
-                          <span className="task-count" style={{ fontWeight: 700, color: '#059669' }}>{selectedProject.tasks.completed}</span>
-                          <span className="task-label" style={{ fontSize: 13, color: '#059669', marginLeft: 4 }}>Completed</span>
-                        </div>
-                        <div className="task-stat in-progress" style={{ background: '#fef9c3', borderRadius: 6, padding: '6px 12px', minWidth: 80 }}>
-                          <span className="task-count" style={{ fontWeight: 700, color: '#f59e0b' }}>{selectedProject.tasks.inProgress}</span>
-                          <span className="task-label" style={{ fontSize: 13, color: '#f59e0b', marginLeft: 4 }}>In Progress</span>
-                        </div>
-                        <div className="task-stat pending" style={{ background: '#fee2e2', borderRadius: 6, padding: '6px 12px', minWidth: 80 }}>
-                          <span className="task-count" style={{ fontWeight: 700, color: '#ef4444' }}>{selectedProject.tasks.pending}</span>
-                          <span className="task-label" style={{ fontSize: 13, color: '#ef4444', marginLeft: 4 }}>Pending</span>
-                        </div>
-                      </div>
-                      {/* Task List with always visible View Details */}
-                      {Array.isArray(selectedProject.tasks.list) && (
-                        <ul className="task-list" style={{ paddingLeft: 0, margin: 0 }}>
-                          {selectedProject.tasks.list.map((task, idx) => (
-                            <li key={idx} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', borderRadius: 6, padding: '8px 12px' }}>
-                              <div>
-                                <strong>{task.title}</strong> - {task.status}
-                                <span style={{ color: '#6b7280', marginLeft: 6 }}>
-                                  (Due: {formatDate(task.dueDate)})
-                                </span>
-                              </div>
-                              <button
-                                style={{
-                                  background: '#3b82f6',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: 4,
-                                  padding: '4px 10px',
-                                  cursor: 'pointer',
-                                  fontSize: 13
-                                }}
-                                onClick={() => {
-                                  setSelectedTask(task);
-                                  setShowTaskDetails(true);
-                                }}
-                              >
-                                View Details
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      {/* Task Assignment Tracker */}
-                      {selectedProject.assignedEmployees && selectedProject.assignedEmployees.length > 0 && (
-                        <div style={{ marginTop: 24, marginBottom: 16, background: '#f8fafc', borderRadius: 8, padding: 12 }}>
-                          <h6 style={{ margin: 0, fontWeight: 700, color: '#3b82f6', marginBottom: 8 }}>
-                            <FaUser style={{ marginRight: 6 }} />
-                            Task Assignment Tracker
-                          </h6>
-                          <table style={{ width: '100%', fontSize: 14, background: 'white', borderRadius: 6, borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ background: '#f3f4f6' }}>
-                                <th style={{ textAlign: 'left', padding: 8, borderRadius: 6006 }}>Team Member</th>
-                                <th style={{ textAlign: 'left', padding: 8 }}>Role</th>
-                                <th style={{ textAlign: 'left', padding: 8 }}>Tasks Assigned</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {selectedProject.assignedEmployees.map(emp => {
-                                // Find tasks assigned to this employee
-                                const tasksForEmp = Array.isArray(selectedProject.tasks?.list)
-                                  ? selectedProject.tasks.list.filter(task => task.assignedTo === emp.name)
-                                  : [];
-                                return (
-                                  <tr key={emp.employeeId} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                                    <td style={{ padding: 8, fontWeight: 500 }}>{emp.name}</td>
-                                    <td style={{ padding: 8, color: '#6b7280' }}>{emp.role} {emp.subRole ? `- ${emp.subRole}` : ''}</td>
-                                    <td style={{ padding: 8 }}>
-                                      {tasksForEmp.length === 0 ? (
-                                        <span style={{ color: '#ef4444' }}>No tasks</span>
-                                      ) : (
-                                        <ul style={{ margin: 0, paddingLeft: 16 }}>
-                                          {tasksForEmp.map((task, idx) => (
-                                            <li key={idx}>
-                                              <span style={{ fontWeight: 500 }}>{task.title}</span>
-                                              <span style={{ color: '#6b7280', marginLeft: 6 }}>({task.status})</span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-
-                      {/* Add Task Section */}
-                      <div style={{ marginTop: 24, padding: 16, background: '#f3f4f6', borderRadius: 8 }}>
-                        <h6 style={{ margin: 0, fontWeight: 700, color: '#059669' }}>
-                          <FaTasks style={{ marginRight: 6 }} />
-                          Add New Task
-                        </h6>
-                        <form onSubmit={handleAddTask} style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          <input
-                            type="text"
-                            placeholder="Task Title"
-                            value={newTask.title}
-                            onChange={e => setNewTask({ ...newTask, title: e.target.value })}
-                            required
-                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-                          />
-                          <textarea
-                            placeholder="Description"
-                            value={newTask.description}
-                            onChange={e => setNewTask({ ...newTask, description: e.target.value })}
-                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-                          />
-                          <select
-                            value={newTask.assignedTo}
-                            onChange={e => setNewTask({ ...newTask, assignedTo: e.target.value })}
-                            required
-                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-                          >
-                            <option value="">Assign to team member...</option>
-                            {selectedProject.assignedEmployees && selectedProject.assignedEmployees.map(emp => (
-                              <option key={emp.employeeId} value={emp.name}>
-                                {emp.name} ({emp.role} - {emp.subRole})
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            type="date"
-                            value={newTask.dueDate}
-                            onChange={e => setNewTask({ ...newTask, dueDate: e.target.value })}
-                            style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-                          />
-                          <button
-                            type="submit"
-                            disabled={addingTask}
-                            style={{
-                              background: '#059669',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: 4,
-                              padding: '8px 18px',
-                              fontWeight: 600,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {addingTask ? 'Adding...' : 'Add Task'}
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Budget/Amount */}
-                  <div className="detail-section" style={{ marginBottom: 18 }}>
-                    <h5 style={{ color: '#3b82f6', fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
-                      <FaChartLine style={{ marginRight: 6 }} /> Budget & Value
-                    </h5>
-                    <div style={{ fontSize: 15 }}>
-                      <div><strong>Final Amount:</strong> ₹{selectedProject.finalAmount ? selectedProject.finalAmount.toLocaleString() : '0'}</div>
-                      {/* Add more budget/progress info if available */}
-                    </div>
-                  </div>
-                </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button
+                  onClick={() => setShowTaskModal(true)}
+                  style={{
+                    background: "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "8px 16px",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  <FaPlus style={{ marginRight: 4 }} /> Create Task
+                </button>
+                <button className="modal-close" onClick={handleCloseDetails}>
+                  <FaTimes />
+                </button>
               </div>
             </div>
-            <div className="modal-footer" style={{ borderTop: '1px solid #e5e7eb', paddingTop: 10, textAlign: 'right' }}>
-              <button className="btn-secondary" onClick={handleCloseDetails} style={{ padding: '6px 18px', borderRadius: 6 }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Task Details Modal (separate window) */}
-      {showTaskDetails && selectedTask && (
-        <div className="modal-overlay" onClick={handleCloseTaskDetails}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 500, borderRadius: 10, background: "#fff" }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
-              <h3 style={{ margin: 0, fontWeight: 700, fontSize: 20, color: '#f59e0b' }}>
-                <FaTasks style={{ marginRight: 8 }} />
-                Task Details
-              </h3>
-              <button className="modal-close" onClick={handleCloseTaskDetails}>
-                <FaTimes />
-              </button>
-            </div>
-            <div className="modal-body" style={{ padding: 20 }}>
-              <div style={{ marginBottom: 12 }}>
-                <strong>Title:</strong> {selectedTask.title}
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <strong>Status:</strong> {selectedTask.status}
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <strong>Description:</strong> {selectedTask.description || 'No description'}
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <strong>Assigned To:</strong> {selectedTask.assignedTo || 'N/A'}
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <strong>Due Date:</strong> {formatDate(selectedTask.dueDate)}
-              </div>
-              {/* Add more fields as needed */}
-            </div>
-            <div className="modal-footer" style={{ borderTop: '1px solid #e5e7eb', paddingTop: 10, textAlign: 'right' }}>
-              <button className="btn-secondary" onClick={handleCloseTaskDetails} style={{ padding: '6px 18px', borderRadius: 6 }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Task Board: Three Columns */}
-      {selectedProject && selectedProject.tasks && Array.isArray(selectedProject.tasks.list) && (
-        <DragDropContext
-          onDragEnd={async (result) => {
-            const { source, destination, draggableId } = result;
-            if (!destination) return;
-            if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
-            // Find the task being moved
-            const task = selectedProject.tasks.list.find(t => t._id === draggableId);
-            if (!task) return;
-
-            // Determine new status
-            let newStatus = destination.droppableId;
-            if (newStatus === 'Pending' || newStatus === 'In Progress' || newStatus === 'Completed') {
-              // Update status locally (optional, for instant UI)
-              task.status = newStatus;
-
-              // Update on server
-              const token = localStorage.getItem('token');
-              await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/edit-task/${task._id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ ...task, status: newStatus })
-              });
-              fetchAssignedProjects();
-            }
-          }}
-        >
-          <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-            {['Pending', 'In Progress', 'Completed'].map(status => (
-              <Droppable droppableId={status} key={status}>
-                {(provided, snapshot) => (
+            <div className="modal-body" style={{ padding: 24 }}>
+              {/* Task Management Dashboard */}
+              <div className="task-dashboard">
+                {/* Task Statistics */}
+                <div
+                  className="task-stats"
+                  style={{ display: "flex", gap: 16, marginBottom: 24 }}
+                >
                   <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
+                    className="task-stat-card"
                     style={{
                       flex: 1,
-                      background: snapshot.isDraggingOver ? '#e0e7ff' : '#f9fafb',
+                      background: "#fef3c7",
+                      padding: 16,
                       borderRadius: 8,
-                      padding: 12,
-                      minHeight: 200
+                      textAlign: "center",
                     }}
                   >
-                    <h6 style={{ color: status === 'Completed' ? '#059669' : status === 'In Progress' ? '#f59e0b' : '#ef4444', fontWeight: 700, marginBottom: 10 }}>
-                      {status}
-                    </h6>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                      {selectedProject.tasks.list
-                        .filter(task => (task.status || 'Pending') === status)
-                        .map((task, idx) => (
-                          <Draggable draggableId={task._id} index={idx} key={task._id}>
-                            {(provided, snapshot) => (
-                              <li
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                style={{
-                                  background: '#fff',
-                                  borderRadius: 6,
-                                  marginBottom: 10,
-                                  padding: 10,
-                                  boxShadow: '0 1px 4px #e5e7eb',
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  ...provided.draggableProps.style
-                                }}
-                              >
-                                <div>
-                                  <strong>{task.title}</strong>
-                                  <div style={{ fontSize: 13, color: '#6b7280' }}>
-                                    {task.assignedTo} | Due: {formatDate(task.dueDate)}
+                    <div
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 700,
+                        color: "#f59e0b",
+                      }}
+                    >
+                      {tasks.Pending.length}
+                    </div>
+                    <div
+                      style={{
+                        color: "#92400e",
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Pending Tasks
+                    </div>
+                  </div>
+                  <div
+                    className="task-stat-card"
+                    style={{
+                      flex: 1,
+                      background: "#dbeafe",
+                      padding: 16,
+                      borderRadius: 8,
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 700,
+                        color: "#3b82f6",
+                      }}
+                    >
+                      {tasks["In Progress"].length}
+                    </div>
+                    <div
+                      style={{
+                        color: "#1e40af",
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      In Progress
+                    </div>
+                  </div>
+                  <div
+                    className="task-stat-card"
+                    style={{
+                      flex: 1,
+                      background: "#d1fae5",
+                      padding: 16,
+                      borderRadius: 8,
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 700,
+                        color: "#10b981",
+                      }}
+                    >
+                      {tasks.Completed.length}
+                    </div>
+                    <div
+                      style={{
+                        color: "#047857",
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Completed
+                    </div>
+                  </div>
+                  <div
+                    className="task-stat-card"
+                    style={{
+                      flex: 1,
+                      background: "#f3f4f6",
+                      padding: 16,
+                      borderRadius: 8,
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 24,
+                        fontWeight: 700,
+                        color: "#374151",
+                      }}
+                    >
+                      {calculateProjectProgress(tasks)}%
+                    </div>
+                    <div
+                      style={{
+                        color: "#6b7280",
+                        fontSize: 14,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Total Progress
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task Tracking Board - Three Columns */}
+                <DragDropContext
+                  onDragEnd={async (result) => {
+                    const { source, destination, draggableId } = result;
+                    if (!destination) return;
+                    if (source.droppableId === destination.droppableId) return;
+
+                    // Find the task being moved
+                    const sourceSection = tasks[source.droppableId];
+                    const taskToMove = sourceSection.find(
+                      (task) => task._id === draggableId
+                    );
+
+                    if (taskToMove) {
+                      // Update task status
+                      await updateTaskStatus(
+                        taskToMove._id,
+                        destination.droppableId
+                      );
+                    }
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: 20,
+                      minHeight: 500,
+                    }}
+                  >
+                    {/* Pending Section */}
+                    <Droppable droppableId="Pending">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          style={{
+                            background: snapshot.isDraggingOver
+                              ? "#fef3c7"
+                              : "#fffbeb",
+                            borderRadius: 12,
+                            padding: 16,
+                            border: "2px dashed #f59e0b",
+                          }}
+                        >
+                          <h4
+                            style={{
+                              color: "#f59e0b",
+                              fontWeight: 700,
+                              marginBottom: 16,
+                              textAlign: "center",
+                            }}
+                          >
+                            📋 PENDING ({tasks.Pending.length})
+                          </h4>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#92400e",
+                              marginBottom: 12,
+                              textAlign: "center",
+                            }}
+                          >
+                            Tasks created but not yet assigned or started
+                          </div>
+
+                          {tasks.Pending.map((task, index) => (
+                            <Draggable
+                              key={task._id}
+                              draggableId={task._id}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  style={{
+                                    background: "#fff",
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    marginBottom: 12,
+                                    boxShadow: snapshot.isDragging
+                                      ? "0 8px 16px rgba(0,0,0,0.15)"
+                                      : "0 2px 4px rgba(0,0,0,0.1)",
+                                    border: "1px solid #fed7aa",
+                                    cursor: "grab",
+                                    ...provided.draggableProps.style,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: 600,
+                                      color: "#1f2937",
+                                      marginBottom: 4,
+                                    }}
+                                  >
+                                    {task.title}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 12,
+                                      color: "#6b7280",
+                                      marginBottom: 8,
+                                    }}
+                                  >
+                                    {task.description}
+                                  </div>
+
+                                  {/* Assignment Section */}
+                                  <div style={{ marginBottom: 8 }}>
+                                    <div
+                                      style={{
+                                        fontSize: 11,
+                                        color: "#92400e",
+                                        fontWeight: 600,
+                                        marginBottom: 4,
+                                      }}
+                                    >
+                                      ASSIGNED TO:
+                                    </div>
+                                    {task.assignedTo &&
+                                    task.assignedTo.length > 0 ? (
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          flexWrap: "wrap",
+                                          gap: 4,
+                                        }}
+                                      >
+                                        {task.assignedTo.map((emp, idx) => (
+                                          <span
+                                            key={idx}
+                                            style={{
+                                              background: "#fecaca",
+                                              color: "#991b1b",
+                                              padding: "2px 6px",
+                                              borderRadius: 4,
+                                              fontSize: 10,
+                                            }}
+                                          >
+                                            {emp.name}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div
+                                        style={{
+                                          color: "#dc2626",
+                                          fontSize: 11,
+                                          fontStyle: "italic",
+                                        }}
+                                      >
+                                        ⚠️ Not assigned yet
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Quick Actions */}
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: 4,
+                                      flexWrap: "wrap",
+                                    }}
+                                  >
+                                    <button
+                                      onClick={() => openAssignmentModal(task)}
+                                      style={{
+                                        background: "#3b82f6",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "4px 8px",
+                                        fontSize: 10,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {task.assignedTo &&
+                                      task.assignedTo.length > 0
+                                        ? "Edit Assignment"
+                                        : "Assign"}
+                                    </button>
+
+                                    <button
+                                      onClick={() => viewTaskHistory(task)}
+                                      style={{
+                                        background: "#6b7280",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "4px 8px",
+                                        fontSize: 10,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      📊 History
+                                    </button>
+
+                                    {task.assignedTo &&
+                                      task.assignedTo.length > 0 && (
+                                        <button
+                                          onClick={() =>
+                                            updateTaskStatus(
+                                              task._id,
+                                              "In Progress"
+                                            )
+                                          }
+                                          style={{
+                                            background: "#10b981",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius: 4,
+                                            padding: "4px 8px",
+                                            fontSize: 10,
+                                            cursor: "pointer",
+                                          }}
+                                        >
+                                          Start Task
+                                        </button>
+                                      )}
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      fontSize: 10,
+                                      color: "#6b7280",
+                                      marginTop: 8,
+                                    }}
+                                  >
+                                    Due: {formatDate(task.dueDate)} | Priority:{" "}
+                                    {task.priority}
                                   </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: 8 }}>
-                                  <button
-                                    style={{ background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 13 }}
-                                    onClick={() => { setSelectedTask(task); setShowTaskDetails(true); }}
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+
+                    {/* In Progress Section */}
+                    <Droppable droppableId="In Progress">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          style={{
+                            background: snapshot.isDraggingOver
+                              ? "#dbeafe"
+                              : "#eff6ff",
+                            borderRadius: 12,
+                            padding: 16,
+                            border: "2px dashed #3b82f6",
+                          }}
+                        >
+                          <h4
+                            style={{
+                              color: "#3b82f6",
+                              fontWeight: 700,
+                              marginBottom: 16,
+                              textAlign: "center",
+                            }}
+                          >
+                            🔄 IN PROGRESS ({tasks["In Progress"].length})
+                          </h4>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#1e40af",
+                              marginBottom: 12,
+                              textAlign: "center",
+                            }}
+                          >
+                            Tasks currently being worked on
+                          </div>
+
+                          {tasks["In Progress"].map((task, index) => (
+                            <Draggable
+                              key={task._id}
+                              draggableId={task._id}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  style={{
+                                    background: "#fff",
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    marginBottom: 12,
+                                    boxShadow: snapshot.isDragging
+                                      ? "0 8px 16px rgba(0,0,0,0.15)"
+                                      : "0 2px 4px rgba(0,0,0,0.1)",
+                                    border: "1px solid #93c5fd",
+                                    cursor: "grab",
+                                    ...provided.draggableProps.style,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: 600,
+                                      color: "#1f2937",
+                                      marginBottom: 4,
+                                    }}
                                   >
-                                    View
-                                  </button>
-                                  <button
-                                    style={{ background: '#f59e0b', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontSize: 13 }}
-                                    onClick={() => { setEditTask(task); setShowEditModal(true); }}
+                                    {task.title}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 12,
+                                      color: "#6b7280",
+                                      marginBottom: 8,
+                                    }}
                                   >
-                                    Edit
-                                  </button>
+                                    {task.description}
+                                  </div>
+
+                                  {/* Progress Bar */}
+                                  <div style={{ marginBottom: 8 }}>
+                                    <div
+                                      style={{
+                                        background: "#e5e7eb",
+                                        borderRadius: 4,
+                                        height: 6,
+                                        overflow: "hidden",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          background: "#3b82f6",
+                                          height: "100%",
+                                          width: `${
+                                            task.progressPercentage || 0
+                                          }%`,
+                                          transition: "width 0.3s ease",
+                                        }}
+                                      ></div>
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: 11,
+                                        color: "#3b82f6",
+                                        fontWeight: 600,
+                                        marginTop: 2,
+                                      }}
+                                    >
+                                      {task.progressPercentage || 0}% Complete
+                                    </div>
+                                  </div>
+
+                                  {/* Task Points */}
+                                  {task.taskPoints &&
+                                    task.taskPoints.length > 0 && (
+                                      <div style={{ marginBottom: 8 }}>
+                                        <div
+                                          style={{
+                                            fontSize: 11,
+                                            color: "#1e40af",
+                                            fontWeight: 600,
+                                            marginBottom: 4,
+                                          }}
+                                        >
+                                          TASK POINTS:
+                                        </div>
+                                        {task.taskPoints.map((point, idx) => (
+                                          <div
+                                            key={idx}
+                                            style={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 4,
+                                              marginBottom: 2,
+                                              fontSize: 10,
+                                            }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={point.isCompleted}
+                                              onChange={(e) =>
+                                                updateTaskPoint(
+                                                  task._id,
+                                                  point._id,
+                                                  e.target.checked,
+                                                  currentUser.name
+                                                )
+                                              }
+                                              style={{ cursor: "pointer" }}
+                                            />
+                                            <span
+                                              style={{
+                                                textDecoration:
+                                                  point.isCompleted
+                                                    ? "line-through"
+                                                    : "none",
+                                                color: point.isCompleted
+                                                  ? "#6b7280"
+                                                  : "#1f2937",
+                                              }}
+                                            >
+                                              {point.pointTitle}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                  {/* Assigned Team */}
+                                  <div style={{ marginBottom: 8 }}>
+                                    <div
+                                      style={{
+                                        fontSize: 11,
+                                        color: "#1e40af",
+                                        fontWeight: 600,
+                                        marginBottom: 4,
+                                      }}
+                                    >
+                                      WORKING:
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexWrap: "wrap",
+                                        gap: 4,
+                                      }}
+                                    >
+                                      {task.assignedTo.map((emp, idx) => (
+                                        <span
+                                          key={idx}
+                                          style={{
+                                            background: "#bfdbfe",
+                                            color: "#1e40af",
+                                            padding: "2px 6px",
+                                            borderRadius: 4,
+                                            fontSize: 10,
+                                          }}
+                                        >
+                                          {emp.name}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      gap: 4,
+                                      flexWrap: "wrap",
+                                      marginBottom: 8,
+                                    }}
+                                  >
+                                    <button
+                                      onClick={() => openAssignmentModal(task)}
+                                      style={{
+                                        background: "#f59e0b",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "4px 8px",
+                                        fontSize: 10,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      Edit Assignment
+                                    </button>
+
+                                    <button
+                                      onClick={() => viewTaskHistory(task)}
+                                      style={{
+                                        background: "#6b7280",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "4px 8px",
+                                        fontSize: 10,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      📊 History
+                                    </button>
+                                  </div>
+
+                                  <div
+                                    style={{ fontSize: 10, color: "#6b7280" }}
+                                  >
+                                    Due: {formatDate(task.dueDate)} | Priority:{" "}
+                                    {task.priority}
+                                  </div>
                                 </div>
-                              </li>
-                            )}
-                          </Draggable>
-                        ))}
-                      {provided.placeholder}
-                    </ul>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+
+                    {/* Completed Section */}
+                    <Droppable droppableId="Completed">
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          style={{
+                            background: snapshot.isDraggingOver
+                              ? "#d1fae5"
+                              : "#ecfdf5",
+                            borderRadius: 12,
+                            padding: 16,
+                            border: "2px dashed #10b981",
+                          }}
+                        >
+                          <h4
+                            style={{
+                              color: "#10b981",
+                              fontWeight: 700,
+                              marginBottom: 16,
+                              textAlign: "center",
+                            }}
+                          >
+                            ✅ COMPLETED ({tasks.Completed.length})
+                          </h4>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#047857",
+                              marginBottom: 12,
+                              textAlign: "center",
+                            }}
+                          >
+                            Successfully finished tasks
+                          </div>
+
+                          {tasks.Completed.map((task, index) => (
+                            <Draggable
+                              key={task._id}
+                              draggableId={task._id}
+                              index={index}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  style={{
+                                    background: "#fff",
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    marginBottom: 12,
+                                    boxShadow: snapshot.isDragging
+                                      ? "0 8px 16px rgba(0,0,0,0.15)"
+                                      : "0 2px 4px rgba(0,0,0,0.1)",
+                                    border: "1px solid #86efac",
+                                    cursor: "grab",
+                                    opacity: 0.9,
+                                    ...provided.draggableProps.style,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: 600,
+                                      color: "#1f2937",
+                                      marginBottom: 4,
+                                    }}
+                                  >
+                                    ✅ {task.title}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 12,
+                                      color: "#6b7280",
+                                      marginBottom: 8,
+                                    }}
+                                  >
+                                    {task.description}
+                                  </div>
+
+                                  {/* Completion Info */}
+                                  <div
+                                    style={{
+                                      background: "#d1fae5",
+                                      padding: 8,
+                                      borderRadius: 4,
+                                      marginBottom: 8,
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: 11,
+                                        color: "#047857",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      🎉 100% COMPLETE
+                                    </div>
+                                    <div
+                                      style={{ fontSize: 10, color: "#059669" }}
+                                    >
+                                      Completed: {formatDate(task.completedAt)}
+                                    </div>
+                                  </div>
+
+                                  {/* Completed By */}
+                                  <div style={{ marginBottom: 8 }}>
+                                    <div
+                                      style={{
+                                        fontSize: 11,
+                                        color: "#047857",
+                                        fontWeight: 600,
+                                        marginBottom: 4,
+                                      }}
+                                    >
+                                      COMPLETED BY:
+                                    </div>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        flexWrap: "wrap",
+                                        gap: 4,
+                                      }}
+                                    >
+                                      {task.assignedTo.map((emp, idx) => (
+                                        <span
+                                          key={idx}
+                                          style={{
+                                            background: "#86efac",
+                                            color: "#047857",
+                                            padding: "2px 6px",
+                                            borderRadius: 4,
+                                            fontSize: 10,
+                                          }}
+                                        >
+                                          {emp.name}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Task History Button */}
+                                  <div style={{ marginBottom: 8 }}>
+                                    <button
+                                      onClick={() => viewTaskHistory(task)}
+                                      style={{
+                                        background: "#6b7280",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: 4,
+                                        padding: "4px 8px",
+                                        fontSize: 10,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      📊 View History
+                                    </button>
+                                  </div>
+
+                                  <div
+                                    style={{ fontSize: 10, color: "#6b7280" }}
+                                  >
+                                    Original Due: {formatDate(task.dueDate)} |
+                                    Priority: {task.priority}
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
                   </div>
-                )}
-              </Droppable>
-            ))}
+                </DragDropContext>
+              </div>
+            </div>
+
+            <div
+              className="modal-footer"
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                paddingTop: 10,
+                textAlign: "right",
+              }}
+            >
+              <button
+                onClick={handleCloseDetails}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                  background: "#f9fafb",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
-        </DragDropContext>
+        </div>
       )}
 
-      {/* Edit Task Modal */}
-      {showEditModal && editTask && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 500, borderRadius: 10, background: "#fff" }}>
-            <div className="modal-header" style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 10 }}>
-              <h3 style={{ margin: 0, fontWeight: 700, fontSize: 20, color: '#f59e0b' }}>
+      {/* Create Task Modal */}
+      {showTaskModal && (
+        <div className="modal-overlay" onClick={() => setShowTaskModal(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 600, background: "#fff" }}
+          >
+            <div
+              className="modal-header"
+              style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 10 }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  color: "#10b981",
+                }}
+              >
                 <FaTasks style={{ marginRight: 8 }} />
-                Edit Task
+                Create New Task
               </h3>
-              <button className="modal-close" onClick={() => setShowEditModal(false)}>
+              <button
+                className="modal-close"
+                onClick={() => setShowTaskModal(false)}
+              >
                 <FaTimes />
               </button>
             </div>
             <form
-              onSubmit={async e => {
+              onSubmit={(e) => {
                 e.preventDefault();
-                // Call your API to update the task here
-                const token = localStorage.getItem('token');
-                await fetch(`http://localhost:5000/api/client-projects/${selectedProject._id}/edit-task/${editTask._id}`, {
-                  method: 'PUT',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify(editTask)
-                });
-                setShowEditModal(false);
-                setEditTask(null);
-                fetchAssignedProjects();
+                createTask();
               }}
-              style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}
+              style={{
+                padding: 20,
+                display: "flex",
+                flexDirection: "column",
+                gap: 15,
+              }}
             >
               <input
                 type="text"
-                value={editTask.title}
-                onChange={e => setEditTask({ ...editTask, title: e.target.value })}
+                placeholder="Task Title *"
+                value={newTask.title}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, title: e.target.value })
+                }
                 required
-                placeholder="Task Title"
-                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-              />
-              <textarea
-                value={editTask.description}
-                onChange={e => setEditTask({ ...editTask, description: e.target.value })}
-                placeholder="Description"
-                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-              />
-              <select
-                value={editTask.assignedTo}
-                onChange={e => setEditTask({ ...editTask, assignedTo: e.target.value })}
-                required
-                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-              >
-                <option value="">Assign to team member...</option>
-                {selectedProject.assignedEmployees && selectedProject.assignedEmployees.map(emp => (
-                  <option key={emp.employeeId} value={emp.name}>
-                    {emp.name} ({emp.role} - {emp.subRole})
-                  </option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={editTask.dueDate}
-                onChange={e => setEditTask({ ...editTask, dueDate: e.target.value })}
-                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-              />
-              <select
-                value={editTask.status}
-                onChange={e => setEditTask({ ...editTask, status: e.target.value })}
-                required
-                style={{ padding: 8, borderRadius: 4, border: '1px solid #d1d5db' }}
-              >
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-              </select>
-              <button
-                type="submit"
                 style={{
-                  background: '#059669',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 4,
-                  padding: '8px 18px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
+                  padding: 10,
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                  fontSize: 14,
+                }}
+              />
+
+              <textarea
+                placeholder="Task Description"
+                value={newTask.description}
+                onChange={(e) =>
+                  setNewTask({ ...newTask, description: e.target.value })
+                }
+                rows={3}
+                style={{
+                  padding: 10,
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                  fontSize: 14,
+                  resize: "vertical",
+                }}
+              />
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 10,
                 }}
               >
-                Save Changes
+                <select
+                  value={newTask.priority}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, priority: e.target.value })
+                  }
+                  style={{
+                    padding: 10,
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontSize: 14,
+                  }}
+                >
+                  <option value="Low">Low Priority</option>
+                  <option value="Medium">Medium Priority</option>
+                  <option value="High">High Priority</option>
+                </select>
+
+                <input
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, dueDate: e.target.value })
+                  }
+                  style={{
+                    padding: 10,
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontSize: 14,
+                  }}
+                />
+              </div>
+
+              {/* Task Points Section */}
+              <div
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 6,
+                  padding: 15,
+                }}
+              >
+                <h6
+                  style={{
+                    margin: "0 0 10px 0",
+                    color: "#374151",
+                    fontWeight: 600,
+                  }}
+                >
+                  Task Points (Optional)
+                </h6>
+
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <input
+                    type="text"
+                    placeholder="Point title"
+                    value={newTaskPoint.pointTitle}
+                    onChange={(e) =>
+                      setNewTaskPoint({
+                        ...newTaskPoint,
+                        pointTitle: e.target.value,
+                      })
+                    }
+                    style={{
+                      flex: 1,
+                      padding: 8,
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                    }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    value={newTaskPoint.description}
+                    onChange={(e) =>
+                      setNewTaskPoint({
+                        ...newTaskPoint,
+                        description: e.target.value,
+                      })
+                    }
+                    style={{
+                      flex: 1,
+                      padding: 8,
+                      borderRadius: 4,
+                      border: "1px solid #d1d5db",
+                      fontSize: 13,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={addTaskPoint}
+                    disabled={!newTaskPoint.pointTitle}
+                    style={{
+                      background: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 4,
+                      padding: "8px 12px",
+                      cursor: "pointer",
+                      fontSize: 13,
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {newTask.taskPoints.length > 0 && (
+                  <div style={{ maxHeight: 120, overflowY: "auto" }}>
+                    {newTask.taskPoints.map((point, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          background: "#f9fafb",
+                          padding: 8,
+                          borderRadius: 4,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <div style={{ fontSize: 13 }}>
+                          <strong>{point.pointTitle}</strong>
+                          {point.description && (
+                            <span style={{ color: "#6b7280" }}>
+                              {" "}
+                              - {point.description}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeTaskPoint(idx)}
+                          style={{
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 3,
+                            padding: "2px 6px",
+                            cursor: "pointer",
+                            fontSize: 11,
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Assignment Section */}
+              {selectedProject.assignedEmployees &&
+                selectedProject.assignedEmployees.length > 0 && (
+                  <div
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 6,
+                      padding: 15,
+                    }}
+                  >
+                    <h6
+                      style={{
+                        margin: "0 0 10px 0",
+                        color: "#374151",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Assign to Team Members (Optional - can assign later)
+                    </h6>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(200px, 1fr))",
+                        gap: 8,
+                      }}
+                    >
+                      {selectedProject.assignedEmployees.map((emp) => (
+                        <label
+                          key={emp.employeeId}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            cursor: "pointer",
+                            fontSize: 13,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={newTask.assignedTo.some(
+                              (assigned) =>
+                                assigned.employeeId === emp.employeeId
+                            )}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewTask((prev) => ({
+                                  ...prev,
+                                  assignedTo: [
+                                    ...prev.assignedTo,
+                                    {
+                                      employeeId: emp.employeeId,
+                                      name: emp.name,
+                                      email: emp.email,
+                                      role: emp.role,
+                                    },
+                                  ],
+                                }));
+                              } else {
+                                setNewTask((prev) => ({
+                                  ...prev,
+                                  assignedTo: prev.assignedTo.filter(
+                                    (assigned) =>
+                                      assigned.employeeId !== emp.employeeId
+                                  ),
+                                }));
+                              }
+                            }}
+                          />
+                          <span>
+                            {emp.name} ({emp.role})
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              <button
+                type="submit"
+                disabled={addingTask}
+                style={{
+                  background: "#10b981",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "12px 24px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontSize: 16,
+                }}
+              >
+                {addingTask ? "Creating Task..." : "Create Task"}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assignment Edit Modal */}
+      {showEditModal && selectedTask && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 500, background: "#fff" }}
+          >
+            <div
+              className="modal-header"
+              style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 10 }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: "#3b82f6",
+                }}
+              >
+                <FaUser style={{ marginRight: 8 }} />
+                Edit Task Assignment - {selectedTask.title}
+              </h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowEditModal(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div style={{ padding: 20 }}>
+              <div style={{ marginBottom: 15 }}>
+                <h6
+                  style={{
+                    margin: "0 0 10px 0",
+                    color: "#374151",
+                    fontWeight: 600,
+                  }}
+                >
+                  Assign to Team Members
+                </h6>
+
+                {selectedProject.assignedEmployees &&
+                selectedProject.assignedEmployees.length > 0 ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: 8,
+                    }}
+                  >
+                    {selectedProject.assignedEmployees.map((emp) => (
+                      <label
+                        key={emp.employeeId}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          cursor: "pointer",
+                          fontSize: 13,
+                          padding: 8,
+                          border: "1px solid #e5e7eb",
+                          borderRadius: 6,
+                          backgroundColor: editAssignment.some(
+                            (assigned) => assigned.employeeId === emp.employeeId
+                          )
+                            ? "#dbeafe"
+                            : "#ffffff",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editAssignment.some(
+                            (assigned) => assigned.employeeId === emp.employeeId
+                          )}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setEditAssignment((prev) => [
+                                ...prev,
+                                {
+                                  employeeId: emp.employeeId,
+                                  name: emp.name,
+                                  email: emp.email,
+                                  role: emp.role,
+                                },
+                              ]);
+                            } else {
+                              setEditAssignment((prev) =>
+                                prev.filter(
+                                  (assigned) =>
+                                    assigned.employeeId !== emp.employeeId
+                                )
+                              );
+                            }
+                          }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{emp.name}</div>
+                          <div style={{ fontSize: 11, color: "#6b7280" }}>
+                            {emp.role} - {emp.subRole}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      fontStyle: "italic",
+                      fontSize: 14,
+                    }}
+                  >
+                    No team members available for assignment. Please ask the
+                    Project Manager to assign team members to this project
+                    first.
+                  </p>
+                )}
+              </div>
+
+              {/* Current Assignment Summary */}
+              <div
+                style={{
+                  marginBottom: 20,
+                  padding: 12,
+                  background: "#f8fafc",
+                  borderRadius: 6,
+                }}
+              >
+                <h6
+                  style={{
+                    margin: "0 0 8px 0",
+                    color: "#374151",
+                    fontWeight: 600,
+                    fontSize: 13,
+                  }}
+                >
+                  Selected Assignments ({editAssignment.length})
+                </h6>
+                {editAssignment.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {editAssignment.map((emp, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          background: "#10b981",
+                          color: "white",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {emp.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    No team members selected
+                  </span>
+                )}
+              </div>
+
+              <div
+                style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}
+              >
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  style={{
+                    background: "#6b7280",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "10px 20px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAssignmentChanges}
+                  style={{
+                    background: "#10b981",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "10px 20px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  Save Assignment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task History Modal */}
+      {showTaskHistory && selectedTaskForHistory && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowTaskHistory(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 700, background: "#fff" }}
+          >
+            <div
+              className="modal-header"
+              style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 10 }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: "#3b82f6",
+                }}
+              >
+                📊 Task Assignment History - {selectedTaskForHistory.title}
+              </h3>
+              <button
+                className="modal-close"
+                onClick={() => setShowTaskHistory(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div style={{ padding: 20 }}>
+              {/* Current Task Info */}
+              <div
+                style={{
+                  marginBottom: 20,
+                  padding: 16,
+                  background: "#f8fafc",
+                  borderRadius: 8,
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <h4
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#374151",
+                    fontSize: 16,
+                  }}
+                >
+                  Current Task Details
+                </h4>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: 12,
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: 12, color: "#6b7280" }}>
+                      STATUS:
+                    </strong>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        marginLeft: 8,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background:
+                          selectedTaskForHistory.status === "Completed"
+                            ? "#d1fae5"
+                            : selectedTaskForHistory.status === "In Progress"
+                            ? "#dbeafe"
+                            : "#fef3c7",
+                        color:
+                          selectedTaskForHistory.status === "Completed"
+                            ? "#065f46"
+                            : selectedTaskForHistory.status === "In Progress"
+                            ? "#1e40af"
+                            : "#92400e",
+                      }}
+                    >
+                      {selectedTaskForHistory.status}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: 12, color: "#6b7280" }}>
+                      PRIORITY:
+                    </strong>
+                    <span style={{ marginLeft: 8, fontSize: 12 }}>
+                      {selectedTaskForHistory.priority}
+                    </span>
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: 12, color: "#6b7280" }}>
+                      DUE DATE:
+                    </strong>
+                    <span style={{ marginLeft: 8, fontSize: 12 }}>
+                      {formatDate(selectedTaskForHistory.dueDate)}
+                    </span>
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: 12, color: "#6b7280" }}>
+                      PROGRESS:
+                    </strong>
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        fontSize: 12,
+                        color: "#059669",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedTaskForHistory.progressPercentage || 0}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Assignment */}
+              <div style={{ marginBottom: 20 }}>
+                <h5
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#374151",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  👥 Currently Assigned To
+                </h5>
+                {selectedTaskForHistory.assignedTo &&
+                selectedTaskForHistory.assignedTo.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {selectedTaskForHistory.assignedTo.map((emp, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: "#dbeafe",
+                          border: "1px solid #bfdbfe",
+                          borderRadius: 6,
+                          padding: "8px 12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 13,
+                            color: "#1e40af",
+                          }}
+                        >
+                          {emp.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#6b7280" }}>
+                          {emp.role} • {emp.email}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p
+                    style={{
+                      color: "#6b7280",
+                      fontStyle: "italic",
+                      fontSize: 14,
+                    }}
+                  >
+                    No team members currently assigned
+                  </p>
+                )}
+              </div>
+
+              {/* Task Points Progress */}
+              {selectedTaskForHistory.taskPoints &&
+                selectedTaskForHistory.taskPoints.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h5
+                      style={{
+                        margin: "0 0 12px 0",
+                        color: "#374151",
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✅ Task Points Progress
+                    </h5>
+                    <div
+                      style={{
+                        background: "#f9fafb",
+                        border: "1px solid #e5e7eb",
+                        borderRadius: 6,
+                        padding: 12,
+                      }}
+                    >
+                      {selectedTaskForHistory.taskPoints.map((point, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: 8,
+                            padding: 8,
+                            background: point.isCompleted ? "#d1fae5" : "#fff",
+                            borderRadius: 4,
+                            border:
+                              "1px solid " +
+                              (point.isCompleted ? "#86efac" : "#e5e7eb"),
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              background: point.isCompleted
+                                ? "#10b981"
+                                : "#e5e7eb",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {point.isCompleted && (
+                              <span style={{ color: "white", fontSize: 10 }}>
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div
+                              style={{
+                                fontWeight: 500,
+                                fontSize: 13,
+                                textDecoration: point.isCompleted
+                                  ? "line-through"
+                                  : "none",
+                                color: point.isCompleted
+                                  ? "#6b7280"
+                                  : "#374151",
+                              }}
+                            >
+                              {point.pointTitle}
+                            </div>
+                            {point.description && (
+                              <div style={{ fontSize: 11, color: "#6b7280" }}>
+                                {point.description}
+                              </div>
+                            )}
+                            {point.isCompleted && point.completedBy && (
+                              <div
+                                style={{
+                                  fontSize: 10,
+                                  color: "#059669",
+                                  marginTop: 2,
+                                }}
+                              >
+                                Completed by: {point.completedBy} on{" "}
+                                {formatDate(point.completedAt)}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Assignment History Timeline */}
+              <div>
+                <h5
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#374151",
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                >
+                  📈 Assignment History Timeline
+                </h5>
+
+                {/* Simulated assignment history - in real implementation, this would come from the backend */}
+                <div
+                  style={{
+                    background: "#f9fafb",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 6,
+                    padding: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginBottom: 12,
+                      paddingBottom: 12,
+                      borderBottom: "1px solid #e5e7eb",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: "50%",
+                        background: "#10b981",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        fontWeight: 600,
+                        fontSize: 12,
+                      }}
+                    >
+                      ✓
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13,
+                          color: "#374151",
+                        }}
+                      >
+                        Task Created
+                      </div>
+                      <div style={{ fontSize: 11, color: "#6b7280" }}>
+                        Created by{" "}
+                        {selectedTaskForHistory.assignedBy?.name || "Team Lead"}{" "}
+                        on {formatDate(selectedTaskForHistory.createdAt)}
+                      </div>
+                      <div
+                        style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}
+                      >
+                        Initial status: Pending
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedTaskForHistory.assignedTo &&
+                    selectedTaskForHistory.assignedTo.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          marginBottom: 12,
+                          paddingBottom: 12,
+                          borderBottom:
+                            selectedTaskForHistory.status !== "Pending"
+                              ? "1px solid #e5e7eb"
+                              : "none",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "50%",
+                            background: "#3b82f6",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontWeight: 600,
+                            fontSize: 12,
+                          }}
+                        >
+                          👥
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: 13,
+                              color: "#374151",
+                            }}
+                          >
+                            Team Members Assigned
+                          </div>
+                          <div style={{ fontSize: 11, color: "#6b7280" }}>
+                            Assigned to:{" "}
+                            {selectedTaskForHistory.assignedTo
+                              .map((emp) => emp.name)
+                              .join(", ")}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#6b7280",
+                              marginTop: 2,
+                            }}
+                          >
+                            Status updated to:{" "}
+                            {selectedTaskForHistory.assignedTo.length > 0
+                              ? "In Progress"
+                              : "Pending"}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                  {selectedTaskForHistory.status === "Completed" && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          background: "#10b981",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "white",
+                          fontWeight: 600,
+                          fontSize: 12,
+                        }}
+                      >
+                        🎉
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 13,
+                            color: "#374151",
+                          }}
+                        >
+                          Task Completed
+                        </div>
+                        <div style={{ fontSize: 11, color: "#6b7280" }}>
+                          Completed on{" "}
+                          {formatDate(selectedTaskForHistory.completedAt)}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#6b7280",
+                            marginTop: 2,
+                          }}
+                        >
+                          Final status: Completed • Progress: 100%
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="modal-footer"
+              style={{
+                borderTop: "1px solid #e5e7eb",
+                paddingTop: 12,
+                textAlign: "right",
+              }}
+            >
+              <button
+                onClick={() => setShowTaskHistory(false)}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                  background: "#f9fafb",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
