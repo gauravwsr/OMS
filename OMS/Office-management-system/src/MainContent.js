@@ -18,6 +18,7 @@ import {
   FiMenu,
   FiX,
   FiFileMinus,
+  FiBarChart,
 } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./Components/AuthProvider/AuthContext.js";
@@ -153,6 +154,11 @@ const MainContent = ({ nav }) => {
           label: "Leave Management",
           icon: <FiClipboard />,
         },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        }
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },

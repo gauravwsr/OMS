@@ -5,14 +5,14 @@ const {
   getCheckInOutAnalytics,
   exportAnalyticsData 
 } = require("../controllers/analyticsController.js");
-const { authenticateToken } = require ("../middlewares/auth.js");
+const { protect } = require ("../middlewares/auth.js");
 
 const router = express.Router();
 
 // Analytics routes
-router.get("/leave-analytics", authenticateToken, getLeaveAnalytics);
-router.get("/attendance-analytics", authenticateToken, getAttendanceAnalytics);
-router.get("/checkinout-analytics", authenticateToken, getCheckInOutAnalytics);
-router.get("/export/:type", authenticateToken, exportAnalyticsData);
+router.get("/leave-analytics", protect, getLeaveAnalytics);
+router.get("/attendance-analytics", protect, getAttendanceAnalytics);
+router.get("/checkinout-analytics", protect, getCheckInOutAnalytics);
+router.get("/export/:type", protect, exportAnalyticsData);
 
 module.exports = router;
