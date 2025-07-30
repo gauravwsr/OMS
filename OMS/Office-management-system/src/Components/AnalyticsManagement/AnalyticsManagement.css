@@ -945,3 +945,121 @@
     justify-content: center;
   }
 }
+
+/* Quick Stats Section - Enhanced for Vibrancy and Clarity */
+.quick-stats {
+  display: flex;
+  gap: 2rem;
+  margin: 1.5rem 0 1rem 0;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.quick-stat {
+  background: linear-gradient(135deg, #ffb347 0%,  100%);
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 1.15rem;
+  /* border-radius: 8px; */
+  padding: 1.1rem 2.2rem;
+  /* box-shadow: 0 4px 18px rgba(255, 204, 51, 0.18); */
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  /* border: 2.0px ; */
+  letter-spacing: 0.5px;
+  min-width: 180px;
+  /* transition: transform 0.2s, box-shadow 0.2s; */
+}
+/* .quick-stat:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 32px rgba(255, 204, 51, 0.25);
+} */
+.quick-stat .stat-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #b45309;
+  margin-right: 0.5rem;
+  text-shadow: 0 1px 0 #fffbe7;
+}
+.quick-stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ff9800;
+  text-shadow: 0 2px 8px #fffbe7;
+}
+
+/* Vibrant Badges for Leave Type, Status, and Balance */
+.badge-leave-type {
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  color: #fff;
+  font-weight: 700;
+  border: 2px solid #ff7e5f;
+  box-shadow: 0 2px 10px rgba(255, 126, 95, 0.12);
+}
+.badge-leave-type.annual-leave {
+  background: linear-gradient(135deg, #43cea2, #185a9d);
+  border-color: #43cea2;
+}
+.badge-leave-type.sick-leave {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  border-color: #f7971e;
+}
+.badge-leave-type.emergency-leave {
+  background: linear-gradient(135deg, #f953c6, #b91d73);
+  border-color: #f953c6;
+}
+.badge-leave-type.maternity-leave {
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  border-color: #a18cd1;
+}
+.badge-leave-type.casual-leave {
+  background: linear-gradient(135deg, #36d1c4, #1e3c72);
+  border-color: #36d1c4;
+}
+.badge-leave-type.earned-leave {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  border-color: #f7971e;
+}
+.badge-leave-type.others {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #667eea;
+}
+
+.badge-status {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  color: #fff;
+  font-weight: 800;
+  border: 2px solid #43e97b;
+  box-shadow: 0 2px 10px rgba(67, 233, 123, 0.12);
+}
+.badge-status.approved {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  border-color: #43e97b;
+}
+.badge-status.pending {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  border-color: #f7971e;
+}
+.badge-status.rejected {
+  background: linear-gradient(135deg, #f953c6, #b91d73);
+  border-color: #f953c6;
+}
+
+.badge-balance {
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  color: #b45309;
+  font-weight: 800;
+  border: 2px solid #fcb69f;
+  box-shadow: 0 2px 10px rgba(252, 182, 159, 0.12);
+}
+.badge-balance.normal {
+  background: linear-gradient(135deg, #43cea2, #185a9d);
+  color: #fff;
+  border-color: #43cea2;
+}
+.badge-balance.low {
+  background: linear-gradient(135deg, #f953c6, #b91d73);
+  color: #fff;
+  border-color: #f953c6;
+}
