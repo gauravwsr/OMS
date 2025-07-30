@@ -109,6 +109,7 @@
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s;
+  background: white;
 }
 
 .form-group input:focus,
@@ -307,6 +308,7 @@
   .form-group select,
   .form-group textarea {
     font-size: 16px; /* Prevents zoom on iOS */
+    : white;
   }
 
   .date-inputs {
