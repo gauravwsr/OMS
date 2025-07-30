@@ -288,4 +288,144 @@
   .form-card, .status-card {
     padding: 20px;
   }
+
+  /* Additional mobile responsiveness */
+  .leave-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .leave-header h1 {
+    font-size: 2rem;
+  }
+
+  .leave-content {
+    gap: 20px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .date-inputs {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .action-buttons button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hr-leave-application {
+    padding: 10px;
+  }
+
+  .leave-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .leave-header p {
+    font-size: 0.9rem;
+  }
+
+  .form-card, .status-card {
+    padding: 15px;
+    margin: 10px 0;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+  }
+
+  .alert {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .applications-section h2 {
+    font-size: 1.3rem;
+  }
+
+  .application-item {
+    padding: 15px;
+  }
+
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+}
+
+/* Landscape mobile orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+  .leave-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .form-section {
+    flex: 1;
+    min-width: 300px;
+  }
+
+  .status-section {
+    flex: 1;
+    min-width: 300px;
+  }
+}
+
+/* Tablet specific */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .hr-leave-application {
+    padding: 25px;
+  }
+
+  .leave-content {
+    gap: 25px;
+  }
+
+  .form-card, .status-card {
+    padding: 25px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .hr-leave-application {
+    padding: 0;
+    background: white;
+  }
+
+  .action-buttons,
+  .submit-btn {
+    display: none;
+  }
+
+  .form-card, .status-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+
+  .leave-header h1 {
+    font-size: 1.5rem;
+    color: black;
+  }
+
+  .status-badge {
+    border: 1px solid #333;
+  }
 }

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './SuperAdminLeaveManagement.css';
+import './HRLeaveManagement.css';
 import { useAuth } from '../AuthProvider/AuthContext';
 
-const SuperAdminLeaveManagement = () => {
+const HRLeaveManagement = () => {
   const { user } = useAuth();
   const [leaveApplications, setLeaveApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,29 +14,29 @@ const SuperAdminLeaveManagement = () => {
   const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
-    console.log('User object in SuperAdminLeaveManagement:', user);
+    console.log('User object in HRLeaveManagement:', user);
     fetchLeaveApplications();
   }, []);
 
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
-      console.log('Fetching admin/HR leave applications...');
-      const response = await axios.get('http://localhost:5000/api/leave/admin-hr');
-      console.log('Admin/HR leave applications response:', response.data);
+      console.log('Fetching employee leave applications...');
+      const response = await axios.get('http://localhost:5000/api/leave/employees');
+      console.log('Employee leave applications response:', response.data);
       
       if (response.data.success) {
         setLeaveApplications(response.data.data);
-        console.log('Admin/HR leave applications set:', response.data.data);
+        console.log('Employee leave applications set:', response.data.data);
       } else {
-        console.log('Failed to fetch admin/HR leave applications:', response.data);
+        console.log('Failed to fetch employee leave applications:', response.data);
       }
     } catch (error) {
-      console.error('Error fetching admin/HR leave applications:', error);
+      console.error('Error fetching employee leave applications:', error);
       console.error('Error response:', error.response?.data);
       setMessage({
         type: 'error',
-        text: 'Failed to fetch admin/HR leave applications'
+        text: 'Failed to fetch employee leave applications'
       });
     } finally {
       setLoading(false);
@@ -68,7 +68,7 @@ const SuperAdminLeaveManagement = () => {
       
       console.log('Request data:', requestData);
       console.log('Making API call to:', `http://localhost:5000/api/leave/status/${leaveId}`);
-      
+
       const response = await axios.patch(`http://localhost:5000/api/leave/status/${leaveId}`, requestData, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -165,10 +165,10 @@ const SuperAdminLeaveManagement = () => {
   };
 
   return (
-    <div className="super-admin-leave-management">
+    <div className="hr-leave-management">
       <div className="page-header">
-        <h1>HR/Admin Leave Management</h1>
-        <p>Review and manage HR Manager and Admin leave applications</p>
+        <h1>Employee Leave Management</h1>
+        <p>Review and manage employee leave applications</p>
       </div>
 
       {message.text && (
@@ -218,7 +218,7 @@ const SuperAdminLeaveManagement = () => {
           <div className="loading">Loading leave applications...</div>
         ) : filteredApplications.length === 0 ? (
           <div className="no-data">
-            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} HR/Admin leave applications found.
+            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} employee leave applications found.
           </div>
         ) : (
           <div className="applications-list">
@@ -335,4 +335,4 @@ const SuperAdminLeaveManagement = () => {
   );
 };
 
-export default SuperAdminLeaveManagement;
+export default HRLeaveManagement;

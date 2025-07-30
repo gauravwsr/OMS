@@ -18,6 +18,7 @@ import {
   FiMenu,
   FiX,
   FiFileMinus,
+  FiBarChart,
 } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./Components/AuthProvider/AuthContext.js";
@@ -44,10 +45,13 @@ import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
-import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard.js";
+import ProjectManagerDashboard  from './Components/ProjectManager/ProjectManagerDashboard';
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
+import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
+import AnalyticsManagement from "./Components/AnalyticsManagement/AnalyticsManagement.js";
+
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -145,6 +149,16 @@ const MainContent = ({ nav }) => {
           label: "Apply Leave",
           icon: <FiFileText />,
         },
+        {
+          path: "/hr-leave-management",
+          label: "Leave Management",
+          icon: <FiClipboard />,
+        },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        }
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -176,6 +190,11 @@ const MainContent = ({ nav }) => {
       // ],
       Employee: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
       Intern: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
@@ -818,8 +837,16 @@ const MainContent = ({ nav }) => {
             element={<SuperAdminLeaveManagement />}
           />
           <Route
+            path="/analytics-management"
+            element={<AnalyticsManagement />}
+          />
+          <Route
             path="/hr-leave-application"
             element={<HRLeaveApplication />}
+          />
+          <Route
+            path="/hr-leave-management"
+            element={<HRLeaveManagement />}
           />
         </Routes>
       </div>

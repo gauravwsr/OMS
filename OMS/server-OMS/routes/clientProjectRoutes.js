@@ -77,4 +77,7 @@ router.delete('/:id', authorize('Project Manager'), deleteClientProject);
 // @access  Private
 router.post('/:id/notes', addProjectNote);
 
+router.get('/employees/sub-role/:subRole', clientProjectController.getEmployeesBySubRole);
+router.put('/:id/assign-employees', clientProjectController.assignEmployeesToProject);
+
 module.exports = router;
