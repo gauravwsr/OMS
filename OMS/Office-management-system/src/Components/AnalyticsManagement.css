@@ -1,0 +1,58 @@
+.quick-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.quick-stat {
+  font-size: 1.08rem;
+  color: #22223b;
+  background: #f0f0f0;
+  padding: 0.6rem 1.3rem;
+  border-radius: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.06);
+  margin: 0.1rem 0;
+  display: flex;
+  align-items: center;
+}
+.quick-stat strong {
+  color: #ff7e5f;
+  font-weight: 800;
+  font-size: 1.12rem;
+  margin-left: 0.3rem;
+  letter-spacing: 0.5px;
+}
+.quick-stat strong.avg {
+  color: #43cea2;
+}
+
+.badge-leave-type.annual-leave {
+  background: linear-gradient(135deg, #43cea2, #185a9d);
+  color: #fff;
+}
+.badge-leave-type.sick-leave {
+  background: linear-gradient(135deg, #ff7e5f, #feb47b);
+  color: #fff;
+}
+.badge-leave-type.emergency-leave {
+  background: linear-gradient(135deg, #ff512f, #dd2476);
+  color: #fff;
+}
+.badge-leave-type.maternity-leave {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  color: #fff;
+}
+.badge-leave-type.casual-leave {
+  background: linear-gradient(135deg, #36d1c4, #1e3c72);
+  color: #fff;
+}
+.badge-leave-type.earned-leave {
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  color: #fff;
+}
+.badge-leave-type.others {
+  background: linear-gradient(135deg, #7f53ac, #647dee);
+  color: #fff;
+}

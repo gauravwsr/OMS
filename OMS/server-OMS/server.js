@@ -1,5 +1,12 @@
 require("dotenv").config(); // Load environment variables
 const express = require("express");
+
+// Set default JWT secret if not in environment
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'your-secret-key-for-oms-application-2024';
+}
+
+console.log('JWT_SECRET configured:', process.env.JWT_SECRET ? 'Yes' : 'No');
 const Imap = require("node-imap");
 const { simpleParser } = require("mailparser");
 const multer = require("multer");
@@ -27,7 +34,12 @@ const scheduleRoutes = require("./routes/scheduleRoutes");
 // const candidateRoutes = require('./routes/candidateRoutes');
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const clientProjectRoutes = require("./routes/clientProjectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
+const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -95,8 +107,20 @@ app.use("/api/schedule", scheduleRoutes);
 
 app.use("/api", projectRoutes);
 
+// Client Project management routes
+app.use("/api/client-projects", clientProjectRoutes);
+
 // Leave management routes
 app.use("/api/leave", leaveRoutes);
+
+// HR Leave management routes
+app.use("/api/hr-leave", hrLeaveRoutes);
+
+// Analytics routes
+app.use("/api/analytics", analyticsRoutes);
+
+// Notification routes
+app.use("/api/notifications", notificationRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);
@@ -374,3 +398,25 @@ const port = process.env.PORT || 5000;
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
+// Automatic cleanup function for finished events
+const cleanupFinishedEvents = async () => {
+  try {
+    const now = new Date();
+    const result = await ScheduleEventData.deleteMany({
+      EndTime: { $lt: now }
+    });
+    
+    if (result.deletedCount > 0) {
+      console.log(`🧹 Auto-cleanup: Removed ${result.deletedCount} finished events at ${now.toLocaleString()}`);
+    }
+  } catch (error) {
+    console.error('❌ Error during auto-cleanup:', error);
+  }
+};
+
+// Run cleanup every 30 minutes
+setInterval(cleanupFinishedEvents, 30 * 60 * 1000);
+
+// Run initial cleanup on server start
+cleanupFinishedEvents();
