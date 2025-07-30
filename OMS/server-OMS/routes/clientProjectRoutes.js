@@ -12,6 +12,8 @@ const {
   addProjectNote,
   getTeamLeads,
   importRemoteProjects,
+  forceSyncWithCrm,
+  getCrmSyncStatus,
 } = require("../controllers/clientProjectController");
 
 // Import authentication and authorization middleware
@@ -90,6 +92,11 @@ router.get(
   "/employees/sub-role/:subRole",
   clientProjectController.getEmployeesBySubRole
 );
+
+// @route   GET /api/client-projects/employees
+// @desc    Get all employees
+// @access  Private
+router.get("/employees", clientProjectController.getAllEmployees);
 router.put(
   "/:id/assign-employees",
   clientProjectController.assignEmployeesToProject
@@ -99,5 +106,15 @@ router.put(
 // @desc    Update project progress
 // @access  Private (Team Lead)
 router.put("/:id/progress", clientProjectController.updateProjectProgress);
+
+// @route   PUT /api/client-projects/:id/sync-crm
+// @desc    Force sync working project with latest CRM data
+// @access  Private (Project Manager only)
+router.put("/:id/sync-crm", authorize("Project Manager"), forceSyncWithCrm);
+
+// @route   GET /api/client-projects/sync-status
+// @desc    Get CRM sync status for all projects
+// @access  Private
+router.get("/sync-status", getCrmSyncStatus);
 
 module.exports = router;

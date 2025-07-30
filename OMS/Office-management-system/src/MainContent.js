@@ -47,6 +47,7 @@ import AdminDashboard from "./AdminDashboard.js";
 import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import EmployeeDashboard from "./Components/Employee/EmployeeDashboard.js";
+import EmployeeProjects from "./Components/Employee/EmployeeProjects.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
@@ -819,8 +820,10 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
-              ) : (
-                <ProjectList />
+              ) : user?.role === "Employee" ? (
+                <EmployeeProjects nav={nav}  />
+              ):(
+                <ProjectList nav={nav} />
               )
             }
           />

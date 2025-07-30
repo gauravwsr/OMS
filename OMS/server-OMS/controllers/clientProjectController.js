@@ -1,4 +1,6 @@
 const ClientProject = require("../models/clientProjectModel");
+const CrmProject = require("../models/crmProjectModel");
+const WorkingProject = require("../models/workingProjectModel");
 const User = require("../models/userModel");
 const mongoose = require("mongoose");
 
@@ -7,7 +9,8 @@ const mongoose = require("mongoose");
 // @access  Private
 const getAllClientProjects = async (req, res) => {
   try {
-    const projects = await ClientProject.getAllWithTeamLeads();
+    // Use WorkingProject instead of ClientProject for API responses
+    const projects = await WorkingProject.getAllWithTeamLeads();
 
     res.status(200).json({
       success: true,
@@ -47,9 +50,12 @@ const getProjectsForTeamLead = async (req, res) => {
       };
     }
 
-    const projects = await ClientProject.find(query)
+    // Use WorkingProject instead of ClientProject
+    const projects = await WorkingProject.find(query)
       .populate("teamLeadId", "name email subRole specialization")
       .populate("assignedBy", "name email")
+      .populate("assignedEmployees.employeeId", "name email role subRole")
+      .populate("crmProjectId")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -72,16 +78,44 @@ const getProjectsForTeamLead = async (req, res) => {
 const getEmployeesBySubRole = async (req, res) => {
   try {
     const { subRole } = req.params;
+    console.log("Fetching employees for subRole:", subRole);
+
     const employees = await User.find({
       role: "Employee",
       subRole: subRole,
     }).select("name email subRole department phoneNumber");
+
+    console.log("Found employees:", employees.length);
+
     res.status(200).json({
       success: true,
       count: employees.length,
       data: employees,
     });
   } catch (error) {
+    console.error("Error fetching employees by subRole:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching employees",
+      error: error.message,
+    });
+  }
+};
+
+// Get all employees
+const getAllEmployees = async (req, res) => {
+  try {
+    const employees = await User.find({
+      role: "Employee",
+    }).select("name email subRole department phoneNumber");
+
+    res.status(200).json({
+      success: true,
+      count: employees.length,
+      data: employees,
+    });
+  } catch (error) {
+    console.error("Error fetching all employees:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching employees",
@@ -95,10 +129,12 @@ const getEmployeesBySubRole = async (req, res) => {
 // @access  Private
 const getClientProject = async (req, res) => {
   try {
-    const project = await ClientProject.findById(req.params.id)
+    // Use WorkingProject instead of ClientProject
+    const project = await WorkingProject.findById(req.params.id)
       .populate("teamLeadId", "name email subRole specialization phoneNumber")
       .populate("assignedBy", "name email")
-      .populate("notes.addedBy", "name email");
+      .populate("notes.addedBy", "name email")
+      .populate("crmProjectId");
 
     if (!project) {
       return res.status(404).json({
@@ -133,13 +169,17 @@ const createClientProject = async (req, res) => {
       // Auto-generate password if not provided
       projectPassword:
         req.body.projectPassword || Math.random().toString(36).substring(2, 10),
+      // Generate external ID for manual entries
+      externalId: req.body.externalId || `MANUAL-${Date.now()}`,
     };
 
-    const project = await ClientProject.create(projectData);
+    // Create working project directly (not from CRM)
+    const project = await WorkingProject.create(projectData);
 
-    const populatedProject = await ClientProject.findById(project._id)
+    const populatedProject = await WorkingProject.findById(project._id)
       .populate("teamLeadId", "name email subRole")
-      .populate("assignedBy", "name email");
+      .populate("assignedBy", "name email")
+      .populate("crmProjectId");
 
     res.status(201).json({
       success: true,
@@ -187,7 +227,7 @@ const createClientProject = async (req, res) => {
 const assignTeamLeadToProject = async (req, res) => {
   try {
     const { teamLeadId, teamLeadName } = req.body;
-    const project = await ClientProject.findById(req.params.id);
+    const project = await WorkingProject.findById(req.params.id);
 
     if (!project) {
       return res
@@ -228,6 +268,7 @@ const assignTeamLeadToProject = async (req, res) => {
     project.assignedTeamLead = teamLeadName;
     project.leadName = teamLeadName;
     project.assignedDate = new Date(today);
+    project.hasLocalModifications = true; // Mark as locally modified
 
     // Add new assignment to history
     project.teamLeadHistory.push({
@@ -239,9 +280,10 @@ const assignTeamLeadToProject = async (req, res) => {
 
     await project.save();
 
-    const updatedProject = await ClientProject.findById(req.params.id)
+    const updatedProject = await WorkingProject.findById(req.params.id)
       .populate("teamLeadId", "name email subRole specialization")
-      .populate("assignedBy", "name email");
+      .populate("assignedBy", "name email")
+      .populate("crmProjectId");
 
     res.json({ success: true, data: updatedProject });
   } catch (error) {
@@ -252,7 +294,7 @@ const assignTeamLeadToProject = async (req, res) => {
 
 const updateClientProject = async (req, res) => {
   try {
-    const project = await ClientProject.findById(req.params.id);
+    const project = await WorkingProject.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({
@@ -268,11 +310,15 @@ const updateClientProject = async (req, res) => {
       }
     });
 
+    // Mark as locally modified
+    project.hasLocalModifications = true;
+
     await project.save();
 
-    const updatedProject = await ClientProject.findById(req.params.id)
+    const updatedProject = await WorkingProject.findById(req.params.id)
       .populate("teamLeadId", "name email subRole specialization")
-      .populate("assignedBy", "name email");
+      .populate("assignedBy", "name email")
+      .populate("crmProjectId");
 
     res.status(200).json({
       success: true,
@@ -294,7 +340,7 @@ const updateClientProject = async (req, res) => {
 // @access  Private (Project Manager only)
 const deleteClientProject = async (req, res) => {
   try {
-    const project = await ClientProject.findById(req.params.id);
+    const project = await WorkingProject.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({
@@ -303,7 +349,7 @@ const deleteClientProject = async (req, res) => {
       });
     }
 
-    await ClientProject.findByIdAndDelete(req.params.id);
+    await WorkingProject.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,
@@ -325,7 +371,7 @@ const deleteClientProject = async (req, res) => {
 const addProjectNote = async (req, res) => {
   try {
     const { content } = req.body;
-    const project = await ClientProject.findById(req.params.id);
+    const project = await WorkingProject.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({
@@ -341,12 +387,12 @@ const addProjectNote = async (req, res) => {
     };
 
     project.notes.push(newNote);
+    project.hasLocalModifications = true; // Mark as locally modified
     await project.save();
 
-    const updatedProject = await ClientProject.findById(req.params.id).populate(
-      "notes.addedBy",
-      "name email"
-    );
+    const updatedProject = await WorkingProject.findById(req.params.id)
+      .populate("notes.addedBy", "name email")
+      .populate("crmProjectId");
 
     res.status(200).json({
       success: true,
@@ -428,16 +474,13 @@ const importRemoteProjects = async (req, res) => {
 
     for (const remoteProject of projectsData) {
       try {
-        // Check if project already exists by external ID or project ID
-        let existingProject = await ClientProject.findOne({
-          $or: [
-            { externalId: remoteProject._id },
-            { projectId: remoteProject.projectId },
-          ],
+        // Step 1: Save/Update in CRM collection (original data)
+        let crmProject = await CrmProject.findOne({
+          externalId: remoteProject._id,
         });
 
-        // Prepare project data
-        const projectData = {
+        const crmProjectData = {
+          externalId: remoteProject._id,
           projectId:
             remoteProject.projectId ||
             `IMPORT-${Date.now()}-${Math.random()
@@ -452,8 +495,6 @@ const importRemoteProjects = async (req, res) => {
             Math.random().toString(36).substring(2, 10),
           assignedTeamLead: remoteProject.assignedTeamLead || null,
           teamLeadId: remoteProject.teamLeadId || null,
-          externalId: remoteProject._id,
-          // Additional fields from remote
           description: remoteProject.description || "",
           budget: remoteProject.budget || remoteProject.finalAmount || 0,
           progress: remoteProject.progress || 0,
@@ -466,24 +507,36 @@ const importRemoteProjects = async (req, res) => {
             inProgress: 0,
             pending: 0,
           },
+          lastSyncedAt: new Date(),
+          syncSource: "CRM",
+          rawData: remoteProject, // Store raw data for reference
         };
 
-        if (existingProject) {
-          // Update existing project
-          Object.keys(projectData).forEach((key) => {
-            if (projectData[key] !== undefined) {
-              existingProject[key] = projectData[key];
+        if (crmProject) {
+          // Update existing CRM project
+          Object.keys(crmProjectData).forEach((key) => {
+            if (crmProjectData[key] !== undefined) {
+              crmProject[key] = crmProjectData[key];
             }
           });
-          await existingProject.save();
-          results.push(existingProject);
-          updatedCount++;
+          await crmProject.save();
         } else {
-          // Create new project
-          const newProject = new ClientProject(projectData);
-          await newProject.save();
-          results.push(newProject);
+          // Create new CRM project
+          crmProject = new CrmProject(crmProjectData);
+          await crmProject.save();
           importedCount++;
+        }
+
+        // Step 2: Sync with Working Project (editable copy)
+        const workingProject = await WorkingProject.syncWithCrmProject(
+          crmProject
+        );
+        results.push(workingProject);
+
+        if (workingProject.isNew) {
+          importedCount++;
+        } else {
+          updatedCount++;
         }
       } catch (projectError) {
         console.error("Error processing individual project:", projectError);
@@ -529,7 +582,7 @@ const importRemoteProjects = async (req, res) => {
 const assignEmployeesToProject = async (req, res) => {
   try {
     const { employees } = req.body; // [{ employeeId }]
-    const project = await ClientProject.findById(req.params.id);
+    const project = await WorkingProject.findById(req.params.id);
     if (!project) {
       return res
         .status(404)
@@ -540,23 +593,41 @@ const assignEmployeesToProject = async (req, res) => {
     const assignedEmployees = [];
     for (const emp of employees) {
       let user = emp;
-      if (!emp.name || !emp.role || !emp.subRole) {
+      if (!emp.name || !emp.role || !emp.subRole || !emp.email) {
+        // Fetch complete user data if missing fields
         user = await User.findById(emp.employeeId);
-      }
-      if (user) {
+        if (user) {
+          assignedEmployees.push({
+            employeeId: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            subRole: user.subRole,
+          });
+        }
+      } else {
+        // Use provided data if complete
         assignedEmployees.push({
-          employeeId: user._id,
-          name: user.name,
-          role: user.role,
-          subRole: user.subRole,
+          employeeId: emp.employeeId,
+          name: emp.name,
+          email: emp.email,
+          role: emp.role,
+          subRole: emp.subRole,
         });
       }
     }
 
     project.assignedEmployees = assignedEmployees;
+    project.hasLocalModifications = true; // Mark as locally modified
     await project.save();
-    res.json({ success: true, data: project });
+
+    const updatedProject = await WorkingProject.findById(req.params.id)
+      .populate("assignedEmployees.employeeId", "name email role subRole")
+      .populate("crmProjectId");
+
+    res.json({ success: true, data: updatedProject });
   } catch (error) {
+    console.error("Error assigning employees:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -577,7 +648,7 @@ const updateProjectProgress = async (req, res) => {
       });
     }
 
-    const project = await ClientProject.findById(projectId);
+    const project = await WorkingProject.findById(projectId);
     if (!project) {
       return res.status(404).json({
         success: false,
@@ -595,6 +666,7 @@ const updateProjectProgress = async (req, res) => {
       project.projectStatus = "Active";
     }
 
+    project.hasLocalModifications = true; // Mark as locally modified
     await project.save();
 
     res.status(200).json({
@@ -622,32 +694,191 @@ const updateProjectProgress = async (req, res) => {
 const getProjectsForEmployee = async (req, res) => {
   try {
     const { identifier } = req.params;
+    console.log("Fetching projects for employee identifier:", identifier);
 
-    // Find projects where this employee is assigned
-    let query = {};
+    // First, find the user by identifier to get their ObjectId
+    let user = null;
     if (mongoose.Types.ObjectId.isValid(identifier)) {
-      query = {
-        "assignedEmployees.employeeId": identifier,
-      };
+      user = await User.findById(identifier);
     } else {
-      query = {
-        $or: [
-          { "assignedEmployees.employeeId": identifier },
-          { "assignedEmployees.email": identifier },
-          { "assignedEmployees.name": identifier },
-        ],
-      };
+      // If not ObjectId, search by email or name
+      user = await User.findOne({
+        $or: [{ email: identifier }, { name: identifier }],
+      });
     }
 
-    const projects = await ClientProject.find(query);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    console.log("Found user:", {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+
+    // Find projects where this employee is assigned directly to the project using user's ObjectId
+    const directlyAssignedProjects = await WorkingProject.find({
+      "assignedEmployees.employeeId": user._id,
+    });
+
+    console.log("Directly assigned projects:", directlyAssignedProjects.length);
+
+    // Also find projects where this employee has tasks assigned
+    const Task = require("../models/taskModel");
+
+    const tasksAssignedToEmployee = await Task.find({
+      "assignedTo.employeeId": user._id,
+    })
+      .select("projectId")
+      .distinct("projectId");
+
+    console.log("Tasks assigned to employee:", tasksAssignedToEmployee.length);
+
+    // Get projects from task assignments using WorkingProject
+    const taskAssignedProjects = await WorkingProject.find({
+      _id: { $in: tasksAssignedToEmployee },
+    });
+
+    console.log("Task assigned projects:", taskAssignedProjects.length);
+
+    // Combine both arrays and remove duplicates
+    const allProjects = [...directlyAssignedProjects];
+
+    taskAssignedProjects.forEach((taskProject) => {
+      const exists = directlyAssignedProjects.find(
+        (directProject) =>
+          directProject._id.toString() === taskProject._id.toString()
+      );
+      if (!exists) {
+        allProjects.push(taskProject);
+      }
+    });
+
+    console.log("Total projects for employee:", allProjects.length);
 
     res.status(200).json({
       success: true,
-      count: projects.length,
-      data: projects,
+      count: allProjects.length,
+      data: allProjects,
     });
   } catch (error) {
     console.error("Error fetching employee projects:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Force sync working project with latest CRM data
+// @route   PUT /api/client-projects/:id/sync-crm
+// @access  Private (Project Manager only)
+const forceSyncWithCrm = async (req, res) => {
+  try {
+    const workingProject = await WorkingProject.findById(
+      req.params.id
+    ).populate("crmProjectId");
+
+    if (!workingProject) {
+      return res.status(404).json({
+        success: false,
+        message: "Working project not found",
+      });
+    }
+
+    if (!workingProject.crmProjectId) {
+      return res.status(400).json({
+        success: false,
+        message: "This project is not linked to CRM data",
+      });
+    }
+
+    // Get latest CRM data
+    const crmProject = await CrmProject.findById(workingProject.crmProjectId);
+
+    if (!crmProject) {
+      return res.status(404).json({
+        success: false,
+        message: "CRM project not found",
+      });
+    }
+
+    // Force update working project with CRM data (override local changes)
+    const fieldsToSync = [
+      "projectId",
+      "leadName",
+      "clientName",
+      "finalAmount",
+      "projectStatus",
+      "description",
+      "budget",
+      "progress",
+      "technologies",
+      "milestones",
+      "risks",
+      "tasks",
+    ];
+
+    fieldsToSync.forEach((field) => {
+      if (crmProject[field] !== undefined) {
+        workingProject[field] = crmProject[field];
+      }
+    });
+
+    workingProject.lastSyncedWithCrm = new Date();
+    workingProject.hasLocalModifications = false; // Reset modification flag
+
+    await workingProject.save();
+
+    const updatedProject = await WorkingProject.findById(req.params.id)
+      .populate("teamLeadId", "name email subRole specialization")
+      .populate("assignedBy", "name email")
+      .populate("crmProjectId");
+
+    res.status(200).json({
+      success: true,
+      data: updatedProject,
+      message: "Project synced with CRM data successfully",
+    });
+  } catch (error) {
+    console.error("Error syncing with CRM:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get CRM sync status for all projects
+// @route   GET /api/client-projects/sync-status
+// @access  Private
+const getCrmSyncStatus = async (req, res) => {
+  try {
+    const workingProjects = await WorkingProject.find({})
+      .populate("crmProjectId", "lastSyncedAt")
+      .select("projectId hasLocalModifications lastSyncedWithCrm crmProjectId");
+
+    const syncStatus = workingProjects.map((project) => ({
+      projectId: project.projectId,
+      workingProjectId: project._id,
+      hasLocalModifications: project.hasLocalModifications,
+      lastSyncedWithCrm: project.lastSyncedWithCrm,
+      linkedToCrm: !!project.crmProjectId,
+      crmLastUpdated: project.crmProjectId?.lastSyncedAt || null,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: syncStatus,
+    });
+  } catch (error) {
+    console.error("Error getting sync status:", error);
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -665,10 +896,13 @@ module.exports = {
   assignTeamLeadToProject,
   updateClientProject,
   getEmployeesBySubRole,
+  getAllEmployees,
   deleteClientProject,
   addProjectNote,
   getTeamLeads,
   importRemoteProjects,
   assignEmployeesToProject,
   updateProjectProgress,
+  forceSyncWithCrm,
+  getCrmSyncStatus,
 };

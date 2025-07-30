@@ -71,6 +71,16 @@ const TeamLeadDashboard = () => {
   const [showTaskHistory, setShowTaskHistory] = useState(false);
   const [selectedTaskForHistory, setSelectedTaskForHistory] = useState(null);
 
+  // Project Assignment States
+  const [showProjectAssignmentModal, setShowProjectAssignmentModal] =
+    useState(false);
+  const [selectedProjectForAssignment, setSelectedProjectForAssignment] =
+    useState(null);
+  const [availableEmployees, setAvailableEmployees] = useState([]);
+  const [selectedEmployeesForProject, setSelectedEmployeesForProject] =
+    useState([]);
+  const [assigningEmployees, setAssigningEmployees] = useState(false);
+
   // Get current user (Team Lead) info from auth context
   const currentUser = user || {
     name: "Team Lead",
@@ -454,9 +464,13 @@ const TeamLeadDashboard = () => {
   };
 
   // Open assignment modal
-  const openAssignmentModal = (task) => {
+  const openAssignmentModal = async (task) => {
     setSelectedTask(task);
     setEditAssignment(task.assignedTo || []);
+
+    // Fetch available employees for assignment
+    await fetchAvailableEmployees();
+
     setShowEditModal(true);
   };
 
@@ -498,6 +512,92 @@ const TeamLeadDashboard = () => {
   const viewTaskHistory = (task) => {
     setSelectedTaskForHistory(task);
     setShowTaskHistory(true);
+  };
+
+  // Project Assignment Functions
+  const fetchAvailableEmployees = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://localhost:5000/api/client-projects/employees/Employee",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const result = await response.json();
+      if (result.success) {
+        setAvailableEmployees(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    }
+  };
+
+  const openProjectAssignmentModal = (project) => {
+    setSelectedProjectForAssignment(project);
+    setSelectedEmployeesForProject(project.assignedEmployees || []);
+    fetchAvailableEmployees();
+    setShowProjectAssignmentModal(true);
+  };
+
+  const handleEmployeeToggleForProject = (employee, isChecked) => {
+    if (isChecked) {
+      setSelectedEmployeesForProject((prev) => [
+        ...prev,
+        {
+          employeeId: employee._id,
+          name: employee.name,
+          role: employee.role,
+          subRole: employee.subRole,
+          email: employee.email,
+        },
+      ]);
+    } else {
+      setSelectedEmployeesForProject((prev) =>
+        prev.filter((emp) => emp.employeeId !== employee._id)
+      );
+    }
+  };
+
+  const assignEmployeesToProject = async () => {
+    if (!selectedProjectForAssignment) return;
+
+    setAssigningEmployees(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:5000/api/client-projects/${selectedProjectForAssignment._id}/assign-employees`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            employees: selectedEmployeesForProject.map((emp) => ({
+              employeeId: emp.employeeId,
+            })),
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Employees assigned to project successfully!");
+        setShowProjectAssignmentModal(false);
+        fetchAssignedProjects(); // Refresh projects
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error assigning employees:", error);
+      alert("Failed to assign employees: " + error.message);
+    } finally {
+      setAssigningEmployees(false);
+    }
   };
 
   // Update project progress when tasks change
@@ -711,6 +811,14 @@ const TeamLeadDashboard = () => {
                     title="View Details"
                   >
                     <FaEye />
+                  </button>
+                  <button
+                    className="action-btn"
+                    onClick={() => openProjectAssignmentModal(project)}
+                    title="Assign Employees to Project"
+                    style={{ marginLeft: 8 }}
+                  >
+                    <FaUser />
                   </button>
                 </div>
               </div>
@@ -2210,8 +2318,7 @@ const TeamLeadDashboard = () => {
                   Assign to Team Members
                 </h6>
 
-                {selectedProject.assignedEmployees &&
-                selectedProject.assignedEmployees.length > 0 ? (
+                {availableEmployees && availableEmployees.length > 0 ? (
                   <div
                     style={{
                       display: "grid",
@@ -2220,9 +2327,9 @@ const TeamLeadDashboard = () => {
                       gap: 8,
                     }}
                   >
-                    {selectedProject.assignedEmployees.map((emp) => (
+                    {availableEmployees.map((emp) => (
                       <label
-                        key={emp.employeeId}
+                        key={emp._id}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -2242,14 +2349,14 @@ const TeamLeadDashboard = () => {
                         <input
                           type="checkbox"
                           checked={editAssignment.some(
-                            (assigned) => assigned.employeeId === emp.employeeId
+                            (assigned) => assigned.employeeId === emp._id
                           )}
                           onChange={(e) => {
                             if (e.target.checked) {
                               setEditAssignment((prev) => [
                                 ...prev,
                                 {
-                                  employeeId: emp.employeeId,
+                                  employeeId: emp._id,
                                   name: emp.name,
                                   email: emp.email,
                                   role: emp.role,
@@ -2258,8 +2365,7 @@ const TeamLeadDashboard = () => {
                             } else {
                               setEditAssignment((prev) =>
                                 prev.filter(
-                                  (assigned) =>
-                                    assigned.employeeId !== emp.employeeId
+                                  (assigned) => assigned.employeeId !== emp._id
                                 )
                               );
                             }
@@ -2858,6 +2964,232 @@ const TeamLeadDashboard = () => {
                 }}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Assignment Modal */}
+      {showProjectAssignmentModal && selectedProjectForAssignment && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowProjectAssignmentModal(false)}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 600, background: "#fff" }}
+          >
+            <div
+              className="modal-header"
+              style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 15 }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  color: "#1f2937",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <FaUser style={{ color: "#3b82f6" }} />
+                Assign Employees to Project
+              </h3>
+              <p
+                style={{
+                  margin: "8px 0 0 0",
+                  color: "#6b7280",
+                  fontSize: 14,
+                }}
+              >
+                Project: {selectedProjectForAssignment.projectId} -{" "}
+                {selectedProjectForAssignment.clientName}
+              </p>
+              <button
+                onClick={() => setShowProjectAssignmentModal(false)}
+                style={{
+                  position: "absolute",
+                  top: 15,
+                  right: 15,
+                  background: "none",
+                  border: "none",
+                  fontSize: 18,
+                  cursor: "pointer",
+                  color: "#6b7280",
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: 20 }}>
+              {/* Currently Assigned Employees */}
+              {selectedEmployeesForProject.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <h4
+                    style={{ color: "#374151", fontSize: 16, marginBottom: 10 }}
+                  >
+                    Currently Assigned ({selectedEmployeesForProject.length})
+                  </h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {selectedEmployeesForProject.map((emp, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          background: "#dbeafe",
+                          color: "#1e40af",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {emp.name} ({emp.role})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Available Employees */}
+              <div>
+                <h4
+                  style={{ color: "#374151", fontSize: 16, marginBottom: 15 }}
+                >
+                  Select Employees to Assign
+                </h4>
+
+                {availableEmployees.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      color: "#6b7280",
+                      padding: 20,
+                      background: "#f9fafb",
+                      borderRadius: 6,
+                    }}
+                  >
+                    <FaUser size={24} style={{ marginBottom: 8 }} />
+                    <p>No employees available</p>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      maxHeight: 300,
+                      overflowY: "auto",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 6,
+                      padding: 10,
+                    }}
+                  >
+                    {availableEmployees.map((employee) => (
+                      <label
+                        key={employee._id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "8px 12px",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          marginBottom: 5,
+                          background: selectedEmployeesForProject.some(
+                            (emp) => emp.employeeId === employee._id
+                          )
+                            ? "#f0f9ff"
+                            : "transparent",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (
+                            !selectedEmployeesForProject.some(
+                              (emp) => emp.employeeId === employee._id
+                            )
+                          ) {
+                            e.target.style.background = "#f9fafb";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (
+                            !selectedEmployeesForProject.some(
+                              (emp) => emp.employeeId === employee._id
+                            )
+                          ) {
+                            e.target.style.background = "transparent";
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEmployeesForProject.some(
+                            (emp) => emp.employeeId === employee._id
+                          )}
+                          onChange={(e) =>
+                            handleEmployeeToggleForProject(
+                              employee,
+                              e.target.checked
+                            )
+                          }
+                          style={{ cursor: "pointer" }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, color: "#1f2937" }}>
+                            {employee.name}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#6b7280" }}>
+                            {employee.role} - {employee.subRole}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                            {employee.email}
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div
+              className="modal-footer"
+              style={{
+                padding: "15px 20px",
+                borderTop: "1px solid #e5e7eb",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+              }}
+            >
+              <button
+                onClick={() => setShowProjectAssignmentModal(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #d1d5db",
+                  background: "#f9fafb",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={assignEmployeesToProject}
+                disabled={assigningEmployees}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: assigningEmployees ? "#9ca3af" : "#3b82f6",
+                  color: "white",
+                  cursor: assigningEmployees ? "not-allowed" : "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                {assigningEmployees ? "Assigning..." : "Assign Employees"}
               </button>
             </div>
           </div>
