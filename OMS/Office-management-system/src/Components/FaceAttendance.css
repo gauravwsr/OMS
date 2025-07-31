@@ -1,0 +1,514 @@
+/* Enhanced Face Recognition Attendance Styles */
+.attendance-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.attendance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.welcome-section h1 {
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.welcome-section p {
+  color: #6b7280;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.time-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.current-time,
+.current-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.today-status {
+  margin-bottom: 24px;
+}
+
+.status-card {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.status-card svg {
+  color: #3b82f6;
+}
+
+.status-info h3 {
+  margin: 0 0 8px 0;
+  color: #1f2937;
+  font-size: 1.3rem;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.status-badge.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.marked p,
+.pending p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.error-message,
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.success-message {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.close-error {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.close-error:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.attendance-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .attendance-content {
+    grid-template-columns: 1fr;
+  }
+
+  .attendance-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .time-info {
+    align-items: center;
+  }
+}
+
+.camera-section {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  padding: 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.section-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.section-header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.camera-placeholder {
+  text-align: center;
+  padding: 60px 40px;
+  color: #6b7280;
+}
+
+.camera-placeholder svg {
+  color: #9ca3af;
+  margin-bottom: 24px;
+}
+
+.camera-placeholder h3 {
+  color: #374151;
+  margin-bottom: 12px;
+  font-size: 1.4rem;
+}
+
+.camera-placeholder p {
+  font-size: 1rem;
+  margin-bottom: 32px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.camera-view {
+  position: relative;
+}
+
+.camera-instructions {
+  background: #f8fafc;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.camera-instructions p {
+  margin: 4px 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+.video-feed {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: cover;
+  display: block;
+}
+
+.camera-controls,
+.capture-controls {
+  padding: 24px;
+  background: #f9fafb;
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.captured-view {
+  text-align: center;
+}
+
+.photo-preview {
+  padding: 24px;
+  background: #f8fafc;
+}
+
+.captured-image {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.camera-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 15px;
+  min-width: 160px;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.camera-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.camera-btn.primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+}
+
+.camera-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.camera-btn.capture {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+}
+
+.camera-btn.capture:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.camera-btn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.camera-btn.secondary:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.attendance-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebar-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  font-size: 1.2rem;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border-left: 4px solid #3b82f6;
+  transition: background 0.2s;
+}
+
+.history-item:hover {
+  background: #f1f5f9;
+}
+
+.history-date {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.history-time {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.history-method {
+  font-size: 12px;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.no-history {
+  text-align: center;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 24px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  transition: border-color 0.2s;
+}
+
+.stat-item:hover {
+  border-color: #3b82f6;
+}
+
+.stat-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .attendance-container {
+    padding: 16px;
+  }
+
+  .attendance-header {
+    padding: 20px;
+  }
+
+  .welcome-section h1 {
+    font-size: 1.8rem;
+  }
+
+  .status-card {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .camera-controls,
+  .capture-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .camera-btn {
+    width: 100%;
+    max-width: 250px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header h2 {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .attendance-header {
+    padding: 16px;
+  }
+
+  .welcome-section h1 {
+    font-size: 1.5rem;
+  }
+
+  .section-header {
+    padding: 20px;
+  }
+
+  .camera-placeholder {
+    padding: 40px 20px;
+  }
+
+  .sidebar-section {
+    padding: 20px;
+  }
+}

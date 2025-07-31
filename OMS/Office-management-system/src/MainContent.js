@@ -30,9 +30,9 @@ import Employee from "./Components/Employee";
 import Meeting from "./Components/Meeting";
 import CandidateProfile from "./Components/CandidatePf";
 import Attendance from "./Components/Attendance";
+import FaceAttendance from "./Components/FaceAttendance";
 import EmployeeAttendance from "./Components/EmplyeAtendnc";
 import ProjectList from "./Components/ProjectList";
-// import QuotationList from './Components/Technical/QuotationList';
 import Todo from "./Components/Todo-list/Todo";
 import Chat from "./Components/chats/chat";
 import Inbox from "./Components/mail/Inbox";
@@ -160,7 +160,7 @@ const MainContent = ({ nav }) => {
           path: "/analytics-management",
           label: "Analytics Management",
           icon: <FiBarChart />,
-        }
+        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -191,11 +191,6 @@ const MainContent = ({ nav }) => {
       //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
       // ],
       Employee: [
-        {
-          path: "/employee-dashboard",
-          label: "My Projects",
-          icon: <FiFileText />,
-        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -813,7 +808,7 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard />
               ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
                 <TeamLeadDashboard />
-              ): (
+              ) : (
                 <Homepage />
               )
             }
@@ -821,9 +816,9 @@ const MainContent = ({ nav }) => {
           <Route path="/Db" element={<Db />} />
           <Route path="/Db/employee" element={<Employee />} />
           <Route path="/Db/viewDetails/:id" element={<ViewDetails />} />
-          <Route path="/hr-registration" element={<HRRegistration />} />
           <Route path="/CandidateProfile" element={<CandidateProfile />} />
           <Route path="/Attendance" element={<Attendance />} />
+          <Route path="/FaceAttendance" element={<FaceAttendance />} />
           <Route path="/EmplyeAtendnc" element={<EmployeeAttendance />} />
           <Route path="/Meeting" element={<Meeting />} />
           <Route
@@ -835,8 +830,8 @@ const MainContent = ({ nav }) => {
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
               ) : user?.role === "Employee" ? (
-                <EmployeeProjects nav={nav}  />
-              ):(
+                <EmployeeProjects nav={nav} />
+              ) : (
                 <ProjectList nav={nav} />
               )
             }

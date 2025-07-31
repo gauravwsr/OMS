@@ -33,6 +33,7 @@ export const navigationMenus = {
     { name: "Analytics Management", path: "/analytics-management" },
     { name: "CandidateProfile", path: "/CandidateProfile" },
     { name: "Attendance", path: "/Attendance" },
+    { name: "Face Attendance", path: "/FaceAttendance" },
     { name: "EmployeeAttendance", path: "/EmplyeAtendnc" },
     { name: "ProjectList", path: "/ProjectList" },
     { name: "chat", path: "/chat" },
