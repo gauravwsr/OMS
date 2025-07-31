@@ -40,12 +40,10 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
-<<<<<<< HEAD
 const attendanceRoutes = require("./routes/attendanceRoutes");
-=======
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
->>>>>>> 577d24a080f50ce65ff724679d3cea18ec524663
+
 
 const app = express();
 const server = http.createServer(app);
