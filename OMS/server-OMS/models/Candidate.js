@@ -1,25 +1,25 @@
 // models/Candidate.js
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const candidateSchema = new mongoose.Schema({
   candidateId: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   photoUrl: {
     type: String,
-    default: null
+    default: null,
   },
   fullName: {
     type: String,
-    required: true
+    required: true,
   },
   gender: {
     type: String,
     required: true,
-    enum: ['Male', 'Female', 'Other', 'Prefer not to say']
+    enum: ["Male", "Female", "Other", "Prefer not to say"],
   },
   role: String,
   subRole: String,
@@ -33,7 +33,7 @@ const candidateSchema = new mongoose.Schema({
   city: String,
   phoneNo: {
     type: String,
-    required: true
+    required: true,
   },
   zipCode: String,
   emergencyNo: String,
@@ -41,9 +41,8 @@ const candidateSchema = new mongoose.Schema({
   personalMail: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
   },
   aadharCard: String,
   joiningDate: Date,
@@ -52,35 +51,43 @@ const candidateSchema = new mongoose.Schema({
   bankName: String,
   ifscCode: String,
   accountNo: String,
+  bankAccountName: String, // Added missing field
+  salary: Number, // Added missing field
+  company: String, // Added missing field
   photoPath: String,
   cvPath: String,
   // Auth related fields
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
   passwordPlain: String, // Temporary storage for showing in the modal
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 // Hash password before saving
-candidateSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
+candidateSchema.pre("save", async function (next) {
+  // Set email field from officialEmail or personalMail if not already set
+  if (!this.email) {
+    this.email = this.officialEmail || this.personalMail;
+  }
+
+  if (!this.isModified("password")) {
     return next();
   }
-  
+
   try {
     // Store the plain password temporarily for displaying in the credentials modal
     this.passwordPlain = this.password;
-    
+
     // Hash the password
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -91,9 +98,9 @@ candidateSchema.pre('save', async function(next) {
 });
 
 // Method to check password
-candidateSchema.methods.matchPassword = async function(enteredPassword) {
+candidateSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const Candidate = mongoose.model('Candidate', candidateSchema);
+const Candidate = mongoose.model("Candidate", candidateSchema);
 module.exports = Candidate;
