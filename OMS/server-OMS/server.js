@@ -3,10 +3,10 @@ const express = require("express");
 
 // Set default JWT secret if not in environment
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'your-secret-key-for-oms-application-2024';
+  process.env.JWT_SECRET = "your-secret-key-for-oms-application-2024";
 }
 
-console.log('JWT_SECRET configured:', process.env.JWT_SECRET ? 'Yes' : 'No');
+console.log("JWT_SECRET configured:", process.env.JWT_SECRET ? "Yes" : "No");
 const Imap = require("node-imap");
 const { simpleParser } = require("mailparser");
 const multer = require("multer");
@@ -40,6 +40,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const attendanceRoutes = require("./routes/attendanceRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -118,6 +119,9 @@ app.use("/api/hr-leave", hrLeaveRoutes);
 
 // Analytics routes
 app.use("/api/analytics", analyticsRoutes);
+
+// Attendance routes
+app.use("/api/attendance", attendanceRoutes);
 
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
@@ -404,14 +408,18 @@ const cleanupFinishedEvents = async () => {
   try {
     const now = new Date();
     const result = await ScheduleEventData.deleteMany({
-      EndTime: { $lt: now }
+      EndTime: { $lt: now },
     });
-    
+
     if (result.deletedCount > 0) {
-      console.log(`🧹 Auto-cleanup: Removed ${result.deletedCount} finished events at ${now.toLocaleString()}`);
+      console.log(
+        `🧹 Auto-cleanup: Removed ${
+          result.deletedCount
+        } finished events at ${now.toLocaleString()}`
+      );
     }
   } catch (error) {
-    console.error('❌ Error during auto-cleanup:', error);
+    console.error("❌ Error during auto-cleanup:", error);
   }
 };
 

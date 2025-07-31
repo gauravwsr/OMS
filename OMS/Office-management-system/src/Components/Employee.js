@@ -22,83 +22,90 @@ const Employee = () => {
     name: "",
   });
   const [showWebcamModal, setShowWebcamModal] = useState(false);
-const [capturedImages, setCapturedImages] = useState([]);
-const [isCapturing, setIsCapturing] = useState(false);
+  const [capturedImages, setCapturedImages] = useState([]);
+  const [isCapturing, setIsCapturing] = useState(false);
 
-const videoRef = useRef(null);
-const canvasRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-const handleOpenWebcam = () => {
-  if (!formData.fullName) {
-    alert("Please enter the employee's Full Name before registering a face.");
-    return;
-  }
-  setShowWebcamModal(true);
-  setCapturedImages([]);
-  startVideoStream();
-};
-
-const startVideoStream = useCallback(async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
+  const handleOpenWebcam = () => {
+    if (!formData.fullName) {
+      alert("Please enter the employee's Full Name before registering a face.");
+      return;
     }
-  } catch (err) {
-    console.error("Error accessing webcam:", err);
-    alert("Could not access the webcam. Please ensure you have given permission.");
-    setShowWebcamModal(false);
-  }
-}, []);
-
-const stopVideoStream = () => {
-  if (videoRef.current && videoRef.current.srcObject) {
-    const stream = videoRef.current.srcObject;
-    const tracks = stream.getTracks();
-    tracks.forEach(track => track.stop());
-    videoRef.current.srcObject = null;
-  }
-};
-
-const handleCapture = () => {
-  if (videoRef.current && canvasRef.current) {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext('2d');
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const imageDataUrl = canvas.toDataURL('image/jpeg');
-    setCapturedImages(prev => [...prev, imageDataUrl]);
-  }
-};
-
-const handleFinishFaceRegistration = async () => {
-  if (capturedImages.length < 5) {
-    alert("Please capture at least 5 images for better accuracy.");
-    return;
-  }
-  setIsCapturing(true);
-  stopVideoStream();
-
-  try {
-    const response = await axios.post('http://localhost:5001/register_face', {
-      name: formData.fullName,
-      images: capturedImages
-    });
-    alert(response.data.message);
-    setShowWebcamModal(false);
-
-  } catch (error) {
-    console.error("Error registering face:", error);
-    const errorMessage = error.response?.data?.error || "Failed to register face. See console for details.";
-    alert(errorMessage);
+    setShowWebcamModal(true);
+    setCapturedImages([]);
     startVideoStream();
-  } finally {
-    setIsCapturing(false);
-  }
-};
+  };
+
+  const startVideoStream = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Error accessing webcam:", err);
+      alert(
+        "Could not access the webcam. Please ensure you have given permission."
+      );
+      setShowWebcamModal(false);
+    }
+  }, []);
+
+  const stopVideoStream = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext("2d");
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageDataUrl = canvas.toDataURL("image/jpeg");
+      setCapturedImages((prev) => [...prev, imageDataUrl]);
+    }
+  };
+
+  const handleFinishFaceRegistration = async () => {
+    if (capturedImages.length < 5) {
+      alert("Please capture at least 5 images for better accuracy.");
+      return;
+    }
+    setIsCapturing(true);
+    stopVideoStream();
+
+    try {
+      // Register face with the face recognition server
+      const response = await axios.post("http://localhost:5001/register_face", {
+        name: formData.fullName,
+        images: capturedImages,
+      });
+      console.log("Face registration response:", response.data);
+      alert(
+        `✅ Face registered successfully for ${formData.fullName}! ${response.data.message}`
+      );
+      setShowWebcamModal(false);
+    } catch (error) {
+      console.error("Error registering face:", error);
+      const errorMessage =
+        error.response?.data?.error ||
+        "Failed to register face. Please ensure the face recognition server is running on port 5001.";
+      alert(`❌ ${errorMessage}`);
+      startVideoStream();
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   // Define roles based on user's role - Super Admin can only register HR Managers
   const getRolesForUser = () => {
@@ -162,6 +169,9 @@ const handleFinishFaceRegistration = async () => {
     bankName: "",
     ifscCode: "",
     accountNo: "",
+    bankAccountName: "", // Added missing field
+    salary: "", // Added missing field
+    company: "", // Added missing field
     password: "",
     confirmPassword: "",
   });
@@ -263,14 +273,32 @@ const handleFinishFaceRegistration = async () => {
       const requiredFields = [
         "candidateId",
         "fullName",
+        "birthDate",
+        "gender",
+        "address",
+        "country",
+        "state",
+        "city",
+        "zipCode",
         "phoneNo",
         "personalMail",
+        "emergencyNo",
         "role",
         "subRole",
-        "gender",
+        "joiningDate",
+        "salary",
+        "company",
+        "qualification",
+        "aadharCard",
+        "panCard",
+        "bankName",
+        "branchName",
+        "accountNo",
+        "ifscCode",
+        "bankAccountName",
         "password",
         "confirmPassword",
-      ]; // Added gender and password fields to required fields
+      ]; // Updated to match all required fields in the form
       const missingFields = requiredFields.filter((field) => !formData[field]);
 
       if (missingFields.length > 0) {
@@ -312,6 +340,13 @@ const handleFinishFaceRegistration = async () => {
         }
       });
 
+      // Debug: Log the form data being sent
+      console.log("Form data being sent:", formData);
+      console.log("FormData entries:");
+      for (let [key, value] of data.entries()) {
+        console.log(key, value);
+      }
+
       // If you still need to send the file for some other purpose
       if (cv) data.append("cv", cv);
 
@@ -329,7 +364,7 @@ const handleFinishFaceRegistration = async () => {
         setCredentials({
           candidateId: response.data.credentials.candidateId,
           name: formData.fullName,
-          email: formData.officialEmail,
+          email: formData.officialEmail || formData.personalMail, // Use officialEmail if provided, otherwise personalMail
           password: formData.password, // Use user-provided password
           role: formData.role,
           subRole: formData.subRole,
@@ -337,7 +372,7 @@ const handleFinishFaceRegistration = async () => {
 
         const userData = {
           name: formData.fullName,
-          email: formData.officialEmail,
+          email: formData.officialEmail || formData.personalMail, // Use officialEmail if provided, otherwise personalMail
           password: formData.password, // Use user-provided password
           role: formData.role,
           subRole: formData.subRole,
@@ -400,6 +435,9 @@ const handleFinishFaceRegistration = async () => {
       bankName: "",
       ifscCode: "",
       accountNo: "",
+      bankAccountName: "",
+      salary: "",
+      company: "",
       password: "",
       confirmPassword: "",
     });
@@ -528,19 +566,19 @@ const handleFinishFaceRegistration = async () => {
                     />
                   </label>
                 </div>
-                <div className="upload-controls" style={{ marginTop: '10px' }}>
-  <div className="warning-text">
-    Or register face using the webcam for attendance system.
-  </div>
-  <button
-    type="button"
-    className="upload-button"
-    onClick={handleOpenWebcam}
-  >
-    <Camera size={16} style={{ marginRight: '8px' }}/>
-    Register Face via Webcam
-  </button>
-</div>
+                <div className="upload-controls" style={{ marginTop: "10px" }}>
+                  <div className="warning-text">
+                    Or register face using the webcam for attendance system.
+                  </div>
+                  <button
+                    type="button"
+                    className="upload-button"
+                    onClick={handleOpenWebcam}
+                  >
+                    <Camera size={16} style={{ marginRight: "8px" }} />
+                    Register Face via Webcam
+                  </button>
+                </div>
               </div>
               {/* Personal Information Section */}
               <div className="form-section">
@@ -1065,49 +1103,94 @@ const handleFinishFaceRegistration = async () => {
       </div>
 
       {showWebcamModal && (
-  <div className="modal-overlay">
-    <div className="modal-content" style={{maxWidth: '700px'}}>
-      <div className="modal-header">
-        <h3>Register Face for: {formData.fullName}</h3>
-        <button
-          onClick={() => {
-            stopVideoStream();
-            setShowWebcamModal(false);
-          }}
-          className="close-modal"
-        >
-          <X size={20} />
-        </button>
-      </div>
-      <div className="modal-body">
-        {isCapturing ? (
-           <div style={{textAlign: 'center', padding: '50px'}}>Processing... Please wait.</div>
-        ) : (
-          <>
-            <video ref={videoRef} autoPlay playsInline style={{ width: '100%', borderRadius: '4px', backgroundColor: '#000' }} />
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-            <div style={{marginTop: '15px', textAlign: 'center'}}>
-                <p>Captured Images: <strong>{capturedImages.length}</strong> / 20</p>
-                <div style={{display: 'flex', flexWrap: 'wrap', gap: '5px', justifyContent: 'center', marginTop: '10px', maxHeight: '100px', overflowY: 'auto'}}>
-                  {capturedImages.map((src, index) => (
-                    <img key={index} src={src} alt={`capture ${index}`} style={{width: '50px', height: '50px', objectFit: 'cover', border: '1px solid #ccc'}} />
-                  ))}
-                </div>
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: "700px" }}>
+            <div className="modal-header">
+              <h3>Register Face for: {formData.fullName}</h3>
+              <button
+                onClick={() => {
+                  stopVideoStream();
+                  setShowWebcamModal(false);
+                }}
+                className="close-modal"
+              >
+                <X size={20} />
+              </button>
             </div>
-          </>
-        )}
-      </div>
-      <div className="modal-footer" style={{justifyContent: 'center', gap: '20px'}}>
-         <button onClick={handleCapture} className="submit-button" disabled={isCapturing || capturedImages.length >= 20}>
-            Capture Image
-        </button>
-        <button onClick={handleFinishFaceRegistration} className="confirm-button" disabled={isCapturing || capturedImages.length < 5}>
-            Finish & Register
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="modal-body">
+              {isCapturing ? (
+                <div style={{ textAlign: "center", padding: "50px" }}>
+                  Processing... Please wait.
+                </div>
+              ) : (
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    style={{
+                      width: "100%",
+                      borderRadius: "4px",
+                      backgroundColor: "#000",
+                    }}
+                  />
+                  <canvas ref={canvasRef} style={{ display: "none" }} />
+                  <div style={{ marginTop: "15px", textAlign: "center" }}>
+                    <p>
+                      Captured Images: <strong>{capturedImages.length}</strong>{" "}
+                      / 20
+                    </p>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "5px",
+                        justifyContent: "center",
+                        marginTop: "10px",
+                        maxHeight: "100px",
+                        overflowY: "auto",
+                      }}
+                    >
+                      {capturedImages.map((src, index) => (
+                        <img
+                          key={index}
+                          src={src}
+                          alt={`capture ${index}`}
+                          style={{
+                            width: "50px",
+                            height: "50px",
+                            objectFit: "cover",
+                            border: "1px solid #ccc",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            <div
+              className="modal-footer"
+              style={{ justifyContent: "center", gap: "20px" }}
+            >
+              <button
+                onClick={handleCapture}
+                className="submit-button"
+                disabled={isCapturing || capturedImages.length >= 20}
+              >
+                Capture Image
+              </button>
+              <button
+                onClick={handleFinishFaceRegistration}
+                className="confirm-button"
+                disabled={isCapturing || capturedImages.length < 5}
+              >
+                Finish & Register
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Credentials Modal */}
       {showModal && (

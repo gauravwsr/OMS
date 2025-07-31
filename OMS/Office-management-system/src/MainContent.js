@@ -30,9 +30,9 @@ import Employee from "./Components/Employee";
 import Meeting from "./Components/Meeting";
 import CandidateProfile from "./Components/CandidatePf";
 import Attendance from "./Components/Attendance";
+import FaceAttendance from "./Components/FaceAttendance";
 import EmployeeAttendance from "./Components/EmplyeAtendnc";
 import ProjectList from "./Components/ProjectList";
-// import QuotationList from './Components/Technical/QuotationList';
 import Todo from "./Components/Todo-list/Todo";
 import Chat from "./Components/chats/chat";
 import Inbox from "./Components/mail/Inbox";
@@ -45,7 +45,7 @@ import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
-import ProjectManagerDashboard  from './Components/ProjectManager/ProjectManagerDashboard';
+import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
@@ -158,7 +158,7 @@ const MainContent = ({ nav }) => {
           path: "/analytics-management",
           label: "Analytics Management",
           icon: <FiBarChart />,
-        }
+        },
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -200,7 +200,11 @@ const MainContent = ({ nav }) => {
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
       ],
       Employee_Team_Lead: [
-        { path: "/team-lead-dashboard", label: "My Projects", icon: <FiFileText /> },
+        {
+          path: "/team-lead-dashboard",
+          label: "My Projects",
+          icon: <FiFileText />,
+        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
       ],
     };
@@ -800,9 +804,9 @@ const MainContent = ({ nav }) => {
           <Route path="/Db" element={<Db />} />
           <Route path="/Db/employee" element={<Employee />} />
           <Route path="/Db/viewDetails/:id" element={<ViewDetails />} />
-          <Route path="/hr-registration" element={<HRRegistration />} />
           <Route path="/CandidateProfile" element={<CandidateProfile />} />
           <Route path="/Attendance" element={<Attendance />} />
+          <Route path="/FaceAttendance" element={<FaceAttendance />} />
           <Route path="/EmplyeAtendnc" element={<EmployeeAttendance />} />
           <Route path="/Meeting" element={<Meeting />} />
           <Route
@@ -844,10 +848,7 @@ const MainContent = ({ nav }) => {
             path="/hr-leave-application"
             element={<HRLeaveApplication />}
           />
-          <Route
-            path="/hr-leave-management"
-            element={<HRLeaveManagement />}
-          />
+          <Route path="/hr-leave-management" element={<HRLeaveManagement />} />
         </Routes>
       </div>
     </>

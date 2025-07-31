@@ -10,6 +10,9 @@ const validRoles = ["Super_Admin", "Admin", "Employee", "Intern"];
 
 // Signup Controller
 const registerUser = async (req, res) => {
+  console.log("=== SIGNUP REQUEST ===");
+  console.log("Request body:", req.body);
+
   const {
     // Basic Information
     firstName,
@@ -47,7 +50,9 @@ const registerUser = async (req, res) => {
   const fullName = name || `${firstName} ${lastName}`.trim();
 
   // Check if all required fields are provided
+  console.log("Checking required fields:", { fullName, email, password, role });
   if (!fullName || !email || !password || !role) {
+    console.log("Missing required fields!");
     return res.status(400).json({ msg: "Please enter all required fields" });
   }
 
@@ -60,8 +65,10 @@ const registerUser = async (req, res) => {
 
   try {
     // Check if the user already exists
+    console.log("Checking if user exists:", email);
     let user = await User.findOne({ email });
     if (user) {
+      console.log("User already exists!");
       return res.status(400).json({ msg: "User already exists" });
     }
 
@@ -118,7 +125,13 @@ const registerUser = async (req, res) => {
     user.userId = Math.floor(1000 + Math.random() * 9000);
 
     // Save user to DB
+    console.log("Attempting to save user:", {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
     await user.save();
+    console.log("User saved successfully!");
 
     res.status(201).json({
       msg: "User registered successfully",
@@ -128,7 +141,8 @@ const registerUser = async (req, res) => {
       subRole: user.subRole,
     });
   } catch (error) {
-    console.error(error.message);
+    console.error("Signup error:", error.message);
+    console.error("Full error:", error);
     res.status(500).send("Server error");
   }
 };
