@@ -13,6 +13,7 @@ const uploadFields = upload.fields([
 // Routes
 router.post('/', uploadFields, candidateController.createCandidate);
 router.get('/', candidateController.getAllCandidates);
+router.get('/employees', candidateController.getAllEmployees); // New route for getting employees for task assignment
 router.get('/:id', candidateController.getCandidateById);
 router.put('/:id', uploadFields, candidateController.updateCandidate);
 router.delete('/:id', candidateController.deleteCandidate);
