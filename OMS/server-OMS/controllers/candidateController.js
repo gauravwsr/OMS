@@ -4,6 +4,9 @@ const Candidate = require("../models/Candidate");
 // Create a new candidate
 exports.createCandidate = async (req, res) => {
   try {
+    console.log("Received request body:", req.body);
+    console.log("Received files:", req.files);
+
     const {
       candidateId,
       fullName,
@@ -48,6 +51,16 @@ exports.createCandidate = async (req, res) => {
       !gender ||
       !password
     ) {
+      console.log("Missing required fields:", {
+        candidateId: !!candidateId,
+        personalMail: !!personalMail,
+        fullName: !!fullName,
+        phoneNo: !!phoneNo,
+        role: !!role,
+        subRole: !!subRole,
+        gender: !!gender,
+        password: !!password,
+      });
       return res.status(400).json({
         success: false,
         message: "Required fields are missing",
@@ -113,6 +126,7 @@ exports.createCandidate = async (req, res) => {
       branchName,
       accountNo,
       ifscCode,
+      bankAccountName,
       photoUrl, // Using Cloudinary URL from frontend
       photoPath: photoUrl, // Set photoPath same as photoUrl for backward compatibility
       cvPath,
@@ -120,7 +134,9 @@ exports.createCandidate = async (req, res) => {
     });
 
     // Save to database
+    console.log("Attempting to save candidate:", newCandidate);
     await newCandidate.save();
+    console.log("Candidate saved successfully:", newCandidate._id);
 
     // Return success response with credentials
     res.status(201).json({

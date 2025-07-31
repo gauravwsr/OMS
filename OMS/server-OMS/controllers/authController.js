@@ -7,7 +7,7 @@
 // // Forgot Password - Send OTP
 // exports.forgotPassword = async (req, res) => {
 //   const { email } = req.body;
-  
+
 //   try {
 //     const user = await User.findOne({ email });
 //     if (!user) return res.status(404).json({ message: "User not found" });
@@ -60,23 +60,26 @@
 //   }
 // };
 
-
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-const Candidate = require('../models/Candidate');
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
+const Candidate = require("../models/Candidate");
 
 // Generate JWT
 const generateToken = (user) => {
-  return jwt.sign({ 
-    id: user._id,
-    userId: user.userId,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    subRole: user.subRole
-  }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
-  });
+  return jwt.sign(
+    {
+      id: user._id,
+      userId: user.userId,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      subRole: user.subRole,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "30d",
+    }
+  );
 };
 
 // @desc    Auth user & get token
@@ -85,35 +88,85 @@ const generateToken = (user) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("🔐 Login attempt for email:", email);
 
-    // Check for user
-    const user = await User.findOne({ email });
+    // First check User collection (for Admin, Super Admin, etc.)
+    let user = await User.findOne({ email });
+    let userType = "User";
+
+    // If not found in User collection, check Candidate collection (for Employees)
+    if (!user) {
+      console.log(
+        "👤 User not found in User collection, checking Candidate collection..."
+      );
+      user = await Candidate.findOne({
+        $or: [
+          { email: email },
+          { personalMail: email },
+          { officialEmail: email },
+        ],
+      });
+      userType = "Candidate";
+    }
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log("❌ User not found in either collection");
+      return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    console.log(
+      "✅ User found in",
+      userType,
+      "collection:",
+      user.email || user.personalMail
+    );
 
     // Check if password matches
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      console.log("❌ Password mismatch");
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check if user is active
-    if (!user.isActive) {
-      return res.status(401).json({ message: 'Account is deactivated' });
+    console.log("✅ Password verified for user:", user.fullName || user.name);
+
+    // Check if user is active (for User collection)
+    if (userType === "User" && !user.isActive) {
+      return res.status(401).json({ message: "Account is deactivated" });
     }
+
+    // Generate token with appropriate fields
+    const token = jwt.sign(
+      {
+        id: user._id,
+        userId: user.userId || user.candidateId,
+        name: user.name || user.fullName,
+        email: user.email || user.personalMail,
+        role: user.role,
+        subRole: user.subRole,
+        userType: userType,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    console.log("✅ Token generated for user:", user.fullName || user.name);
 
     res.json({
       _id: user._id,
-      candidateId: user.candidateId,
-      email: user.email,
+      candidateId: user.candidateId || user.userId,
+      email: user.email || user.personalMail,
+      name: user.fullName || user.name,
       role: user.role,
-      token: generateToken(user)
+      subRole: user.subRole,
+      userType: userType,
+      token: token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -128,7 +181,7 @@ const register = async (req, res) => {
     const userExists = await User.findOne({ email });
 
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     // Create new user
@@ -136,7 +189,7 @@ const register = async (req, res) => {
       candidateId,
       email,
       password,
-      role: role || 'candidate'
+      role: role || "candidate",
     });
 
     const savedUser = await user.save();
@@ -146,10 +199,10 @@ const register = async (req, res) => {
       candidateId: savedUser.candidateId,
       email: savedUser.email,
       role: savedUser.role,
-      token: generateToken(savedUser)
+      token: generateToken(savedUser),
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -158,15 +211,15 @@ const register = async (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select("-password");
     if (user) {
       // Get candidate details if user is a candidate
-      if (user.role === 'candidate') {
+      if (user.role === "candidate") {
         const candidate = await Candidate.findOne({ user: user._id });
         if (candidate) {
           res.json({
             user,
-            candidate
+            candidate,
           });
         } else {
           res.json({ user });
@@ -175,10 +228,10 @@ const getUserProfile = async (req, res) => {
         res.json({ user });
       }
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: "User not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -191,7 +244,7 @@ const updateUserProfile = async (req, res) => {
 
     if (user) {
       user.email = req.body.email || user.email;
-      
+
       if (req.body.password) {
         user.password = req.body.password;
       }
@@ -203,13 +256,13 @@ const updateUserProfile = async (req, res) => {
         candidateId: updatedUser.candidateId,
         email: updatedUser.email,
         role: updatedUser.role,
-        token: generateToken(updatedUser)
+        token: generateToken(updatedUser),
       });
     } else {
-      res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: "User not found" });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -218,10 +271,10 @@ const updateUserProfile = async (req, res) => {
 // @access  Private/Admin
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-password');
+    const users = await User.find({}).select("-password");
     res.json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -230,5 +283,5 @@ module.exports = {
   register,
   getUserProfile,
   updateUserProfile,
-  getUsers
+  getUsers,
 };

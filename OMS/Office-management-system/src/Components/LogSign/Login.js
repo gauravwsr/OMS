@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../AuthProvider/AuthContext';
-import loginImage from './Rectangle 20.jpg';
-import './Login.css';
-
-
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../AuthProvider/AuthContext";
+import loginImage from "./Rectangle 20.jpg";
+import "./Login.css";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const { login } = useAuth();
 
@@ -23,7 +21,6 @@ const Login = () => {
         <div className="login-form-container">
           <h1 className="login-title">Welcome Back!</h1>
           <form onSubmit={handleSubmit} className="login-form">
-
             {/* Email Input */}
             <div>
               <label htmlFor="email">
@@ -38,7 +35,6 @@ const Login = () => {
                 placeholder="Enter your email address"
               />
             </div>
-
 
             {/* Password Input */}
             <div>
@@ -74,18 +70,19 @@ const Login = () => {
             </div>
 
             <div>
-
               {/* Login Button */}
-              <button type="submit" className="login-btn">Login</button>
+              <button type="submit" className="login-btn">
+                Login
+              </button>
             </div>
           </form>
 
-          <p className="register-text">
-            Don't have an account?{' '}
-            <div className="font-medium text-indigo-600 hover:text-indigo-500">
+          <div className="register-text">
+            Don't have an account?{" "}
+            <span className="font-medium text-indigo-600 hover:text-indigo-500">
               <Link to="/sign_up">Register here</Link>
-            </div>
-          </p>
+            </span>
+          </div>
         </div>
 
         {/* Right Side - Image with Proper Spacing */}
@@ -96,7 +93,6 @@ const Login = () => {
             className="login-image"
           />
         </div>
-
       </div>
     </div>
   );
