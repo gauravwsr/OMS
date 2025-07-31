@@ -493,14 +493,47 @@ const importRemoteProjects = async (req, res) => {
   }
 };
 
+// const assignEmployeesToProject = async (req, res) => {
+//   try {
+//     const { employees } = req.body; // [{ employeeId, name, role, subRole }]
+//     const project = await ClientProject.findById(req.params.id);
+//     if (!project) {
+//       return res.status(404).json({ success: false, message: 'Project not found' });
+//     }
+//     project.assignedEmployees = employees;
+//     await project.save();
+//     res.json({ success: true, data: project });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 const assignEmployeesToProject = async (req, res) => {
   try {
-    const { employees } = req.body; // [{ employeeId, name, role, subRole }]
+    const { employees } = req.body; // [{ employeeId }]
     const project = await ClientProject.findById(req.params.id);
     if (!project) {
       return res.status(404).json({ success: false, message: 'Project not found' });
     }
-    project.assignedEmployees = employees;
+
+    // Fetch full user info for each employee
+    const assignedEmployees = [];
+    for (const emp of employees) {
+      let user = emp;
+      if (!emp.name || !emp.role || !emp.subRole) {
+        user = await User.findById(emp.employeeId);
+      }
+      if (user) {
+        assignedEmployees.push({
+          employeeId: user._id,
+          name: user.name,
+          role: user.role,
+          subRole: user.subRole
+        });
+      }
+    }
+
+    project.assignedEmployees = assignedEmployees;
     await project.save();
     res.json({ success: true, data: project });
   } catch (error) {
