@@ -45,8 +45,10 @@ import ViewDetails from "./Components/ViewDetails";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
-import ProjectManagerDashboard from './Components/ProjectManager/ProjectManagerDashboard';
+import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
+import EmployeeDashboard from "./Components/Employee/EmployeeDashboard.js";
+import EmployeeProjects from "./Components/Employee/EmployeeProjects.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
@@ -189,6 +191,11 @@ const MainContent = ({ nav }) => {
       //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
       // ],
       Employee: [
+        {
+          path: "/employee-dashboard",
+          label: "My Projects",
+          icon: <FiFileText />,
+        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -205,7 +212,11 @@ const MainContent = ({ nav }) => {
         },
       ],
       Employee_Team_Lead: [
-        { path: "/team-lead-dashboard", label: "My Projects", icon: <FiFileText /> },
+        {
+          path: "/team-lead-dashboard",
+          label: "My Projects",
+          icon: <FiFileText />,
+        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -802,7 +813,7 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard />
               ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
                 <TeamLeadDashboard />
-              ) : (
+              ): (
                 <Homepage />
               )
             }
@@ -823,14 +834,20 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
-              ) : (
-                <ProjectList />
+              ) : user?.role === "Employee" ? (
+                <EmployeeProjects nav={nav}  />
+              ):(
+                <ProjectList nav={nav} />
               )
             }
           />
           <Route
             path="/team-lead-dashboard"
             element={<TeamLeadDashboard nav={nav} />}
+          />
+          <Route
+            path="/employee-dashboard"
+            element={<EmployeeDashboard nav={nav} />}
           />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
@@ -854,10 +871,7 @@ const MainContent = ({ nav }) => {
             path="/hr-leave-application"
             element={<HRLeaveApplication />}
           />
-          <Route
-            path="/hr-leave-management"
-            element={<HRLeaveManagement />}
-          />
+          <Route path="/hr-leave-management" element={<HRLeaveManagement />} />
         </Routes>
       </div>
     </>
