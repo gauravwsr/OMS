@@ -209,7 +209,19 @@ const Calender = () => {
           group={{ allowGroupEdit: !isSuperAdmin }} // Disable group editing for Super Admin
           allowDragAndDrop={!isSuperAdmin} // Disable drag and drop for Super Admin
           readonly={isSuperAdmin} // Make entire schedule readonly for Super Admin
-          eventSettings={{ dataSource: dataManager }} // Event data source
+          eventSettings={{ 
+            dataSource: dataManager,
+            fields: {
+              id: '_id',
+              subject: { name: 'Subject' },
+              startTime: { name: 'StartTime' },
+              endTime: { name: 'EndTime' },
+              description: { name: 'Description' },
+              location: { name: 'Location' },
+              isAllDay: { name: 'IsAllDay' },
+              resourceFields: 'Users'
+            }
+          }} // Event data source
           actionBegin={onActionBegin} // Handle action restrictions
           cellClick={onCellClick} // Handle cell click restrictions
           eventClick={onEventClick} // Handle event click restrictions
