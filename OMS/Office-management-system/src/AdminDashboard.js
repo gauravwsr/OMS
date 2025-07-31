@@ -740,19 +740,40 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* BOTTOM ROW: Upcoming Events - With Extra Spacing */}
-      <div className="grid-row upcoming-events-row">
-        {/* Upcoming Events Section */}
-        <div className="upcoming-events-container">
-          <h2 className="section-title">Upcoming Events</h2>
-          
-          {eventsLoading ? (
-            <p className="loading-text">Loading upcoming events...</p>
-          ) : eventsError ? (
-            <p className="error-text">Error loading events: {eventsError}</p>
-          ) : upcomingEvents.length === 0 ? (
-            <div className="no-events">
-              <h4>No Upcoming Events</h4>
+      {/* Upcoming Events Section */}
+            <div className="activity-section">
+              <div className="section-header">
+                <h3>Upcoming Events</h3>
+              </div>
+
+              {eventsLoading ? (
+                <div className="activity-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-icon notification">⏳</div>
+                    <div className="timeline-content">
+                      <h4>Loading Events</h4>
+                      <p>Please wait while we fetch your events...</p>
+                      <span className="timeline-time">Just now</span>
+                    </div>
+                  </div>
+                </div>
+              ) : eventsError ? (
+                <div className="activity-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-icon notification">❌</div>
+                    <div className="timeline-content">
+                      <h4>Error Loading Events</h4>
+                      <p>Unable to fetch upcoming events</p>
+                      <span className="timeline-time">Just now</span>
+                    </div>
+                  </div>
+                </div>
+              ) : upcomingEvents.length === 0 ? (
+                <div className="activity-timeline">
+                  <div className="timeline-item">
+                    <div className="timeline-icon notification">📅</div>
+                    <div className="timeline-content">
+                      <h4>No Upcoming Events</h4>
                       <p>No events scheduled for today</p>
                       <span className="timeline-time">
                         {new Date().toLocaleDateString("en-US", {
@@ -763,33 +784,26 @@ const AdminDashboard = () => {
                           hour12: true,
                         })}
                       </span>
-            </div>
-          ) : (
-            <div className="events-list">
-              {upcomingEvents.map((event) => (
-                <div key={event._id} className="event-item">
-                  <div className="event-details">
-                    <h4 className="event-title">{event.Subject}</h4>
-                    <p className="event-time">{formatEventDate(event.StartTime, event.EndTime)}</p>
-                    {event.Description && (
-                      <p className="event-description">{event.Description}</p>
-                    )}
-                    {event.Location && (
-                      <p className="event-location">📍 {event.Location}</p>
-                    )}
-                    {event.Users && event.Users.length > 0 && (
-                      <div className="event-attendees">
-                        <span className="attendees-label">Attendees: </span>
-                        <span className="attendees-list">{event.Users.join(', ')}</span>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="activity-timeline">
+                  {upcomingEvents.map((event) => (
+                    <div key={event._id} className="timeline-item">
+                      <div className="timeline-icon notification">📅</div>
+                      <div className="timeline-content">
+                        <h4>{event.Subject}</h4>
+                        <p>{event.Description || "Event scheduled"}</p>
+                        <span className="timeline-time">
+                          {formatEventDate(event.StartTime, event.EndTime)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
 
       {/* Expenses Chart Modal */}
       {showExpensesChart && (
