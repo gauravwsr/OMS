@@ -1,58 +1,242 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const ScheduleEventData = require('../models/calenderModel');
-const { createEventNotification, createMeetingNotification } = require('../controllers/notificationController');
-const { protect } = require('../middlewares/auth');
-const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
-
+const ScheduleEventData = require("../models/calenderModel");
+const {
+  createEventNotification,
+  createMeetingNotification,
+} = require("../controllers/notificationController");
+const { protect } = require("../middlewares/auth");
+const jwt = require("jsonwebtoken");
+const User = require("../models/userModel");
 
 // Load all events (similar to LoadData in C#) with automatic cleanup
-router.post('/GetData', async (req, res) => {
+router.post("/GetData", async (req, res) => {
+  let userId = null;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-secret-key"
+      );
+      userId = decoded.id;
+      console.log("User ID from token:", userId);
+    } catch (error) {
+      console.error("Error verifying token for GetData:", error.message);
+    }
+  } else {
+    console.log("No authorization header for GetData request");
+  }
+
   try {
-    // First, cleanup finished events (events that ended more than 1 hour ago)
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-    
-    await ScheduleEventData.deleteMany({
-      EndTime: { $lt: oneHourAgo }
-    });
-    
-    console.log(`Cleaned up finished events older than: ${oneHourAgo}`);
-    
-    // Then return remaining events
-    const events = await ScheduleEventData.find();
+    let events;
+    if (userId) {
+      // Get current user details to check role
+      const currentUser = await User.findById(userId);
+      const userIdString = userId.toString();
+
+      // Check if user is Admin (any Admin role gets full access)
+      const isAdmin = currentUser && currentUser.role === "Admin";
+
+      // Check if user is HR Manager (Admin with HR Manager subRole)
+      const isHRManager =
+        currentUser &&
+        currentUser.role === "Admin" &&
+        currentUser.subRole === "HR Manager";
+
+      console.log(`🔍 User Details:`, {
+        userId: userId,
+        userName: currentUser?.name,
+        role: currentUser?.role,
+        subRole: currentUser?.subRole,
+        isAdmin: isAdmin,
+        isHRManager: isHRManager,
+      });
+
+      if (isHRManager) {
+        // HR Manager can see ALL events in the system
+        events = await ScheduleEventData.find({});
+        console.log(
+          `🔍 HR Manager ${currentUser.name} can see ALL ${events.length} events`
+        );
+      } else if (isAdmin) {
+        // Regular Admin users can see:
+        // 1. All public events
+        // 2. All events created by them (where CreateBy = their ID)
+        // 3. All events where they are tagged in Users array
+        events = await ScheduleEventData.find({
+          $or: [
+            { Users: { $exists: false } }, // Public events
+            { Users: null },
+            { Users: { $size: 0 } },
+            { CreateBy: userIdString }, // Events created by Admin
+            { CreateBy: userId },
+            { Users: userIdString }, // Events where Admin is tagged
+            { Users: userId },
+            { Users: { $in: [userIdString, userId] } },
+          ],
+        });
+
+        console.log(
+          `🔍 Admin ${currentUser.name} can see ${events.length} events`
+        );
+      } else {
+        // Regular users can see:
+        // 1. Public events (empty Users array or null)
+        // 2. Events where they are tagged in Users array
+        events = await ScheduleEventData.find({
+          $or: [
+            { Users: { $exists: false } },
+            { Users: null },
+            { Users: { $size: 0 } },
+            { Users: userIdString },
+            { Users: userId },
+            { Users: { $in: [userIdString, userId] } },
+          ],
+        });
+
+        console.log(
+          `🔍 Regular user ${currentUser?.name || "Unknown"} can see ${
+            events.length
+          } events`
+        );
+      }
+
+      // Debug: Show all events and their details
+      const allEvents = await ScheduleEventData.find({});
+      console.log(`- Total events in DB: ${allEvents.length}`);
+
+      allEvents.forEach((event, index) => {
+        console.log(`Event ${index + 1}:`);
+        console.log(`  - ID: ${event._id}`);
+        console.log(`  - Subject: ${event.Subject}`);
+        console.log(`  - Users: ${JSON.stringify(event.Users)}`);
+        console.log(`  - CreateBy: ${event.CreateBy}`);
+        console.log(
+          `  - Created by current user: ${
+            event.CreateBy === userIdString || event.CreateBy === userId
+          }`
+        );
+
+        if (isHRManager) {
+          const canSeeAsHR =
+            !event.Users ||
+            event.Users.length === 0 ||
+            event.CreateBy === userIdString ||
+            event.CreateBy === userId ||
+            (event.Users &&
+              (event.Users.includes(userIdString) ||
+                event.Users.includes(userId)));
+          console.log(`  - HR Manager can see: ${canSeeAsHR}`);
+        } else {
+          const includesUserId = event.Users && event.Users.includes(userId);
+          const includesUserIdString =
+            event.Users && event.Users.includes(userIdString);
+          const isPublic = !event.Users || event.Users.length === 0;
+          const canSeeAsRegular =
+            isPublic || includesUserId || includesUserIdString;
+          console.log(
+            `  - Regular user can see: ${canSeeAsRegular} (Public: ${isPublic}, Tagged: ${
+              includesUserId || includesUserIdString
+            })`
+          );
+        }
+        console.log("  ---");
+      });
+    } else {
+      // If no user authenticated, show only public events
+      events = await ScheduleEventData.find({
+        $or: [
+          { Users: { $exists: false } },
+          { Users: null },
+          { Users: { $size: 0 } },
+        ],
+      });
+      console.log("No user ID found, returning only public events.");
+    }
+
     res.json(events);
   } catch (err) {
-    console.error('Error loading data:', err);
-    res.status(500).json({ error: 'Error loading data' });
+    console.error("Error loading data:", err);
+    res.status(500).json({ error: "Error loading data" });
+  }
+});
+
+// Debug route to check specific event visibility
+router.get("/debug/:eventId", async (req, res) => {
+  const { eventId } = req.params;
+  let userId = null;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-secret-key"
+      );
+      userId = decoded.id;
+    } catch (error) {
+      console.error("Error verifying token:", error.message);
+    }
+  }
+
+  try {
+    const event = await ScheduleEventData.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    const userIdString = userId ? userId.toString() : null;
+
+    const debugInfo = {
+      eventId: event._id,
+      subject: event.Subject,
+      users: event.Users,
+      usersType: Array.isArray(event.Users) ? "Array" : typeof event.Users,
+      usersLength: event.Users ? event.Users.length : null,
+      currentUserId: userId,
+      currentUserIdString: userIdString,
+      matches: {
+        includesObjectId: event.Users && event.Users.includes(userId),
+        includesString: event.Users && event.Users.includes(userIdString),
+        isPublic: !event.Users || event.Users.length === 0,
+      },
+    };
+
+    res.json(debugInfo);
+  } catch (err) {
+    console.error("Debug error:", err);
+    res.status(500).json({ error: "Debug error" });
   }
 });
 
 // Cleanup finished events - Manual cleanup endpoint
-router.delete('/cleanup-finished', async (req, res) => {
+router.delete("/cleanup-finished", async (req, res) => {
   try {
     const now = new Date();
-    console.log('Starting cleanup of finished events...');
-    
+    console.log("Starting cleanup of finished events...");
+
     // Delete events that ended before current time
     const result = await ScheduleEventData.deleteMany({
-      EndTime: { $lt: now }
+      EndTime: { $lt: now },
     });
-    
+
     console.log(`Cleaned up ${result.deletedCount} finished events`);
-    
+
     res.json({
       success: true,
       message: `Successfully cleaned up ${result.deletedCount} finished events`,
-      deletedCount: result.deletedCount
+      deletedCount: result.deletedCount,
     });
   } catch (err) {
-    console.error('Error during cleanup:', err);
-    res.status(500).json({ 
+    console.error("Error during cleanup:", err);
+    res.status(500).json({
       success: false,
-      error: 'Error during cleanup',
-      details: err.message 
+      error: "Error during cleanup",
+      details: err.message,
     });
   }
 });
@@ -61,7 +245,7 @@ router.delete('/cleanup-finished', async (req, res) => {
 // router.post('/BatchData', async (req, res) => {
 //   const { action, key, added, changed, deleted, value } = req.body;
 
-//   console.log('Request Body:', req.body); 
+//   console.log('Request Body:', req.body);
 //   try {
 //     if (action === 'insert' || (action === 'batch' && added)) {
 //       const newEvent = added ? added[0] : value;
@@ -125,69 +309,113 @@ router.delete('/cleanup-finished', async (req, res) => {
 //   }
 // });
 
-router.post('/BatchData', async (req, res) => {
+router.post("/BatchData", async (req, res) => {
   const { action, key, added, changed, deleted, value } = req.body;
 
   // Try to get user from token if available
   let currentUser = null;
   const authHeader = req.headers.authorization;
-  
 
-  console.log('🔥 BatchData called:', {
+  console.log("🔥 BatchData called:", {
     action,
-    authHeader: authHeader ? 'Present' : 'Missing',
+    authHeader: authHeader ? "Present" : "Missing",
     hasAdded: !!(added && added.length > 0),
-    userAgent: req.headers['user-agent']?.substring(0, 50) || 'Unknown'
+    userAgent: req.headers["user-agent"]?.substring(0, 50) || "Unknown",
   });
-  
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
     try {
       const token = authHeader.substring(7);
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-secret-key"
+      );
       currentUser = await User.findById(decoded.id);
 
-      console.log('🔥 User authenticated:', {
-        name: currentUser?.name || 'Unknown',
+      console.log("🔥 User authenticated:", {
+        name: currentUser?.name || "Unknown",
         role: currentUser?.role,
         subRole: currentUser?.subRole,
-        userId: currentUser?.userId
+        userId: currentUser?.userId,
       });
     } catch (error) {
-      console.log('🔥 Token verification failed:', error.message);
+      console.log("🔥 Token verification failed:", error.message);
     }
   } else {
-    console.log('🔥 No authorization header found');
+    console.log("🔥 No authorization header found");
   }
 
   try {
-    if (action === 'insert' || (action === 'batch' && added && added.length > 0)) {
+    if (
+      action === "insert" ||
+      (action === "batch" && added && added.length > 0)
+    ) {
       const newEvent = added && added.length > 0 ? added[0] : value;
-      
+
       // Check if newEvent is defined and contains required fields
-      if (!newEvent || !newEvent.StartTime || !newEvent.EndTime || !newEvent.Subject) {
-        return res.status(400).json({ error: 'Missing required fields in the event data' });
+      if (
+        !newEvent ||
+        !newEvent.StartTime ||
+        !newEvent.EndTime ||
+        !newEvent.Subject
+      ) {
+        return res
+          .status(400)
+          .json({ error: "Missing required fields in the event data" });
       }
       // Ensure CreateBy is a string, even if it comes as an array
-      const users = newEvent.Users || [];
-      const createdBy = Array.isArray(newEvent.Users) ? newEvent.Users[0] : newEvent.Users;
+
+      // Convert Users field: if any value is a name, convert to _id
+      let users = newEvent.Users || [];
+      if (!Array.isArray(users)) users = [users];
+
+      // Filter out empty strings and null values
+      users = users.filter((u) => u && u.trim && u.trim() !== "");
+
+      // Find all users from DB
+      const allUsers = await User.find({}, "_id name");
+      const nameToId = {};
+      allUsers.forEach((u) => {
+        nameToId[u.name] = u._id.toString();
+      });
+
+      // Convert names to IDs
+      users = users
+        .map((u) => {
+          // If it's already an ObjectId string, keep it; if it's a name, convert
+          if (typeof u === "string" && nameToId[u]) return nameToId[u];
+          return u;
+        })
+        .filter((u) => u); // Remove any undefined/null values
+
+      // If no users are tagged, make it a public event (empty array)
+      // If users are tagged, make it private to those users
+      const createdBy = currentUser ? currentUser._id.toString() : null;
+
+      console.log("🔥 Event Creation:", {
+        originalUsers: newEvent.Users,
+        processedUsers: users,
+        isPublicEvent: users.length === 0,
+        createdBy: createdBy,
+        currentUserInfo: currentUser ? { id: currentUser._id, name: currentUser.name } : null,
+      });
 
       const newEventData = new ScheduleEventData({
         StartTime: new Date(newEvent.StartTime),
         EndTime: new Date(newEvent.EndTime),
         Subject: newEvent.Subject,
         Description: newEvent.Description,
-        CreateBy: createdBy,  // Fix applied here
-        Users: users,  // Ensure Users is an array or null
+        CreateBy: createdBy, // Fix applied here
+        Users: users, // Always array of user IDs
         Location: newEvent.Location,
-        IsAllDay: newEvent.IsAllDay || false,  
+        IsAllDay: newEvent.IsAllDay || false,
         StartTimezone: newEvent.StartTimezone || null,
         EndTimezone: newEvent.EndTimezone || null,
         RecurrenceRule: newEvent.RecurrenceRule || null,
         RecurrenceID: newEvent.RecurrenceID || null,
-        RecurrenceException: newEvent.RecurrenceException || null
+        RecurrenceException: newEvent.RecurrenceException || null,
       });
 
-      
       const savedEvent = await newEventData.save();
 
       // Create notification for the new event
@@ -197,20 +425,21 @@ router.post('/BatchData', async (req, res) => {
             id: savedEvent._id,
             title: savedEvent.Subject,
             startTime: savedEvent.StartTime,
-            location: savedEvent.Location || 'No location specified'
+            location: savedEvent.Location || "No location specified",
           };
 
           // Check if current user is HR Manager or Admin with HR role
-          const isHRUser = currentUser.role === 'Admin' && 
-                          (currentUser.subRole && currentUser.subRole.includes('HR'));
+          const isHRUser =
+            currentUser.role === "Admin" &&
+            currentUser.subRole &&
+            currentUser.subRole.includes("HR");
 
           // Only create notification for current/future events by HR users
           const eventStartTime = new Date(savedEvent.StartTime);
           const now = new Date();
           const isCurrentOrFutureEvent = eventStartTime >= now;
 
-
-          console.log('🔥 Notification Check:', {
+          console.log("🔥 Notification Check:", {
             user: currentUser.name,
             role: currentUser.role,
             subRole: currentUser.subRole,
@@ -218,71 +447,123 @@ router.post('/BatchData', async (req, res) => {
             eventTitle: savedEvent.Subject,
             eventStartTime: eventStartTime,
             isCurrentOrFuture: isCurrentOrFutureEvent,
-            willCreateNotification: isHRUser && isCurrentOrFutureEvent
+            willCreateNotification: isHRUser && isCurrentOrFutureEvent,
           });
 
           // Only create notification if HR user is creating a current/future event
           if (isHRUser && isCurrentOrFutureEvent) {
             // Check if it's a meeting (based on subject or description keywords)
-            const isMeeting = savedEvent.Subject.toLowerCase().includes('meeting') || 
-                             savedEvent.Description?.toLowerCase().includes('meeting');
+            const isMeeting =
+              savedEvent.Subject.toLowerCase().includes("meeting") ||
+              savedEvent.Description?.toLowerCase().includes("meeting");
 
-
-            console.log('🔥 Creating notification:', {
-              type: isMeeting ? 'meeting' : 'event',
+            console.log("🔥 Creating notification:", {
+              type: isMeeting ? "meeting" : "event",
               title: savedEvent.Subject,
-              createdBy: currentUser.name
+              createdBy: currentUser.name,
             });
 
             if (isMeeting) {
-              await createMeetingNotification(eventData, currentUser._id, currentUser.name);
+              await createMeetingNotification(
+                eventData,
+                currentUser._id,
+                currentUser.name
+              );
             } else {
-              await createEventNotification(eventData, currentUser._id, currentUser.name);
+              await createEventNotification(
+                eventData,
+                currentUser._id,
+                currentUser.name
+              );
             }
-            
 
-            console.log(`🔥✅ Notification created for ${isMeeting ? 'meeting' : 'event'}: ${savedEvent.Subject} by HR user ${currentUser.name}`);
+            console.log(
+              `🔥✅ Notification created for ${
+                isMeeting ? "meeting" : "event"
+              }: ${savedEvent.Subject} by HR user ${currentUser.name}`
+            );
           } else if (!isHRUser) {
-            console.log(`🔥❌ Event created by non-HR user ${currentUser.name} (Role: ${currentUser.role}, SubRole: ${currentUser.subRole}), no notification sent to Super Admin`);
+            console.log(
+              `🔥❌ Event created by non-HR user ${currentUser.name} (Role: ${currentUser.role}, SubRole: ${currentUser.subRole}), no notification sent to Super Admin`
+            );
           } else if (!isCurrentOrFutureEvent) {
-            console.log(`🔥❌ Past event created by HR user ${currentUser.name}, no notification sent`);
+            console.log(
+              `🔥❌ Past event created by HR user ${currentUser.name}, no notification sent`
+            );
           }
         } catch (notificationError) {
-          console.error('Error creating notification:', notificationError);
+          console.error("Error creating notification:", notificationError);
           // Don't fail the event creation if notification fails
         }
       } else {
-        console.log('No authenticated user, skipping notification creation');
+        console.log("No authenticated user, skipping notification creation");
       }
 
       const allEvents = await ScheduleEventData.find();
-      return res.json(allEvents);
-
+      return res.json({ result: allEvents, count: allEvents.length }); // <-- yahan object bhejein
     }
 
-    if (action === 'update' || (action === 'batch' && changed && changed.length > 0)) {
+    if (
+      action === "update" ||
+      (action === "batch" && changed && changed.length > 0)
+    ) {
       const updatedEvent = changed && changed.length > 0 ? changed[0] : value;
-      
+
       // Check if updatedEvent is defined and contains required fields
-      if (!updatedEvent || !updatedEvent._id || !updatedEvent.StartTime || !updatedEvent.EndTime || !updatedEvent.Subject) {
-        return res.status(400).json({ error: 'Missing required fields in the event data for update' });
+      if (
+        !updatedEvent ||
+        !updatedEvent._id ||
+        !updatedEvent.StartTime ||
+        !updatedEvent.EndTime ||
+        !updatedEvent.Subject
+      ) {
+        return res.status(400).json({
+          error: "Missing required fields in the event data for update",
+        });
       }
 
-      // Ensure Users exists before using it
-      const users = updatedEvent.Users || [];
-      const createdBy = Array.isArray(updatedEvent.Users) ? updatedEvent.Users[0] : updatedEvent.Users;
+      // Ensure Users exists before using it, and convert names to IDs
+      let users = updatedEvent.Users || [];
+      if (!Array.isArray(users)) users = [users];
 
-      console.log(users)
+      // Filter out empty strings and null values
+      users = users.filter((u) => u && u.trim && u.trim() !== "");
+
+      // Find all users from DB
+      const allUsers = await User.find({}, "_id name");
+      const nameToId = {};
+      allUsers.forEach((u) => {
+        nameToId[u.name] = u._id.toString();
+      });
+
+      // Convert names to IDs
+      users = users
+        .map((u) => {
+          if (typeof u === "string" && nameToId[u]) return nameToId[u];
+          return u;
+        })
+        .filter((u) => u); // Remove any undefined/null values
+
+      // If no users are tagged, make it a public event (empty array)
+      const createdBy = currentUser ? currentUser._id.toString() : null;
+
+      console.log("🔥 Event Update:", {
+        originalUsers: updatedEvent.Users,
+        processedUsers: users,
+        isPublicEvent: users.length === 0,
+        createdBy: createdBy,
+        currentUserInfo: currentUser ? { id: currentUser._id, name: currentUser.name } : null,
+      });
 
       const event = await ScheduleEventData.findById(updatedEvent._id);
       if (event) {
         event.StartTime = new Date(updatedEvent.StartTime);
         event.EndTime = new Date(updatedEvent.EndTime);
         event.Subject = updatedEvent.Subject;
-        event.CreateBy = createdBy;  // Fix applied here
+        event.CreateBy = createdBy; // Fix applied here
         event.Location = updatedEvent.Location;
         event.Description = updatedEvent.Description;
-        event.Users = users;  // Ensure Users is an array or null
+        event.Users = users; // Always array of user IDs
         event.StartTimezone = updatedEvent.StartTimezone || null;
         event.EndTimezone = updatedEvent.EndTimezone || null;
         event.RecurrenceRule = updatedEvent.RecurrenceRule || null;
@@ -293,27 +574,30 @@ router.post('/BatchData', async (req, res) => {
       }
 
       const allEvents = await ScheduleEventData.find();
-      return res.json(allEvents);
+      return res.json({ result: allEvents, count: allEvents.length }); // <-- yahan object bhejein
     }
 
-    if (action === 'remove' || (action === 'batch' && deleted && deleted.length > 0)) {
-      if (action === 'remove') {
+    if (
+      action === "remove" ||
+      (action === "batch" && deleted && deleted.length > 0)
+    ) {
+      if (action === "remove") {
         const event = await ScheduleEventData.findByIdAndDelete(key);
         if (event) {
-          return res.json(await ScheduleEventData.find());
+          const allEvents = await ScheduleEventData.find();
+          return res.json({ result: allEvents, count: allEvents.length }); // <-- fix here
         }
       } else {
         for (const eventToDelete of deleted) {
           await ScheduleEventData.findByIdAndDelete(eventToDelete._id);
         }
+        const allEvents = await ScheduleEventData.find();
+        return res.json({ result: allEvents, count: allEvents.length });
       }
-
-      return res.json(await ScheduleEventData.find());
     }
-
   } catch (err) {
-    console.error('Error updating data:', err);
-    res.status(500).json({ error: 'Error updating data' });
+    console.error("Error updating data:", err);
+    res.status(500).json({ error: "Error updating data" });
   }
 });
 

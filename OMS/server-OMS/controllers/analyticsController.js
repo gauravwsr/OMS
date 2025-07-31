@@ -5,40 +5,38 @@ const Leave = require ("../models/leaveModel.js");
 const getLeaveAnalytics = async (req, res) => {
   try {
     const { startDate, endDate, employeeId } = req.query;
-    
     // Build query based on filters
     let query = {};
-    
     if (startDate && endDate) {
       query.createdAt = {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
       };
     }
-    
     if (employeeId && employeeId !== 'all') {
-      query.employeeId = employeeId;
+      query.userId = employeeId;
     }
-
     // Get leave data with employee details
     const leaves = await Leave.find(query)
-      .populate('employeeId', 'name email department')
+      .populate('userId', 'name email department')
       .sort({ createdAt: -1 });
-
     // Format the response
     const formattedLeaves = leaves.map(leave => ({
       _id: leave._id,
-      employeeName: leave.employeeId?.name || leave.employeeName || 'Unknown',
-      employeeEmail: leave.employeeId?.email || leave.employeeEmail || 'Unknown',
-      department: leave.employeeId?.department || 'General',
+      employeeName: leave.userId?.name || leave.employeeName || 'Unknown',
+      employeeEmail: leave.userId?.email || leave.employeeEmail || 'Unknown',
+      department: leave.userId?.department || 'General',
       leaveType: leave.leaveType,
-      startDate: leave.startDate,
-      endDate: leave.endDate,
+      startDate: leave.leaveDates?.start || leave.startDate,
+      endDate: leave.leaveDates?.end || leave.endDate,
       totalDays: leave.totalDays,
-      reason: leave.reason,
+      reason: leave.leaveReason || leave.reason,
       status: leave.status,
-      createdAt: leave.createdAt,
-      approvedBy: leave.approvedBy
+      createdAt: leave.appliedDate || leave.createdAt,
+      approvedBy: leave.reviewedBy || leave.approvedBy,
+      approvedDate: leave.reviewedDate || leave.approvedDate,
+      comments: leave.reviewComments || leave.comments,
+      leaveBalance: leave.leaveBalance || 0
     }));
 
     res.json(formattedLeaves);

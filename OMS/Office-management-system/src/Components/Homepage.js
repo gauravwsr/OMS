@@ -78,8 +78,32 @@ const NewDashboard = () => {
     const fetchUpcomingEvents = async () => {
       setEventsLoading(true);
       try {
-        const response = await axios.post('http://localhost:5000/GetData');
+        const token = localStorage.getItem("token");
+        console.log("Homepage - Fetching upcoming events with token:", !!token);
+        
+        // Check if current user is HR Manager (Admin with HR Manager subRole)
+        const isHRManager = user?.role === 'Admin' && user?.subRole === 'HR Manager';
+        
+        console.log("Homepage - User Role Info:", {
+          role: user?.role,
+          subRole: user?.subRole,
+          isHRManager: isHRManager
+        });
+        
+        // Use GetData for all users (backend will handle HR Manager permissions)
+        const apiUrl = 'http://localhost:5000/GetData';
+        
+        console.log("Homepage - Using API URL:", apiUrl);
+        
+        const response = await axios.post(apiUrl, {}, {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+          }
+        });
+        
         const allEvents = response.data || [];
+        console.log("Homepage - All events received:", allEvents.length);
         
         // Filter upcoming events (events that haven't ended yet)
         const now = new Date();
@@ -90,6 +114,11 @@ const NewDashboard = () => {
           })
           .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime)) // Sort by start time
           .slice(0, 3); // Show only next 3 events for homepage
+        
+        console.log("Homepage - Upcoming events filtered:", upcoming.length);
+        upcoming.forEach((event, index) => {
+          console.log(`Event ${index + 1}: ${event.Subject} - Users: ${JSON.stringify(event.Users)}`);
+        });
         
         setUpcomingEvents(upcoming);
         setEventsError(null);
@@ -587,94 +616,76 @@ const NewDashboard = () => {
                 </div>
               </div>
 
-              {/* Enhanced Upcoming Events Section */}
-              <div className="events-section-modern">
-                <h2 className="section-title">
-                  <span className="title-icon">📅</span>
-                  Upcoming Events
-                  {upcomingEvents.length > 0 && (
-                    <span className="event-count">{upcomingEvents.length}</span>
-                  )}
-                </h2>
+            {/* Upcoming Events Section */}
+            <div className="activity-section">
+              <div className="section-header">
+                <h3>Upcoming Events</h3>
+              </div>
 
-                <div className="events-container">
-                  {eventsLoading ? (
-                    <div className="events-loading">
-                      <div className="loading-spinner-small">
-                        <div className="spinner-circle"></div>
-                      </div>
-                      <div className="loading-text">
+              <div className="upcoming-events-scrollable">
+                {eventsLoading ? (
+                  <div className="activity-timeline">
+                    <div className="timeline-item">
+                      <div className="timeline-icon notification">⏳</div>
+                      <div className="timeline-content">
                         <h4>Loading Events</h4>
-                        <p>Fetching your upcoming schedule...</p>
+                        <p>Please wait while we fetch your events...</p>
+                        <span className="timeline-time">Just now</span>
                       </div>
                     </div>
-                  ) : eventsError ? (
-                    <div className="events-error">
-                      <div className="error-icon-small">❌</div>
-                      <div className="error-text">
-                        <h4>Unable to Load Events</h4>
-                        <p>There was an issue fetching your events</p>
-                        <button 
-                          className="retry-small-btn"
-                          onClick={() => window.location.reload()}
-                        >
-                          Try Again
-                        </button>
+                  </div>
+                ) : eventsError ? (
+                  <div className="activity-timeline">
+                    <div className="timeline-item">
+                      <div className="timeline-icon notification">❌</div>
+                      <div className="timeline-content">
+                        <h4>Error Loading Events</h4>
+                        <p>Unable to fetch upcoming events</p>
+                        <span className="timeline-time">Just now</span>
                       </div>
                     </div>
-                  ) : upcomingEvents.length === 0 ? (
-                    <div className="events-empty">
-                      <div className="empty-illustration">
-                        <div className="calendar-icon">📅</div>
-                        <div className="empty-dots">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
-                      </div>
-                      <div className="empty-text">
+                  </div>
+                ) : upcomingEvents.length === 0 ? (
+                  <div className="activity-timeline">
+                    <div className="timeline-item">
+                      <div className="timeline-icon notification">📅</div>
+                      <div className="timeline-content">
                         <h4>No Upcoming Events</h4>
-                        <p>Your schedule is clear for today. Enjoy some focused work time!</p>
+                        <p>No events scheduled for today</p>
+                        <span className="timeline-time">
+                          {new Date().toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="events-list">
-                      {upcomingEvents.map((event, index) => (
-                        <div key={event._id} className={`event-card-modern ${index === 0 ? 'next-event' : ''}`}>
-                          <div className="event-indicator">
-                            <div className="event-dot"></div>
-                            {index < upcomingEvents.length - 1 && <div className="event-line"></div>}
-                          </div>
-                          <div className="event-content">
-                            <div className="event-header">
-                              <h4>{event.Subject}</h4>
-                              {index === 0 && <span className="next-badge">Next</span>}
-                            </div>
-                            <p className="event-description">
-                              {event.Description || "Event scheduled"}
-                            </p>
-                            <div className="event-meta">
-                              <span className="event-time">
-                                {formatEventDate(event.StartTime, event.EndTime)}
-                              </span>
-                              <div className="event-actions">
-                                <button className="event-action-btn">
-                                  <span>👁️</span>
-                                  View
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                  </div>
+                ) : (
+                  <div className="activity-timeline">
+                    {upcomingEvents.map((event) => (
+                      <div key={event._id} className="timeline-item">
+                        <div className="timeline-icon notification">📅</div>
+                        <div className="timeline-content">
+                          <h4>{event.Subject}</h4>
+                          <p>{event.Description || "Event scheduled"}</p>
+                          <span className="timeline-time">
+                            {formatEventDate(event.StartTime, event.EndTime)}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
     </>
   );
 };

@@ -18,6 +18,7 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0;
+  color: black !important;
 }
 
 .add-employee-btn {
@@ -76,6 +77,13 @@
   margin-bottom: 20px;
 }
 
+.headerr h2 {
+  color: #2d3748 !important;
+  font-weight: 700;
+  font-size: 20px;
+  margin: 0;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -94,17 +102,37 @@
   border-collapse: collapse;
 }
 
-.employee-table th,
+.employee-table th {
+  border: 1px solid #E0E0E0;
+  padding: 12px;
+  text-align: left;
+  background-color: #f8f9fa;
+  color: #2d3748 !important;
+  font-weight: 700;
+}
+
 .employee-table td {
   border: 1px solid #E0E0E0;
   padding: 12px;
   text-align: left;
+  color: #2d3748 !important; /* Dark, readable text for all table cells */
+  font-weight: 500;
 }
 
 .employee-info {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #2d3748 !important; /* Dark, readable text for employee details */
+  font-weight: 700; /* Bold font for employee names */
+}
+
+.employee-info h4,
+.employee-info span,
+.employee-info p {
+  color: #2d3748 !important;
+  margin: 0;
+  font-weight: 700; /* Bold font for all employee info */
 }
 
 .employee-avatar {
@@ -231,6 +259,8 @@
   .list-header h3 {
     margin: 0;
     font-size: 16px;
+    color: #2d3748 !important;
+    font-weight: 700;
   }
 
   .list-header-actions {
@@ -279,11 +309,14 @@
   .mobile-employee-info h4 {
     margin: 0 0 5px 0;
     font-size: 14px;
+    color: #2d3748 !important;
+    font-weight: 700; /* Bold font for mobile employee names */
   }
 
   .mobile-employee-info span {
     font-size: 12px;
-    color: #666;
+    color: #4a5568 !important;
+    font-weight: 600; /* Bold font for mobile employee details */
   }
 
   .mobile-card-dropdown {

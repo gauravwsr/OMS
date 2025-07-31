@@ -18,6 +18,7 @@ import {
   FiMenu,
   FiX,
   FiFileMinus,
+  FiBarChart,
 } from "react-icons/fi";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "./Components/AuthProvider/AuthContext.js";
@@ -40,7 +41,7 @@ import EmailDetails from "./Components/mail/EmailDetails";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate";
 import ViewDetails from "./Components/ViewDetails";
-import HrAttendance from "./Components/HrAttendance";
+// import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
@@ -122,11 +123,11 @@ const MainContent = ({ nav }) => {
     const roleSpecificItems = {
       Super_Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
-        {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
+        // {
+        //   path: "/hrAttendance",
+        //   label: "HR Attendance",
+        //   icon: <FiClipboard />,
+        // },
         // { path: "/QuotationList", label: "Quotations", icon: <FiFileText /> },
         { path: "/Invoice", label: "Invoice", icon: <FiFileMinus /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
@@ -140,11 +141,11 @@ const MainContent = ({ nav }) => {
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-        {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
+        // {
+        //   path: "/hrAttendance",
+        //   label: "HR Attendance",
+        //   icon: <FiClipboard />,
+        // },
         {
           path: "/hr-leave-application",
           label: "Apply Leave",
@@ -155,6 +156,11 @@ const MainContent = ({ nav }) => {
           label: "Leave Management",
           icon: <FiClipboard />,
         },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        }
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -199,6 +205,11 @@ const MainContent = ({ nav }) => {
       ],
       Intern: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
       Employee_Team_Lead: [
         {
@@ -207,6 +218,11 @@ const MainContent = ({ nav }) => {
           icon: <FiFileText />,
         },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
     };
 
@@ -841,7 +857,7 @@ const MainContent = ({ nav }) => {
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
-          <Route path="/hrAttendance" element={<HrAttendance />} />
+          {/* <Route path="/hrAttendance" element={<HrAttendance />} /> */}
           <Route path="/Invoice" element={<Invoice />} />
           <Route
             path="/super-admin-leave-management"

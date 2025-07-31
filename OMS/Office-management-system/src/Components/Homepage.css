@@ -480,6 +480,39 @@ body {
   scroll-behavior: smooth;
 }
 
+/* Upcoming Events Scrollable Container */
+.upcoming-events-scrollable {
+  max-height: 300px; /* Limit height for upcoming events */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px; /* Add space for scrollbar */
+}
+
+/* Custom scrollbar for upcoming events */
+.upcoming-events-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.upcoming-events-scrollable::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.upcoming-events-scrollable::-webkit-scrollbar-thumb {
+  background: #3a66db;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.upcoming-events-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #1e4ed8;
+}
+
+/* Smooth scrolling for upcoming events */
+.upcoming-events-scrollable {
+  scroll-behavior: smooth;
+}
+
 /* Fade effect at the bottom when content is scrollable */
 .activity-section::after {
   content: '';
