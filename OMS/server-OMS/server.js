@@ -40,7 +40,12 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+<<<<<<< HEAD
 const attendanceRoutes = require("./routes/attendanceRoutes");
+=======
+const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
+const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
+>>>>>>> 577d24a080f50ce65ff724679d3cea18ec524663
 
 const app = express();
 const server = http.createServer(app);
@@ -66,7 +71,7 @@ app.use("/api/message", messageRoutes);
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -76,36 +81,33 @@ app.use(
 // Pre-flight requests
 app.options("*", cors());
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes
-app.use("/api/candidates", candidateRoutes);
+// Connect to Database
+connectDB();
 
 // Default route
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// Middleware
-app.use(express.json());
-
-// Connect to Database
-connectDB();
-
+// Authentication routes
 app.use("/api/auth", authRoutes);
 
-// Routes
-app.use("/tasks", taskRoutes);
+// User routes
 app.use("/users", userRoutes);
 app.use(userRoutes);
+
+// Other routes
+app.use("/tasks", taskRoutes);
 app.use("/", calenderRoutes);
 app.use("/api/schedule", scheduleRoutes);
-// app.use('/api/candidates', candidateRoutes);
-
+app.use("/api/candidates", candidateRoutes);
 app.use("/api", projectRoutes);
 
 // Client Project management routes
@@ -125,6 +127,12 @@ app.use("/api/attendance", attendanceRoutes);
 
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
+
+// Team Lead Task management routes
+app.use("/api/team-lead", teamLeadTaskRoutes);
+
+// Employee Task management routes
+app.use("/api/employee", employeeTaskRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);

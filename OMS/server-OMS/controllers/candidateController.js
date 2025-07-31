@@ -314,3 +314,43 @@ exports.loginCandidate = async (req, res) => {
     });
   }
 };
+
+// Get all employees for task assignment
+exports.getAllEmployees = async (req, res) => {
+  try {
+    const employees = await Candidate.find({}, {
+      _id: 1,
+      candidateId: 1,
+      fullName: 1,
+      personalMail: 1,
+      officialEmail: 1,
+      email: 1,
+      role: 1,
+      subRole: 1,
+      phoneNo: 1
+    }).sort({ fullName: 1 });
+
+    // Format the response for easier use in frontend
+    const formattedEmployees = employees.map(emp => ({
+      id: emp._id,
+      candidateId: emp.candidateId,
+      name: emp.fullName,
+      email: emp.personalMail || emp.officialEmail || emp.email,
+      role: emp.role,
+      subRole: emp.subRole,
+      phone: emp.phoneNo
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Employees retrieved successfully",
+      data: formattedEmployees,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving employees",
+      error: error.message,
+    });
+  }
+};

@@ -41,12 +41,14 @@ import EmailDetails from "./Components/mail/EmailDetails";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate";
 import ViewDetails from "./Components/ViewDetails";
-import HrAttendance from "./Components/HrAttendance";
+// import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
 import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
+import EmployeeDashboard from "./Components/Employee/EmployeeDashboard.js";
+import EmployeeProjects from "./Components/Employee/EmployeeProjects.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
@@ -121,11 +123,11 @@ const MainContent = ({ nav }) => {
     const roleSpecificItems = {
       Super_Admin: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
-        {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
+        // {
+        //   path: "/hrAttendance",
+        //   label: "HR Attendance",
+        //   icon: <FiClipboard />,
+        // },
         // { path: "/QuotationList", label: "Quotations", icon: <FiFileText /> },
         { path: "/Invoice", label: "Invoice", icon: <FiFileMinus /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
@@ -139,11 +141,11 @@ const MainContent = ({ nav }) => {
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-        {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
+        // {
+        //   path: "/hrAttendance",
+        //   label: "HR Attendance",
+        //   icon: <FiClipboard />,
+        // },
         {
           path: "/hr-leave-application",
           label: "Apply Leave",
@@ -189,6 +191,11 @@ const MainContent = ({ nav }) => {
       //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
       // ],
       Employee: [
+        {
+          path: "/employee-dashboard",
+          label: "My Projects",
+          icon: <FiFileText />,
+        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -198,6 +205,11 @@ const MainContent = ({ nav }) => {
       ],
       Intern: [
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
       Employee_Team_Lead: [
         {
@@ -206,6 +218,11 @@ const MainContent = ({ nav }) => {
           icon: <FiFileText />,
         },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
       ],
     };
 
@@ -796,7 +813,7 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard />
               ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
                 <TeamLeadDashboard />
-              ) : (
+              ): (
                 <Homepage />
               )
             }
@@ -817,14 +834,20 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
-              ) : (
-                <ProjectList />
+              ) : user?.role === "Employee" ? (
+                <EmployeeProjects nav={nav}  />
+              ):(
+                <ProjectList nav={nav} />
               )
             }
           />
           <Route
             path="/team-lead-dashboard"
             element={<TeamLeadDashboard nav={nav} />}
+          />
+          <Route
+            path="/employee-dashboard"
+            element={<EmployeeDashboard nav={nav} />}
           />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
@@ -834,7 +857,7 @@ const MainContent = ({ nav }) => {
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
-          <Route path="/hrAttendance" element={<HrAttendance />} />
+          {/* <Route path="/hrAttendance" element={<HrAttendance />} /> */}
           <Route path="/Invoice" element={<Invoice />} />
           <Route
             path="/super-admin-leave-management"

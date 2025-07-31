@@ -25,11 +25,11 @@ const optionalUpload = (req, res, next) => {
 };
 
 // Routes
-router.post("/", optionalUpload, candidateController.createCandidate);
-router.get("/", candidateController.getAllCandidates);
-router.get("/:id", candidateController.getCandidateById);
-router.put("/:id", optionalUpload, candidateController.updateCandidate);
-router.delete("/:id", candidateController.deleteCandidate);
-router.post("/login", candidateController.loginCandidate);
+router.post('/', uploadFields, candidateController.createCandidate);
+router.get('/', candidateController.getAllCandidates);
+router.get('/:id', candidateController.getCandidateById);
+router.put('/:id', uploadFields, candidateController.updateCandidate);
+router.delete('/:id', candidateController.deleteCandidate);
+router.post('/login', candidateController.loginCandidate);
 
 module.exports = router;
