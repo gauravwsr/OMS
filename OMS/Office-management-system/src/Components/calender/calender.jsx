@@ -23,57 +23,76 @@ const Calender = () => {
   const [users, setUsers] = useState([]);
   const { user } = useAuth(); // Get user info to check role
 
-  // Check if current user is Super Admin
+  // Check if current user is Super Admin, Admin, or HR Manager
   const isSuperAdmin = user?.role === 'Super_Admin';
+  const isAdmin = user?.role === 'Admin';
+  const isHRManager = user?.role === "Admin" && user?.subRole?.includes("HR");
+
+  console.log('Calendar User Info:', {
+    userName: user?.name,
+    role: user?.role,
+    subRole: user?.subRole,
+    isSuperAdmin: isSuperAdmin,
+    isAdmin: isAdmin,
+    isHRManager: isHRManager
+  });
+
+  // Admin users (including HR Manager) get special URL to see all events
+  const baseUrl = (isAdmin || isHRManager)
+    ? "http://localhost:5000/GetAllEvents"
+    : "http://localhost:5000/GetData";
 
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {
     const token = localStorage.getItem("token");
     console.log('Calendar DataManager - Token available:', !!token);
+    console.log('Calendar DataManager - Token preview:', token ? token.substring(0, 20) + '...' : 'null');
     console.log('Calendar DataManager - Is Super Admin:', isSuperAdmin);
+    console.log('Calendar DataManager - Is Admin:', isAdmin);
+    console.log('Calendar DataManager - Is HR Manager:', isHRManager);
+    console.log('Calendar DataManager - User object:', user);
+    console.log('Calendar DataManager - Using URL:', baseUrl);
     
-    if (isSuperAdmin) {
-      return new DataManager({
-        url: "http://localhost:5000/GetData",
-        adaptor: new UrlAdaptor(),
-        crossDomain: true,
-        requestType: 'POST',
-        headers: {
-      "Authorization": token ? `Bearer ${token}` : "",
-      "Content-Type": "application/json"
-    },
-      });
+    if (!token) {
+      console.error('❌ No token found in localStorage! User needs to login again.');
+      return null;
     }
     
     return new DataManager({
-      url: "http://localhost:5000/GetData",
+      url: baseUrl,
       crudUrl: "http://localhost:5000/BatchData",
       adaptor: new UrlAdaptor(),
       crossDomain: true,
       requestType: 'POST',
       headers: {
-        "Authorization": token ? `Bearer ${token}` : "",
+        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
       },
-      beforeSend: (dm, request, settings) => {
+      beforeSend: (dm, request) => {
         console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
+        console.log('Calendar beforeSend - User Role:', user?.role, 'SubRole:', user?.subRole);
+        console.log('Calendar beforeSend - URL:', request.url);
+        
         const currentToken = localStorage.getItem("token");
+        console.log('Calendar beforeSend - Token available:', !!currentToken);
+        
         if (currentToken) {
           console.log('Calendar beforeSend - Setting authorization header');
+          console.log('Calendar beforeSend - Auth header value:', `Bearer ${currentToken.substring(0, 20)}...`);
           request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
           request.httpRequest.setRequestHeader("Content-Type", "application/json");
         } else {
-          console.log('Calendar beforeSend - No token found');
+          console.error('❌ Calendar beforeSend - No token found in beforeSend!');
         }
-      },
-      actionComplete: (e) => {
-        console.log('Calendar Action Complete:', e);
-        if (e.action === 'insert' || e.action === 'batch') {
-          console.log('Calendar - Event created, notifications should be triggered');
-        }
+        
+        // Log all headers being sent
+        console.log('Calendar beforeSend - All headers:', {
+          authorization: request.httpRequest.getRequestHeader('Authorization'),
+          contentType: request.httpRequest.getRequestHeader('Content-Type')
+        });
       }
     });
-  }, [user, isSuperAdmin]);
+  }, [user, isAdmin, isHRManager, baseUrl]);
 
   // Event handlers for Super Admin restrictions
   const onActionBegin = (args) => {
@@ -100,6 +119,60 @@ const Calender = () => {
     }
   };
 
+  // Test token validity
+  useEffect(() => {
+    const testToken = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log("❌ No token found in localStorage");
+        return;
+      }
+      
+      try {
+        console.log("🔍 Testing token validity...");
+        console.log("🔍 Token preview:", token.substring(0, 30) + "...");
+        
+        const response = await fetch("http://localhost:5000/users/me", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          console.log("✅ Token is valid. User data:", userData);
+        } else {
+          console.log("❌ Token test failed:", response.status, response.statusText);
+          const errorText = await response.text();
+          console.log("❌ Error response:", errorText);
+          
+          if (response.status === 401) {
+            console.log("🔄 Token expired or invalid. User should re-login.");
+            // Optionally clear the invalid token
+            // localStorage.removeItem("token");
+          }
+        }
+      } catch (error) {
+        console.error("❌ Token test error:", error);
+      }
+    };
+    
+    testToken();
+  }, []);
+
+  // Debug user context
+  useEffect(() => {
+    console.log("🔍 Calendar - User context updated:", {
+      user: user,
+      isAuthenticated: !!user,
+      role: user?.role,
+      subRole: user?.subRole,
+      userId: user?._id
+    });
+  }, [user]);
+
   // Fetch users data
   useEffect(() => {
     const fetchRoomData = async () => {
@@ -116,41 +189,53 @@ const Calender = () => {
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
-
-      <ScheduleComponent
-        width={"100%"}
-        height={"calc(100% - 60px)"}
-        id="schedule"
-        ref={scheduleObj}
-        currentView="Week"
-        group={{ allowGroupEdit: !isSuperAdmin }} // Disable group editing for Super Admin
-        allowDragAndDrop={!isSuperAdmin} // Disable drag and drop for Super Admin
-        readonly={isSuperAdmin} // Make entire schedule readonly for Super Admin
-        eventSettings={{ dataSource: dataManager }} // Event data source
-        actionBegin={onActionBegin} // Handle action restrictions
-        cellClick={onCellClick} // Handle cell click restrictions
-        eventClick={onEventClick} // Handle event click restrictions
-      >
-        <ResourcesDirective>
-          <ResourceDirective
-            field="Users"
-            title="Users"
-            name="Users"
-            idField="_id"
-            textField="name"
-            allowMultiple={true}
-            dataSource={users}
-          />
-        </ResourcesDirective>
-        <ViewsDirective>
-          <ViewDirective option="Day" />
-          <ViewDirective option="Week" />
-          <ViewDirective option="WorkWeek" />
-          <ViewDirective option="Month" />
-          <ViewDirective option="Agenda" />
-        </ViewsDirective>
-        <Inject services={[Day, Week, WorkWeek, Month, Agenda, DragAndDrop]} />
-      </ScheduleComponent>
+      {!dataManager ? (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100%',
+          fontSize: '18px',
+          color: '#666'
+        }}>
+          Please login to access the calendar
+        </div>
+      ) : (
+        <ScheduleComponent
+          width={"100%"}
+          height={"calc(100% - 60px)"}
+          id="schedule"
+          ref={scheduleObj}
+          currentView="Week"
+          group={{ allowGroupEdit: !isSuperAdmin }} // Disable group editing for Super Admin
+          allowDragAndDrop={!isSuperAdmin} // Disable drag and drop for Super Admin
+          readonly={isSuperAdmin} // Make entire schedule readonly for Super Admin
+          eventSettings={{ dataSource: dataManager }} // Event data source
+          actionBegin={onActionBegin} // Handle action restrictions
+          cellClick={onCellClick} // Handle cell click restrictions
+          eventClick={onEventClick} // Handle event click restrictions
+        >
+          <ResourcesDirective>
+            <ResourceDirective
+              field="Users"
+              title="Users"
+              name="Users"
+              idField="_id"
+              textField="name"
+              allowMultiple={true}
+              dataSource={users}
+            />
+          </ResourcesDirective>
+          <ViewsDirective>
+            <ViewDirective option="Day" />
+            <ViewDirective option="Week" />
+            <ViewDirective option="WorkWeek" />
+            <ViewDirective option="Month" />
+            <ViewDirective option="Agenda" />
+          </ViewsDirective>
+          <Inject services={[Day, Week, WorkWeek, Month, Agenda, DragAndDrop]} />
+        </ScheduleComponent>
+      )}
     </div>
   );
 };

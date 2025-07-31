@@ -7,7 +7,7 @@ const {
 } = require("../controllers/notificationController");
 const { protect } = require("../middlewares/auth");
 const jwt = require("jsonwebtoken");
-const User = require("../models/userModel"); // ya jahan se User model import hota hai
+const User = require("../models/userModel");
 
 // Load all events (similar to LoadData in C#) with automatic cleanup
 router.post("/GetData", async (req, res) => {
@@ -33,18 +33,120 @@ router.post("/GetData", async (req, res) => {
   try {
     let events;
     if (userId) {
-      // Sirf wahi events lao jo public hain ya jisme current user ki ID Users array me hai
+      // Get current user details to check role
+      const currentUser = await User.findById(userId);
+      const userIdString = userId.toString();
+
+      // Check if user is Admin (any Admin role gets full access)
+      const isAdmin = currentUser && currentUser.role === "Admin";
+
+      // Check if user is HR Manager (Admin with HR subRole)
+      const isHRManager = currentUser && 
+                         currentUser.role === "Admin" && 
+                         currentUser.subRole && 
+                         currentUser.subRole.includes("HR");
+
+      console.log(`🔍 User Details:`, {
+        userId: userId,
+        userName: currentUser?.name,
+        role: currentUser?.role,
+        subRole: currentUser?.subRole,
+        isAdmin: isAdmin,
+        isHRManager: isHRManager,
+      });
+
+      if (isAdmin) {
+        // Admin users can see:
+        // 1. All public events
+        // 2. All events created by them (where CreateBy = their ID)
+        // 3. All events where they are tagged in Users array
+        events = await ScheduleEventData.find({
+          $or: [
+            { Users: { $exists: false } }, // Public events
+            { Users: null },
+            { Users: { $size: 0 } },
+            { CreateBy: userIdString }, // Events created by Admin
+            { CreateBy: userId },
+            { Users: userIdString }, // Events where Admin is tagged
+            { Users: userId },
+            { Users: { $in: [userIdString, userId] } },
+          ],
+        });
+
+        console.log(
+          `🔍 Admin ${currentUser.name} can see ${events.length} events`
+        );
+      } else {
+        // Regular users can see:
+        // 1. Public events (empty Users array or null)
+        // 2. Events where they are tagged in Users array
+        events = await ScheduleEventData.find({
+          $or: [
+            { Users: { $exists: false } },
+            { Users: null },
+            { Users: { $size: 0 } },
+            { Users: userIdString },
+            { Users: userId },
+            { Users: { $in: [userIdString, userId] } },
+          ],
+        });
+
+        console.log(
+          `🔍 Regular user ${currentUser?.name || "Unknown"} can see ${
+            events.length
+          } events`
+        );
+      }
+
+      // Debug: Show all events and their details
+      const allEvents = await ScheduleEventData.find({});
+      console.log(`- Total events in DB: ${allEvents.length}`);
+
+      allEvents.forEach((event, index) => {
+        console.log(`Event ${index + 1}:`);
+        console.log(`  - ID: ${event._id}`);
+        console.log(`  - Subject: ${event.Subject}`);
+        console.log(`  - Users: ${JSON.stringify(event.Users)}`);
+        console.log(`  - CreateBy: ${event.CreateBy}`);
+        console.log(
+          `  - Created by current user: ${
+            event.CreateBy === userIdString || event.CreateBy === userId
+          }`
+        );
+
+        if (isHRManager) {
+          const canSeeAsHR =
+            !event.Users ||
+            event.Users.length === 0 ||
+            event.CreateBy === userIdString ||
+            event.CreateBy === userId ||
+            (event.Users &&
+              (event.Users.includes(userIdString) ||
+                event.Users.includes(userId)));
+          console.log(`  - HR Manager can see: ${canSeeAsHR}`);
+        } else {
+          const includesUserId = event.Users && event.Users.includes(userId);
+          const includesUserIdString =
+            event.Users && event.Users.includes(userIdString);
+          const isPublic = !event.Users || event.Users.length === 0;
+          const canSeeAsRegular =
+            isPublic || includesUserId || includesUserIdString;
+          console.log(
+            `  - Regular user can see: ${canSeeAsRegular} (Public: ${isPublic}, Tagged: ${
+              includesUserId || includesUserIdString
+            })`
+          );
+        }
+        console.log("  ---");
+      });
+    } else {
+      // If no user authenticated, show only public events
       events = await ScheduleEventData.find({
         $or: [
-          { Users: { $size: 0 } }, // Public events
-          { Users: userId },        // Users array me string/objectId dono match ho sake
-          { Users: { $elemMatch: { $eq: userId } } }
-        ]
-      });
-      console.log(`Found ${events.length} events for user ID: ${userId}`);
-    } else {
-      events = await ScheduleEventData.find({
-        Users: { $size: 0 },
+          { Users: { $exists: false } },
+          { Users: null },
+          { Users: { $size: 0 } },
+        ],
       });
       console.log("No user ID found, returning only public events.");
     }
@@ -53,6 +155,55 @@ router.post("/GetData", async (req, res) => {
   } catch (err) {
     console.error("Error loading data:", err);
     res.status(500).json({ error: "Error loading data" });
+  }
+});
+
+// Debug route to check specific event visibility
+router.get("/debug/:eventId", async (req, res) => {
+  const { eventId } = req.params;
+  let userId = null;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your-secret-key"
+      );
+      userId = decoded.id;
+    } catch (error) {
+      console.error("Error verifying token:", error.message);
+    }
+  }
+
+  try {
+    const event = await ScheduleEventData.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    const userIdString = userId ? userId.toString() : null;
+
+    const debugInfo = {
+      eventId: event._id,
+      subject: event.Subject,
+      users: event.Users,
+      usersType: Array.isArray(event.Users) ? "Array" : typeof event.Users,
+      usersLength: event.Users ? event.Users.length : null,
+      currentUserId: userId,
+      currentUserIdString: userIdString,
+      matches: {
+        includesObjectId: event.Users && event.Users.includes(userId),
+        includesString: event.Users && event.Users.includes(userIdString),
+        isPublic: !event.Users || event.Users.length === 0,
+      },
+    };
+
+    res.json(debugInfo);
+  } catch (err) {
+    console.error("Debug error:", err);
+    res.status(500).json({ error: "Debug error" });
   }
 });
 
@@ -211,18 +362,36 @@ router.post("/BatchData", async (req, res) => {
       // Convert Users field: if any value is a name, convert to _id
       let users = newEvent.Users || [];
       if (!Array.isArray(users)) users = [users];
+
+      // Filter out empty strings and null values
+      users = users.filter((u) => u && u.trim && u.trim() !== "");
+
       // Find all users from DB
       const allUsers = await User.find({}, "_id name");
       const nameToId = {};
       allUsers.forEach((u) => {
         nameToId[u.name] = u._id.toString();
       });
-      users = users.map((u) => {
-        // If it's already an ObjectId string, keep it; if it's a name, convert
-        if (typeof u === "string" && nameToId[u]) return nameToId[u];
-        return u;
-      });
+
+      // Convert names to IDs
+      users = users
+        .map((u) => {
+          // If it's already an ObjectId string, keep it; if it's a name, convert
+          if (typeof u === "string" && nameToId[u]) return nameToId[u];
+          return u;
+        })
+        .filter((u) => u); // Remove any undefined/null values
+
+      // If no users are tagged, make it a public event (empty array)
+      // If users are tagged, make it private to those users
       const createdBy = users.length > 0 ? users[0] : null;
+
+      console.log("🔥 Event Creation:", {
+        originalUsers: newEvent.Users,
+        processedUsers: users,
+        isPublicEvent: users.length === 0,
+        createdBy: createdBy,
+      });
 
       const newEventData = new ScheduleEventData({
         StartTime: new Date(newEvent.StartTime),
@@ -341,27 +510,42 @@ router.post("/BatchData", async (req, res) => {
         !updatedEvent.EndTime ||
         !updatedEvent.Subject
       ) {
-        return res
-          .status(400)
-          .json({
-            error: "Missing required fields in the event data for update",
-          });
+        return res.status(400).json({
+          error: "Missing required fields in the event data for update",
+        });
       }
 
       // Ensure Users exists before using it, and convert names to IDs
       let users = updatedEvent.Users || [];
       if (!Array.isArray(users)) users = [users];
+
+      // Filter out empty strings and null values
+      users = users.filter((u) => u && u.trim && u.trim() !== "");
+
       // Find all users from DB
       const allUsers = await User.find({}, "_id name");
       const nameToId = {};
       allUsers.forEach((u) => {
         nameToId[u.name] = u._id.toString();
       });
-      users = users.map((u) => {
-        if (typeof u === "string" && nameToId[u]) return nameToId[u];
-        return u;
-      });
+
+      // Convert names to IDs
+      users = users
+        .map((u) => {
+          if (typeof u === "string" && nameToId[u]) return nameToId[u];
+          return u;
+        })
+        .filter((u) => u); // Remove any undefined/null values
+
+      // If no users are tagged, make it a public event (empty array)
       const createdBy = users.length > 0 ? users[0] : null;
+
+      console.log("🔥 Event Update:", {
+        originalUsers: updatedEvent.Users,
+        processedUsers: users,
+        isPublicEvent: users.length === 0,
+        createdBy: createdBy,
+      });
 
       const event = await ScheduleEventData.findById(updatedEvent._id);
       if (event) {
