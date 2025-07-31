@@ -857,9 +857,24 @@ const ProjectManagerDashboard = () => {
 
   if (loading) {
     return (
-      <div className="project-manager-dashboard">
-        <div className="loading-spinner">
-          Loading Project Manager Dashboard...
+      <div className="dashboard-wrapper">
+        <div className="modern-loader-container">
+          <div className="loader-wrapper">
+            <div className="modern-spinner">
+              <div className="spinner-ring"></div>
+              <div className="spinner-ring"></div>
+              <div className="spinner-ring"></div>
+            </div>
+            <div className="loading-content">
+              <h3>Loading Project Manager Dashboard</h3>
+              <p>Please wait while we prepare your project management workspace...</p>
+              <div className="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -10,11 +10,15 @@ const {
   deleteTask,
   addTaskComment,
   getMyTasks,
+  getEmployeesForAssignment,
 } = require("../controllers/teamLeadTaskController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
 // Apply auth middleware to all routes
 router.use(authenticate);
+
+// Get employees for task assignment
+router.get("/employees", getEmployeesForAssignment);
 
 // Task CRUD operations
 router.post("/projects/:projectId/tasks", createTask);

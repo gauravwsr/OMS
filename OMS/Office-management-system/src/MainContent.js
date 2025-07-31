@@ -797,9 +797,7 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard />
               ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
                 <TeamLeadDashboard />
-              ) : user?.role === "Employee" ? (
-                <EmployeeDashboard />
-              ) : (
+              ): (
                 <Homepage />
               )
             }

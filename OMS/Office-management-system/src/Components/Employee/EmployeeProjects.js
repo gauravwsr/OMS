@@ -389,10 +389,24 @@ const EmployeeProjects = () => {
 
   if (loading) {
     return (
-      <div className="employee-dashboard">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading your assigned projects...</p>
+      <div className="dashboard-wrapper">
+        <div className="modern-loader-container">
+          <div className="loader-wrapper">
+            <div className="modern-spinner">
+              <div className="spinner-ring"></div>
+              <div className="spinner-ring"></div>
+              <div className="spinner-ring"></div>
+            </div>
+            <div className="loading-content">
+              <h3>Loading Employee Projects</h3>
+              <p>Please wait while we fetch your assigned projects and tasks...</p>
+              <div className="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -402,7 +416,7 @@ const EmployeeProjects = () => {
     <div className="employee-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <h1>Employee Dashboard</h1>
+        <h1>My Projects</h1>
         <p>
           Welcome back, {currentUser.name || currentUser.username || "Employee"}
           ! Here are your assigned projects and tasks.

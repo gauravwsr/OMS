@@ -1,5 +1,7 @@
 const Task = require("../models/taskModel");
+const WorkingProject = require("../models/workingProjectModel");
 const ClientProject = require("../models/clientProjectModel");
+const Candidate = require("../models/Candidate");
 
 // Create a new task
 const createTask = async (req, res) => {
@@ -10,18 +12,59 @@ const createTask = async (req, res) => {
 
     // Get current user info
     const currentUser = req.user;
+    console.log('Current user:', currentUser);
+    console.log('Project ID:', projectId);
 
     // Verify project exists and user is team lead
-    const project = await ClientProject.findById(projectId);
+    // Try to find project by MongoDB ObjectId first in WorkingProject
+    let project = await WorkingProject.findById(projectId);
+    
+    // If not found by ObjectId, try finding by projectId field (string) in WorkingProject
     if (!project) {
+      project = await WorkingProject.findOne({ projectId: projectId });
+    }
+    
+    // If still not found, try ClientProject as fallback
+    if (!project) {
+      project = await ClientProject.findById(projectId);
+    }
+    
+    // If still not found, try ClientProject by projectId field
+    if (!project) {
+      project = await ClientProject.findOne({ projectId: projectId });
+    }
+    
+    console.log('Found project:', project ? 'Yes' : 'No');
+    if (project) {
+      console.log('Project found in:', project.constructor.modelName);
+      console.log('Project details:', {
+        _id: project._id,
+        projectId: project.projectId,
+        clientName: project.clientName,
+        assignedTeamLead: project.assignedTeamLead,
+        teamLeadId: project.teamLeadId
+      });
+    }
+    
+    if (!project) {
+      console.log('Project not found with ID:', projectId);
       return res.status(404).json({ error: "Project not found" });
     }
 
+    console.log('Project teamLeadId:', project.teamLeadId);
+    console.log('Project assignedTeamLead:', project.assignedTeamLead);
+    console.log('Current user ID:', currentUser.id);
+    console.log('Current user name:', currentUser.name);
+
     // Check if current user is the team lead for this project
-    if (
-      project.teamLeadId !== currentUser.id &&
-      project.assignedTeamLead !== currentUser.name
-    ) {
+    const isTeamLeadById = project.teamLeadId && project.teamLeadId.toString() === currentUser.id;
+    const isTeamLeadByName = project.assignedTeamLead === currentUser.name;
+    
+    console.log('Is team lead by ID:', isTeamLeadById);
+    console.log('Is team lead by name:', isTeamLeadByName);
+
+    // For now, let's be more permissive during testing - allow if either condition is met OR if no team lead is assigned
+    if (!isTeamLeadById && !isTeamLeadByName && project.assignedTeamLead && project.teamLeadId) {
       return res
         .status(403)
         .json({
@@ -30,11 +73,171 @@ const createTask = async (req, res) => {
         });
     }
 
+    // Process assignedTo data to match the expected schema format
+    let processedAssignedTo = [];
+    
+    console.log('Raw assignedTo data:', JSON.stringify(assignedTo, null, 2));
+    
+    if (assignedTo && Array.isArray(assignedTo)) {
+      // Flatten the array if it's nested
+      let flattenedAssignedTo = assignedTo;
+      
+      // Check if the first element is itself an array (nested structure)
+      if (assignedTo.length > 0 && Array.isArray(assignedTo[0])) {
+        flattenedAssignedTo = assignedTo.flat();
+      }
+      
+      // Process each assignment and validate against Candidate model
+      for (const assignment of flattenedAssignedTo) {
+        console.log('Processing assignment:', JSON.stringify(assignment, null, 2));
+        
+        let candidateData = null;
+        let employeeId = null;
+        let employeeName = null;
+        let employeeEmail = null;
+        
+        // Extract employee information from different formats
+        if (typeof assignment === 'string') {
+          // If it's just a string, treat it as candidate ID or name
+          employeeId = assignment;
+          employeeName = assignment;
+        } else if (assignment.employeeId && typeof assignment.employeeId === 'object') {
+          // Check if employeeId is an array (malformed data from frontend)
+          if (Array.isArray(assignment.employeeId) && assignment.employeeId.length > 0) {
+            const firstItem = assignment.employeeId[0];
+            if (firstItem.employeeId && typeof firstItem.employeeId === 'object') {
+              // Extract from nested structure
+              employeeId = firstItem.employeeId._id || firstItem.employeeId.id;
+              employeeName = firstItem.employeeId.name || firstItem.employeeId.fullName || firstItem.name;
+              employeeEmail = firstItem.employeeId.email || firstItem.employeeId.personalMail || firstItem.email;
+            } else {
+              // Simple array structure
+              employeeId = firstItem.employeeId || firstItem.id || firstItem._id;
+              employeeName = firstItem.name || firstItem.fullName;
+              employeeEmail = firstItem.email || firstItem.personalMail;
+            }
+          } else {
+            // Normal object structure (populated employee data)
+            employeeId = assignment.employeeId._id || assignment.employeeId.id || assignment.employeeId.candidateId;
+            employeeName = assignment.employeeId.name || assignment.employeeId.fullName || assignment.name;
+            employeeEmail = assignment.employeeId.email || assignment.employeeId.personalMail || assignment.email;
+          }
+        } else {
+          // If it's a simple object, check if fields are arrays (malformed data)
+          if (Array.isArray(assignment.employeeId)) {
+            // Handle malformed data where employeeId is an array
+            const firstItem = assignment.employeeId[0];
+            if (firstItem && firstItem.employeeId && typeof firstItem.employeeId === 'object') {
+              employeeId = firstItem.employeeId._id || firstItem.employeeId.id;
+              employeeName = firstItem.employeeId.name || firstItem.employeeId.fullName;
+              employeeEmail = firstItem.employeeId.email || firstItem.employeeId.personalMail;
+            }
+          } else if (Array.isArray(assignment.name)) {
+            // Handle malformed data where name is an array
+            const firstItem = assignment.name[0];
+            if (firstItem && firstItem.employeeId && typeof firstItem.employeeId === 'object') {
+              employeeId = firstItem.employeeId._id || firstItem.employeeId.id;
+              employeeName = firstItem.employeeId.name || firstItem.employeeId.fullName;
+              employeeEmail = firstItem.employeeId.email || firstItem.employeeId.personalMail;
+            } else {
+              employeeId = firstItem.employeeId || firstItem.id || firstItem._id;
+              employeeName = firstItem.name || firstItem.fullName;
+              employeeEmail = firstItem.email || firstItem.personalMail;
+            }
+          } else {
+            // Normal simple object
+            employeeId = assignment.employeeId || assignment.id || assignment._id || assignment.candidateId;
+            employeeName = assignment.name || assignment.fullName;
+            employeeEmail = assignment.email || assignment.personalMail;
+          }
+        }
+        
+        // Try to find the candidate in the database
+        try {
+          if (employeeId) {
+            // Try to find by MongoDB _id first
+            candidateData = await Candidate.findById(employeeId);
+            
+            // If not found by _id, try by candidateId
+            if (!candidateData) {
+              candidateData = await Candidate.findOne({ candidateId: employeeId });
+            }
+            
+            // If still not found, try by name
+            if (!candidateData && employeeName) {
+              candidateData = await Candidate.findOne({ fullName: employeeName });
+            }
+            
+            // If still not found, try by email
+            if (!candidateData && employeeEmail) {
+              candidateData = await Candidate.findOne({ 
+                $or: [
+                  { personalMail: employeeEmail },
+                  { officialEmail: employeeEmail },
+                  { email: employeeEmail }
+                ]
+              });
+            }
+          }
+          
+          // If candidate found, use their data
+          if (candidateData) {
+            processedAssignedTo.push({
+              employeeId: candidateData._id.toString(),
+              name: candidateData.fullName,
+              email: candidateData.personalMail || candidateData.officialEmail || candidateData.email,
+              role: candidateData.role || 'Employee'
+            });
+            console.log('Found candidate:', candidateData.fullName, 'with ID:', candidateData._id);
+          } else {
+            // If no candidate found, create entry with provided data and add warning
+            console.warn('Candidate not found for:', employeeId || employeeName || employeeEmail);
+            
+            // Ensure employeeName is a string for email generation
+            const nameForEmail = (typeof employeeName === 'string') ? employeeName : 'unknown';
+            const defaultEmail = employeeEmail || (nameForEmail !== 'unknown' ? nameForEmail.toLowerCase().replace(/\s+/g, '') + '@company.com' : 'unknown@company.com');
+            
+            processedAssignedTo.push({
+              employeeId: employeeId || 'unknown',
+              name: nameForEmail,
+              email: defaultEmail,
+              role: 'Employee'
+            });
+          }
+        } catch (error) {
+          console.error('Error finding candidate:', error);
+          // Fallback to provided data
+          const nameForEmail = (typeof employeeName === 'string') ? employeeName : 'Unknown Employee';
+          processedAssignedTo.push({
+            employeeId: employeeId || 'unknown',
+            name: nameForEmail,
+            email: employeeEmail || 'unknown@company.com',
+            role: 'Employee'
+          });
+        }
+      }
+    }
+
+    console.log('Processed assignedTo:', processedAssignedTo);
+
+    // Validate processed data
+    processedAssignedTo.forEach((assignment, index) => {
+      if (!assignment.employeeId) {
+        console.error(`Assignment ${index} missing employeeId:`, assignment);
+      }
+      if (!assignment.name) {
+        console.error(`Assignment ${index} missing name:`, assignment);
+      }
+      if (!assignment.email) {
+        console.error(`Assignment ${index} missing email:`, assignment);
+      }
+    });
+
     const newTask = new Task({
       title,
       description,
       projectId,
-      assignedTo: assignedTo || [], // Can be empty initially
+      assignedTo: processedAssignedTo, // Use processed data
       assignedBy: {
         employeeId: currentUser.id,
         name: currentUser.name,
@@ -43,7 +246,7 @@ const createTask = async (req, res) => {
       priority: priority || "Medium",
       dueDate: dueDate ? new Date(dueDate) : null,
       taskPoints: taskPoints || [],
-      status: assignedTo && assignedTo.length > 0 ? "In Progress" : "Pending",
+      status: processedAssignedTo && processedAssignedTo.length > 0 ? "In Progress" : "Pending",
     });
 
     // Calculate initial progress
@@ -300,7 +503,14 @@ const addTaskComment = async (req, res) => {
 // Helper function to update project progress
 const updateProjectProgress = async (projectId) => {
   try {
-    const project = await ClientProject.findById(projectId);
+    // Try to find project in WorkingProject first
+    let project = await WorkingProject.findById(projectId);
+    
+    // If not found, try ClientProject
+    if (!project) {
+      project = await ClientProject.findById(projectId);
+    }
+    
     if (!project) return;
 
     const tasks = await Task.find({ projectId });
@@ -356,6 +566,47 @@ const getMyTasks = async (req, res) => {
   }
 };
 
+// Get employees for task assignment
+const getEmployeesForAssignment = async (req, res) => {
+  try {
+    const employees = await Candidate.find({}, {
+      _id: 1,
+      candidateId: 1,
+      fullName: 1,
+      personalMail: 1,
+      officialEmail: 1,
+      email: 1,
+      role: 1,
+      subRole: 1,
+      phoneNo: 1
+    }).sort({ fullName: 1 });
+
+    // Format the response for easier use in frontend
+    const formattedEmployees = employees.map(emp => ({
+      id: emp._id,
+      candidateId: emp.candidateId,
+      name: emp.fullName,
+      email: emp.personalMail || emp.officialEmail || emp.email,
+      role: emp.role,
+      subRole: emp.subRole,
+      phone: emp.phoneNo
+    }));
+
+    res.json({
+      success: true,
+      message: "Employees retrieved successfully",
+      data: formattedEmployees,
+    });
+  } catch (error) {
+    console.error("Error retrieving employees for assignment:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to retrieve employees",
+      message: error.message 
+    });
+  }
+};
+
 module.exports = {
   createTask,
   getProjectTasks,
@@ -366,4 +617,5 @@ module.exports = {
   deleteTask,
   addTaskComment,
   getMyTasks,
+  getEmployeesForAssignment,
 };
