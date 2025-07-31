@@ -26,7 +26,8 @@ const Calender = () => {
   // Check if current user is Super Admin, Admin, or HR Manager
   const isSuperAdmin = user?.role === 'Super_Admin';
   const isAdmin = user?.role === 'Admin';
-  const isHRManager = user?.role === "Admin" && user?.subRole?.includes("HR");
+  // Check if current user is HR Manager (Admin with HR Manager subRole)
+  const isHRManager = user?.role === "Admin" && user?.subRole === "HR Manager";
 
   console.log('Calendar User Info:', {
     userName: user?.name,
@@ -37,10 +38,8 @@ const Calender = () => {
     isHRManager: isHRManager
   });
 
-  // Admin users (including HR Manager) get special URL to see all events
-  const baseUrl = (isAdmin || isHRManager)
-    ? "http://localhost:5000/GetAllEvents"
-    : "http://localhost:5000/GetData";
+  // HR Manager uses regular GetData route (backend will handle showing all events)
+  const baseUrl = "http://localhost:5000/GetData";
 
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {

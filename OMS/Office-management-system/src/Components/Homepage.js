@@ -81,23 +81,17 @@ const NewDashboard = () => {
         const token = localStorage.getItem("token");
         console.log("Homepage - Fetching upcoming events with token:", !!token);
         
-        // Check if current user is Admin (including HR Manager)
-        const isAdmin = user?.role === 'Admin';
-        const isHRManager = user?.role === 'Admin' && 
-                           user?.subRole && 
-                           user?.subRole.includes('HR');
+        // Check if current user is HR Manager (Admin with HR Manager subRole)
+        const isHRManager = user?.role === 'Admin' && user?.subRole === 'HR Manager';
         
         console.log("Homepage - User Role Info:", {
           role: user?.role,
           subRole: user?.subRole,
-          isAdmin: isAdmin,
           isHRManager: isHRManager
         });
         
-        // Admin users (including HR Manager) get all events, others get filtered events
-        const apiUrl = isAdmin ? 
-          'http://localhost:5000/GetAllEvents' : 
-          'http://localhost:5000/GetData';
+        // Use GetData for all users (backend will handle HR Manager permissions)
+        const apiUrl = 'http://localhost:5000/GetData';
         
         console.log("Homepage - Using API URL:", apiUrl);
         

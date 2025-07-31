@@ -40,11 +40,11 @@ router.post("/GetData", async (req, res) => {
       // Check if user is Admin (any Admin role gets full access)
       const isAdmin = currentUser && currentUser.role === "Admin";
 
-      // Check if user is HR Manager (Admin with HR subRole)
-      const isHRManager = currentUser && 
-                         currentUser.role === "Admin" && 
-                         currentUser.subRole && 
-                         currentUser.subRole.includes("HR");
+      // Check if user is HR Manager (Admin with HR Manager subRole)
+      const isHRManager =
+        currentUser &&
+        currentUser.role === "Admin" &&
+        currentUser.subRole === "HR Manager";
 
       console.log(`🔍 User Details:`, {
         userId: userId,
@@ -55,8 +55,14 @@ router.post("/GetData", async (req, res) => {
         isHRManager: isHRManager,
       });
 
-      if (isAdmin) {
-        // Admin users can see:
+      if (isHRManager) {
+        // HR Manager can see ALL events in the system
+        events = await ScheduleEventData.find({});
+        console.log(
+          `🔍 HR Manager ${currentUser.name} can see ALL ${events.length} events`
+        );
+      } else if (isAdmin) {
+        // Regular Admin users can see:
         // 1. All public events
         // 2. All events created by them (where CreateBy = their ID)
         // 3. All events where they are tagged in Users array
@@ -384,13 +390,14 @@ router.post("/BatchData", async (req, res) => {
 
       // If no users are tagged, make it a public event (empty array)
       // If users are tagged, make it private to those users
-      const createdBy = users.length > 0 ? users[0] : null;
+      const createdBy = currentUser ? currentUser._id.toString() : null;
 
       console.log("🔥 Event Creation:", {
         originalUsers: newEvent.Users,
         processedUsers: users,
         isPublicEvent: users.length === 0,
         createdBy: createdBy,
+        currentUserInfo: currentUser ? { id: currentUser._id, name: currentUser.name } : null,
       });
 
       const newEventData = new ScheduleEventData({
@@ -538,13 +545,14 @@ router.post("/BatchData", async (req, res) => {
         .filter((u) => u); // Remove any undefined/null values
 
       // If no users are tagged, make it a public event (empty array)
-      const createdBy = users.length > 0 ? users[0] : null;
+      const createdBy = currentUser ? currentUser._id.toString() : null;
 
       console.log("🔥 Event Update:", {
         originalUsers: updatedEvent.Users,
         processedUsers: users,
         isPublicEvent: users.length === 0,
         createdBy: createdBy,
+        currentUserInfo: currentUser ? { id: currentUser._id, name: currentUser.name } : null,
       });
 
       const event = await ScheduleEventData.findById(updatedEvent._id);
