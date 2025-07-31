@@ -191,11 +191,6 @@ const MainContent = ({ nav }) => {
       //   { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
       // ],
       Employee: [
-        {
-          path: "/employee-dashboard",
-          label: "My Projects",
-          icon: <FiFileText />,
-        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -813,7 +808,7 @@ const MainContent = ({ nav }) => {
                 <ProjectManagerDashboard />
               ) : user?.role === "Employee" && user?.subRole === "Team_Lead" ? (
                 <TeamLeadDashboard />
-              ): (
+              ) : (
                 <Homepage />
               )
             }
@@ -835,8 +830,8 @@ const MainContent = ({ nav }) => {
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
               ) : user?.role === "Employee" ? (
-                <EmployeeProjects nav={nav}  />
-              ):(
+                <EmployeeProjects nav={nav} />
+              ) : (
                 <ProjectList nav={nav} />
               )
             }
