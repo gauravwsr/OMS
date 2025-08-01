@@ -41,6 +41,26 @@ const Calender = () => {
   // HR Manager uses regular GetData route (backend will handle showing all events)
   const baseUrl = "http://localhost:5000/GetData";
 
+  class CustomAuthAdaptor extends UrlAdaptor {
+    processQuery(dm, query, hierarchyFilters) {
+      const request = super.processQuery(dm, query, hierarchyFilters);
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        request.headers = {
+          ...request.headers,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        };
+        console.log("✅ CustomAdaptor - Injected Authorization header");
+      } else {
+        console.warn("❌ CustomAdaptor - No token found");
+      }
+
+      return request;
+    }
+  }
+
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {
     const token = localStorage.getItem("token");
@@ -51,39 +71,36 @@ const Calender = () => {
     console.log('Calendar DataManager - Is HR Manager:', isHRManager);
     console.log('Calendar DataManager - User object:', user);
     console.log('Calendar DataManager - Using URL:', baseUrl);
-    
+
     if (!token) {
       console.error('❌ No token found in localStorage! User needs to login again.');
       return null;
     }
-    
+
     return new DataManager({
       url: baseUrl,
       crudUrl: "http://localhost:5000/BatchData",
-      adaptor: new UrlAdaptor(),
+      adaptor: new CustomAuthAdaptor(),
       crossDomain: true,
       requestType: 'POST',
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
+
       beforeSend: (dm, request) => {
         console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
         console.log('Calendar beforeSend - User Role:', user?.role, 'SubRole:', user?.subRole);
         console.log('Calendar beforeSend - URL:', request.url);
-        
+
         const currentToken = localStorage.getItem("token");
         console.log('Calendar beforeSend - Token available:', !!currentToken);
-        
+
         if (currentToken) {
-          console.log('Calendar beforeSend - Setting authorization header');
-          console.log('Calendar beforeSend - Auth header value:', `Bearer ${currentToken.substring(0, 20)}...`);
           request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
           request.httpRequest.setRequestHeader("Content-Type", "application/json");
+
+          console.log('✅ Authorization header set for DataManager request.');
         } else {
-          console.error('❌ Calendar beforeSend - No token found in beforeSend!');
+          console.error('❌ No token found in localStorage during beforeSend!');
         }
-        
+
         // Log all headers being sent
         console.log('Calendar beforeSend - All headers:', {
           authorization: request.httpRequest.getRequestHeader('Authorization'),
@@ -96,9 +113,9 @@ const Calender = () => {
   // Event handlers for Super Admin restrictions
   const onActionBegin = (args) => {
     // Prevent all editing actions for Super Admin
-    if (isSuperAdmin && (args.requestType === 'eventCreate' || 
-        args.requestType === 'eventChange' || 
-        args.requestType === 'eventRemove')) {
+    if (isSuperAdmin && (args.requestType === 'eventCreate' ||
+      args.requestType === 'eventChange' ||
+      args.requestType === 'eventRemove')) {
       args.cancel = true;
       console.log('Action prevented: Super Admin has read-only access to calendar');
     }
@@ -126,11 +143,11 @@ const Calender = () => {
         console.log("❌ No token found in localStorage");
         return;
       }
-      
+
       try {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
-        
+
         const response = await fetch("http://localhost:5000/users/me", {
           method: "GET",
           headers: {
@@ -138,7 +155,7 @@ const Calender = () => {
             "Content-Type": "application/json"
           }
         });
-        
+
         if (response.ok) {
           const userData = await response.json();
           console.log("✅ Token is valid. User data:", userData);
@@ -146,7 +163,7 @@ const Calender = () => {
           console.log("❌ Token test failed:", response.status, response.statusText);
           const errorText = await response.text();
           console.log("❌ Error response:", errorText);
-          
+
           if (response.status === 401) {
             console.log("🔄 Token expired or invalid. User should re-login.");
             // Optionally clear the invalid token
@@ -157,7 +174,7 @@ const Calender = () => {
         console.error("❌ Token test error:", error);
       }
     };
-    
+
     testToken();
   }, []);
 
@@ -189,10 +206,10 @@ const Calender = () => {
   return (
     <div style={{ width: '100%', height: '100%' }}>
       {!dataManager ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '100%',
           fontSize: '18px',
           color: '#666'
@@ -209,7 +226,7 @@ const Calender = () => {
           group={{ allowGroupEdit: !isSuperAdmin }} // Disable group editing for Super Admin
           allowDragAndDrop={!isSuperAdmin} // Disable drag and drop for Super Admin
           readonly={isSuperAdmin} // Make entire schedule readonly for Super Admin
-          eventSettings={{ 
+          eventSettings={{
             dataSource: dataManager,
             fields: {
               id: '_id',
