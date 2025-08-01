@@ -40,6 +40,9 @@ import SendEmail from "./Components/mail/SendEmail";
 import EmailDetails from "./Components/mail/EmailDetails";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate";
+import CertificateHistory from "./Components/Certificates/CertificateHistory";
+import CompletionHistory from "./Components/Certificates/CompletionHistory";
+import OfferHistory from "./Components/Certificates/OfferHistory";
 import ViewDetails from "./Components/ViewDetails";
 // import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
@@ -852,6 +855,9 @@ const MainContent = ({ nav }) => {
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
+          <Route path="/CertificateHistory" element={<CertificateHistory />} />
+          <Route path="/CompletionHistory" element={<CompletionHistory />} />
+          <Route path="/OfferHistory" element={<OfferHistory />} />
           {/* <Route path="/hrAttendance" element={<HrAttendance />} /> */}
           <Route path="/Invoice" element={<Invoice />} />
           <Route
