@@ -207,11 +207,6 @@ const MainContent = ({ nav }) => {
         },
       ],
       Employee_Team_Lead: [
-        {
-          path: "/team-lead-dashboard",
-          label: "My Projects",
-          icon: <FiFileText />,
-        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
