@@ -4,7 +4,6 @@
   padding: 20px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
- 
 }
 
 .employee-header {
@@ -24,7 +23,7 @@
 .add-employee-btn {
   display: flex;
   align-items: center;
-  background-color: #5570F1;
+  background-color: #5570f1;
   color: white;
   border: none;
   border-radius: 8px;
@@ -42,7 +41,7 @@
 .search-input {
   flex-grow: 1;
   padding: 10px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   font-size: 14px;
 }
@@ -56,7 +55,7 @@
 
 .notification-bell,
 .user-profile {
-  background-color: #F0F0F0;
+  background-color: #f0f0f0;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -93,7 +92,7 @@
 .department-filter,
 .export-btn {
   padding: 8px 15px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
 }
 
@@ -103,7 +102,7 @@
 }
 
 .employee-table th {
-  border: 1px solid #E0E0E0;
+  border: 1px solid #e0e0e0;
   padding: 12px;
   text-align: left;
   background-color: #f8f9fa;
@@ -112,7 +111,7 @@
 }
 
 .employee-table td {
-  border: 1px solid #E0E0E0;
+  border: 1px solid #e0e0e0;
   padding: 12px;
   text-align: left;
   color: #2d3748 !important; /* Dark, readable text for all table cells */
@@ -148,17 +147,17 @@
 }
 
 .attendance-mark.present {
-  background-color: #E6F2E9;
-  color: #2D9958;
+  background-color: #e6f2e9;
+  color: #2d9958;
 }
 
 .attendance-mark.on-leave {
-  background-color: #FFF1E5;
-  color: #FF6B00;
+  background-color: #fff1e5;
+  color: #ff6b00;
 }
 
 .view-details-btn {
-  background-color: #5570F1;
+  background-color: #5570f1;
   color: white;
   border: none;
   padding: 8px 15px;
@@ -181,7 +180,7 @@
 
 .pagination-controls button {
   padding: 8px 15px;
-  border: 1px solid #E0E0E0;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   background-color: white;
   cursor: pointer;
@@ -196,7 +195,7 @@
   .employee-container.mobile-view {
     margin: 0;
     padding: 15px;
-    background-color: #F5F5F5;
+    background-color: #f5f5f5;
   }
 
   .mobile-header {
@@ -227,7 +226,7 @@
   .add-employee-btn {
     width: 95%;
     padding: 12px;
-    background-color: #5570F1;
+    background-color: #5570f1;
     color: white;
     border: none;
     border-radius: 8px;
@@ -237,7 +236,7 @@
   .mobile-search-input {
     width: 100%;
     padding: 12px;
-    border: 1px solid #E0E0E0;
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
     font-size: 14px;
   }
@@ -272,7 +271,7 @@
 
   .department-filter {
     padding: 8px;
-    border: 1px solid #E0E0E0;
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
     font-size: 12px;
   }
@@ -283,7 +282,7 @@
   }
 
   .mobile-employee-card {
-    background-color: #F9F9F9;
+    background-color: #f9f9f9;
     border-radius: 8px;
     margin-bottom: 10px;
     padding: 15px;
@@ -321,6 +320,69 @@
 
   .mobile-card-dropdown {
     color: #888;
+  }
+}
+
+/* Action Buttons Styles */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ViewDetails-btn,
+.edit-btn,
+.delete-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 70px;
+}
+
+.ViewDetails-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.ViewDetails-btn:hover {
+  background-color: #0056b3;
+}
+
+.edit-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #1e7e34;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c82333;
+}
+
+/* Mobile Action Buttons */
+@media (max-width: 768px) {
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ViewDetails-btn,
+  .edit-btn,
+  .delete-btn {
+    font-size: 11px;
+    padding: 4px 8px;
+    min-width: 60px;
   }
 }
 

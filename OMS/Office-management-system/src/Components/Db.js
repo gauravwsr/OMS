@@ -152,6 +152,54 @@ const EmployeeList = () => {
     navigate(`viewDetails/${id}`);
   };
 
+  const handleEditEmployee = (id) => {
+    navigate(`edit/${id}`);
+  };
+
+  const handleDeleteEmployee = async (id) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this employee? This will also delete their face recognition data and uploaded files."
+      )
+    ) {
+      try {
+        const response = await axios.delete(
+          `http://localhost:5000/api/candidates/${id}`
+        );
+
+        if (response.data.success) {
+          alert(`Employee deleted successfully! 
+          
+Details:
+- Employee data removed from database
+- Face recognition images: ${
+            response.data.deletedData.faceImagesDeleted
+              ? "Deleted"
+              : "None found"
+          }
+- Uploaded files: ${
+            response.data.deletedData.filesDeleted ? "Deleted" : "None found"
+          }`);
+
+          // Refresh the employee list
+          const refreshResponse = await axios.get(
+            "http://localhost:5000/api/candidates"
+          );
+          setEmployees(
+            Array.isArray(refreshResponse.data.data)
+              ? refreshResponse.data.data
+              : []
+          );
+        } else {
+          throw new Error(response.data.message);
+        }
+      } catch (error) {
+        console.error("Error deleting employee:", error);
+        alert("Failed to delete employee. Please try again.");
+      }
+    }
+  };
+
   const handleMobileEmployeeClick = (id) => {
     navigate(`viewDetails/${id}`);
   };
@@ -279,13 +327,35 @@ const EmployeeList = () => {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="ViewDetails-btn"
-                        onClick={() => handleViewDetails(employee.candidateId)}
-                      >
-                        <span></span>
-                        View Details
-                      </button>
+                      <div className="action-buttons">
+                        <button
+                          className="ViewDetails-btn"
+                          onClick={() =>
+                            handleViewDetails(employee.candidateId)
+                          }
+                        >
+                          <span></span>
+                          View Details
+                        </button>
+                        <button
+                          className="edit-btn"
+                          onClick={() =>
+                            handleEditEmployee(employee.candidateId)
+                          }
+                        >
+                          <span></span>
+                          Edit
+                        </button>
+                        <button
+                          className="delete-btn"
+                          onClick={() =>
+                            handleDeleteEmployee(employee.candidateId)
+                          }
+                        >
+                          <span></span>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

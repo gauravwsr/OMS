@@ -47,7 +47,6 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const completionRoutes = require("./routes/completionRoutes");
 const offerRoutes = require("./routes/offerRoutes");
 
-
 const app = express();
 const server = http.createServer(app);
 // Initialize Socket.io
@@ -143,6 +142,33 @@ app.use("/api/offers", require("./routes/offerRoutes"));
 // mouse tracking
 // app.use("/api", trackingRoutes);
 // app.use("/api", activityRoutes);
+
+// General health check endpoint
+app.get("/api/health", async (req, res) => {
+  try {
+    // Check database connectivity
+    const dbState = mongoose.connection.readyState;
+    const dbStatus = dbState === 1 ? "connected" : "disconnected";
+
+    res.status(200).json({
+      status: "healthy",
+      service: "oms-backend",
+      timestamp: new Date().toISOString(),
+      database: {
+        status: dbStatus,
+        state: dbState,
+      },
+      uptime: process.uptime(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "unhealthy",
+      service: "oms-backend",
+      timestamp: new Date().toISOString(),
+      error: error.message,
+    });
+  }
+});
 
 // Error Handling Middleware
 app.use(errorHandler);

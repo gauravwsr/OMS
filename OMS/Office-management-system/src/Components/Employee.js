@@ -15,6 +15,30 @@ const Employee = () => {
   const [role, setRole] = useState("");
   const [subRole, setSubRole] = useState("");
   const { signup, user } = useAuth();
+
+  // Document upload states
+  const [documents, setDocuments] = useState({
+    // Common documents
+    resume: null,
+    governmentId: null,
+    panCard: null,
+    passportPhoto: null,
+    signedOfferLetter: null,
+    nda: null,
+
+    // Employee specific documents
+    addressProof: null,
+    educationalCertificates: null,
+    experienceCertificates: null,
+    salarySlips: null,
+    bankDetails: null,
+    joiningForm: null,
+    medicalCertificate: null,
+
+    // Intern specific documents
+    collegeId: null,
+    bonafideCertificate: null,
+  });
   const [credentials, setCredentials] = useState({
     candidateId: "",
     email: "",
@@ -91,6 +115,27 @@ const Employee = () => {
         images: capturedImages,
       });
       console.log("Face registration response:", response.data);
+
+      // Store face encodings in backend database
+      if (formData.candidateId) {
+        try {
+          const faceEncodingsResponse = await axios.put(
+            `http://localhost:5000/api/candidates/${formData.candidateId}/face-encodings`,
+            {
+              faceEncodings: capturedImages, // Store captured images as face data
+              faceImagePaths: [`face_images/${formData.fullName}`], // Store image path
+            }
+          );
+          console.log(
+            "Face encodings stored in database:",
+            faceEncodingsResponse.data
+          );
+        } catch (dbError) {
+          console.error("Error storing face encodings in database:", dbError);
+          // Continue with success message even if DB storage fails
+        }
+      }
+
       alert(
         `✅ Face registered successfully for ${formData.fullName}! ${response.data.message}`
       );
@@ -143,6 +188,7 @@ const Employee = () => {
 
   const roles = getRolesForUser();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
   const [formData, setFormData] = useState({
     candidateId: "",
     fullName: "",
@@ -241,6 +287,119 @@ const Employee = () => {
     }
   };
 
+  // Handle Document Upload
+  const handleDocumentUpload = (documentType, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // Validate file size (5MB max)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert(
+          `File size should not exceed 5MB. Current size: ${(
+            file.size /
+            (1024 * 1024)
+          ).toFixed(2)}MB`
+        );
+        return;
+      }
+
+      // Validate file types based on document type
+      const allowedTypes = {
+        resume: [".pdf", ".doc", ".docx"],
+        governmentId: [".pdf", ".jpg", ".jpeg", ".png"],
+        panCard: [".pdf", ".jpg", ".jpeg", ".png"],
+        passportPhoto: [".jpg", ".jpeg", ".png"],
+        signedOfferLetter: [".pdf", ".doc", ".docx"],
+        nda: [".pdf", ".doc", ".docx"],
+        addressProof: [".pdf", ".jpg", ".jpeg", ".png"],
+        educationalCertificates: [".pdf", ".jpg", ".jpeg", ".png"],
+        experienceCertificates: [".pdf", ".doc", ".docx"],
+        salarySlips: [".pdf", ".jpg", ".jpeg", ".png"],
+        bankDetails: [".pdf", ".jpg", ".jpeg", ".png"],
+        joiningForm: [".pdf", ".doc", ".docx"],
+        medicalCertificate: [".pdf", ".jpg", ".jpeg", ".png"],
+        collegeId: [".pdf", ".jpg", ".jpeg", ".png"],
+        bonafideCertificate: [".pdf", ".doc", ".docx"],
+      };
+
+      const fileExtension = "." + file.name.split(".").pop().toLowerCase();
+      if (
+        !allowedTypes[documentType] ||
+        !allowedTypes[documentType].includes(fileExtension)
+      ) {
+        alert(
+          `Invalid file type. Allowed types for ${documentType}: ${allowedTypes[
+            documentType
+          ].join(", ")}`
+        );
+        return;
+      }
+
+      setDocuments((prev) => ({
+        ...prev,
+        [documentType]: file,
+      }));
+    }
+  };
+
+  // Remove document
+  const handleRemoveDocument = (documentType) => {
+    setDocuments((prev) => ({
+      ...prev,
+      [documentType]: null,
+    }));
+  };
+
+  // Get document requirements based on role
+  const getDocumentRequirements = (role) => {
+    const commonDocs = [
+      "Resume/CV - Updated with accurate contact and academic details",
+      "Government ID Proof - Aadhar Card / PAN Card / Passport / Voter ID",
+      "PAN Card - Mandatory for tax purposes",
+      "Passport-size Photograph - For ID cards and internal records",
+      "Signed Offer Letter - Acknowledgement of offer and role responsibilities",
+      "Non-Disclosure Agreement (NDA) - To maintain confidentiality",
+    ];
+
+    const employeeDocs = [
+      "Address Proof - Utility bill, rent agreement, or any valid proof",
+      "Educational Certificates - 10th, 12th, Graduation, Post-Graduation",
+      "Experience Certificates - Relieving letters from previous employers",
+      "Last 3 Months Salary Slips - For experienced candidates",
+      "Bank Account Details - For salary credit (passbook/cancelled cheque)",
+      "Joining Form - With personal, family, and emergency contact details",
+      "Medical Fitness Certificate - Depending on organization policy",
+    ];
+
+    const internDocs = [
+      "College ID Proof - Valid student identification from institution",
+      "Bonafide Certificate - Letter stating current enrollment and internship eligibility",
+    ];
+
+    if (role === "Employee") {
+      return [...commonDocs, ...employeeDocs];
+    } else if (role === "Intern") {
+      return [...commonDocs, ...internDocs];
+    }
+
+    return commonDocs;
+  };
+
+  // Check server status
+  const checkServerStatus = async () => {
+    try {
+      console.log("🔍 Checking server status...");
+      const response = await axios.get("http://localhost:5000/api/health", {
+        timeout: 3000,
+      });
+      console.log("✅ Server is running and accessible");
+      return true;
+    } catch (error) {
+      console.error("❌ Server check failed:", error.message);
+      return false;
+    }
+  };
+
   // Function to upload image to Cloudinary
   const uploadImageToCloudinary = async (imageFile) => {
     try {
@@ -267,8 +426,23 @@ const Employee = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingMessage("Initializing...");
 
     try {
+      console.log("🚀 Starting candidate registration process...");
+
+      // Check server status first
+      setLoadingMessage("Checking server connection...");
+      const serverOnline = await checkServerStatus();
+      if (!serverOnline) {
+        alert(
+          "❌ Backend server is not accessible. Please ensure the server is running on http://localhost:5000"
+        );
+        setLoading(false);
+        setLoadingMessage("");
+        return;
+      }
+
       // Validate required fields
       const requiredFields = [
         "candidateId",
@@ -306,6 +480,7 @@ const Employee = () => {
           `Please fill in all required fields: ${missingFields.join(", ")}`
         );
         setLoading(false);
+        setLoadingMessage("");
         return;
       }
 
@@ -313,6 +488,7 @@ const Employee = () => {
       if (formData.password !== formData.confirmPassword) {
         alert("Passwords do not match. Please try again.");
         setLoading(false);
+        setLoadingMessage("");
         return;
       }
 
@@ -320,17 +496,23 @@ const Employee = () => {
       if (formData.password.length < 6) {
         alert("Password must be at least 6 characters long.");
         setLoading(false);
+        setLoadingMessage("");
         return;
       }
 
       // Create FormData object
       const data = new FormData();
+      console.log("📝 Form validation passed, preparing data...");
+      setLoadingMessage("Preparing form data...");
 
       // Upload image to Cloudinary if exists
       let imageUrl = null;
       if (photoFile) {
+        console.log("📷 Uploading profile photo to Cloudinary...");
+        setLoadingMessage("Uploading profile photo...");
         imageUrl = await uploadImageToCloudinary(photoFile);
         data.append("photoUrl", imageUrl); // Add the Cloudinary URL to form data
+        console.log("✅ Profile photo uploaded successfully");
       }
 
       // Add all other form fields
@@ -350,17 +532,37 @@ const Employee = () => {
       // If you still need to send the file for some other purpose
       if (cv) data.append("cv", cv);
 
+      // Add document uploads
+      const uploadedDocuments = Object.keys(documents).filter(
+        (docType) => documents[docType]
+      );
+      if (uploadedDocuments.length > 0) {
+        console.log(
+          `📎 Adding ${uploadedDocuments.length} documents to upload...`
+        );
+        setLoadingMessage(`Preparing ${uploadedDocuments.length} documents...`);
+        Object.keys(documents).forEach((docType) => {
+          if (documents[docType]) {
+            data.append(`document_${docType}`, documents[docType]);
+          }
+        });
+      }
+
+      console.log("🌐 Sending registration request to server...");
+      setLoadingMessage("Submitting registration...");
       const response = await axios.post(
         "http://localhost:5000/api/candidates",
         data,
         {
           headers: { "Content-Type": "multipart/form-data" },
-          timeout: 5000,
+          timeout: 30000, // Increased to 30 seconds for file uploads
           withCredentials: true,
         }
       );
 
       if (response.status === 201) {
+        console.log("✅ Candidate registered successfully!");
+        setLoadingMessage("Creating user account...");
         setCredentials({
           candidateId: response.data.credentials.candidateId,
           name: formData.fullName,
@@ -393,17 +595,34 @@ const Employee = () => {
     } catch (error) {
       let errorMessage = "Error saving candidate";
 
-      if (error.code === "ERR_NETWORK") {
+      if (error.code === "ECONNABORTED") {
         errorMessage =
-          "Unable to connect to server. Please check if the server is running.";
+          "Request timeout! The server is taking too long to respond. Please try again or check your internet connection.";
+      } else if (error.code === "ERR_NETWORK") {
+        errorMessage =
+          "Unable to connect to server. Please check if the backend server is running on http://localhost:5000";
       } else if (error.response) {
-        errorMessage = error.response.data.message || "Server error occurred";
+        const status = error.response.status;
+        if (status === 400) {
+          errorMessage =
+            error.response.data.message ||
+            "Bad request - please check your form data";
+        } else if (status === 500) {
+          errorMessage =
+            "Internal server error - please contact the administrator";
+        } else {
+          errorMessage =
+            error.response.data.message || `Server error (${status})`;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       console.error("Error details:", error);
       alert(errorMessage);
     } finally {
       setLoading(false);
+      setLoadingMessage("");
     }
   };
 
@@ -445,6 +664,25 @@ const Employee = () => {
     setPhotoFile(null);
     setCv(null);
     setPasswordError("");
+
+    // Reset documents
+    setDocuments({
+      resume: null,
+      governmentId: null,
+      panCard: null,
+      passportPhoto: null,
+      signedOfferLetter: null,
+      nda: null,
+      addressProof: null,
+      educationalCertificates: null,
+      experienceCertificates: null,
+      salarySlips: null,
+      bankDetails: null,
+      joiningForm: null,
+      medicalCertificate: null,
+      collegeId: null,
+      bonafideCertificate: null,
+    });
   };
 
   const handleRegister = async () => {
@@ -512,6 +750,41 @@ const Employee = () => {
                 Employees and Interns through this form.
               </div>
             )}
+
+            {/* Server Status Info */}
+            <div
+              style={{
+                backgroundColor: "#f8f9fa",
+                border: "1px solid #dee2e6",
+                borderRadius: "4px",
+                padding: "12px",
+                marginBottom: "20px",
+                fontSize: "14px",
+              }}
+            >
+              <strong>🔧 Troubleshooting Tips:</strong>
+              <ul
+                style={{
+                  marginLeft: "20px",
+                  marginTop: "8px",
+                  marginBottom: "0",
+                }}
+              >
+                <li>
+                  If you get "timeout" errors, the backend server might be slow
+                  or not running
+                </li>
+                <li>
+                  Ensure the backend server is running on{" "}
+                  <code>http://localhost:5000</code>
+                </li>
+                <li>
+                  Check that MongoDB is connected properly for the backend
+                </li>
+                <li>Large file uploads may take longer - please be patient</li>
+              </ul>
+            </div>
+
             <form onSubmit={handleSave}>
               {/* Upload Photo Section */}
               <div className="upload-container">
@@ -937,7 +1210,573 @@ const Employee = () => {
                 </div>
               </div>
 
-              {/* Documents Section */}
+              {/* Mandatory Documents Section */}
+              <div className="form-section">
+                <h3 className="section-title">Mandatory Documents Upload</h3>
+                <div
+                  className="form-description"
+                  style={{
+                    marginBottom: "20px",
+                    padding: "12px",
+                    backgroundColor: "#f5f5f5",
+                    borderRadius: "4px",
+                  }}
+                >
+                  <p>
+                    <strong>Note:</strong> Document uploads are not mandatory
+                    for form submission but are recommended for complete record
+                    keeping.
+                  </p>
+                  <p>
+                    Maximum file size: 5MB per document. Accepted formats: PDF,
+                    DOC, DOCX, JPG, PNG
+                  </p>
+                  {formData.role && (
+                    <div style={{ marginTop: "12px" }}>
+                      <p>
+                        <strong>Required documents for {formData.role}:</strong>
+                      </p>
+                      <ul style={{ marginLeft: "20px", fontSize: "13px" }}>
+                        {getDocumentRequirements(formData.role).map(
+                          (doc, index) => (
+                            <li key={index} style={{ marginBottom: "4px" }}>
+                              {doc}
+                            </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Common Documents for All */}
+                <div className="document-category">
+                  <h4 style={{ color: "#2c3e50", marginBottom: "15px" }}>
+                    📄 Common Documents
+                  </h4>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Resume/CV (Updated)</label>
+                      <label
+                        htmlFor="resume-upload"
+                        className="upload-button secondary-upload"
+                      >
+                        <Upload size={16} /> Upload Resume
+                      </label>
+                      <input
+                        type="file"
+                        id="resume-upload"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleDocumentUpload("resume", e)}
+                        style={{ display: "none" }}
+                      />
+                      {documents.resume && (
+                        <div className="file-info">
+                          <span>{documents.resume.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file"
+                            onClick={() => handleRemoveDocument("resume")}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Government ID Proof</label>
+                      <label
+                        htmlFor="govt-id-upload"
+                        className="upload-button secondary-upload"
+                      >
+                        <Upload size={16} /> Upload ID
+                      </label>
+                      <input
+                        type="file"
+                        id="govt-id-upload"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) =>
+                          handleDocumentUpload("governmentId", e)
+                        }
+                        style={{ display: "none" }}
+                      />
+                      {documents.governmentId && (
+                        <div className="file-info">
+                          <span>{documents.governmentId.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file"
+                            onClick={() => handleRemoveDocument("governmentId")}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>PAN Card</label>
+                      <label
+                        htmlFor="pan-upload"
+                        className="upload-button secondary-upload"
+                      >
+                        <Upload size={16} /> Upload PAN
+                      </label>
+                      <input
+                        type="file"
+                        id="pan-upload"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload("panCard", e)}
+                        style={{ display: "none" }}
+                      />
+                      {documents.panCard && (
+                        <div className="file-info">
+                          <span>{documents.panCard.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file"
+                            onClick={() => handleRemoveDocument("panCard")}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Passport-size Photograph</label>
+                      <label
+                        htmlFor="passport-photo-upload"
+                        className="upload-button secondary-upload"
+                      >
+                        <Upload size={16} /> Upload Photo
+                      </label>
+                      <input
+                        type="file"
+                        id="passport-photo-upload"
+                        accept=".jpg,.jpeg,.png"
+                        onChange={(e) =>
+                          handleDocumentUpload("passportPhoto", e)
+                        }
+                        style={{ display: "none" }}
+                      />
+                      {documents.passportPhoto && (
+                        <div className="file-info">
+                          <span>{documents.passportPhoto.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file"
+                            onClick={() =>
+                              handleRemoveDocument("passportPhoto")
+                            }
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Signed Offer Letter</label>
+                      <label
+                        htmlFor="offer-letter-upload"
+                        className="upload-button secondary-upload"
+                      >
+                        <Upload size={16} /> Upload Letter
+                      </label>
+                      <input
+                        type="file"
+                        id="offer-letter-upload"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) =>
+                          handleDocumentUpload("signedOfferLetter", e)
+                        }
+                        style={{ display: "none" }}
+                      />
+                      {documents.signedOfferLetter && (
+                        <div className="file-info">
+                          <span>{documents.signedOfferLetter.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file"
+                            onClick={() =>
+                              handleRemoveDocument("signedOfferLetter")
+                            }
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Non-Disclosure Agreement (NDA)</label>
+                      <label
+                        htmlFor="nda-upload"
+                        className="upload-button secondary-upload"
+                      >
+                        <Upload size={16} /> Upload NDA
+                      </label>
+                      <input
+                        type="file"
+                        id="nda-upload"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleDocumentUpload("nda", e)}
+                        style={{ display: "none" }}
+                      />
+                      {documents.nda && (
+                        <div className="file-info">
+                          <span>{documents.nda.name}</span>
+                          <button
+                            type="button"
+                            className="remove-file"
+                            onClick={() => handleRemoveDocument("nda")}
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Employee Specific Documents */}
+                {formData.role === "Employee" && (
+                  <div
+                    className="document-category"
+                    style={{ marginTop: "30px" }}
+                  >
+                    <h4 style={{ color: "#27ae60", marginBottom: "15px" }}>
+                      👨‍💼 Employee Specific Documents
+                    </h4>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Address Proof</label>
+                        <label
+                          htmlFor="address-proof-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Proof
+                        </label>
+                        <input
+                          type="file"
+                          id="address-proof-upload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) =>
+                            handleDocumentUpload("addressProof", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.addressProof && (
+                          <div className="file-info">
+                            <span>{documents.addressProof.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("addressProof")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-group">
+                        <label>Educational Certificates</label>
+                        <label
+                          htmlFor="edu-cert-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Certificates
+                        </label>
+                        <input
+                          type="file"
+                          id="edu-cert-upload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) =>
+                            handleDocumentUpload("educationalCertificates", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.educationalCertificates && (
+                          <div className="file-info">
+                            <span>
+                              {documents.educationalCertificates.name}
+                            </span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("educationalCertificates")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Experience Certificates</label>
+                        <label
+                          htmlFor="exp-cert-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Experience
+                        </label>
+                        <input
+                          type="file"
+                          id="exp-cert-upload"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) =>
+                            handleDocumentUpload("experienceCertificates", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.experienceCertificates && (
+                          <div className="file-info">
+                            <span>{documents.experienceCertificates.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("experienceCertificates")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-group">
+                        <label>Last 3 Months Salary Slips</label>
+                        <label
+                          htmlFor="salary-slips-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Slips
+                        </label>
+                        <input
+                          type="file"
+                          id="salary-slips-upload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) =>
+                            handleDocumentUpload("salarySlips", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.salarySlips && (
+                          <div className="file-info">
+                            <span>{documents.salarySlips.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("salarySlips")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Bank Account Details</label>
+                        <label
+                          htmlFor="bank-details-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Details
+                        </label>
+                        <input
+                          type="file"
+                          id="bank-details-upload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) =>
+                            handleDocumentUpload("bankDetails", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.bankDetails && (
+                          <div className="file-info">
+                            <span>{documents.bankDetails.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("bankDetails")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-group">
+                        <label>Joining Form</label>
+                        <label
+                          htmlFor="joining-form-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Form
+                        </label>
+                        <input
+                          type="file"
+                          id="joining-form-upload"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) =>
+                            handleDocumentUpload("joiningForm", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.joiningForm && (
+                          <div className="file-info">
+                            <span>{documents.joiningForm.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("joiningForm")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Medical Fitness Certificate</label>
+                        <label
+                          htmlFor="medical-cert-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Certificate
+                        </label>
+                        <input
+                          type="file"
+                          id="medical-cert-upload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) =>
+                            handleDocumentUpload("medicalCertificate", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.medicalCertificate && (
+                          <div className="file-info">
+                            <span>{documents.medicalCertificate.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("medicalCertificate")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Intern Specific Documents */}
+                {formData.role === "Intern" && (
+                  <div
+                    className="document-category"
+                    style={{ marginTop: "30px" }}
+                  >
+                    <h4 style={{ color: "#e74c3c", marginBottom: "15px" }}>
+                      🎓 Intern Specific Documents
+                    </h4>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>College ID Proof</label>
+                        <label
+                          htmlFor="college-id-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload College ID
+                        </label>
+                        <input
+                          type="file"
+                          id="college-id-upload"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => handleDocumentUpload("collegeId", e)}
+                          style={{ display: "none" }}
+                        />
+                        {documents.collegeId && (
+                          <div className="file-info">
+                            <span>{documents.collegeId.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() => handleRemoveDocument("collegeId")}
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="form-group">
+                        <label>Bonafide Certificate / Internship Letter</label>
+                        <label
+                          htmlFor="bonafide-cert-upload"
+                          className="upload-button secondary-upload"
+                        >
+                          <Upload size={16} /> Upload Certificate
+                        </label>
+                        <input
+                          type="file"
+                          id="bonafide-cert-upload"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) =>
+                            handleDocumentUpload("bonafideCertificate", e)
+                          }
+                          style={{ display: "none" }}
+                        />
+                        {documents.bonafideCertificate && (
+                          <div className="file-info">
+                            <span>{documents.bonafideCertificate.name}</span>
+                            <button
+                              type="button"
+                              className="remove-file"
+                              onClick={() =>
+                                handleRemoveDocument("bonafideCertificate")
+                              }
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Document Details Section */}
               <div className="form-section">
                 <h3 className="section-title">Document Details</h3>
                 <div className="form-row">
@@ -1084,6 +1923,91 @@ const Employee = () => {
                 )}
               </div>
 
+              {/* Document Upload Summary */}
+              {(Object.values(documents).some((doc) => doc !== null) || cv) && (
+                <div className="form-section">
+                  <h3 className="section-title">
+                    📎 Uploaded Documents Summary
+                  </h3>
+                  <div
+                    style={{
+                      padding: "15px",
+                      backgroundColor: "#e8f5e8",
+                      borderRadius: "4px",
+                      border: "1px solid #c3e6cb",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(250px, 1fr))",
+                        gap: "10px",
+                      }}
+                    >
+                      {cv && (
+                        <div
+                          style={{
+                            padding: "8px",
+                            backgroundColor: "white",
+                            borderRadius: "4px",
+                            fontSize: "14px",
+                          }}
+                        >
+                          <strong>📄 CV/Resume:</strong> {cv.name}
+                        </div>
+                      )}
+                      {Object.entries(documents).map(([docType, file]) => {
+                        if (!file) return null;
+                        const docNames = {
+                          resume: "📄 Resume/CV",
+                          governmentId: "🆔 Government ID",
+                          panCard: "💳 PAN Card",
+                          passportPhoto: "📸 Passport Photo",
+                          signedOfferLetter: "📋 Offer Letter",
+                          nda: "📜 NDA",
+                          addressProof: "🏠 Address Proof",
+                          educationalCertificates: "🎓 Education Certificates",
+                          experienceCertificates: "💼 Experience Certificates",
+                          salarySlips: "💰 Salary Slips",
+                          bankDetails: "🏦 Bank Details",
+                          joiningForm: "📝 Joining Form",
+                          medicalCertificate: "⚕️ Medical Certificate",
+                          collegeId: "🎓 College ID",
+                          bonafideCertificate: "📜 Bonafide Certificate",
+                        };
+                        return (
+                          <div
+                            key={docType}
+                            style={{
+                              padding: "8px",
+                              backgroundColor: "white",
+                              borderRadius: "4px",
+                              fontSize: "14px",
+                            }}
+                          >
+                            <strong>{docNames[docType]}:</strong> {file.name}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p
+                      style={{
+                        marginTop: "10px",
+                        marginBottom: "0",
+                        fontSize: "13px",
+                        color: "#155724",
+                      }}
+                    >
+                      <strong>Total Documents:</strong>{" "}
+                      {Object.values(documents).filter((doc) => doc !== null)
+                        .length + (cv ? 1 : 0)}{" "}
+                      uploaded
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Form Actions */}
               <div className="form-actions">
                 <button
@@ -1091,7 +2015,14 @@ const Employee = () => {
                   className="submit-button"
                   disabled={loading}
                 >
-                  {loading ? "Saving..." : "Save & Register"}
+                  {loading ? (
+                    <span>
+                      <span style={{ marginRight: "8px" }}>⏳</span>
+                      {loadingMessage || "Processing..."}
+                    </span>
+                  ) : (
+                    "Save & Register"
+                  )}
                 </button>
                 <button type="button" className="cancel-button">
                   Cancel

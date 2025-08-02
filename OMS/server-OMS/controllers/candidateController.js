@@ -256,12 +256,73 @@ exports.deleteCandidate = async (req, res) => {
       });
     }
 
-    // Delete the candidate
+    // Delete face recognition images from face recognition server
+    if (candidate.fullName) {
+      try {
+        const axios = require("axios");
+
+        // Call face recognition server to delete user images
+        const faceDeleteResponse = await axios.delete(
+          `http://localhost:5001/api/delete-user/${encodeURIComponent(
+            candidate.fullName
+          )}`,
+          { timeout: 5000 }
+        );
+
+        if (faceDeleteResponse.status === 200) {
+          console.log(
+            `✅ Face recognition images deleted for: ${candidate.fullName}`
+          );
+        } else {
+          console.log(
+            `⚠️ Face recognition server responded with: ${faceDeleteResponse.status}`
+          );
+        }
+      } catch (faceError) {
+        console.error(
+          `❌ Error deleting face images for ${candidate.fullName}:`,
+          faceError.message
+        );
+        // Continue with deletion even if face server is not available
+      }
+    }
+
+    // Delete uploaded files if they exist
+    const fs = require("fs");
+    const path = require("path");
+
+    try {
+      // Delete CV file if exists
+      if (candidate.cvPath && fs.existsSync(candidate.cvPath)) {
+        fs.unlinkSync(candidate.cvPath);
+        console.log(`✅ CV file deleted: ${candidate.cvPath}`);
+      }
+
+      // Delete photo file if exists (if stored locally)
+      if (candidate.photoPath && fs.existsSync(candidate.photoPath)) {
+        fs.unlinkSync(candidate.photoPath);
+        console.log(`✅ Photo file deleted: ${candidate.photoPath}`);
+      }
+    } catch (fileError) {
+      console.error(
+        `❌ Error deleting files for ${candidate.fullName}:`,
+        fileError.message
+      );
+      // Continue with deletion even if file deletion fails
+    }
+
+    // Delete the candidate from database
     await Candidate.findOneAndDelete({ candidateId: req.params.id });
 
     res.status(200).json({
       success: true,
-      message: "Candidate deleted successfully",
+      message: "Candidate and associated files deleted successfully",
+      deletedData: {
+        candidateId: candidate.candidateId,
+        fullName: candidate.fullName,
+        faceImagesDeleted: !!candidate.fullName,
+        filesDeleted: !!(candidate.cvPath || candidate.photoPath),
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -318,27 +379,30 @@ exports.loginCandidate = async (req, res) => {
 // Get all employees for task assignment
 exports.getAllEmployees = async (req, res) => {
   try {
-    const employees = await Candidate.find({}, {
-      _id: 1,
-      candidateId: 1,
-      fullName: 1,
-      personalMail: 1,
-      officialEmail: 1,
-      email: 1,
-      role: 1,
-      subRole: 1,
-      phoneNo: 1
-    }).sort({ fullName: 1 });
+    const employees = await Candidate.find(
+      {},
+      {
+        _id: 1,
+        candidateId: 1,
+        fullName: 1,
+        personalMail: 1,
+        officialEmail: 1,
+        email: 1,
+        role: 1,
+        subRole: 1,
+        phoneNo: 1,
+      }
+    ).sort({ fullName: 1 });
 
     // Format the response for easier use in frontend
-    const formattedEmployees = employees.map(emp => ({
+    const formattedEmployees = employees.map((emp) => ({
       id: emp._id,
       candidateId: emp.candidateId,
       name: emp.fullName,
       email: emp.personalMail || emp.officialEmail || emp.email,
       role: emp.role,
       subRole: emp.subRole,
-      phone: emp.phoneNo
+      phone: emp.phoneNo,
     }));
 
     res.status(200).json({
@@ -350,6 +414,225 @@ exports.getAllEmployees = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error retrieving employees",
+      error: error.message,
+    });
+  }
+};
+
+// Mark attendance using face recognition
+exports.markAttendance = async (req, res) => {
+  try {
+    const { candidateId, status, timestamp } = req.body;
+
+    if (!candidateId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Candidate ID and status are required",
+      });
+    }
+
+    const candidate = await Candidate.findOne({ candidateId });
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    const today = new Date();
+    const todayDate = today.toDateString();
+
+    // Check if attendance is already marked today
+    const todayAttendance = candidate.attendanceHistory.find(
+      (record) => new Date(record.date).toDateString() === todayDate
+    );
+
+    if (todayAttendance) {
+      return res.status(400).json({
+        success: false,
+        message: "Attendance already marked for today",
+      });
+    }
+
+    // Update attendance fields
+    candidate.attendanceMark = status;
+    candidate.lastAttendanceDate = timestamp || new Date();
+
+    if (status === "Present" || status === "On Time" || status === "Late") {
+      candidate.totalPresentDays += 1;
+    }
+
+    // Add to attendance history
+    candidate.attendanceHistory.push({
+      date: new Date(),
+      status: status,
+      timestamp: timestamp || new Date(),
+    });
+
+    candidate.updatedAt = new Date();
+    await candidate.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Attendance marked successfully",
+      data: {
+        candidateId: candidate.candidateId,
+        fullName: candidate.fullName,
+        status: status,
+        totalPresentDays: candidate.totalPresentDays,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error marking attendance",
+      error: error.message,
+    });
+  }
+};
+
+// Get attendance history for a candidate
+exports.getAttendanceHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { limit = 30 } = req.query;
+
+    const candidate = await Candidate.findOne({ candidateId: id }).select(
+      "candidateId fullName attendanceMark lastAttendanceDate totalPresentDays attendanceHistory"
+    );
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    // Sort attendance history by date (newest first) and limit results
+    const history = candidate.attendanceHistory
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        candidateId: candidate.candidateId,
+        fullName: candidate.fullName,
+        currentStatus: candidate.attendanceMark,
+        lastAttendanceDate: candidate.lastAttendanceDate,
+        totalPresentDays: candidate.totalPresentDays,
+        history: history,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving attendance history",
+      error: error.message,
+    });
+  }
+};
+
+// Update face encodings for a candidate
+exports.updateFaceEncodings = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { faceEncodings, faceImagePaths } = req.body;
+
+    if (!faceEncodings || !Array.isArray(faceEncodings)) {
+      return res.status(400).json({
+        success: false,
+        message: "Face encodings array is required",
+      });
+    }
+
+    const candidate = await Candidate.findOne({ candidateId: id });
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found",
+      });
+    }
+
+    candidate.faceEncodings = faceEncodings;
+    if (faceImagePaths && Array.isArray(faceImagePaths)) {
+      candidate.faceImagePaths = faceImagePaths;
+    }
+    candidate.updatedAt = new Date();
+
+    await candidate.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Face encodings updated successfully",
+      data: {
+        candidateId: candidate.candidateId,
+        fullName: candidate.fullName,
+        faceEncodingsCount: candidate.faceEncodings.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating face encodings",
+      error: error.message,
+    });
+  }
+};
+
+// Get all attendance records (for admin dashboard)
+exports.getAllAttendanceRecords = async (req, res) => {
+  try {
+    const { date, status, limit = 100 } = req.query;
+
+    let matchCondition = {};
+
+    // Filter by date if provided
+    if (date) {
+      const targetDate = new Date(date);
+      const nextDay = new Date(targetDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      matchCondition["attendanceHistory.date"] = {
+        $gte: targetDate,
+        $lt: nextDay,
+      };
+    }
+
+    // Filter by status if provided
+    if (status && status !== "all") {
+      matchCondition["attendanceHistory.status"] = status;
+    }
+
+    const candidates = await Candidate.find(matchCondition)
+      .select(
+        "candidateId fullName role subRole attendanceMark lastAttendanceDate totalPresentDays attendanceHistory"
+      )
+      .limit(parseInt(limit))
+      .sort({ lastAttendanceDate: -1 });
+
+    const formattedRecords = candidates.map((candidate) => ({
+      candidateId: candidate.candidateId,
+      fullName: candidate.fullName,
+      role: candidate.role,
+      subRole: candidate.subRole,
+      currentStatus: candidate.attendanceMark,
+      lastAttendanceDate: candidate.lastAttendanceDate,
+      totalPresentDays: candidate.totalPresentDays,
+      recentHistory: candidate.attendanceHistory
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5), // Last 5 records
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: formattedRecords.length,
+      data: formattedRecords,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving attendance records",
       error: error.message,
     });
   }
