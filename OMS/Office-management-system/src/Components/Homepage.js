@@ -40,7 +40,6 @@ const NewDashboard = () => {
         setUser(data);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching user data:", error);
         setError("Failed to load user data. Please try again later.");
         setLoading(false);
       }
@@ -71,7 +70,7 @@ const NewDashboard = () => {
         const data = await response.json();
         setLoggedInHours(data.loggedInHours);
       } catch (error) {
-        console.error("Error fetching logged-in hours:", error);
+        // Silently handle logged-in hours error
       }
     };
 
@@ -79,51 +78,40 @@ const NewDashboard = () => {
       setEventsLoading(true);
       try {
         const token = localStorage.getItem("token");
-        console.log("Homepage - Fetching upcoming events with token:", !!token);
-        
+
         // Check if current user is HR Manager (Admin with HR Manager subRole)
-        const isHRManager = user?.role === 'Admin' && user?.subRole === 'HR Manager';
-        
-        console.log("Homepage - User Role Info:", {
-          role: user?.role,
-          subRole: user?.subRole,
-          isHRManager: isHRManager
-        });
-        
+        const isHRManager =
+          user?.role === "Admin" && user?.subRole === "HR Manager";
+
         // Use GetData for all users (backend will handle HR Manager permissions)
-        const apiUrl = 'http://localhost:5000/GetData';
-        
-        console.log("Homepage - Using API URL:", apiUrl);
-        
-        const response = await axios.post(apiUrl, {}, {
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json'
+        const apiUrl = "http://localhost:5000/GetData";
+
+        const response = await axios.post(
+          apiUrl,
+          {},
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
           }
-        });
-        
+        );
+
         const allEvents = response.data || [];
-        console.log("Homepage - All events received:", allEvents.length);
-        
+
         // Filter upcoming events (events that haven't ended yet)
         const now = new Date();
         const upcoming = allEvents
-          .filter(event => {
+          .filter((event) => {
             const eventEnd = new Date(event.EndTime);
             return eventEnd >= now; // Include events that haven't ended yet
           })
           .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime)) // Sort by start time
           .slice(0, 3); // Show only next 3 events for homepage
-        
-        console.log("Homepage - Upcoming events filtered:", upcoming.length);
-        upcoming.forEach((event, index) => {
-          console.log(`Event ${index + 1}: ${event.Subject} - Users: ${JSON.stringify(event.Users)}`);
-        });
-        
+
         setUpcomingEvents(upcoming);
         setEventsError(null);
       } catch (error) {
-        console.error("Error fetching upcoming events:", error);
         setEventsError(error.message);
       } finally {
         setEventsLoading(false);
@@ -168,37 +156,37 @@ const NewDashboard = () => {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Check if event is currently ongoing
     if (startDate <= now && endDate >= now) {
       return `🔴 Ongoing`;
     }
-    
+
     // Check if event starts today
     if (startDate.toDateString() === today.toDateString()) {
-      return `Today, ${startDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+      return `Today, ${startDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       })}`;
     }
-    
+
     // Check if event starts tomorrow
     if (startDate.toDateString() === tomorrow.toDateString()) {
-      return `Tomorrow, ${startDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+      return `Tomorrow, ${startDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       })}`;
     }
-    
+
     // Other dates
-    return startDate.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    return startDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -252,10 +240,22 @@ const NewDashboard = () => {
         <div className="modern-error-container">
           <div className="error-content">
             <div className="error-icon-modern">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="#ef4444" strokeWidth="2"/>
-                <path d="m15 9-6 6" stroke="#ef4444" strokeWidth="2"/>
-                <path d="m9 9 6 6" stroke="#ef4444" strokeWidth="2"/>
+              <svg
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="#ef4444"
+                  strokeWidth="2"
+                />
+                <path d="m15 9-6 6" stroke="#ef4444" strokeWidth="2" />
+                <path d="m9 9 6 6" stroke="#ef4444" strokeWidth="2" />
               </svg>
             </div>
             <h3>Oops! Something went wrong</h3>
@@ -283,85 +283,11 @@ const NewDashboard = () => {
 
   return (
     <>
-
       <NotificationPopup />
 
-      {/* Debug user info */}
-      
-
       {/* Show NotificationPopup only for Super Admin */}
-      {user?.role === 'Super_Admin' && <NotificationPopup />}
-      
-      {/* Test button for Super Admin to create notification */}
-      {user?.role === 'Super_Admin' && (
-        <div style={{
-          position: 'fixed',
-          top: '10px',
-          right: '10px',
-          zIndex: 9999,
-          background: '#007bff',
-          color: 'white',
-          padding: '10px 15px',
-          borderRadius: '5px',
-          fontSize: '12px',
-          cursor: 'pointer',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-        }}
-        onClick={async () => {
-          try {
-            const token = localStorage.getItem('token');
-            console.log('Token check:', token ? 'Present' : 'Missing');
-            
-            if (!token) {
-              alert('No token found! Please login again.');
-              return;
-            }
+      {user?.role === "Super_Admin" && <NotificationPopup />}
 
-            const response = await fetch('http://localhost:5000/api/notifications', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                title: "Test Notification for Super Admin",
-                message: "Test notification created by Nayan Nikhare to verify notification system",
-                type: 'event',
-                targetRoles: ['Super_Admin'],
-                priority: 'high',
-                eventData: {
-                  eventTitle: "HR Team Meeting",
-                  eventDate: new Date(),
-                  location: "Conference Room A"
-                }
-              })
-            });
-            
-            console.log('Response status:', response.status);
-            
-            if (response.ok) {
-              const result = await response.json();
-              console.log('✅ Test notification created successfully:', result);
-              alert('Test notification created! Popup should appear soon.');
-              // Force refresh notifications after creation
-              setTimeout(() => {
-                window.location.reload();
-              }, 1000);
-            } else {
-              const error = await response.text();
-              console.error('❌ Failed to create notification:', error);
-              alert('Failed to create notification: ' + error);
-            }
-          } catch (error) {
-            console.error('❌ Error creating notification:', error);
-            alert('Error: ' + error.message);
-          }
-        }}>
-          Create Test Notification
-        </div>
-      )}
-
-      
       <div className="dashboard-wrapper">
         <div className="dashboard-container-new">
           <div className="dashboard-main">
@@ -374,7 +300,9 @@ const NewDashboard = () => {
                       {getGreeting()}
                       {user ? `, ${user.name.split(" ")[0]}` : ""}!
                     </h1>
-                    <p className="welcome-subtitle">Welcome back to your workspace</p>
+                    <p className="welcome-subtitle">
+                      Welcome back to your workspace
+                    </p>
                   </div>
                   <div className="header-stats">
                     <div className="current-time">
@@ -411,9 +339,25 @@ const NewDashboard = () => {
                       <div className="stat-progress">
                         <div className="progress-ring">
                           <svg width="60" height="60">
-                            <circle cx="30" cy="30" r="25" stroke="#e5e7eb" strokeWidth="6" fill="none"/>
-                            <circle cx="30" cy="30" r="25" stroke="#3b82f6" strokeWidth="6" fill="none"
-                              strokeDasharray="157" strokeDashoffset="39" strokeLinecap="round"/>
+                            <circle
+                              cx="30"
+                              cy="30"
+                              r="25"
+                              stroke="#e5e7eb"
+                              strokeWidth="6"
+                              fill="none"
+                            />
+                            <circle
+                              cx="30"
+                              cy="30"
+                              r="25"
+                              stroke="#3b82f6"
+                              strokeWidth="6"
+                              fill="none"
+                              strokeDasharray="157"
+                              strokeDashoffset="39"
+                              strokeLinecap="round"
+                            />
                           </svg>
                           <span className="progress-text">75%</span>
                         </div>
@@ -440,7 +384,9 @@ const NewDashboard = () => {
                     <div className="stat-content">
                       <h3>Join Date</h3>
                       <p className="stat-value-modern">
-                        {user ? new Date(user.date).toLocaleDateString("en-GB") : "N/A"}
+                        {user
+                          ? new Date(user.date).toLocaleDateString("en-GB")
+                          : "N/A"}
                       </p>
                       <span className="stat-subtitle">Member since</span>
                     </div>
@@ -475,7 +421,9 @@ const NewDashboard = () => {
                     </div>
                     <div className="stat-content">
                       <h3>Sub Role</h3>
-                      <p className="stat-value-modern">{user?.subRole || "N/A"}</p>
+                      <p className="stat-value-modern">
+                        {user?.subRole || "N/A"}
+                      </p>
                       <span className="stat-subtitle">Specialization</span>
                     </div>
                   </div>
@@ -568,7 +516,8 @@ const NewDashboard = () => {
                         <p>You logged into the system successfully</p>
                         <span className="activity-time">
                           <span className="time-icon">🕐</span>
-                          Today, {new Date().toLocaleTimeString("en-US", {
+                          Today,{" "}
+                          {new Date().toLocaleTimeString("en-US", {
                             hour: "2-digit",
                             minute: "2-digit",
                             hour12: true,
@@ -616,76 +565,76 @@ const NewDashboard = () => {
                 </div>
               </div>
 
-            {/* Upcoming Events Section */}
-            <div className="activity-section">
-              <div className="section-header">
-                <h3>Upcoming Events</h3>
-              </div>
+              {/* Upcoming Events Section */}
+              <div className="activity-section">
+                <div className="section-header">
+                  <h3>Upcoming Events</h3>
+                </div>
 
-              <div className="upcoming-events-scrollable">
-                {eventsLoading ? (
-                  <div className="activity-timeline">
-                    <div className="timeline-item">
-                      <div className="timeline-icon notification">⏳</div>
-                      <div className="timeline-content">
-                        <h4>Loading Events</h4>
-                        <p>Please wait while we fetch your events...</p>
-                        <span className="timeline-time">Just now</span>
+                <div className="upcoming-events-scrollable">
+                  {eventsLoading ? (
+                    <div className="activity-timeline">
+                      <div className="timeline-item">
+                        <div className="timeline-icon notification">⏳</div>
+                        <div className="timeline-content">
+                          <h4>Loading Events</h4>
+                          <p>Please wait while we fetch your events...</p>
+                          <span className="timeline-time">Just now</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : eventsError ? (
-                  <div className="activity-timeline">
-                    <div className="timeline-item">
-                      <div className="timeline-icon notification">❌</div>
-                      <div className="timeline-content">
-                        <h4>Error Loading Events</h4>
-                        <p>Unable to fetch upcoming events</p>
-                        <span className="timeline-time">Just now</span>
+                  ) : eventsError ? (
+                    <div className="activity-timeline">
+                      <div className="timeline-item">
+                        <div className="timeline-icon notification">❌</div>
+                        <div className="timeline-content">
+                          <h4>Error Loading Events</h4>
+                          <p>Unable to fetch upcoming events</p>
+                          <span className="timeline-time">Just now</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : upcomingEvents.length === 0 ? (
-                  <div className="activity-timeline">
-                    <div className="timeline-item">
-                      <div className="timeline-icon notification">📅</div>
-                      <div className="timeline-content">
-                        <h4>No Upcoming Events</h4>
-                        <p>No events scheduled for today</p>
-                        <span className="timeline-time">
-                          {new Date().toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="activity-timeline">
-                    {upcomingEvents.map((event) => (
-                      <div key={event._id} className="timeline-item">
+                  ) : upcomingEvents.length === 0 ? (
+                    <div className="activity-timeline">
+                      <div className="timeline-item">
                         <div className="timeline-icon notification">📅</div>
                         <div className="timeline-content">
-                          <h4>{event.Subject}</h4>
-                          <p>{event.Description || "Event scheduled"}</p>
+                          <h4>No Upcoming Events</h4>
+                          <p>No events scheduled for today</p>
                           <span className="timeline-time">
-                            {formatEventDate(event.StartTime, event.EndTime)}
+                            {new Date().toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
                           </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className="activity-timeline">
+                      {upcomingEvents.map((event) => (
+                        <div key={event._id} className="timeline-item">
+                          <div className="timeline-icon notification">📅</div>
+                          <div className="timeline-content">
+                            <h4>{event.Subject}</h4>
+                            <p>{event.Description || "Event scheduled"}</p>
+                            <span className="timeline-time">
+                              {formatEventDate(event.StartTime, event.EndTime)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

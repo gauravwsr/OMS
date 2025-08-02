@@ -28,7 +28,8 @@ isme/* Base Styles */
 .form-card {
   background: linear-gradient(120deg, #fff 80%, #f0f4ff 100%);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(85, 112, 241, 0.1), 0 1.5px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 32px rgba(85, 112, 241, 0.1),
+    0 1.5px 8px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   border: 1.5px solid #e3e9f7;
   transition: box-shadow 0.2s, border 0.2s;
@@ -383,23 +384,23 @@ isme/* Base Styles */
     border-radius: 0;
     box-shadow: 0 2px 8px rgba(85, 112, 241, 0.08);
   }
-  
+
   .card-header {
     padding: 15px;
   }
-  
+
   .form-content {
     padding: 15px;
   }
-  
+
   .form-group {
     min-width: 100%;
   }
-  
+
   .form-actions {
     flex-direction: column;
   }
-  
+
   .submit-button,
   .cancel-button {
     width: 100%;
@@ -410,14 +411,344 @@ isme/* Base Styles */
   .main-cont {
     padding: 10px;
   }
-  
+
   .profile-photo,
   .empty-photo {
     width: 120px;
     height: 120px;
   }
-  
+
   .modal-content {
     width: 95%;
+  }
+}
+
+/* Face Registration Section Styles */
+.face-registration-section {
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.face-registered-status {
+  text-align: center;
+}
+
+.face-not-registered {
+  text-align: center;
+}
+
+.success-message {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.warning-message {
+  color: #ffc107;
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.register-face-btn,
+.re-register-btn {
+  background-color: #5570f1;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 15px;
+  transition: background-color 0.3s ease;
+}
+
+.register-face-btn:hover,
+.re-register-btn:hover {
+  background-color: #4456d1;
+}
+
+.re-register-btn {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.re-register-btn:hover {
+  background-color: #e0a800;
+}
+
+/* Webcam Modal Styles for Edit Employee */
+.webcam-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.webcam-modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.webcam-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
+}
+
+.webcam-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-webcam-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-webcam-btn:hover {
+  color: #000;
+}
+
+.webcam-content {
+  padding: 20px;
+}
+
+.webcam-video {
+  width: 100%;
+  max-width: 400px;
+  height: 300px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-bottom: 15px;
+}
+
+.webcam-controls {
+  text-align: center;
+}
+
+.captured-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.captured-thumbnail {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.webcam-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.capture-btn,
+.register-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.capture-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.capture-btn:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.register-btn {
+  background-color: #007bff;
+  color: white;
+}
+
+.register-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.capture-btn:disabled,
+.register-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .webcam-modal-content {
+    width: 95%;
+  }
+
+  .webcam-video {
+    height: 250px;
+  }
+
+  .webcam-buttons {
+    flex-direction: column;
+  }
+
+  .capture-btn,
+  .register-btn {
+    width: 100%;
+  }
+}
+
+/* Document Upload Styles */
+.document-category {
+  margin-bottom: 25px;
+  padding: 20px;
+  border: 1px solid #e3e9f7;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fdfdfd 0%, #f8faff 100%);
+}
+
+.document-category h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-description {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.form-description p {
+  margin: 0 0 8px 0;
+}
+
+.form-description p:last-child {
+  margin-bottom: 0;
+}
+
+.secondary-upload {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  margin-top: 5px;
+}
+
+.secondary-upload:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.file-info span {
+  color: #495057;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.remove-file {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.remove-file:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+/* Role-specific document sections */
+.document-category[data-role="employee"] {
+  border-left: 4px solid #27ae60;
+}
+
+.document-category[data-role="intern"] {
+  border-left: 4px solid #e74c3c;
+}
+
+/* Responsive design for document uploads */
+@media (max-width: 768px) {
+  .document-category {
+    padding: 15px;
+  }
+
+  .file-info span {
+    max-width: 150px;
+  }
+
+  .secondary-upload {
+    padding: 10px 14px;
+    font-size: 13px;
   }
 }

@@ -41,6 +41,7 @@ import EmailDetails from "./Components/mail/EmailDetails";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate";
 import ViewDetails from "./Components/ViewDetails";
+import EditEmployee from "./Components/EditEmployee";
 // import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
@@ -223,31 +224,18 @@ const MainContent = ({ nav }) => {
 
     // Check for subrole first
     let roleKey = user.role;
-    console.log("Debug - User role:", user.role);
-    console.log("Debug - User subRole:", user.subRole);
-    console.log("Debug - User object:", user);
 
     if (user.subRole) {
-      const subroleKey = `${user.role}_${user.subRole}`;
-      console.log("Debug - Checking subroleKey:", subroleKey);
-      console.log(
-        "Debug - Available roleSpecificItems keys:",
-        Object.keys(roleSpecificItems)
-      );
+      const subroleKey = `${user.role}_${user.subRole.replace(/\s+/g, "_")}`;
       if (roleSpecificItems[subroleKey]) {
         roleKey = subroleKey;
-        console.log("Debug - Using subroleKey:", roleKey);
-      } else {
-        console.log("Debug - Subrole not found, using base role:", roleKey);
       }
     }
 
-    console.log("Debug - Final roleKey being used:", roleKey);
     const finalMenuItems = [
       ...commonItems,
       ...(roleSpecificItems[roleKey] || []),
     ];
-    console.log("Debug - Final menu items:", finalMenuItems);
     return finalMenuItems;
   };
 
@@ -816,6 +804,8 @@ const MainContent = ({ nav }) => {
           <Route path="/Db" element={<Db />} />
           <Route path="/Db/employee" element={<Employee />} />
           <Route path="/Db/viewDetails/:id" element={<ViewDetails />} />
+          <Route path="/database/edit/:id" element={<EditEmployee />} />
+          <Route path="/Db/edit/:id" element={<EditEmployee />} />
           <Route path="/CandidateProfile" element={<CandidateProfile />} />
           <Route path="/Attendance" element={<Attendance />} />
           <Route path="/FaceAttendance" element={<FaceAttendance />} />

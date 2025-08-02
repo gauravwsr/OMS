@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -13,18 +12,19 @@ const Position = require("../models/positionModel"); // Position model
 const authMiddleware = require("../middlewares/authMiddleware");
 
 // GET /team-leads - Get all team leads (for dropdowns etc)
-router.get('/team-leads', async (req, res) => {
+router.get("/team-leads", async (req, res) => {
   try {
     const teamLeads = await User.find({
-      $or: [
-        { subRole: 'Team Lead' },
-        { subRole: 'Team Leader' }
-      ]
-    }).select('name email specialization availability experience skills currentProjects');
+      $or: [{ subRole: "Team Lead" }, { subRole: "Team Leader" }],
+    }).select(
+      "name email specialization availability experience skills currentProjects"
+    );
     res.json({ success: true, count: teamLeads.length, data: teamLeads });
   } catch (error) {
-    console.error('Error fetching team leads:', error);
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error("Error fetching team leads:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 });
 
@@ -124,6 +124,18 @@ router.get("/users", async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET /all-users - Alternative endpoint for analytics (same functionality as /users)
+router.get("/all-users", async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json({ success: true, count: users.length, data: users });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 });
 
@@ -282,11 +294,9 @@ router.delete(
       // Prevent deletion of core roles
       const coreRoles = ["CEO", "COO", "CFO"];
       if (coreRoles.includes(subRole)) {
-        return res
-          .status(400)
-          .json({
-            message: "Cannot delete core Super Admin roles (CEO, COO, CFO)",
-          });
+        return res.status(400).json({
+          message: "Cannot delete core Super Admin roles (CEO, COO, CFO)",
+        });
       }
 
       // Check if any user currently has this subrole

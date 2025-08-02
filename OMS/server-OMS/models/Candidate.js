@@ -56,6 +56,43 @@ const candidateSchema = new mongoose.Schema({
   company: String, // Added missing field
   photoPath: String,
   cvPath: String,
+  // Face Recognition and Attendance fields
+  faceEncodings: [
+    {
+      type: String, // Base64 encoded face data
+    },
+  ],
+  faceImagePaths: [
+    {
+      type: String, // Paths to stored face images
+    },
+  ],
+  attendanceMark: {
+    type: String,
+    enum: ["Present", "Absent", "Late", "On Time", "Very Late", "N/A"],
+    default: "N/A",
+  },
+  lastAttendanceDate: Date,
+  totalPresentDays: {
+    type: Number,
+    default: 0,
+  },
+  attendanceHistory: [
+    {
+      date: {
+        type: Date,
+        default: Date.now,
+      },
+      status: {
+        type: String,
+        enum: ["Present", "Absent", "Late", "On Time", "Very Late"],
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
   // Auth related fields
   email: {
     type: String,
@@ -68,6 +105,10 @@ const candidateSchema = new mongoose.Schema({
   },
   passwordPlain: String, // Temporary storage for showing in the modal
   createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
     type: Date,
     default: Date.now,
   },

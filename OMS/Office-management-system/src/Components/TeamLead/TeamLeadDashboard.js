@@ -326,7 +326,7 @@ const TeamLeadDashboard = () => {
     setAddingTask(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       // Prepare task data with proper assignment structure
       const taskData = {
         title: newTask.title,
@@ -334,11 +334,11 @@ const TeamLeadDashboard = () => {
         priority: newTask.priority || "Medium",
         dueDate: newTask.dueDate,
         taskPoints: newTask.taskPoints || [],
-        assignedTo: Array.isArray(newTask.assignedTo) ? newTask.assignedTo : []
+        assignedTo: Array.isArray(newTask.assignedTo) ? newTask.assignedTo : [],
       };
 
       console.log("Sending task data:", taskData);
-      
+
       const response = await fetch(
         `http://localhost:5000/api/team-lead/projects/${selectedProject._id}/tasks`,
         {
@@ -354,7 +354,7 @@ const TeamLeadDashboard = () => {
       console.log("Response status:", response.status);
       const result = await response.json();
       console.log("Response data:", result);
-      
+
       if (result.success) {
         // Reset form
         setNewTask({
@@ -438,12 +438,21 @@ const TeamLeadDashboard = () => {
   // Delete task (only for managers and team leads)
   const deleteTask = async (taskId) => {
     // Check if user has permission to delete tasks
-    if (!user || (user.role !== 'Manager' && user.subRole !== 'Team Lead' && user.role !== 'Admin')) {
+    if (
+      !user ||
+      (user.role !== "Manager" &&
+        user.subRole !== "Team Lead" &&
+        user.role !== "Admin")
+    ) {
       alert("You don't have permission to delete tasks.");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this task? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -545,7 +554,12 @@ const TeamLeadDashboard = () => {
     if (!selectedTask) return;
 
     // Check if user has permission to save changes
-    if (!user || (user.role !== 'Manager' && user.subRole !== 'Team Lead' && user.role !== 'Admin')) {
+    if (
+      !user ||
+      (user.role !== "Manager" &&
+        user.subRole !== "Team Lead" &&
+        user.role !== "Admin")
+    ) {
       alert("You don't have permission to modify task assignments.");
       return;
     }
@@ -565,7 +579,12 @@ const TeamLeadDashboard = () => {
   // Add employee to task assignment
   const addEmployeeToTask = (employee) => {
     // Check if user has permission
-    if (!user || (user.role !== 'Manager' && user.subRole !== 'Team Lead' && user.role !== 'Admin')) {
+    if (
+      !user ||
+      (user.role !== "Manager" &&
+        user.subRole !== "Team Lead" &&
+        user.role !== "Admin")
+    ) {
       alert("You don't have permission to modify task assignments.");
       return;
     }
@@ -591,7 +610,12 @@ const TeamLeadDashboard = () => {
   // Remove employee from task assignment
   const removeEmployeeFromTask = (employeeId) => {
     // Check if user has permission
-    if (!user || (user.role !== 'Manager' && user.subRole !== 'Team Lead' && user.role !== 'Admin')) {
+    if (
+      !user ||
+      (user.role !== "Manager" &&
+        user.subRole !== "Team Lead" &&
+        user.role !== "Admin")
+    ) {
       alert("You don't have permission to modify task assignments.");
       return;
     }
@@ -789,7 +813,9 @@ const TeamLeadDashboard = () => {
             </div>
             <div className="loading-content">
               <h3>Loading Team Lead Dashboard</h3>
-              <p>Please wait while we fetch your assigned projects and tasks...</p>
+              <p>
+                Please wait while we fetch your assigned projects and tasks...
+              </p>
               <div className="loading-dots">
                 <span></span>
                 <span></span>
@@ -1461,8 +1487,8 @@ const TeamLeadDashboard = () => {
 
                           {tasks.Pending.map((task, index) => (
                             <Draggable
-                              key={task._id}
-                              draggableId={task._id}
+                              key={task._id || `pending-${index}`}
+                              draggableId={task._id || `pending-${index}`}
                               index={index}
                             >
                               {(provided, snapshot) => (
@@ -1525,7 +1551,9 @@ const TeamLeadDashboard = () => {
                                       >
                                         {task.assignedTo.map((emp, idx) => (
                                           <span
-                                            key={idx}
+                                            key={`${task._id}-pending-${
+                                              emp.employeeId || emp.name
+                                            }-${idx}`}
                                             style={{
                                               background: "#fecaca",
                                               color: "#991b1b",
@@ -1603,7 +1631,13 @@ const TeamLeadDashboard = () => {
                                         fontSize: 10,
                                         cursor: "pointer",
                                         marginLeft: 4,
-                                        display: (user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) ? 'block' : 'none'
+                                        display:
+                                          user &&
+                                          (user.role === "Manager" ||
+                                            user.subRole === "Team Lead" ||
+                                            user.role === "Admin")
+                                            ? "block"
+                                            : "none",
                                       }}
                                       title="Delete Task"
                                     >
@@ -1691,8 +1725,8 @@ const TeamLeadDashboard = () => {
 
                           {tasks["In Progress"].map((task, index) => (
                             <Draggable
-                              key={task._id}
-                              draggableId={task._id}
+                              key={task._id || `inprogress-${index}`}
+                              draggableId={task._id || `inprogress-${index}`}
                               index={index}
                             >
                               {(provided, snapshot) => (
@@ -1781,7 +1815,7 @@ const TeamLeadDashboard = () => {
                                         </div>
                                         {task.taskPoints.map((point, idx) => (
                                           <div
-                                            key={idx}
+                                            key={`${task._id}-point-${idx}`}
                                             style={{
                                               display: "flex",
                                               alignItems: "center",
@@ -1842,7 +1876,9 @@ const TeamLeadDashboard = () => {
                                     >
                                       {task.assignedTo.map((emp, idx) => (
                                         <span
-                                          key={idx}
+                                          key={`${task._id}-inprogress-${
+                                            emp.employeeId || emp.name
+                                          }-${idx}`}
                                           style={{
                                             background: "#bfdbfe",
                                             color: "#1e40af",
@@ -1907,7 +1943,13 @@ const TeamLeadDashboard = () => {
                                         fontSize: 10,
                                         cursor: "pointer",
                                         marginLeft: 4,
-                                        display: (user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) ? 'block' : 'none'
+                                        display:
+                                          user &&
+                                          (user.role === "Manager" ||
+                                            user.subRole === "Team Lead" ||
+                                            user.role === "Admin")
+                                            ? "block"
+                                            : "none",
                                       }}
                                       title="Delete Task"
                                     >
@@ -1968,8 +2010,8 @@ const TeamLeadDashboard = () => {
 
                           {tasks.Completed.map((task, index) => (
                             <Draggable
-                              key={task._id}
-                              draggableId={task._id}
+                              key={task._id || `completed-${index}`}
+                              draggableId={task._id || `completed-${index}`}
                               index={index}
                             >
                               {(provided, snapshot) => (
@@ -2056,7 +2098,9 @@ const TeamLeadDashboard = () => {
                                     >
                                       {task.assignedTo.map((emp, idx) => (
                                         <span
-                                          key={idx}
+                                          key={`${task._id}-completed-${
+                                            emp.employeeId || emp.name
+                                          }-${idx}`}
                                           style={{
                                             background: "#86efac",
                                             color: "#047857",
@@ -2405,10 +2449,13 @@ const TeamLeadDashboard = () => {
                         >
                           <input
                             type="checkbox"
-                            checked={Array.isArray(newTask.assignedTo) && newTask.assignedTo.some(
-                              (assigned) =>
-                                assigned.employeeId === emp.employeeId
-                            )}
+                            checked={
+                              Array.isArray(newTask.assignedTo) &&
+                              newTask.assignedTo.some(
+                                (assigned) =>
+                                  assigned.employeeId === emp.employeeId
+                              )
+                            }
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setNewTask((prev) => ({
@@ -2497,7 +2544,14 @@ const TeamLeadDashboard = () => {
 
             <div style={{ padding: 20 }}>
               <div style={{ marginBottom: 15 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 10,
+                  }}
+                >
                   <h6
                     style={{
                       margin: 0,
@@ -2514,55 +2568,64 @@ const TeamLeadDashboard = () => {
                       fontStyle: "italic",
                     }}
                   >
-                    {(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) 
-                      ? "✓ You can add/remove assignments" 
+                    {user &&
+                    (user.role === "Manager" ||
+                      user.subRole === "Team Lead" ||
+                      user.role === "Admin")
+                      ? "✓ You can add/remove assignments"
                       : "⚠️ View only - Contact Manager/Team Lead to modify"}
                   </span>
                 </div>
-                
+
                 {/* Quick Action Buttons */}
-                {(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) && availableEmployees.length > 0 && (
-                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                    <button
-                      onClick={() => {
-                        const newAssignments = availableEmployees.map(emp => ({
-                          employeeId: emp.id,
-                          name: emp.name,
-                          email: emp.email,
-                          role: emp.role,
-                        }));
-                        setEditAssignment(newAssignments);
-                      }}
-                      style={{
-                        background: "#3b82f6",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 4,
-                        padding: "4px 8px",
-                        fontSize: 10,
-                        cursor: "pointer",
-                        fontWeight: 500,
-                      }}
-                    >
-                      ✓ Assign All
-                    </button>
-                    <button
-                      onClick={() => setEditAssignment([])}
-                      style={{
-                        background: "#ef4444",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 4,
-                        padding: "4px 8px",
-                        fontSize: 10,
-                        cursor: "pointer",
-                        fontWeight: 500,
-                      }}
-                    >
-                      ✕ Remove All
-                    </button>
-                  </div>
-                )}
+                {user &&
+                  (user.role === "Manager" ||
+                    user.subRole === "Team Lead" ||
+                    user.role === "Admin") &&
+                  availableEmployees.length > 0 && (
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <button
+                        onClick={() => {
+                          const newAssignments = availableEmployees.map(
+                            (emp) => ({
+                              employeeId: emp.id,
+                              name: emp.name,
+                              email: emp.email,
+                              role: emp.role,
+                            })
+                          );
+                          setEditAssignment(newAssignments);
+                        }}
+                        style={{
+                          background: "#3b82f6",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          padding: "4px 8px",
+                          fontSize: 10,
+                          cursor: "pointer",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ✓ Assign All
+                      </button>
+                      <button
+                        onClick={() => setEditAssignment([])}
+                        style={{
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          padding: "4px 8px",
+                          fontSize: 10,
+                          cursor: "pointer",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ✕ Remove All
+                      </button>
+                    </div>
+                  )}
 
                 {availableEmployees && availableEmployees.length > 0 ? (
                   <div
@@ -2597,8 +2660,17 @@ const TeamLeadDashboard = () => {
                           checked={editAssignment.some(
                             (assigned) => assigned.employeeId === emp.id
                           )}
-                          onChange={(e) => toggleEmployeeAssignment(emp, e.target.checked)}
-                          disabled={!(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin'))}
+                          onChange={(e) =>
+                            toggleEmployeeAssignment(emp, e.target.checked)
+                          }
+                          disabled={
+                            !(
+                              user &&
+                              (user.role === "Manager" ||
+                                user.subRole === "Team Lead" ||
+                                user.role === "Admin")
+                            )
+                          }
                         />
                         <div>
                           <div style={{ fontWeight: 600 }}>{emp.name}</div>
@@ -2644,7 +2716,9 @@ const TeamLeadDashboard = () => {
                   Selected Assignments ({editAssignment.length})
                 </h6>
                 {editAssignment.length > 0 ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                  >
                     {editAssignment.map((emp, idx) => (
                       <div
                         key={idx}
@@ -2667,24 +2741,29 @@ const TeamLeadDashboard = () => {
                             {emp.email} • {emp.role}
                           </div>
                         </div>
-                        {(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) && (
-                          <button
-                            onClick={() => removeEmployeeFromTask(emp.employeeId)}
-                            style={{
-                              background: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              borderRadius: 4,
-                              padding: "4px 8px",
-                              fontSize: 10,
-                              cursor: "pointer",
-                              fontWeight: 500,
-                            }}
-                            title="Remove from assignment"
-                          >
-                            ✕ Remove
-                          </button>
-                        )}
+                        {user &&
+                          (user.role === "Manager" ||
+                            user.subRole === "Team Lead" ||
+                            user.role === "Admin") && (
+                            <button
+                              onClick={() =>
+                                removeEmployeeFromTask(emp.employeeId)
+                              }
+                              style={{
+                                background: "#ef4444",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 4,
+                                padding: "4px 8px",
+                                fontSize: 10,
+                                cursor: "pointer",
+                                fontWeight: 500,
+                              }}
+                              title="Remove from assignment"
+                            >
+                              ✕ Remove
+                            </button>
+                          )}
                       </div>
                     ))}
                   </div>
@@ -2721,27 +2800,52 @@ const TeamLeadDashboard = () => {
                 </button>
                 <button
                   onClick={saveAssignmentChanges}
-                  disabled={!(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin'))}
+                  disabled={
+                    !(
+                      user &&
+                      (user.role === "Manager" ||
+                        user.subRole === "Team Lead" ||
+                        user.role === "Admin")
+                    )
+                  }
                   style={{
-                    background: (user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) 
-                      ? "#10b981" 
-                      : "#9ca3af",
+                    background:
+                      user &&
+                      (user.role === "Manager" ||
+                        user.subRole === "Team Lead" ||
+                        user.role === "Admin")
+                        ? "#10b981"
+                        : "#9ca3af",
                     color: "#fff",
                     border: "none",
                     borderRadius: 6,
                     padding: "10px 20px",
                     fontWeight: 600,
-                    cursor: (user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) 
-                      ? "pointer" 
-                      : "not-allowed",
+                    cursor:
+                      user &&
+                      (user.role === "Manager" ||
+                        user.subRole === "Team Lead" ||
+                        user.role === "Admin")
+                        ? "pointer"
+                        : "not-allowed",
                     fontSize: 14,
                   }}
-                  title={!(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) 
-                    ? "You don't have permission to modify assignments" 
-                    : "Save assignment changes"}
+                  title={
+                    !(
+                      user &&
+                      (user.role === "Manager" ||
+                        user.subRole === "Team Lead" ||
+                        user.role === "Admin")
+                    )
+                      ? "You don't have permission to modify assignments"
+                      : "Save assignment changes"
+                  }
                 >
-                  {(user && (user.role === 'Manager' || user.subRole === 'Team Lead' || user.role === 'Admin')) 
-                    ? "Save Assignment" 
+                  {user &&
+                  (user.role === "Manager" ||
+                    user.subRole === "Team Lead" ||
+                    user.role === "Admin")
+                    ? "Save Assignment"
                     : "View Only"}
                 </button>
               </div>

@@ -25,11 +25,17 @@ const optionalUpload = (req, res, next) => {
 };
 
 // Routes
-router.post('/', uploadFields, candidateController.createCandidate);
-router.get('/', candidateController.getAllCandidates);
-router.get('/:id', candidateController.getCandidateById);
-router.put('/:id', uploadFields, candidateController.updateCandidate);
-router.delete('/:id', candidateController.deleteCandidate);
-router.post('/login', candidateController.loginCandidate);
+router.post("/", uploadFields, candidateController.createCandidate);
+router.get("/", candidateController.getAllCandidates);
+router.get("/:id", candidateController.getCandidateById);
+router.put("/:id", uploadFields, candidateController.updateCandidate);
+router.delete("/:id", candidateController.deleteCandidate);
+router.post("/login", candidateController.loginCandidate);
+
+// Face Recognition and Attendance routes
+router.post("/attendance/mark", candidateController.markAttendance);
+router.get("/:id/attendance/history", candidateController.getAttendanceHistory);
+router.put("/:id/face-encodings", candidateController.updateFaceEncodings);
+router.get("/attendance/all", candidateController.getAllAttendanceRecords);
 
 module.exports = router;
