@@ -550,20 +550,20 @@ const ProjectManagerDashboard = () => {
   // Handle team lead assignment
   const handleAssignTeam = (project) => {
     console.log("handleAssignTeam called with project:", project);
-    
+
     if (!project) {
       console.error("No project provided to handleAssignTeam");
       alert("Error: No project selected. Please try again.");
       return;
     }
-    
+
     // Validate project has required properties
     if (!project._id && !project.id) {
       console.error("Project missing ID:", project);
       alert("Error: Invalid project data. Please refresh and try again.");
       return;
     }
-    
+
     setSelectedProject(project);
     // Use assignedTeamLead instead of teamLeadId, and provide fallback
     setSelectedTeamLead(project.assignedTeamLead || project.teamLeadId || "");
@@ -950,7 +950,7 @@ const ProjectManagerDashboard = () => {
     setAddingTask(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       // Prepare task data with proper assignment structure
       const taskData = {
         title: newTask.title,
@@ -962,7 +962,7 @@ const ProjectManagerDashboard = () => {
       };
 
       console.log("Sending task data:", taskData);
-      
+
       const response = await fetch(
         `http://localhost:5000/api/team-lead/projects/${selectedProject._id}/tasks`,
         {
@@ -978,7 +978,7 @@ const ProjectManagerDashboard = () => {
       console.log("Response status:", response.status);
       const result = await response.json();
       console.log("Response data:", result);
-      
+
       if (result.success) {
         // Reset form
         setNewTask({
@@ -1196,13 +1196,13 @@ const ProjectManagerDashboard = () => {
       alert("Error: No project selected. Please try again.");
       return;
     }
-    
+
     if (!project._id && !project.id) {
       console.error("Project missing ID:", project);
       alert("Error: Invalid project data. Please refresh and try again.");
       return;
     }
-    
+
     setSelectedProject(project);
     setShowProjectDetails(true);
     await fetchProjectTasks(project._id || project.id);
@@ -1215,13 +1215,13 @@ const ProjectManagerDashboard = () => {
       alert("Error: No project selected. Please try again.");
       return;
     }
-    
+
     if (!project._id && !project.id) {
       console.error("Project missing ID:", project);
       alert("Error: Invalid project data. Please refresh and try again.");
       return;
     }
-    
+
     setSelectedProject(project);
     await fetchProjectTasks(project._id || project.id);
     setShowTaskBoard(true);
@@ -1233,7 +1233,7 @@ const ProjectManagerDashboard = () => {
   // Helper function to open task creation modal
   const handleOpenTaskCreationModal = (project = null) => {
     console.log("Opening task creation modal for project:", project);
-    
+
     // Reset the task form
     setNewTask({
       title: "",
@@ -1244,21 +1244,21 @@ const ProjectManagerDashboard = () => {
       taskPoints: [],
       project: project?._id || selectedProject?._id || ""
     });
-    
+
     // Reset task point form
     setNewTaskPoint({
       pointTitle: "",
       description: "",
     });
-    
+
     // Clear any edit state
     setEditTask(null);
-    
+
     // Set the selected project if provided
     if (project) {
       setSelectedProject(project);
     }
-    
+
     console.log("Task modal should open now");
     // Open the modal
     setShowTaskModal(true);
@@ -1312,14 +1312,14 @@ const ProjectManagerDashboard = () => {
   const openAssignmentModal = (task) => {
     setEditTask(task);
     setEditAssignment(task.assignedTo || []);
-    
+
     // Set available employees (those not currently assigned to this task)
     const assignedIds = task.assignedTo?.map(emp => emp.employeeId) || [];
     const available = selectedProject?.assignedEmployees?.filter(
       emp => !assignedIds.includes(emp.employeeId)
     ) || [];
     setAvailableEmployees(available);
-    
+
     setShowEditModal(true);
   };
 
@@ -1332,9 +1332,9 @@ const ProjectManagerDashboard = () => {
         role: employee.role,
         _id: employee.employeeId
       }]);
-      
+
       // Remove from available employees
-      setAvailableEmployees(prev => 
+      setAvailableEmployees(prev =>
         prev.filter(emp => emp.employeeId !== employee.employeeId)
       );
     }
@@ -1343,11 +1343,11 @@ const ProjectManagerDashboard = () => {
   // Remove Employee from Task
   const removeEmployeeFromTask = (employeeId) => {
     const removedEmployee = editAssignment.find(emp => emp.employeeId === employeeId);
-    
-    setEditAssignment(prev => 
+
+    setEditAssignment(prev =>
       prev.filter(emp => emp.employeeId !== employeeId)
     );
-    
+
     // Add back to available employees
     if (removedEmployee) {
       const originalEmployee = selectedProject?.assignedEmployees?.find(
@@ -1382,7 +1382,7 @@ const ProjectManagerDashboard = () => {
         setEditTask(null);
         setEditAssignment([]);
         setAvailableEmployees([]);
-        
+
         // Refresh tasks
         if (selectedProject) {
           await fetchProjectTasks(selectedProject._id);
@@ -1668,11 +1668,10 @@ const ProjectManagerDashboard = () => {
                   <div className="assignment-item">
                     <strong>Project Status:</strong>
                     <span
-                      className={`status-indicator ${
-                        project.projectStatus
+                      className={`status-indicator ${project.projectStatus
                           ? project.projectStatus.toLowerCase()
                           : "unknown"
-                      }`}
+                        }`}
                     >
                       {project.projectStatus || "Unknown"}
                     </span>
@@ -1686,9 +1685,8 @@ const ProjectManagerDashboard = () => {
                   <div className="assignment-item">
                     <strong>Assigned Team:</strong>
                     <span
-                      className={`team-lead-status ${
-                        project.assignedTeamLead ? "assigned" : "unassigned"
-                      }`}
+                      className={`team-lead-status ${project.assignedTeamLead ? "assigned" : "unassigned"
+                        }`}
                     >
                       {project.assignedTeamLead || "Not Assigned"}
                     </span>
@@ -1732,11 +1730,10 @@ const ProjectManagerDashboard = () => {
                   <div className="status-header">
                     <span>Project Status</span>
                     <span
-                      className={`status-indicator ${
-                        project.projectStatus
+                      className={`status-indicator ${project.projectStatus
                           ? project.projectStatus.toLowerCase()
                           : "unknown"
-                      }`}
+                        }`}
                     >
                       {project.projectStatus || "Unknown"}
                     </span>
@@ -1765,7 +1762,7 @@ const ProjectManagerDashboard = () => {
                     <span
                       className={
                         (project.budget || 0) - (project.spent || 0) <
-                        (project.budget || 0) * 0.1
+                          (project.budget || 0) * 0.1
                           ? "warning"
                           : ""
                       }
@@ -1980,7 +1977,7 @@ const ProjectManagerDashboard = () => {
             <div className="modal-header">
               <h3>Project Details</h3>
               <div className="modal-header-actions">
-                <button 
+                <button
                   className="btn btn-primary btn-sm"
                   onClick={() => {
                     if (selectedProject) {
@@ -1993,7 +1990,7 @@ const ProjectManagerDashboard = () => {
                 >
                   <FaTasks /> View Tasks
                 </button>
-                <button 
+                <button
                   className="btn btn-success btn-sm"
                   onClick={() => handleOpenTaskCreationModal(selectedProject)}
                   title="Create New Task"
@@ -2133,7 +2130,7 @@ const ProjectManagerDashboard = () => {
                       <span>
                         {formatCurrency(
                           (selectedProject.budget || 0) -
-                            (selectedProject.spent || 0)
+                          (selectedProject.spent || 0)
                         )}
                       </span>
                     </div>
@@ -2238,10 +2235,10 @@ const ProjectManagerDashboard = () => {
                       <span className="task-label">Pending</span>
                     </div>
                   </div>
-                  
+
                   {/* Quick Task Actions */}
                   <div className="task-quick-actions">
-                    <button 
+                    <button
                       className="btn btn-primary btn-sm"
                       onClick={() => {
                         if (selectedProject) {
@@ -2253,7 +2250,7 @@ const ProjectManagerDashboard = () => {
                     >
                       <FaTasks /> View All Tasks
                     </button>
-                    <button 
+                    <button
                       className="btn btn-success btn-sm"
                       onClick={() => handleOpenTaskCreationModal(selectedProject)}
                     >
@@ -2267,8 +2264,8 @@ const ProjectManagerDashboard = () => {
                       <h6>Recent Tasks</h6>
                       <div className="recent-tasks-list">
                         {Object.entries(tasks)
-                          .map(([status, taskList]) => 
-                            taskList.slice(0, 2).map(task => ({...task, status}))
+                          .map(([status, taskList]) =>
+                            taskList.slice(0, 2).map(task => ({ ...task, status }))
                           )
                           .flat()
                           .slice(0, 5)
@@ -2341,7 +2338,7 @@ const ProjectManagerDashboard = () => {
                 <div className="detail-section">
                   <h5>Team Lead History</h5>
                   {selectedProject.teamLeadHistory &&
-                  selectedProject.teamLeadHistory.length > 0 ? (
+                    selectedProject.teamLeadHistory.length > 0 ? (
                     <table className="team-lead-history-table">
                       <thead>
                         <tr>
@@ -2361,11 +2358,10 @@ const ProjectManagerDashboard = () => {
                             </td>
                             <td>
                               <span
-                                className={`status-indicator ${
-                                  history.unassignedDate
+                                className={`status-indicator ${history.unassignedDate
                                     ? "unassigned"
                                     : "active"
-                                }`}
+                                  }`}
                               >
                                 {history.unassignedDate
                                   ? "Unassigned"
@@ -2412,13 +2408,239 @@ const ProjectManagerDashboard = () => {
       )}
 
       {/* Task Creation Modal */}
+
+      {/* Task Board Modal */}
+      {showTaskBoard && selectedProject && (
+        <div className="modal-overlay task-board-overlay">
+          <div className="modal-content task-board-modal">
+            <div className="modal-header">
+              <h3>
+                <FaTasks /> Task Board - {selectedProject.projectId || selectedProject.name || "Untitled Project"}
+              </h3>
+              <div className="task-board-actions">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
+                >
+                  <FaPlus /> Add Task
+                </button>
+                <button
+                  className="close-btn"
+                  onClick={() => {
+                    setShowTaskBoard(false);
+                    setSelectedProject(null);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-body task-board-container">
+              {/* Task Statistics */}
+              <div className="task-stats-section">
+                <div className="task-stat-card">
+                  <div className="stat-icon pending">
+                    <FaClock />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-number">{tasks.Pending?.length || 0}</span>
+                    <span className="stat-label">Pending</span>
+                  </div>
+                </div>
+                <div className="task-stat-card">
+                  <div className="stat-icon in-progress">
+                    <FaPlay />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-number">{tasks["In Progress"]?.length || 0}</span>
+                    <span className="stat-label">In Progress</span>
+                  </div>
+                </div>
+                <div className="task-stat-card">
+                  <div className="stat-icon completed">
+                    <FaCheckCircle />
+                  </div>
+                  <div className="stat-info">
+                    <span className="stat-number">{tasks.Completed?.length || 0}</span>
+                    <span className="stat-label">Completed</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Task Board Columns */}
+              <div className="task-board-columns">
+                {Object.entries(tasks).map(([status, taskList]) => (
+                  <div key={status} className={`task-column ${status.toLowerCase().replace(' ', '-')}`}>
+                    <div className="column-header">
+                      <h4>{status}</h4>
+                      <span className="task-count">{taskList.length}</span>
+                    </div>
+
+                    <div className="task-list">
+                      {taskList.map((task) => (
+                        <div key={task._id} className="task-card">
+                          <div className="task-header">
+                            <h5 className="task-title">{task.title}</h5>
+                            <div className="task-actions">
+                              <button
+                                className="action-btn"
+                                onClick={() => openAssignmentModal(task)}
+                                title="Edit Assignment"
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                className="action-btn delete"
+                                onClick={() => deleteTaskEnhanced(task._id)}
+                                title="Delete Task"
+                              >
+                                <FaTimes />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="task-content">
+                            <p className="task-description">{task.description}</p>
+
+                            <div className="task-meta">
+                              <div className="task-priority">
+                                <span className={`priority-badge ${task.priority?.toLowerCase()}`}>
+                                  {task.priority}
+                                </span>
+                              </div>
+
+                              {task.dueDate && (
+                                <div className="task-due-date">
+                                  <FaCalendarAlt />
+                                  <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Task Points */}
+                            {task.taskPoints && task.taskPoints.length > 0 && (
+                              <div className="task-points">
+                                <div className="task-points-header">
+                                  <strong>Task Points:</strong>
+                                  <span className="points-progress">
+                                    {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length}
+                                  </span>
+                                </div>
+                                <div className="task-points-list">
+                                  {task.taskPoints.map((point, idx) => (
+                                    <div key={idx} className="task-point">
+                                      <label className="task-point-checkbox">
+                                        <input
+                                          type="checkbox"
+                                          checked={point.isCompleted}
+                                          onChange={(e) =>
+                                            updateTaskPointEnhanced(
+                                              task._id,
+                                              point._id,
+                                              e.target.checked,
+                                              JSON.parse(localStorage.getItem("user") || "{}")._id
+                                            )
+                                          }
+                                        />
+                                        <span className={point.isCompleted ? 'completed' : ''}>
+                                          {point.pointTitle}
+                                        </span>
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Assigned Employees */}
+                            {task.assignedTo && task.assignedTo.length > 0 && (
+                              <div className="task-assignees">
+                                <div className="assignees-header">
+                                  <strong>Assigned to:</strong>
+                                </div>
+                                <div className="assignees-list">
+                                  {task.assignedTo.map((assignee, idx) => (
+                                    <div key={idx} className="assignee-item">
+                                      <span className="assignee-name">{assignee.name}</span>
+                                      <small className="assignee-role">({assignee.role})</small>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Status Change Buttons */}
+                            <div className="task-status-actions">
+                              {status === 'Pending' && (
+                                <button
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() => updateTaskStatusEnhanced(task._id, 'In Progress')}
+                                >
+                                  Start Task
+                                </button>
+                              )}
+                              {status === 'In Progress' && (
+                                <>
+                                  <button
+                                    className="btn btn-warning btn-sm"
+                                    onClick={() => updateTaskStatusEnhanced(task._id, 'Pending')}
+                                  >
+                                    Move to Pending
+                                  </button>
+                                  <button
+                                    className="btn btn-success btn-sm"
+                                    onClick={() => updateTaskStatusEnhanced(task._id, 'Completed')}
+                                  >
+                                    Complete
+                                  </button>
+                                </>
+                              )}
+                              {status === 'Completed' && (
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => updateTaskStatusEnhanced(task._id, 'In Progress')}
+                                >
+                                  Reopen
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {taskList.length === 0 && (
+                        <div className="empty-column">
+                          <p>No {status.toLowerCase()} tasks</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add New Task Section */}
+              <div className="add-task-section">
+                <button
+                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
+                  className="btn btn-primary add-task-btn"
+                >
+                  <FaPlus /> Create New Task
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task Creation/Edit Modal */}
       {showTaskModal && (
         <div className="modal-overlay">
           <div className="modal-content task-modal">
             <div className="modal-header">
               <h3>{editTask ? 'Edit Task' : 'Create New Task'}</h3>
-              <button 
-                className="close-btn" 
+              <button
+                className="close-btn"
                 onClick={() => {
                   setShowTaskModal(false);
                   setEditTask(null);
@@ -2437,23 +2659,41 @@ const ProjectManagerDashboard = () => {
               </button>
             </div>
             <div className="modal-body">
+              {/* Project Info Section */}
+              {selectedProject && (
+                <div className="project-info-section" style={{ 
+                  backgroundColor: '#f8f9fa', 
+                  padding: '12px', 
+                  borderRadius: '6px', 
+                  marginBottom: '20px',
+                  border: '1px solid #e9ecef'
+                }}>
+                  <h5 style={{ margin: '0 0 8px 0', color: '#495057' }}>
+                    Creating task for: <strong>{selectedProject.projectId || selectedProject.name || "Untitled Project"}</strong>
+                  </h5>
+                  <p style={{ margin: '0', fontSize: '14px', color: '#6c757d' }}>
+                    Client: {selectedProject.clientName || "Unknown Client"}
+                  </p>
+                </div>
+              )}
+              
               <div className="form-row">
                 <div className="form-group">
                   <label>Task Title *</label>
                   <input
                     type="text"
                     value={newTask.title}
-                    onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                     placeholder="Enter task title"
                     required
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label>Priority</label>
                   <select
                     value={newTask.priority}
-                    onChange={(e) => setNewTask({...newTask, priority: e.target.value})}
+                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
@@ -2466,39 +2706,21 @@ const ProjectManagerDashboard = () => {
                 <label>Description</label>
                 <textarea
                   value={newTask.description}
-                  onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                   placeholder="Enter task description"
                   rows="3"
                 />
               </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Due Date</label>
-                  <input
-                    type="date"
-                    value={newTask.dueDate}
-                    onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Project</label>
-                  <select
-                    value={newTask.project || selectedProject?._id || ''}
-                    onChange={(e) => setNewTask({...newTask, project: e.target.value})}
-                    required
-                  >
-                    <option value="">Select Project</option>
-                    {projects.map(project => (
-                      <option key={project._id} value={project._id}>
-                        {project.projectId || project.name || "Untitled Project"}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="form-group">
+                <label>Due Date</label>
+                <input
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                />
               </div>
-              
+
               {/* Task Points Section */}
               <div className="form-group">
                 <label>Task Points (Optional)</label>
@@ -2606,8 +2828,8 @@ const ProjectManagerDashboard = () => {
                 ) : (
                   <div className="no-employees-message">
                     <p>No employees assigned to this project yet.</p>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="btn btn-secondary"
                       onClick={() => {
                         if (selectedProject) {
@@ -2623,7 +2845,7 @@ const ProjectManagerDashboard = () => {
                 )}
               </div>
             </div>
-            
+
             <div className="modal-footer">
               <button
                 type="button"
@@ -2648,234 +2870,10 @@ const ProjectManagerDashboard = () => {
                 type="button"
                 className="btn btn-primary"
                 onClick={editTask ? updateTask : createTaskEnhanced}
-                disabled={!newTask.title || (!newTask.project && !selectedProject)}
+                disabled={!newTask.title || !selectedProject}
               >
                 {editTask ? 'Update Task' : 'Create Task'}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Task Board Modal */}
-      {showTaskBoard && selectedProject && (
-        <div className="modal-overlay task-board-overlay">
-          <div className="modal-content task-board-modal">
-            <div className="modal-header">
-              <h3>
-                <FaTasks /> Task Board - {selectedProject.projectId || selectedProject.name || "Untitled Project"}
-              </h3>
-              <div className="task-board-actions">
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
-                >
-                  <FaPlus /> Add Task
-                </button>
-                <button 
-                  className="close-btn" 
-                  onClick={() => {
-                    setShowTaskBoard(false);
-                    setSelectedProject(null);
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            
-            <div className="modal-body task-board-container">
-              {/* Task Statistics */}
-              <div className="task-stats-section">
-                <div className="task-stat-card">
-                  <div className="stat-icon pending">
-                    <FaClock />
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-number">{tasks.Pending?.length || 0}</span>
-                    <span className="stat-label">Pending</span>
-                  </div>
-                </div>
-                <div className="task-stat-card">
-                  <div className="stat-icon in-progress">
-                    <FaPlay />
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-number">{tasks["In Progress"]?.length || 0}</span>
-                    <span className="stat-label">In Progress</span>
-                  </div>
-                </div>
-                <div className="task-stat-card">
-                  <div className="stat-icon completed">
-                    <FaCheckCircle />
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-number">{tasks.Completed?.length || 0}</span>
-                    <span className="stat-label">Completed</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Task Board Columns */}
-              <div className="task-board-columns">
-                {Object.entries(tasks).map(([status, taskList]) => (
-                  <div key={status} className={`task-column ${status.toLowerCase().replace(' ', '-')}`}>
-                    <div className="column-header">
-                      <h4>{status}</h4>
-                      <span className="task-count">{taskList.length}</span>
-                    </div>
-                    
-                    <div className="task-list">
-                      {taskList.map((task) => (
-                        <div key={task._id} className="task-card">
-                          <div className="task-header">
-                            <h5 className="task-title">{task.title}</h5>
-                            <div className="task-actions">
-                              <button
-                                className="action-btn"
-                                onClick={() => openAssignmentModal(task)}
-                                title="Edit Assignment"
-                              >
-                                <FaEdit />
-                              </button>
-                              <button
-                                className="action-btn delete"
-                                onClick={() => deleteTaskEnhanced(task._id)}
-                                title="Delete Task"
-                              >
-                                <FaTimes />
-                              </button>
-                            </div>
-                          </div>
-                          
-                          <div className="task-content">
-                            <p className="task-description">{task.description}</p>
-                            
-                            <div className="task-meta">
-                              <div className="task-priority">
-                                <span className={`priority-badge ${task.priority?.toLowerCase()}`}>
-                                  {task.priority}
-                                </span>
-                              </div>
-                              
-                              {task.dueDate && (
-                                <div className="task-due-date">
-                                  <FaCalendarAlt />
-                                  <span>{new Date(task.dueDate).toLocaleDateString()}</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Task Points */}
-                            {task.taskPoints && task.taskPoints.length > 0 && (
-                              <div className="task-points">
-                                <div className="task-points-header">
-                                  <strong>Task Points:</strong>
-                                  <span className="points-progress">
-                                    {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length}
-                                  </span>
-                                </div>
-                                <div className="task-points-list">
-                                  {task.taskPoints.map((point, idx) => (
-                                    <div key={idx} className="task-point">
-                                      <label className="task-point-checkbox">
-                                        <input
-                                          type="checkbox"
-                                          checked={point.isCompleted}
-                                          onChange={(e) => 
-                                            updateTaskPointEnhanced(
-                                              task._id, 
-                                              point._id, 
-                                              e.target.checked, 
-                                              JSON.parse(localStorage.getItem("user") || "{}")._id
-                                            )
-                                          }
-                                        />
-                                        <span className={point.isCompleted ? 'completed' : ''}>
-                                          {point.pointTitle}
-                                        </span>
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Assigned Employees */}
-                            {task.assignedTo && task.assignedTo.length > 0 && (
-                              <div className="task-assignees">
-                                <div className="assignees-header">
-                                  <strong>Assigned to:</strong>
-                                </div>
-                                <div className="assignees-list">
-                                  {task.assignedTo.map((assignee, idx) => (
-                                    <div key={idx} className="assignee-item">
-                                      <span className="assignee-name">{assignee.name}</span>
-                                      <small className="assignee-role">({assignee.role})</small>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Status Change Buttons */}
-                            <div className="task-status-actions">
-                              {status === 'Pending' && (
-                                <button
-                                  className="btn btn-primary btn-sm"
-                                  onClick={() => updateTaskStatusEnhanced(task._id, 'In Progress')}
-                                >
-                                  Start Task
-                                </button>
-                              )}
-                              {status === 'In Progress' && (
-                                <>
-                                  <button
-                                    className="btn btn-warning btn-sm"
-                                    onClick={() => updateTaskStatusEnhanced(task._id, 'Pending')}
-                                  >
-                                    Move to Pending
-                                  </button>
-                                  <button
-                                    className="btn btn-success btn-sm"
-                                    onClick={() => updateTaskStatusEnhanced(task._id, 'Completed')}
-                                  >
-                                    Complete
-                                  </button>
-                                </>
-                              )}
-                              {status === 'Completed' && (
-                                <button
-                                  className="btn btn-secondary btn-sm"
-                                  onClick={() => updateTaskStatusEnhanced(task._id, 'In Progress')}
-                                >
-                                  Reopen
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {taskList.length === 0 && (
-                        <div className="empty-column">
-                          <p>No {status.toLowerCase()} tasks</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Add New Task Section */}
-              <div className="add-task-section">
-                <button
-                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
-                  className="btn btn-primary add-task-btn"
-                >
-                  <FaPlus /> Create New Task
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -2894,7 +2892,7 @@ const ProjectManagerDashboard = () => {
                 <h4>{editTask.title}</h4>
                 <p>{editTask.description}</p>
               </div>
-              
+
               <div className="assignment-section">
                 <h5>Available Employees</h5>
                 <div className="available-employees">
@@ -2911,7 +2909,7 @@ const ProjectManagerDashboard = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="assigned-section">
                 <h5>Currently Assigned</h5>
                 <div className="assigned-employees">

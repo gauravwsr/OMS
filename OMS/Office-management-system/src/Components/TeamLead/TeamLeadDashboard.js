@@ -675,12 +675,12 @@ const TeamLeadDashboard = () => {
     }
   };
 
-  const openProjectAssignmentModal = (project) => {
-    setSelectedProjectForAssignment(project);
-    setSelectedEmployeesForProject(project.assignedEmployees || []);
-    fetchAvailableEmployees();
-    setShowProjectAssignmentModal(true);
-  };
+  // const openProjectAssignmentModal = (project) => {
+  //   setSelectedProjectForAssignment(project);
+  //   setSelectedEmployeesForProject(project.assignedEmployees || []);
+  //   fetchAvailableEmployees();
+  //   setShowProjectAssignmentModal(true);
+  // };
 
   const handleEmployeeToggleForProject = (employee, isChecked) => {
     if (isChecked) {
@@ -965,14 +965,14 @@ const TeamLeadDashboard = () => {
                   >
                     <FaEye />
                   </button>
-                  <button
+                  {/* <button
                     className="action-btn"
                     onClick={() => openProjectAssignmentModal(project)}
                     title="Assign Employees to Project"
                     style={{ marginLeft: 8 }}
                   >
                     <FaUser />
-                  </button>
+                  </button> */}
                 </div>
               </div>
 
