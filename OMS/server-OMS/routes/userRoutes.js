@@ -4,7 +4,6 @@ const {
   registerUser,
   loginUser,
   getUser,
-  countLoggedInHours,
 } = require("../controllers/userController");
 const User = require("../models/userModel"); // Mongoose User model
 const Position = require("../models/positionModel"); // Position model
@@ -138,9 +137,6 @@ router.get("/all-users", async (req, res) => {
       .json({ success: false, message: "Server error", error: error.message });
   }
 });
-
-// GET /logged-in-hours - Count logged-in hours
-router.get("/logged-in-hours", authMiddleware.authenticate, countLoggedInHours);
 
 // GET /positions - Get all positions
 router.get("/positions", async (req, res) => {

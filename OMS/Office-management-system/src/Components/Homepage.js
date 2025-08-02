@@ -5,7 +5,6 @@ import "./Homepage.css"; // Make sure to use this new CSS file
 
 const NewDashboard = () => {
   const [user, setUser] = useState(null);
-  const [loggedInHours, setLoggedInHours] = useState("00:00:00");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -42,35 +41,6 @@ const NewDashboard = () => {
       } catch (error) {
         setError("Failed to load user data. Please try again later.");
         setLoading(false);
-      }
-    };
-
-    const fetchLoggedInHours = async () => {
-      const token = localStorage.getItem("token");
-
-      try {
-        const response = await fetch(
-          "http://localhost:5000/users/logged-in-hours",
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch logged-in hours. Status: ${response.status}`
-          );
-        }
-
-        const data = await response.json();
-        setLoggedInHours(data.loggedInHours);
-      } catch (error) {
-        // Silently handle logged-in hours error
       }
     };
 
@@ -119,7 +89,6 @@ const NewDashboard = () => {
     };
 
     fetchUserData();
-    fetchLoggedInHours();
     fetchUpcomingEvents();
 
     // Update clock every second
@@ -127,15 +96,11 @@ const NewDashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
 
-    // Fetch logged-in hours every second
-    const hoursInterval = setInterval(fetchLoggedInHours, 1000);
-
     // Refresh upcoming events every 5 minutes to auto-remove finished events
     const eventsInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
 
     return () => {
       clearInterval(clockInterval);
-      clearInterval(hoursInterval);
       clearInterval(eventsInterval);
     };
   }, []);
@@ -333,43 +298,6 @@ const NewDashboard = () => {
                   Quick Overview
                 </h2>
                 <div className="quick-stats-modern">
-                  <div className="stat-card-modern primary">
-                    <div className="stat-visual">
-                      <div className="stat-icon-modern">⏱️</div>
-                      <div className="stat-progress">
-                        <div className="progress-ring">
-                          <svg width="60" height="60">
-                            <circle
-                              cx="30"
-                              cy="30"
-                              r="25"
-                              stroke="#e5e7eb"
-                              strokeWidth="6"
-                              fill="none"
-                            />
-                            <circle
-                              cx="30"
-                              cy="30"
-                              r="25"
-                              stroke="#3b82f6"
-                              strokeWidth="6"
-                              fill="none"
-                              strokeDasharray="157"
-                              strokeDashoffset="39"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                          <span className="progress-text">75%</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="stat-content">
-                      <h3>Logged Hours</h3>
-                      <p className="stat-value-modern">{loggedInHours}</p>
-                      <span className="stat-subtitle">Today's activity</span>
-                    </div>
-                  </div>
-
                   <div className="stat-card-modern secondary">
                     <div className="stat-visual">
                       <div className="stat-icon-modern">📅</div>
