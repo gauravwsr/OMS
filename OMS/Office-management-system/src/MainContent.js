@@ -41,7 +41,7 @@ import EmailDetails from "./Components/mail/EmailDetails";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate";
 import ViewDetails from "./Components/ViewDetails";
-import EditEmployee from "./Components/EditEmployee.js";
+import EditEmployee from "./Components/EditEmployee";
 // import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
