@@ -39,7 +39,7 @@ const Calender = () => {
   });
 
   // HR Manager uses regular GetData route (backend will handle showing all events)
-  const baseUrl = "http://localhost:5000/GetData";
+  const baseUrl = "http://142.93.213.81:5001/GetData";
 
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {
@@ -59,7 +59,7 @@ const Calender = () => {
     
     return new DataManager({
       url: baseUrl,
-      crudUrl: "http://localhost:5000/BatchData",
+      crudUrl: "http://142.93.213.81:5001/BatchData",
       adaptor: new UrlAdaptor(),
       crossDomain: true,
       requestType: 'POST',
@@ -131,7 +131,7 @@ const Calender = () => {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
         
-        const response = await fetch("http://localhost:5000/users/me", {
+        const response = await fetch("http://142.93.213.81:5001/users/me", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -176,7 +176,7 @@ const Calender = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/users");
+        const response = await axios.get("http://142.93.213.81:5001/users");
         setUsers(response.data); // Set the room data to state
       } catch (error) {
         console.error("Error fetching room data:", error);

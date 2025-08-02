@@ -20,7 +20,7 @@ const NewDashboard = () => {
       setLoading(true);
 
       try {
-        const response = await fetch("http://localhost:5000/users/me", {
+        const response = await fetch("http://142.93.213.81:5001/users/me", {
           method: "GET",
           credentials: "include",
           headers: {
@@ -54,7 +54,7 @@ const NewDashboard = () => {
           user?.role === "Admin" && user?.subRole === "HR Manager";
 
         // Use GetData for all users (backend will handle HR Manager permissions)
-        const apiUrl = "http://localhost:5000/GetData";
+        const apiUrl = "http://142.93.213.81:5001/GetData";
 
         const response = await axios.post(
           apiUrl,

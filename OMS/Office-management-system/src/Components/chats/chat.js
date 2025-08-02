@@ -23,7 +23,7 @@ const Chat = () => {
   const [users, setUsers] = useState([]);
   const [candidates, setCandidates] = useState([]);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://142.93.213.81:5001';
 
   // Initialize socket connection
   useEffect(() => {
@@ -681,7 +681,7 @@ export default Chat;
 // import axios from 'axios';
 // import { io } from 'socket.io-client';
 
-// const socket = io('http://localhost:5000'); // Connect to backend
+// const socket = io('http://142.93.213.81:5001'); // Connect to backend
 
 // const ChatPopup = ({ selectedEmployee, closeChat }) => {
 //   const [messages, setMessages] = useState([]);
@@ -694,7 +694,7 @@ export default Chat;
 //     const fetchUserData = async () => {
 //       const token = localStorage.getItem("token");
 //       try {
-//         const response = await fetch("http://localhost:5000/users/me", {
+//         const response = await fetch("http://142.93.213.81:5001/users/me", {
 //           method: "GET",
 //           credentials: "include",
 //           headers: {
@@ -720,7 +720,7 @@ export default Chat;
 
 //     const fetchMessages = async () => {
 //       try {
-//         const response = await axios.get('http://localhost:5000/api/messages', {
+//         const response = await axios.get('http://142.93.213.81:5001/api/messages', {
 //           params: { recipient: isGroupChat ? 'group' : selectedEmployee.name }
 //         });
 //         if (response.status === 200 && Array.isArray(response.data)) {
@@ -748,7 +748,7 @@ export default Chat;
 //     if (!newMessage.trim()) return; // Avoid sending empty messages
 
 //     try {
-//       const response = await axios.post('http://localhost:5000/api/messages', {
+//       const response = await axios.post('http://142.93.213.81:5001/api/messages', {
 //         sender: loggedInUser,
 //         recipient: selectedEmployee.name,
 //         text: newMessage,
@@ -764,7 +764,7 @@ export default Chat;
 //   // Handle deleting a message
 //   const deleteMessage = async (messageId) => {
 //     try {
-//       const response = await axios.delete(`http://localhost:5000/api/messages/${messageId}`);
+//       const response = await axios.delete(`http://142.93.213.81:5001/api/messages/${messageId}`);
 //       setMessages(messages.filter((msg) => msg._id !== messageId));
 //       console.log('Message deleted:', response.data);
 //     } catch (error) {
@@ -1261,7 +1261,7 @@ export default Chat;
 //   const [candidates, setCandidates] = useState([]);
 //   const [connections, setConnections] = useState([]); // Track user connections
 
-//   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+//   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://142.93.213.81:5001';
 
 //   // Fetch initial data (users and candidates)
 //   useEffect(() => {
