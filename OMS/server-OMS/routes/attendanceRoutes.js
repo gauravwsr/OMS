@@ -1,72 +1,64 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middlewares/auth");
+const {
+  markAttendance,
+  getAttendanceHistory,
+  getTodayAttendance,
+  getDailyWorkingHours,
+  getAllAttendance,
+  getAttendanceAnalytics,
+  getRecentAttendance,
+  getTodayAttendanceSummary,
+  deleteAttendance,
+  healthCheck,
+} = require("../controllers/attendanceController");
 
-// Mock attendance storage (In production, use database)
-let attendanceRecords = [];
+const {
+  validateFaceRecognitionData,
+  checkFaceRecognitionHealth,
+} = require("../middlewares/faceRecognitionMiddleware");
+
+// Health check endpoint
+router.get("/health", healthCheck);
+
+// Check face recognition server health
+router.get(
+  "/face-recognition/health",
+  checkFaceRecognitionHealth,
+  (req, res) => {
+    res.status(200).json({
+      message: "Face recognition health check",
+      ...req.faceRecognitionHealth,
+    });
+  }
+);
+
+// Get recent attendance records
+router.get("/recent", protect, getRecentAttendance);
 
 // Get attendance history for logged-in user
-router.get("/history", protect, async (req, res) => {
-  try {
-    // Filter attendance records for the current user
-    const userAttendance = attendanceRecords.filter(
-      (record) =>
-        record.userId === req.user.id || record.userId === req.user.userId
-    );
+router.get("/history", protect, getAttendanceHistory);
 
-    // Sort by timestamp (newest first)
-    userAttendance.sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+// Get today's attendance for logged-in user
+router.get("/today", protect, getTodayAttendance);
 
-    res.status(200).json(userAttendance);
-  } catch (error) {
-    console.error("Error fetching attendance history:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// Get daily working hours for logged-in user
+router.get("/working-hours", protect, getDailyWorkingHours);
 
-// Mark attendance for logged-in user
-router.post("/mark", protect, async (req, res) => {
-  try {
-    const { method, timestamp } = req.body;
-
-    const attendanceRecord = {
-      id: Date.now().toString(),
-      userId: req.user.id || req.user.userId,
-      userName: req.user.name || req.user.fullName,
-      method: method || "manual",
-      timestamp: timestamp || new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
-
-    attendanceRecords.push(attendanceRecord);
-
-    res.status(200).json({
-      message: "Attendance marked successfully",
-      record: attendanceRecord,
-    });
-  } catch (error) {
-    console.error("Error marking attendance:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// Mark attendance for logged-in user (with face recognition validation)
+router.post("/mark", protect, validateFaceRecognitionData, markAttendance);
 
 // Get all attendance records (Admin only)
-router.get("/all", protect, async (req, res) => {
-  try {
-    // Check if user has admin privileges
-    if (req.user.role !== "Admin" && req.user.role !== "Super_Admin") {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Admin privileges required." });
-    }
+router.get("/all", protect, getAllAttendance);
 
-    res.status(200).json(attendanceRecords);
-  } catch (error) {
-    console.error("Error fetching all attendance records:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// Get today's attendance summary for all employees (Admin only)
+router.get("/today-summary", protect, getTodayAttendanceSummary);
+
+// Get attendance analytics (Admin only)
+router.get("/analytics", protect, getAttendanceAnalytics);
+
+// Delete attendance record (Super Admin only)
+router.delete("/:attendanceId", protect, deleteAttendance);
 
 module.exports = router;

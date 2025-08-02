@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../AuthProvider/AuthContext';
-import './NotificationPopup.css';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../AuthProvider/AuthContext";
+import "./NotificationPopup.css";
 
 const NotificationPopup = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -11,23 +11,19 @@ const NotificationPopup = () => {
     unreadNotifications,
     fetchNotifications,
     markNotificationAsRead,
-    user
+    user,
   } = useAuth();
 
   // Fetch notifications on component mount and user login
   useEffect(() => {
-    console.log('🔔 NotificationPopup mounted, user:', user?.name, user?.role);
-    if (user && user.role === 'Super_Admin') {
-      console.log('🔔 Fetching notifications for Super Admin');
+    if (user && user.role === "Super_Admin") {
       fetchNotifications();
-    } else {
-      console.log('🔔 User is not Super Admin or user not loaded yet');
     }
   }, [user]);
 
   // Set up polling separately to avoid infinite calls
   useEffect(() => {
-    if (user && user.role === 'Super_Admin') {
+    if (user && user.role === "Super_Admin") {
       const interval = setInterval(() => {
         fetchNotifications();
       }, 15000); // Poll every 15 seconds for more responsive updates
@@ -38,28 +34,19 @@ const NotificationPopup = () => {
 
   // Show popup when new notifications arrive
   useEffect(() => {
-    console.log('🔔 Notifications changed:', {
-      count: notifications?.length || 0,
-      userRole: user?.role,
-      notifications: notifications?.map(n => n.title) || []
-    });
-    
-    if (notifications && notifications.length > 0 && user?.role === 'Super_Admin') {
+    if (
+      notifications &&
+      notifications.length > 0 &&
+      user?.role === "Super_Admin"
+    ) {
       const userId = user?._id || user?.id;
 
-      const unreadNotifs = notifications.filter(notif => {
-        const isRead = notif.readBy.some(reader => reader.userId === userId);
+      const unreadNotifs = notifications.filter((notif) => {
+        const isRead = notif.readBy.some((reader) => reader.userId === userId);
         return !isRead;
       });
-      
-      console.log('🔔 Unread notifications found:', {
-        total: notifications.length,
-        unread: unreadNotifs.length,
-        unreadTitles: unreadNotifs.map(n => n.title)
-      });
-      
+
       if (unreadNotifs.length > 0) {
-        console.log('🔔 Setting notification queue and showing popup');
         setNotificationQueue(unreadNotifs);
         showNextNotification(unreadNotifs);
       }
@@ -67,21 +54,13 @@ const NotificationPopup = () => {
   }, [notifications, user]);
 
   const showNextNotification = (queue) => {
-    console.log('🔔 showNextNotification called:', {
-      queueLength: queue.length,
-      isVisible: isVisible,
-      willShow: queue.length > 0 && !isVisible
-    });
-    
     if (queue.length > 0 && !isVisible) {
       const nextNotification = queue[0];
-      console.log('🔔 Showing notification:', nextNotification.title);
       setCurrentNotification(nextNotification);
       setIsVisible(true);
-      
+
       // Auto-hide after 8 seconds
       setTimeout(() => {
-        console.log('🔔 Auto-hiding notification after 8 seconds');
         handleClose();
       }, 8000);
     }
@@ -91,14 +70,14 @@ const NotificationPopup = () => {
     if (currentNotification) {
       await markNotificationAsRead(currentNotification._id);
     }
-    
+
     setIsVisible(false);
     setCurrentNotification(null);
-    
+
     // Remove current notification from queue and show next
     const remainingQueue = notificationQueue.slice(1);
     setNotificationQueue(remainingQueue);
-    
+
     // Show next notification after a brief delay
     if (remainingQueue.length > 0) {
       setTimeout(() => {
@@ -116,59 +95,57 @@ const NotificationPopup = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'event':
-        return '📅';
-      case 'meeting':
-        return '🤝';
+      case "event":
+        return "📅";
+      case "meeting":
+        return "🤝";
       default:
-        return '🔔';
+        return "🔔";
     }
   };
 
   const getNotificationStyle = (type, priority) => {
-    let baseStyle = 'notification-popup';
-    
+    let baseStyle = "notification-popup";
+
     switch (priority) {
-      case 'high':
-        baseStyle += ' high-priority';
+      case "high":
+        baseStyle += " high-priority";
         break;
-      case 'medium':
-        baseStyle += ' medium-priority';
+      case "medium":
+        baseStyle += " medium-priority";
         break;
-      case 'low':
-        baseStyle += ' low-priority';
+      case "low":
+        baseStyle += " low-priority";
         break;
       default:
-        baseStyle += ' medium-priority';
+        baseStyle += " medium-priority";
     }
-    
+
     return baseStyle;
   };
 
   if (!isVisible || !currentNotification) {
-    console.log('🔔 NotificationPopup not rendering:', {
-      isVisible,
-      hasCurrentNotification: !!currentNotification,
-      userRole: user?.role
-    });
     return null;
   }
 
-  console.log('🔔 NotificationPopup rendering:', currentNotification.title);
-
   return (
-    <div className={`notification-overlay ${isVisible ? 'visible' : ''}`}>
-      <div className={getNotificationStyle(currentNotification.type, currentNotification.priority)}>
+    <div className={`notification-overlay ${isVisible ? "visible" : ""}`}>
+      <div
+        className={getNotificationStyle(
+          currentNotification.type,
+          currentNotification.priority
+        )}
+      >
         <div className="notification-header">
           <div className="notification-icon">
             {getNotificationIcon(currentNotification.type)}
@@ -212,10 +189,7 @@ const NotificationPopup = () => {
         </div>
 
         <div className="notification-actions">
-          <button
-            className="btn-mark-read"
-            onClick={handleMarkAsRead}
-          >
+          <button className="btn-mark-read" onClick={handleMarkAsRead}>
             Mark as Read
           </button>
           {notificationQueue.length > 1 && (

@@ -334,6 +334,19 @@
   transform: translateY(-1px);
 }
 
+.camera-btn.disabled {
+  background: #fca5a5 !important;
+  color: #7f1d1d !important;
+  border: 1px solid #fca5a5 !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.camera-btn.disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .spinning {
   animation: spin 1s linear infinite;
 }

@@ -159,23 +159,31 @@ const getUser = async (req, res) => {
 
 // Login Controller
 const loginUser = async (req, res) => {
+  console.log("🔐 Login attempt:", req.body);
   const { email, password } = req.body;
 
   // Check if all fields are provided
   if (!email || !password) {
+    console.log("❌ Missing fields");
     return res.status(400).json({ msg: "Please enter all fields" });
   }
 
   try {
     // Check if user exists
+    console.log("🔍 Looking for user with email:", email);
     const user = await User.findOne({ email });
     if (!user) {
+      console.log("❌ User not found");
       return res.status(400).json({ msg: "Invalid credentials!" });
     }
+    console.log("✅ User found:", user.name);
 
     // Check if password matches
+    console.log("🔑 Checking password...");
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("🔑 Password match:", isMatch);
     if (!isMatch) {
+      console.log("❌ Password mismatch");
       return res.status(400).json({ msg: "Invalid credentials!!" });
     }
 
