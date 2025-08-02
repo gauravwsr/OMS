@@ -340,11 +340,15 @@ const Certificate = () => {
           position: relative;
           font-family: 'Times New Roman', serif;
           box-sizing: border-box;
-          border: 4px solid #0891b2;
+          border: 20px solid #0891b2;
         ">
           <!-- Certificate Content -->
           <div style="text-align: center; height: 100%; padding: 40px;">
-            
+            <div style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+            ">Image</div>
             <!-- Title -->
             <h1 style="
               font-size: 48px;
@@ -388,6 +392,7 @@ const Certificate = () => {
               color: #333;
               margin: 15px 0;
               line-height: 1.6;
+              margin-top: -17px;
             ">with <strong>TARS Technologies</strong>.</p>
 
             <!-- Footer Section -->
