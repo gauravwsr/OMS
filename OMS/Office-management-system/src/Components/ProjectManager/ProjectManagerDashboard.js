@@ -1230,6 +1230,40 @@ const ProjectManagerDashboard = () => {
   // Add missing state for task board
   const [showTaskBoard, setShowTaskBoard] = useState(false);
 
+  // Helper function to open task creation modal
+  const handleOpenTaskCreationModal = (project = null) => {
+    console.log("Opening task creation modal for project:", project);
+    
+    // Reset the task form
+    setNewTask({
+      title: "",
+      description: "",
+      assignedTo: [],
+      dueDate: "",
+      priority: "Medium",
+      taskPoints: [],
+      project: project?._id || selectedProject?._id || ""
+    });
+    
+    // Reset task point form
+    setNewTaskPoint({
+      pointTitle: "",
+      description: "",
+    });
+    
+    // Clear any edit state
+    setEditTask(null);
+    
+    // Set the selected project if provided
+    if (project) {
+      setSelectedProject(project);
+    }
+    
+    console.log("Task modal should open now");
+    // Open the modal
+    setShowTaskModal(true);
+  };
+
   // Update Task function
   const updateTask = async () => {
     if (!editTask || !newTask.title) {
@@ -1587,11 +1621,7 @@ const ProjectManagerDashboard = () => {
                   </button>
                   <button
                     className="action-btn"
-                    onClick={() => {
-                      setSelectedProject(project);
-                      setNewTask({...newTask, project: project._id});
-                      setShowTaskModal(true);
-                    }}
+                    onClick={() => handleOpenTaskCreationModal(project)}
                     title="Create Task"
                   >
                     <FaPlus />
@@ -1965,10 +1995,7 @@ const ProjectManagerDashboard = () => {
                 </button>
                 <button 
                   className="btn btn-success btn-sm"
-                  onClick={() => {
-                    setNewTask({...newTask, project: selectedProject._id});
-                    setShowTaskModal(true);
-                  }}
+                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
                   title="Create New Task"
                 >
                   <FaPlus /> Create Task
@@ -2228,10 +2255,7 @@ const ProjectManagerDashboard = () => {
                     </button>
                     <button 
                       className="btn btn-success btn-sm"
-                      onClick={() => {
-                        setNewTask({...newTask, project: selectedProject._id});
-                        setShowTaskModal(true);
-                      }}
+                      onClick={() => handleOpenTaskCreationModal(selectedProject)}
                     >
                       <FaPlus /> Add New Task
                     </button>
@@ -2644,10 +2668,7 @@ const ProjectManagerDashboard = () => {
               <div className="task-board-actions">
                 <button
                   className="btn btn-primary btn-sm"
-                  onClick={() => {
-                    setNewTask({...newTask, project: selectedProject._id});
-                    setShowTaskModal(true);
-                  }}
+                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
                 >
                   <FaPlus /> Add Task
                 </button>
@@ -2849,10 +2870,7 @@ const ProjectManagerDashboard = () => {
               {/* Add New Task Section */}
               <div className="add-task-section">
                 <button
-                  onClick={() => {
-                    setNewTask({...newTask, project: selectedProject._id});
-                    setShowTaskModal(true);
-                  }}
+                  onClick={() => handleOpenTaskCreationModal(selectedProject)}
                   className="btn btn-primary add-task-btn"
                 >
                   <FaPlus /> Create New Task
