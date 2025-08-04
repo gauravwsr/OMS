@@ -79,17 +79,8 @@ const Calender = () => {
 
     return new DataManager({
       url: baseUrl,
-<<<<<<< HEAD
       crudUrl: "http://138.197.27.240:5001/BatchData",
-=======
-<<<<<<< HEAD
-      crudUrl: "http://localhost:5000/BatchData",
       adaptor: new CustomAuthAdaptor(),
-=======
-      crudUrl: "http://142.93.213.81:5001/BatchData",
->>>>>>> 838a2a74e7847829f2ff021f27880443a6aa3a0d
-      adaptor: new UrlAdaptor(),
->>>>>>> 25305f9d64ad1495a7b3ab6f67bbaa51c3d98d34
       crossDomain: true,
       requestType: 'POST',
 
@@ -156,17 +147,10 @@ const Calender = () => {
       try {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
-<<<<<<< HEAD
+ 
 
-        const response = await fetch("http://localhost:5000/users/me", {
-=======
-        
-<<<<<<< HEAD
         const response = await fetch("http://138.197.27.240:5001/users/me", {
-=======
-        const response = await fetch("http://142.93.213.81:5001/users/me", {
->>>>>>> 25305f9d64ad1495a7b3ab6f67bbaa51c3d98d34
->>>>>>> 838a2a74e7847829f2ff021f27880443a6aa3a0d
+
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
