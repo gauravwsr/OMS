@@ -12,7 +12,7 @@
 //     const fetchDrafts = async () => {
 //         try {
 //             console.log("Fetching drafts...");
-//             const response = await fetch("http://localhost:5000/fetch-drafts");
+//             const response = await fetch("http://142.93.213.81:5001/fetch-drafts");
 
 //             if (!response.ok) {
 //                 throw new Error(`Failed to fetch drafts: ${response.status} ${response.statusText}`);
@@ -50,7 +50,7 @@
 //         setLoading(true);
 
 //         try {
-//             const response = await fetch("http://localhost:5000/api/send-email", {
+//             const response = await fetch("http://142.93.213.81:5001/api/send-email", {
 //                 method: "POST",
 //                 body: formData,
 //             });
@@ -134,7 +134,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/send-email", {
+      const response = await fetch("http://142.93.213.81:5001/api/send-email", {
         method: "POST",
         body: formData,
       });

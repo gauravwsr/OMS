@@ -38,7 +38,7 @@ const Todo = () => {
     setIsLoading(true);
     axios
       .get(
-        `http://localhost:5000/tasks?userEmail=${encodeURIComponent(
+        `http://142.93.213.81:5001/tasks?userEmail=${encodeURIComponent(
           user.email
         )}`
       )
@@ -64,7 +64,7 @@ const Todo = () => {
       try {
         // Fetch from candidates (employees) first
         const candidatesResponse = await axios.get(
-          "http://localhost:5000/api/candidates"
+          "http://142.93.213.81:5001/api/candidates"
         );
         const candidateEmails =
           candidatesResponse.data.data?.map(
@@ -73,7 +73,7 @@ const Todo = () => {
 
         // Fetch from users as backup
         const usersResponse = await axios.get(
-          "http://localhost:5000/api/users"
+          "http://142.93.213.81:5001/api/users"
         );
         const userEmails = usersResponse.data?.map((user) => user.email) || [];
 
@@ -109,7 +109,7 @@ const Todo = () => {
     };
 
     axios
-      .post("http://localhost:5000/tasks", task)
+      .post("http://142.93.213.81:5001/tasks", task)
       .then((res) => {
         if (res.data && res.data.title) {
           // Only add to local state if the task is assigned to current user
@@ -138,7 +138,7 @@ const Todo = () => {
     if (!task) return;
 
     axios
-      .put(`http://localhost:5000/tasks/${id}`, { completed: !task.completed })
+      .put(`http://142.93.213.81:5001/tasks/${id}`, { completed: !task.completed })
       .then(() => {
         setTasks(
           tasks.map((t) =>
@@ -155,7 +155,7 @@ const Todo = () => {
 
   const deleteTask = (id) => {
     axios
-      .delete(`http://localhost:5000/tasks/${id}`)
+      .delete(`http://142.93.213.81:5001/tasks/${id}`)
       .then(() => {
         setTasks(tasks.filter((t) => t._id !== id));
       })

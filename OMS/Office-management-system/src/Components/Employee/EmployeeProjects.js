@@ -67,7 +67,7 @@ const EmployeeProjects = () => {
         currentUser.id || currentUser.email || currentUser.name;
 
       const response = await fetch(
-        `http://localhost:5000/api/client-projects/employee/${identifier}`,
+        `http://142.93.213.81:5001/api/client-projects/employee/${identifier}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const EmployeeProjects = () => {
         assignedProjects.map(async (project) => {
           try {
             const taskResponse = await fetch(
-              `http://localhost:5000/api/employee/projects/${project._id}/tasks`,
+              `http://142.93.213.81:5001/api/employee/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -285,7 +285,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/employee/projects/${projectId}/tasks`,
+        `http://142.93.213.81:5001/api/employee/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -331,7 +331,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/employee/tasks/${taskId}/status`,
+        `http://142.93.213.81:5001/api/employee/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -357,7 +357,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5000/api/employee/tasks/${taskId}/points/${pointId}`,
+        `http://142.93.213.81:5001/api/employee/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {

@@ -176,7 +176,7 @@ Employee: Jane Smith
 
 ## API Endpoints Added
 
-### Backend (`localhost:5000`)
+### Backend (`142.93.213.81:5001`)
 
 ```
 DELETE /api/candidates/:id
