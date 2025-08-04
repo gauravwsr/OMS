@@ -59,11 +59,12 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  /* background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); */
   padding: 25px;
   border-radius: 12px;
   text-align: center;
   color: white;
+  text-color: black;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -73,7 +74,7 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.stat-card.total {
+/* .stat-card.total {
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
 }
 
@@ -87,20 +88,27 @@
 
 .stat-card.rejected {
   background: linear-gradient(135deg, #ef5350 0%, #f44336 100%);
-}
+} */
 
 .stat-card h3 {
   font-size: 1rem;
-  margin-bottom: 15px;
-  opacity: 0.9;
-  font-weight: 500;
+  color: black;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .stat-number {
   font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: black;
 }
+
+.stat-card.total .stat-number { color: black; }
+.stat-card.pending .stat-number { color: black; }
+.stat-card.approved .stat-number { color: black; }
+.stat-card.rejected .stat-number { color: black; }
 
 /* Filter Tabs */
 .filter-tabs {
@@ -113,8 +121,8 @@
 .filter-tab {
   padding: 12px 20px;
   border: 2px solid #e0e6ed;
-  background: #f8f9fa;
-  color: #495057;
+  /* background: #f8f9fa; */
+  /* color: #495057; */
   border-radius: 25px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -122,10 +130,10 @@
   font-size: 0.9rem;
 }
 
-.filter-tab:hover {
+/* .filter-tab:hover {
   background: #e9ecef;
   border-color: #ced4da;
-}
+} */
 
 .filter-tab.active {
   background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
@@ -259,11 +267,30 @@
   border-radius: 8px;
   margin-bottom: 20px;
   border-left: 4px solid #007bff;
+  color: black;
 }
 
 .action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 12px;  .stat-card h3 {
+    font-size: 1rem;
+    color: black;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: black;
+  }
+  
+  .stat-card.total .stat-number { color: black; }
+  .stat-card.pending .stat-number { color: black; }
+  .stat-card.approved .stat-number { color: black; }
+  .stat-card.rejected .stat-number { color: black; }
   margin-top: 20px;
   flex-wrap: wrap;
 }
@@ -611,23 +638,23 @@
   border: none;
   font-size: 1rem;
   font-weight: 500;
-  color: #7f8c8d;
+  /* color: #7f8c8d; */
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
 }
 
-.filter-tab:hover {
+/* .filter-tab:hover {
   color: #2c3e50;
   background-color: #f8f9fa;
-}
+} */
 
-.filter-tab.active {
+/* .filter-tab.active {
   color: #3498db;
   border-bottom-color: #3498db;
   background-color: #f8f9fa;
-}
+} */
 
 /* Applications Section */
 .applications-section {

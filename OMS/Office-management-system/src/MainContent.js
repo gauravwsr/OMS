@@ -39,9 +39,12 @@ import Inbox from "./Components/mail/Inbox";
 import SendEmail from "./Components/mail/SendEmail";
 import EmailDetails from "./Components/mail/EmailDetails";
 import Calender from "./Components/calender/calender";
-import Certificate from "./Components/Certificates/Certificate";
-import ViewDetails from "./Components/ViewDetails";
-import EditEmployee from "./Components/EditEmployee";
+import Certificate from "./Components/Certificates/Certificate.js";
+import CertificateHistory from "./Components/Certificates/CertificateHistory.js";
+import CompletionHistory from "./Components/Certificates/CompletionHistory.js";
+import OfferHistory from "./Components/Certificates/OfferHistory.js";
+import ViewDetails from "./Components/ViewDetails.js";
+import EditEmployee from "./Components/EditEmployee.js";
 // import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
@@ -845,6 +848,9 @@ const MainContent = ({ nav }) => {
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
+          <Route path="/CertificateHistory" element={<CertificateHistory />} />
+          <Route path="/CompletionHistory" element={<CompletionHistory />} />
+          <Route path="/OfferHistory" element={<OfferHistory />} />
           {/* <Route path="/hrAttendance" element={<HrAttendance />} /> */}
           <Route path="/Invoice" element={<Invoice />} />
           <Route
