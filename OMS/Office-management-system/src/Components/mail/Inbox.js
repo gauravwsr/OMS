@@ -29,11 +29,11 @@
 
 //       let url = '';
 //       if (activeTab === 'inbox') {
-//         url = 'http://142.93.213.81:5001/fetch-inbox-emails';
+//         url = 'http://138.197.27.240:5001/fetch-inbox-emails';
 //       } else if (activeTab === 'sent') {
-//         url = 'http://142.93.213.81:5001/fetch-sent-emails';
+//         url = 'http://138.197.27.240:5001/fetch-sent-emails';
 //       } else if (activeTab === 'drafts') {
-//         url = 'http://142.93.213.81:5001/fetch-drafts';
+//         url = 'http://138.197.27.240:5001/fetch-drafts';
 //       }
 
 //       try {
@@ -237,11 +237,11 @@ const Inbox = () => {
 
       let url = '';
       if (activeTab === 'inbox') {
-        url = 'http://142.93.213.81:5001/fetch-inbox-emails';
+        url = 'http://138.197.27.240:5001/fetch-inbox-emails';
       } else if (activeTab === 'sent') {
-        url = 'http://142.93.213.81:5001/fetch-sent-emails';
+        url = 'http://138.197.27.240:5001/fetch-sent-emails';
       } else if (activeTab === 'drafts') {
-        url = 'http://142.93.213.81:5001/fetch-drafts';
+        url = 'http://138.197.27.240:5001/fetch-drafts';
       }
 
       try {

@@ -13,7 +13,7 @@ const ViewDetails = () => {
   useEffect(() => {
     const fetchCandidateDetails = async () => {
       try {
-        const response = await axios.get(`http://142.93.213.81:5001/api/candidates/${id}`);
+        const response = await axios.get(`http://138.197.27.240:5001/api/candidates/${id}`);
         setCandidate(response.data.data);
         console.log("Candidate details:", response.data.data);
       } catch (error) {
@@ -31,7 +31,7 @@ const ViewDetails = () => {
 
   const handleDownload = () => {
     const cvUrl = candidate.cvPath
-      ? `http://142.93.213.81:5001/uploads/cvs/${candidate.cvPath}`
+      ? `http://138.197.27.240:5001/uploads/cvs/${candidate.cvPath}`
       : "/default_cv.pdf";
     const link = document.createElement("a");
     link.href = cvUrl;

@@ -67,7 +67,7 @@ const EmployeeProjects = () => {
         currentUser.id || currentUser.email || currentUser.name;
 
       const response = await fetch(
-        `http://142.93.213.81:5001/api/client-projects/employee/${identifier}`,
+        `http://138.197.27.240:5001/api/client-projects/employee/${identifier}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const EmployeeProjects = () => {
         assignedProjects.map(async (project) => {
           try {
             const taskResponse = await fetch(
-              `http://142.93.213.81:5001/api/employee/projects/${project._id}/tasks`,
+              `http://138.197.27.240:5001/api/employee/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -285,7 +285,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://142.93.213.81:5001/api/employee/projects/${projectId}/tasks`,
+        `http://138.197.27.240:5001/api/employee/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -329,9 +329,19 @@ const EmployeeProjects = () => {
   // Update task status (only for own assigned tasks)
   const updateTaskStatus = async (taskId, status) => {
     try {
+      // Add confirmation when marking task as completed
+      if (status === "Completed") {
+        const confirmComplete = window.confirm(
+          "Are you sure you want to mark this task as completed? This will update the project progress."
+        );
+        if (!confirmComplete) {
+          return; // Cancel the operation if user clicks "No"
+        }
+      }
+
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://142.93.213.81:5001/api/employee/tasks/${taskId}/status`,
+        `http://138.197.27.240:5001/api/employee/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -357,7 +367,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://142.93.213.81:5001/api/employee/tasks/${taskId}/points/${pointId}`,
+        `http://138.197.27.240:5001/api/employee/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -416,11 +426,40 @@ const EmployeeProjects = () => {
     <div className="employee-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <h1>My Projects</h1>
-        <p>
-          Welcome back, {currentUser.name || currentUser.username || "Employee"}
-          ! Here are your assigned projects and tasks.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h1>My Projects</h1>
+            <p>
+              Welcome back, {currentUser.name || currentUser.username || "Employee"}
+              ! Here are your assigned projects and tasks.
+            </p>
+          </div>
+          <div>
+            <button
+              onClick={() => {
+                // Open a modal or navigate to view all tasks across projects
+                alert("This feature can be expanded to show all tasks across all projects");
+              }}
+              style={{
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                padding: "10px 16px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: "500"
+              }}
+              title="View all your tasks across all projects"
+            >
+              <FaTasks size={16} />
+              View All My Tasks
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Statistics Grid */}

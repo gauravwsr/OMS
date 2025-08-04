@@ -28,7 +28,7 @@ const EmployeeList = () => {
     const fetchEmployees = async () => {
       try {
         const response = await axios.get(
-          "http://142.93.213.81:5001/api/candidates"
+          "http://138.197.27.240:5001/api/candidates"
         );
         console.log("API Response:", response.data.data);
         setEmployees(
@@ -164,7 +164,7 @@ const EmployeeList = () => {
     ) {
       try {
         const response = await axios.delete(
-          `http://142.93.213.81:5001/api/candidates/${id}`
+          `http://138.197.27.240:5001/api/candidates/${id}`
         );
 
         if (response.data.success) {
@@ -183,7 +183,7 @@ Details:
 
           // Refresh the employee list
           const refreshResponse = await axios.get(
-            "http://142.93.213.81:5001/api/candidates"
+            "http://138.197.27.240:5001/api/candidates"
           );
           setEmployees(
             Array.isArray(refreshResponse.data.data)
@@ -305,7 +305,7 @@ Details:
                       <img
                         src={
                           employee.photoPath
-                            ? `http://142.93.213.81:5001/uploads/photos/${employee.photoPath}`
+                            ? `http://138.197.27.240:5001/uploads/photos/${employee.photoPath}`
                             : `https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
                         }
                         alt={employee.fullName}
@@ -476,7 +476,7 @@ Details:
                   <img
                     src={
                       employee.photoPath
-                        ? `http://142.93.213.81:5001/uploads/photos/${employee.photoPath}`
+                        ? `http://138.197.27.240:5001/uploads/photos/${employee.photoPath}`
                         : ` https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
                     }
                     alt={employee.fullName}

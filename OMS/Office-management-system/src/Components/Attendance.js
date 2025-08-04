@@ -57,7 +57,7 @@ const Attendance = () => {
 
     try {
       const response = await axios.get(
-        `http://localhost:5001/api/registered-users?t=${Date.now()}`,
+        `http://localhost5001/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -99,7 +99,7 @@ const Attendance = () => {
 
   const checkMongoDBConnection = async () => {
     try {
-      const response = await axios.get("http://142.93.213.81:5001/api/health", {
+      const response = await axios.get("http://138.197.27.240:5001/api/health", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -192,7 +192,7 @@ const Attendance = () => {
   const fetchAttendanceHistory = async () => {
     try {
       const response = await axios.get(
-        "http://142.93.213.81:5001/api/attendance/history",
+        "http://138.197.27.240:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -208,7 +208,7 @@ const Attendance = () => {
   const fetchTodayAttendance = async () => {
     try {
       const response = await axios.get(
-        "http://142.93.213.81:5001/api/attendance/today",
+        "http://138.197.27.240:5001/api/attendance/today",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -236,7 +236,7 @@ const Attendance = () => {
   const fetchRegisteredUsers = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5001/api/registered-users?t=${Date.now()}`,
+        `http://localhost5001/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -463,7 +463,7 @@ const Attendance = () => {
     try {
       // First verify user is registered in face recognition system
       const registeredResponse = await axios.get(
-        "http://localhost:5001/api/registered-users"
+        "http://localhost5001/api/registered-users"
       );
       const userRegistered = registeredResponse.data.registered_users?.find(
         (regUser) => regUser.name.toLowerCase() === user.name.toLowerCase()
@@ -494,7 +494,7 @@ const Attendance = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5001/api/mark-attendance",
+        "http://localhost5001/api/mark-attendance",
         {
           image: imageData,
         },
@@ -555,7 +555,7 @@ const Attendance = () => {
           console.log("Saving attendance to MongoDB:", attendanceData);
 
           const mongoResponse = await axios.post(
-            "http://142.93.213.81:5001/api/attendance/mark",
+            "http://138.197.27.240:5001/api/attendance/mark",
             {
               ...attendanceData,
               attendance_type: attendanceType, // Add attendance type
@@ -672,7 +672,7 @@ const Attendance = () => {
                 );
 
                 const mongoResponse = await axios.post(
-                  "http://142.93.213.81:5001/api/attendance/mark",
+                  "http://138.197.27.240:5001/api/attendance/mark",
                   {
                     ...attendanceData,
                     attendance_type: attendanceType, // Add attendance type

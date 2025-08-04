@@ -36,7 +36,7 @@ const AnalyticsManagement = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://142.93.213.81:5001/api/users/all-users', {
+      const response = await axios.get('http://138.197.27.240:5001/api/users/all-users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployees(response.data.filter(user => user.role === 'Employee'));
@@ -89,7 +89,7 @@ const AnalyticsManagement = () => {
 
   const fetchLeaveData = async (config) => {
     try {
-      const response = await axios.get('http://142.93.213.81:5001/api/analytics/leave-analytics', config);
+      const response = await axios.get('http://138.197.27.240:5001/api/analytics/leave-analytics', config);
       console.log('Fetched Leave Data:', response.data); // Debugging log
       setLeaveData(response.data || []);
     } catch (error) {
@@ -100,7 +100,7 @@ const AnalyticsManagement = () => {
 
   const fetchAttendanceData = async (config) => {
     try {
-      const response = await axios.get('http://142.93.213.81:5001/api/analytics/attendance-analytics', config);
+      const response = await axios.get('http://138.197.27.240:5001/api/analytics/attendance-analytics', config);
       setAttendanceData(response.data || []);
     } catch (error) {
       console.error('Error fetching attendance data:', error);
@@ -110,7 +110,7 @@ const AnalyticsManagement = () => {
 
   const fetchCheckInOutData = async (config) => {
     try {
-      const response = await axios.get('http://142.93.213.81:5001/api/analytics/checkinout-analytics', config);
+      const response = await axios.get('http://138.197.27.240:5001/api/analytics/checkinout-analytics', config);
       setCheckInOutData(response.data || []);
     } catch (error) {
       console.error('Error fetching check-in/out data:', error);

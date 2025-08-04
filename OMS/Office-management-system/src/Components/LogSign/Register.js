@@ -132,7 +132,7 @@ const Register = () => {
     };
 
     try {
-      const response = await fetch("http://142.93.213.81:5001/auth/signup", {
+      const response = await fetch("http://138.197.27.240:5001/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

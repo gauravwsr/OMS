@@ -350,7 +350,7 @@ export default Meeting;
 //     };
 
 //     try {
-//       const response = await fetch("http://142.93.213.81:5001/api/schedule", {
+//       const response = await fetch("http://138.197.27.240:5001/api/schedule", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newMeeting),

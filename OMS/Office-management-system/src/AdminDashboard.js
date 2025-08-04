@@ -1,6 +1,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Legend, 
+  Tooltip, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Area,
+  AreaChart
+} from "recharts";
 import NotificationPopup from "./Components/NotificationPopup/NotificationPopup";
 import { useAuth } from "./Components/AuthProvider/AuthContext";
 import "./AdminDashboard.css";
@@ -31,6 +47,7 @@ const AdminDashboard = () => {
     new Date().getFullYear().toString()
   );
   const [availableYears, setAvailableYears] = useState([]);
+  const [monthlyFinancialData, setMonthlyFinancialData] = useState([]);
 
   const [showExpensesChart, setShowExpensesChart] = useState(false);
 
@@ -49,6 +66,16 @@ const AdminDashboard = () => {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
 
+  // Project summary states
+  const [projectSummary, setProjectSummary] = useState({
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    overdueProjects: 0,
+    totalProjectValue: 0,
+    loading: true
+  });
+
   const API_BASE_URL = "https://crm-brown-gamma.vercel.app/api";
 
   useEffect(() => {
@@ -60,6 +87,7 @@ const AdminDashboard = () => {
     fetchMeetings();
     fetchTasks();
     fetchUpcomingEvents();
+    fetchProjectSummary();
 
     // Set up auto-refresh for upcoming events every 5 minutes
     const eventsInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
@@ -87,7 +115,7 @@ const AdminDashboard = () => {
   const cleanupTestNotifications = async () => {
     try {
       await axios.delete(
-        "http://142.93.213.81:5001/api/notifications/cleanup-test",
+        "http://138.197.27.240:5001/api/notifications/cleanup-test",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -236,6 +264,17 @@ const AdminDashboard = () => {
   const calculateFinancials = (revenueData, services, year) => {
     const yearNumber = parseInt(year);
 
+    // Initialize monthly data structure
+    const monthlyData = [];
+    for (let month = 0; month < 12; month++) {
+      monthlyData.push({
+        month: new Date(yearNumber, month).toLocaleDateString('en-US', { month: 'short' }),
+        revenue: 0,
+        expenses: 0,
+        profit: 0
+      });
+    }
+
     // Calculate total revenue for selected year
     let totalRevenue = 0;
     revenueData.forEach((finance) => {
@@ -253,7 +292,9 @@ const AdminDashboard = () => {
 
       paymentDates.forEach((date, index) => {
         if (date && new Date(date).getFullYear() === yearNumber) {
+          const month = new Date(date).getMonth();
           totalRevenue += payments[index];
+          monthlyData[month].revenue += payments[index];
         }
       });
     });
@@ -266,7 +307,11 @@ const AdminDashboard = () => {
           (service) => new Date(service.buyDate).getFullYear() === yearNumber
         )
       )
-      .reduce((sum, service) => sum + service.serviceCost, 0);
+      .reduce((sum, service) => {
+        const month = new Date(service.buyDate).getMonth();
+        monthlyData[month].expenses += service.serviceCost;
+        return sum + service.serviceCost;
+      }, 0);
 
     // 2. Service renewals
     const totalRenewalCost = services
@@ -278,7 +323,16 @@ const AdminDashboard = () => {
           )
         )
       )
-      .reduce((sum, renewal) => sum + renewal.renewalCost, 0);
+      .reduce((sum, renewal) => {
+        const month = new Date(renewal.renewalDate).getMonth();
+        monthlyData[month].expenses += renewal.renewalCost;
+        return sum + renewal.renewalCost;
+      }, 0);
+
+    // Calculate monthly profits
+    monthlyData.forEach(data => {
+      data.profit = data.revenue - data.expenses;
+    });
 
     const totalExpenses = totalServiceCost + totalRenewalCost;
     const profit = totalRevenue - totalExpenses;
@@ -293,6 +347,8 @@ const AdminDashboard = () => {
       loading: false,
       error: null,
     });
+
+    setMonthlyFinancialData(monthlyData);
   };
 
   const getStatusColor = (profit) => {
@@ -305,6 +361,38 @@ const AdminDashboard = () => {
 
   const handleCloseExpensesChart = () => {
     setShowExpensesChart(false);
+  };
+
+  // Fetch project summary data
+  const fetchProjectSummary = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://138.197.27.240:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const projects = result.data || [];
+        
+        const summary = {
+          totalProjects: projects.length,
+          activeProjects: projects.filter(p => p.projectStatus === 'Active').length,
+          completedProjects: projects.filter(p => p.projectStatus === 'Completed').length,
+          overdueProjects: projects.filter(p => p.projectStatus === 'Overdue').length,
+          totalProjectValue: projects.reduce((sum, p) => sum + (p.finalAmount || 0), 0),
+          loading: false
+        };
+        
+        setProjectSummary(summary);
+      }
+    } catch (error) {
+      console.error("Error fetching project summary:", error);
+      setProjectSummary(prev => ({ ...prev, loading: false }));
+    }
   };
 
   // MeetingNotifications functions
@@ -405,7 +493,7 @@ const AdminDashboard = () => {
     setEventsLoading(true);
     console.log('Fetching upcoming events...');
     try {
-      const response = await axios.post('http://142.93.213.81:5001/GetData');
+      const response = await axios.post('http://138.197.27.240:5001/GetData');
       console.log('Events API response:', response.data);
       const allEvents = response.data || [];
       console.log('All events fetched:', allEvents);
@@ -489,346 +577,601 @@ const AdminDashboard = () => {
   // Check if there are actual tasks with values greater than 0
   const hasTaskData = taskData.some((item) => item.value > 0);
   const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]; // Colors for different statuses
+  
+  // Colors for charts
+  const CHART_COLORS = {
+    primary: "#3b82f6",
+    secondary: "#10b981", 
+    accent: "#f59e0b",
+    danger: "#ef4444",
+    purple: "#8b5cf6",
+    teal: "#14b8a6"
+  };
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Format large numbers
+  const formatNumber = (num) => {
+    if (num >= 10000000) return (num / 10000000).toFixed(1) + 'Cr';
+    if (num >= 100000) return (num / 100000).toFixed(1) + 'L';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
 
   return (
     <>
-
       <NotificationPopup />
-
-      {/* Show NotificationPopup only for Super Admin */}
       {user?.role === 'Super_Admin' && <NotificationPopup />}
-
       
-      <div className="dashboard-container">
-      {/* FIRST ROW: Financial Performance Summary - Full Width */}
-      <div className="grid-row financial-row">
-        {/* TotalRevenue Section */}
-        <div className="finance-container">
-          <h2 className="finance-title">Financial Performance Summary</h2>
-
-          <div className="year-selector">
-            <label className="year-label">Select Year: </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="year-select"
-            >
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="card-container">
-            <div className="finance-card">
-              <div className="card-header">
-                <h3 className="card-title">Total Revenue</h3>
-              </div>
-              <div className="card-body revenue-bg">
-                <p className="card-value">
-                  ₹{financialData.totalRevenue.toLocaleString()}
-                </p>
+      <div className="modern-dashboard">
+        {/* Header Section */}
+        <div className="dashboard-header">
+          <div className="header-content">
+            <div className="header-left">
+              <h1 className="dashboard-title">
+                <span className="title-main">Super Admin Dashboard</span>
+                <span className="title-subtitle">Complete Business Overview & Analytics</span>
+              </h1>
+              <div className="header-info">
+                <span className="current-date">Today: {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</span>
               </div>
             </div>
-
-            {/* Expenses card with click handler */}
-            <div
-              className="finance-card clickable"
-              onClick={handleOpenExpensesChart}
-              title="Click to view detailed expense breakdown"
-            >
-              <div className="card-header">
-                <h3 className="card-title">Total Expenses</h3>
+            <div className="header-stats">
+              <div className="quick-stat revenue-stat">
+                <div className="stat-icon">💰</div>
+                <div className="stat-content">
+                  <span className="stat-value">{formatNumber(financialData.totalRevenue)}</span>
+                  <span className="stat-label">Total Revenue</span>
+                </div>
               </div>
-              <div className="card-body expenses-bg">
-                <p className="card-value">
-                  ₹{financialData.totalExpenses.toLocaleString()}
-                </p>
+              <div className="quick-stat projects-stat">
+                <div className="stat-icon">🎯</div>
+                <div className="stat-content">
+                  <span className="stat-value">{projectSummary.totalProjects}</span>
+                  <span className="stat-label">Active Projects</span>
+                </div>
               </div>
-            </div>
-
-            <div className="finance-card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  {financialData.profit >= 0 ? "Profit" : "Loss"}
-                </h3>
-              </div>
-              <div className={`card-body ${financialData.profit >= 0 ? "profit-bg" : "loss-bg"}`}>
-                <p
-                  className="card-value"
-                  style={{ color: getStatusColor(financialData.profit) }}
-                >
-                  ₹{Math.abs(financialData.profit).toLocaleString()}
-                </p>
+              <div className="quick-stat deals-stat">
+                <div className="stat-icon">🤝</div>
+                <div className="stat-content">
+                  <span className="stat-value">{dealsStats.totalDeals}</span>
+                  <span className="stat-label">Pipeline Deals</span>
+                </div>
               </div>
             </div>
-
-            <div className="finance-card">
-              <div className="card-header">
-                <h3 className="card-title">Profit Margin</h3>
-              </div>
-              <div className={`card-body ${financialData.profit >= 0 ? "profit-bg" : "loss-bg"}`}>
-                <p
-                  className="card-value"
-                  style={{ color: getStatusColor(financialData.profit) }}
-                >
-                  {financialData.profitPercentage}%
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="finance-summary">
-            <h3 className="summary-title">
-              Financial Summary for {selectedYear}
-            </h3>
-            <p className="summary-text">
-              In {selectedYear}, the total revenue generated was{" "}
-              <strong>₹{financialData.totalRevenue.toLocaleString()}</strong>{" "}
-              against total expenses of{" "}
-              <strong>₹{financialData.totalExpenses.toLocaleString()}</strong>,
-              resulting in a {financialData.profit >= 0 ? "profit" : "loss"} of{" "}
-              <strong style={{ color: getStatusColor(financialData.profit) }}>
-                ₹{Math.abs(financialData.profit).toLocaleString()}
-              </strong>{" "}
-              with a profit margin of
-              <strong style={{ color: getStatusColor(financialData.profit) }}>
-                {" "}
-                {financialData.profitPercentage}%
-              </strong>
-              .
-            </p>
           </div>
         </div>
-      </div>
 
-      {/* SECOND ROW: Task Progress, Deals Overview, and Quotations all in one row */}
-      <div className="grid-row-three-cols">
-        {/* TaskProgress Section */}
-        <div className="task-progress-container">
-          <h3 className="section-title">Task Progress</h3>
-
-          {tasksLoading ? (
-            <p className="loading-text">Loading task data...</p>
-          ) : tasksError ? (
-            <p className="error-text">Error loading tasks: {tasksError}</p>
-          ) : !hasTaskData ? (
-            <div className="no-data-container">
-              <p className="no-data-text">
-                No TASKs Assigned
-              </p>
+        {/* Financial Performance Section */}
+        <div className="dashboard-section financial-section">
+          <div className="section-header">
+            <div className="section-title-group">
+              <h2 className="section-title">
+                <span className="section-icon">📊</span>
+                Financial Performance
+              </h2>
+              <p className="section-description">Track revenue, expenses, and profitability metrics</p>
             </div>
-          ) : (
-            <div className="chart-container">
-              <PieChart
-                width={220}
-                height={220}
-                className="pie-chart"
+            <div className="year-selector-modern">
+              <label htmlFor="year-select">Financial Year:</label>
+              <select
+                id="year-select"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="modern-select"
               >
-                <Pie
-                  data={taskData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  label
-                >
-                  {taskData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
             </div>
-          )}
-        </div>
-
-        {/* Deals Statistics Section */}
-        <div className="deals-overview-container">
-          <h3 className="section-title">Deals Overview</h3>
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr className="table-header-row">
-                  <th className="table-header-cell">
-                    Category
-                  </th>
-                  <th className="table-header-cell">
-                    Count
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="table-cell">
-                    Total Deals
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.totalDeals}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="table-cell">
-                    Contacted Deals
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.contactedDeals}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="table-cell">
-                    Qualified Deals
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.qualifiedDeals}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="table-cell">
-                    Proposals Accepted
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.proposalsAccepted}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
-        </div>
 
-        {/* Saved Quotations Section */}
-        <div className="quotations-container">
-          <h3 className="section-title">Saved Quotations</h3>
-          {savedQuotations.length === 0 ? (
-            <p className="no-data-text">No saved quotations available</p>
-          ) : (
-            <div className="table-container">
-              <table className="data-table">
-                <thead className="sticky-header">
-                  <tr>
-                    <th className="table-header-cell">
-                      Client Name
-                    </th>
-                    <th className="table-header-cell">
-                      Total Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {savedQuotations.map((quotation, index) => (
-                    <tr key={index}>
-                      <td className="table-cell">
-                        {quotation.clientName}
-                      </td>
-                      <td className="table-cell">
-                        ₹{quotation.Totalamount}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {financialData.loading ? (
+            <div className="section-loading">
+              <div className="loading-spinner"></div>
+              <span>Loading financial data...</span>
             </div>
-          )}
-        </div>
-      </div>
+          ) : financialData.error ? (
+            <div className="section-error">
+              <span className="error-icon">⚠️</span>
+              <span>{financialData.error}</span>
+            </div>
+          ) : (
+            <div className="financial-grid">
+              {/* Financial Cards */}
+              <div className="financial-cards">
+                <div className="finance-card modern revenue-card" data-trend="positive">
+                  <div className="card-background"></div>
+                  <div className="card-icon-wrapper">
+                    <div className="card-icon">💰</div>
+                  </div>
+                  <div className="card-content">
+                    <h3>Total Revenue</h3>
+                    <p className="card-value">{formatCurrency(financialData.totalRevenue)}</p>
+                    <div className="card-trend positive">
+                      <span className="trend-icon">↗</span>
+                      <span>Revenue for {selectedYear}</span>
+                    </div>
+                  </div>
+                </div>
 
-      {/* Upcoming Events Section */}
-            <div className="activity-section">
-              <div className="section-header">
-                <h3>Upcoming Events</h3>
+                <div className="finance-card modern expenses-card clickable" onClick={handleOpenExpensesChart} data-trend="neutral">
+                  <div className="card-background"></div>
+                  <div className="card-icon-wrapper">
+                    <div className="card-icon">💸</div>
+                  </div>
+                  <div className="card-content">
+                    <h3>Total Expenses</h3>
+                    <p className="card-value">{formatCurrency(financialData.totalExpenses)}</p>
+                    <div className="card-trend clickable-trend">
+                      <span className="trend-icon">👆</span>
+                      <span>Click for detailed breakdown</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`finance-card modern ${financialData.profit >= 0 ? 'profit-card' : 'loss-card'}`} 
+                     data-trend={financialData.profit >= 0 ? 'positive' : 'negative'}>
+                  <div className="card-background"></div>
+                  <div className="card-icon-wrapper">
+                    <div className="card-icon">{financialData.profit >= 0 ? '📈' : '📉'}</div>
+                  </div>
+                  <div className="card-content">
+                    <h3>{financialData.profit >= 0 ? "Net Profit" : "Net Loss"}</h3>
+                    <p className="card-value">{formatCurrency(Math.abs(financialData.profit))}</p>
+                    <div className={`card-trend ${financialData.profit >= 0 ? 'positive' : 'negative'}`}>
+                      <span className="trend-icon">{financialData.profit >= 0 ? '📊' : '📉'}</span>
+                      <span>{financialData.profitPercentage}% profit margin</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {eventsLoading ? (
-                <div className="activity-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-icon notification">⏳</div>
-                    <div className="timeline-content">
-                      <h4>Loading Events</h4>
-                      <p>Please wait while we fetch your events...</p>
-                      <span className="timeline-time">Just now</span>
+              {/* Financial Chart */}
+              <div className="chart-container modern">
+                <div className="chart-header">
+                  <h3 className="chart-title">Monthly Financial Trends - {selectedYear}</h3>
+                  <div className="chart-legend">
+                    <div className="legend-item">
+                      <span className="legend-color revenue-color"></span>
+                      <span>Revenue</span>
+                    </div>
+                    <div className="legend-item">
+                      <span className="legend-color expenses-color"></span>
+                      <span>Expenses</span>
                     </div>
                   </div>
                 </div>
-              ) : eventsError ? (
-                <div className="activity-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-icon notification">❌</div>
-                    <div className="timeline-content">
-                      <h4>Error Loading Events</h4>
-                      <p>Unable to fetch upcoming events</p>
-                      <span className="timeline-time">Just now</span>
-                    </div>
-                  </div>
+                <div className="chart-content">
+                  <ResponsiveContainer width="100%" height={350}>
+                    <AreaChart data={monthlyFinancialData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                        </linearGradient>
+                        <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#d1d5db' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#d1d5db' }}
+                        tickFormatter={(value) => formatNumber(value)}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => [formatCurrency(value), name]}
+                        labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+                        contentStyle={{ 
+                          backgroundColor: '#ffffff', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#3b82f6"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorRevenue)"
+                        name="Revenue"
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="expenses" 
+                        stroke="#ef4444"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorExpenses)"
+                        name="Expenses"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-              ) : upcomingEvents.length === 0 ? (
-                <div className="activity-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-icon notification">📅</div>
-                    <div className="timeline-content">
-                      <h4>No Upcoming Events</h4>
-                      <p>No events scheduled for today</p>
-                      <span className="timeline-time">
-                        {new Date().toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </span>
-                    </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Business Overview Grid */}
+        <div className="business-overview-section">
+          <div className="section-header">
+            <div className="section-title-group">
+              <h2 className="section-title">
+                <span className="section-icon">📈</span>
+                Business Analytics Dashboard
+              </h2>
+              <p className="section-description">Comprehensive overview of projects, tasks, deals, and quotations</p>
+            </div>
+          </div>
+          
+          <div className="business-overview-grid">
+            
+            {/* Project Summary */}
+            <div className="overview-card project-summary-card">
+              <div className="card-header">
+                <h3>Project Portfolio</h3>
+                <span className="card-icon">🎯</span>
+              </div>
+              <div className="card-body">
+                {projectSummary.loading ? (
+                  <div className="loading-state">
+                    <div className="loading-spinner"></div>
+                    <span>Loading project data...</span>
                   </div>
-                </div>
-              ) : (
-                <div className="activity-timeline">
-                  {upcomingEvents.map((event) => (
-                    <div key={event._id} className="timeline-item">
-                      <div className="timeline-icon notification">📅</div>
-                      <div className="timeline-content">
-                        <h4>{event.Subject}</h4>
-                        <p>{event.Description || "Event scheduled"}</p>
-                        <span className="timeline-time">
-                          {formatEventDate(event.StartTime, event.EndTime)}
-                        </span>
+                ) : (
+                  <>
+                    <div className="project-stats-grid">
+                      <div className="stat-item total-stat">
+                        <span className="stat-number">{projectSummary.totalProjects}</span>
+                        <span className="stat-label">Total Projects</span>
+                        <div className="stat-indicator total"></div>
+                      </div>
+                      <div className="stat-item active-stat">
+                        <span className="stat-number">{projectSummary.activeProjects}</span>
+                        <span className="stat-label">Active</span>
+                        <div className="stat-indicator active"></div>
+                      </div>
+                      <div className="stat-item completed-stat">
+                        <span className="stat-number">{projectSummary.completedProjects}</span>
+                        <span className="stat-label">Completed</span>
+                        <div className="stat-indicator completed"></div>
+                      </div>
+                      <div className="stat-item overdue-stat">
+                        <span className="stat-number">{projectSummary.overdueProjects}</span>
+                        <span className="stat-label">Overdue</span>
+                        <div className="stat-indicator overdue"></div>
                       </div>
                     </div>
-                  ))}
+                    <div className="project-value">
+                      <span className="value-label">Total Portfolio Value</span>
+                      <span className="value-amount">{formatCurrency(projectSummary.totalProjectValue)}</span>
+                    </div>
+                    
+                    <div className="chart-wrapper">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Active', value: projectSummary.activeProjects, color: CHART_COLORS.primary },
+                              { name: 'Completed', value: projectSummary.completedProjects, color: CHART_COLORS.secondary },
+                              { name: 'Overdue', value: projectSummary.overdueProjects, color: CHART_COLORS.danger }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={70}
+                            dataKey="value"
+                            strokeWidth={2}
+                            stroke="#fff"
+                          >
+                            {[
+                              { name: 'Active', value: projectSummary.activeProjects, color: CHART_COLORS.primary },
+                              { name: 'Completed', value: projectSummary.completedProjects, color: CHART_COLORS.secondary },
+                              { name: 'Overdue', value: projectSummary.overdueProjects, color: CHART_COLORS.danger }
+                            ].map((entry, index) => (
+                              <Cell key={`project-cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            formatter={(value) => [value, 'Projects']}
+                            contentStyle={{
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Legend 
+                            wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+          {/* Task Progress */}
+          <div className="overview-card task-progress-card">
+            <div className="card-header">
+              <h3>Task Management</h3>
+              <span className="card-icon">✅</span>
+            </div>
+            <div className="card-body">
+              {tasksLoading ? (
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <span>Loading task data...</span>
+                </div>
+              ) : tasksError ? (
+                <div className="error-state">
+                  <span className="error-icon">⚠️</span>
+                  <span>Error loading tasks</span>
+                </div>
+              ) : !hasTaskData ? (
+                <div className="empty-state">
+                  <span className="empty-icon">📋</span>
+                  <p>No tasks assigned yet</p>
+                </div>
+              ) : (
+                <div className="chart-wrapper">
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={taskData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        dataKey="value"
+                        strokeWidth={2}
+                        stroke="#fff"
+                      >
+                        {taskData.map((entry, index) => (
+                          <Cell key={`task-cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value) => [value, 'Tasks']}
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
+          </div>
 
-      {/* Expenses Chart Modal */}
-      {showExpensesChart && (
-        <div className="modal">
-          <div className="modal-content">
-            <span
-              className="close-button"
-              onClick={handleCloseExpensesChart}
-              title="Close"
-            >
-              &times;
-            </span>
-            <h3 className="modal-title">
-              Expenses Breakdown for {selectedYear}
-            </h3>
-            <div className="modal-chart-container">
-              {/* Here you would place your expenses chart component */}
-              <p className="centered-text">
-                Detailed expenses chart would be displayed here.
-              </p>
+          {/* Deals Overview */}
+          <div className="overview-card deals-overview-card">
+            <div className="card-header">
+              <h3>Sales Pipeline</h3>
+              <span className="card-icon">🤝</span>
+            </div>
+            <div className="card-body">
+              <div className="deals-chart">
+                <div className="chart-wrapper">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart
+                      data={[
+                        { name: 'Total', value: dealsStats.totalDeals, color: CHART_COLORS.primary },
+                        { name: 'Contacted', value: dealsStats.contactedDeals, color: CHART_COLORS.accent },
+                        { name: 'Qualified', value: dealsStats.qualifiedDeals, color: CHART_COLORS.purple },
+                        { name: 'Accepted', value: dealsStats.proposalsAccepted, color: CHART_COLORS.secondary }
+                      ]}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#d1d5db' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#d1d5db' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                      <Bar dataKey="value" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              
+              <div className="deals-summary">
+                <div className="deal-stat">
+                  <span className="deal-number">{dealsStats.totalDeals}</span>
+                  <span className="deal-label">Total Pipeline</span>
+                </div>
+                <div className="deal-stat">
+                  <span className="deal-number">{dealsStats.proposalsAccepted}</span>
+                  <span className="deal-label">Converted</span>
+                </div>
+                <div className="deal-stat">
+                  <span className="deal-number">
+                    {dealsStats.totalDeals > 0 
+                      ? Math.round((dealsStats.proposalsAccepted / dealsStats.totalDeals) * 100)
+                      : 0}%
+                  </span>
+                  <span className="deal-label">Success Rate</span>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Saved Quotations */}
+          <div className="overview-card quotations-card">
+            <div className="card-header">
+              <h3>Recent Quotations</h3>
+              <span className="card-icon">📄</span>
+            </div>
+            <div className="card-body">
+              {savedQuotations.length === 0 ? (
+                <div className="empty-state">
+                  <span className="empty-icon">📝</span>
+                  <p>No quotations available</p>
+                </div>
+              ) : (
+                <div className="quotations-list">
+                  {savedQuotations.slice(0, 5).map((quotation, index) => (
+                    <div key={index} className="quotation-item">
+                      <div className="quotation-details">
+                        <div className="quotation-client">{quotation.clientName}</div>
+                        <div className="quotation-date">
+                          {new Date(quotation.createdAt || Date.now()).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="quotation-amount">{formatCurrency(quotation.Totalamount)}</div>
+                    </div>
+                  ))}
+                  {savedQuotations.length > 5 && (
+                    <div className="quotations-more">
+                      <span className="more-count">+{savedQuotations.length - 5}</span>
+                      <span>more quotations</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
-      )}
-    </div>
+        </div>
+
+        {/* Upcoming Events Section */}
+        <div className="dashboard-section events-section">
+          <div className="section-header">
+            <div className="section-title-group">
+              <h2 className="section-title">
+                <span className="section-icon">📅</span>
+                Upcoming Events & Meetings
+              </h2>
+              <p className="section-description">Stay updated with your scheduled meetings and events</p>
+            </div>
+          </div>
+          
+          <div className="events-container">
+            {eventsLoading ? (
+              <div className="loading-state">
+                <div className="loading-spinner"></div>
+                <span>Loading upcoming events...</span>
+              </div>
+            ) : eventsError ? (
+              <div className="section-error">
+                <span className="error-icon">❌</span>
+                <span>Error loading events: {eventsError}</span>
+              </div>
+            ) : upcomingEvents.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon">📅</span>
+                <p>No upcoming events scheduled</p>
+              </div>
+            ) : (
+              <div className="events-timeline">
+                {upcomingEvents.map((event) => (
+                  <div key={event._id} className="event-item">
+                    <div className="event-time">
+                      <span className="event-date">{formatEventDate(event.StartTime, event.EndTime)}</span>
+                    </div>
+                    <div className="event-content">
+                      <h4 className="event-title">{event.Subject}</h4>
+                      <p className="event-description">{event.Description || "Event scheduled"}</p>
+                      {event.Location && (
+                        <p className="event-location">📍 {event.Location}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Expenses Chart Modal */}
+        {showExpensesChart && (
+          <div className="modal-overlay">
+            <div className="modal-container">
+              <div className="modal-header">
+                <h3>Monthly Expenses Breakdown - {selectedYear}</h3>
+                <button className="modal-close" onClick={handleCloseExpensesChart}>×</button>
+              </div>
+              <div className="modal-body">
+                <div className="chart-wrapper">
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart data={monthlyFinancialData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis 
+                        dataKey="month" 
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#d1d5db' }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#d1d5db' }}
+                        tickFormatter={(value) => formatNumber(value)}
+                      />
+                      <Tooltip 
+                        formatter={(value) => [formatCurrency(value), 'Expenses']}
+                        labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+                        contentStyle={{ 
+                          backgroundColor: '#ffffff', 
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                      <Bar 
+                        dataKey="expenses" 
+                        fill={CHART_COLORS.danger} 
+                        name="Monthly Expenses"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };

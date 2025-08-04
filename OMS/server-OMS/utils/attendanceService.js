@@ -401,14 +401,14 @@ class AttendanceService {
         },
         systemInfo: {
           userAgent: "Face Recognition API",
-          ipAddress: "localhost",
+          ipAddress: "138.197.27.240",
           platform: process.platform,
           nodeVersion: process.version,
         },
         metadata: {
           source: "face_recognition_api",
           apiVersion: "1.0",
-          processingServer: "localhost:5001",
+          processingServer: "localhost5001",
         },
       };
 

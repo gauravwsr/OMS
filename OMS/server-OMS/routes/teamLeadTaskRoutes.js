@@ -11,6 +11,8 @@ const {
   addTaskComment,
   getMyTasks,
   getEmployeesForAssignment,
+  getEmployeeTasks,
+  getTaskHistory,
 } = require("../controllers/teamLeadTaskController");
 const { authenticate } = require("../middlewares/authMiddleware");
 
@@ -19,6 +21,12 @@ router.use(authenticate);
 
 // Get employees for task assignment
 router.get("/employees", getEmployeesForAssignment);
+
+// Get tasks for specific employee
+router.get("/employees/:employeeId/tasks", getEmployeeTasks);
+
+// Get task history
+router.get("/tasks/history", getTaskHistory);
 
 // Task CRUD operations
 router.post("/projects/:projectId/tasks", createTask);
