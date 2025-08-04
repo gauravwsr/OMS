@@ -61,7 +61,7 @@ app.use("/api/message", messageRoutes);
 
 // const io = new Server(server, {
 //   cors: {
-//     origin: 'http://localhost:3000',
+//     origin: 'http://142.93.213.81:3000',
 //     methods: ['GET', 'POST'],
 //   },
 // });
@@ -434,13 +434,13 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
-// mongoose.connect('mongodb://localhost:27017/projectdb', {
+// mongoose.connect('mongodb://142.93.213.81:27017/projectdb', {
 //   useNewUrlParser: true,
 //   useUnifiedTopology: true,
 // });
 
 server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on http://142.93.213.81:${port}`);
 });
 
 // Automatic cleanup function for finished events

@@ -25,7 +25,7 @@ const ITDashboard = () => {
   const [infrastructure, setInfrastructure] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://142.93.213.81:5001/api';
 
   useEffect(() => {
     fetchDashboardData();

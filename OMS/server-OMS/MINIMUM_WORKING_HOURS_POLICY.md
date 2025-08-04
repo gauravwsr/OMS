@@ -142,7 +142,7 @@ To change the minimum working hours requirement:
 ### Test Case 1: Manual Check-out Before 6 Hours
 
 ```bash
-curl -X POST http://localhost:3000/api/attendance/mark \
+curl -X POST http://142.93.213.81:3000/api/attendance/mark \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"attendance_type": "check_out"}'
@@ -151,7 +151,7 @@ curl -X POST http://localhost:3000/api/attendance/mark \
 ### Test Case 2: Face Recognition Check-out Before 6 Hours
 
 ```bash
-curl -X POST http://localhost:3000/api/attendance/mark \
+curl -X POST http://142.93.213.81:3000/api/attendance/mark \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

@@ -22,7 +22,7 @@ const CertificateHistory = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/certificates", {
+      const response = await fetch("http://142.93.213.81:5000/api/certificates", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -58,7 +58,7 @@ const CertificateHistory = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/certificates/${id}`, {
+      const response = await fetch(`http://142.93.213.81:5000/api/certificates/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,

@@ -53,10 +53,10 @@ python server.py
 
 ```bash
 # Get Registered Users
-curl http://localhost:5001/api/registered-users
+curl http://142.93.213.81:5001/api/registered-users
 
 # Test Face Recognition (with base64 image)
-curl -X POST http://localhost:5001/api/mark-attendance \
+curl -X POST http://142.93.213.81:5001/api/mark-attendance \
   -H "Content-Type: application/json" \
   -d '{"image": "base64_image_data_here"}'
 ```

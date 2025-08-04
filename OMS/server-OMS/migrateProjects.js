@@ -10,7 +10,7 @@ async function migrateExistingProjects() {
     // Connect to MongoDB (adjust connection string as needed)
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(
-        process.env.MONGODB_URI || "mongodb://localhost:27017/oms",
+        process.env.MONGODB_URI || "mongodb://142.93.213.81:27017/oms",
         {
           useNewUrlParser: true,
           useUnifiedTopology: true,

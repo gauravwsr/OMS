@@ -246,7 +246,7 @@ N_NEIGHBORS = 3             # KNN model parameter
 1. **Camera Not Working**:
 
    - Check browser permissions
-   - Ensure HTTPS or localhost
+   - Ensure HTTPS or 142.93.213.81
    - Verify camera hardware
 
 2. **Face Not Recognized**:

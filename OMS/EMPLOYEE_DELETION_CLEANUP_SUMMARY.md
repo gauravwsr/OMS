@@ -184,7 +184,7 @@ DELETE /api/candidates/:id
 - Returns detailed deletion report
 ```
 
-### Face Recognition Server (`localhost:5001`)
+### Face Recognition Server (`142.93.213.81:5001`)
 
 ```
 DELETE /api/delete-user/<username>
