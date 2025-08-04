@@ -158,7 +158,6 @@ const AnalyticsManagement = () => {
           'Approved Date': leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A',
           'Comments': leave.comments || 'N/A',
           'Emergency Contact': leave.emergencyContact || 'N/A',
-          'Leave Balance': leave.leaveBalance + ' days' || 'N/A'
         }));
         fileName = 'Employee_Leave_Applications_Report';
         break;
@@ -251,7 +250,6 @@ const AnalyticsManagement = () => {
                 <th>Status</th>
                 <th>Applied</th>
                 <th>Approval</th>
-                <th>Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -323,9 +321,6 @@ const AnalyticsManagement = () => {
                           )}
                         </div>
                       )}
-                    </td>
-                    <td>
-                      <span className={`badge badge-balance ${leave.leaveBalance <= 5 ? 'low' : 'normal'}`}>{leave.leaveBalance} days</span>
                     </td>
                   </tr>
                 ))

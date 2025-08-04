@@ -43,6 +43,9 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
+const certificateRoutes = require("./routes/certificateRoutes");
+const completionRoutes = require("./routes/completionRoutes");
+const offerRoutes = require("./routes/offerRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -130,6 +133,11 @@ app.use("/api/team-lead", teamLeadTaskRoutes);
 
 // Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
+
+// Certificate management routes
+app.use("/api/certificates", require("./routes/certificateRoutes"));
+app.use("/api/completions", require("./routes/completionRoutes"));
+app.use("/api/offers", require("./routes/offerRoutes"));
 
 // mouse tracking
 // app.use("/api", trackingRoutes);
