@@ -401,7 +401,7 @@ class AttendanceService {
         },
         systemInfo: {
           userAgent: "Face Recognition API",
-          ipAddress: "localhost",
+          ipAddress: "138.197.27.240",
           platform: process.platform,
           nodeVersion: process.version,
         },

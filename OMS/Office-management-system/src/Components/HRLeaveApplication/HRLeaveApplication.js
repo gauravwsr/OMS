@@ -47,10 +47,10 @@ const HRLeaveApplication = () => {
       let response;
       if (user && user._id) {
         console.log('Using user ID:', user._id);
-        response = await axios.get(`http://localhost:5001/api/leave/user/${user._id}`);
+        response = await axios.get(`http://138.197.27.240:5001/api/leave/user/${user._id}`);
       } else if (user && user.email) {
         console.log('Using user email:', user.email);
-        response = await axios.get(`http://localhost:5001/api/leave/user-by-email/${user.email}`);
+        response = await axios.get(`http://138.197.27.240:5001/api/leave/user-by-email/${user.email}`);
       } else {
         console.log('No user ID or email available');
         throw new Error('User information not available');
@@ -177,7 +177,7 @@ const HRLeaveApplication = () => {
       console.log('Submitting leave application with data:', payload);
       console.log('User object:', user);
 
-      const response = await axios.post('http://localhost:5001/api/leave/apply', payload);
+      const response = await axios.post('http://138.197.27.240:5001/api/leave/apply', payload);
 
       console.log('Leave application response:', response.data);
 

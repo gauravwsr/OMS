@@ -48,6 +48,7 @@ import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
 import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
+import SuperAdminProjectView from "./Components/SuperAdminLeaveManagement/SuperAdminProjectView.js";
 import EmployeeDashboard from "./Components/Employee/EmployeeDashboard.js";
 import EmployeeProjects from "./Components/Employee/EmployeeProjects.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
@@ -814,7 +815,9 @@ const MainContent = ({ nav }) => {
           <Route
             path="/ProjectList"
             element={
-              user?.role === "Employee" &&
+              user?.role === "Super_Admin" ? (
+                <SuperAdminProjectView nav={nav} />
+              ) : user?.role === "Employee" &&
               user?.subRole === "Project Manager" ? (
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (

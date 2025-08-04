@@ -99,7 +99,7 @@ const Attendance = () => {
 
   const checkMongoDBConnection = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/health", {
+      const response = await axios.get("http://138.197.27.240:5001/api/health", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -192,7 +192,7 @@ const Attendance = () => {
   const fetchAttendanceHistory = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/attendance/history",
+        "http://138.197.27.240:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -208,7 +208,7 @@ const Attendance = () => {
   const fetchTodayAttendance = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/attendance/today",
+        "http://138.197.27.240:5001/api/attendance/today",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -555,7 +555,7 @@ const Attendance = () => {
           console.log("Saving attendance to MongoDB:", attendanceData);
 
           const mongoResponse = await axios.post(
-            "http://localhost:5001/api/attendance/mark",
+            "http://138.197.27.240:5001/api/attendance/mark",
             {
               ...attendanceData,
               attendance_type: attendanceType, // Add attendance type
@@ -672,7 +672,7 @@ const Attendance = () => {
                 );
 
                 const mongoResponse = await axios.post(
-                  "http://localhost:5001/api/attendance/mark",
+                  "http://138.197.27.240:5001/api/attendance/mark",
                   {
                     ...attendanceData,
                     attendance_type: attendanceType, // Add attendance type

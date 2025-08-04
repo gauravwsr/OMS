@@ -15,7 +15,7 @@
 //                 alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
 //                 try {
-//                     await fetch("http://localhost:5001/api/idle-warning", {
+//                     await fetch("http://138.197.27.240:5001/api/idle-warning", {
 //                         method: "POST",
 //                         headers: { "Content-Type": "application/json" },
 //                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -69,7 +69,7 @@
 //                 alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
 //                 try {
-//                     await fetch("http://localhost:5001/api/idle-warning", {
+//                     await fetch("http://138.197.27.240:5001/api/idle-warning", {
 //                         method: "POST",
 //                         headers: { "Content-Type": "application/json" },
 //                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -125,7 +125,7 @@ const IdleTracker = () => {
 
                     alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
-                    fetch("http://localhost:5001/api/idle-warning", {
+                    fetch("http://138.197.27.240:5001/api/idle-warning", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),

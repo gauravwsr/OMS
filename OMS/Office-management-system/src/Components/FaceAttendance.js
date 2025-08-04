@@ -36,7 +36,7 @@ const FaceAttendance = () => {
   const fetchAttendanceHistory = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/attendance/history",
+        "http://138.197.27.240:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -130,7 +130,7 @@ const FaceAttendance = () => {
       // Save to main OMS database
       try {
         await axios.post(
-          "http://localhost:5001/api/attendance/mark",
+          "http://138.197.27.240:5001/api/attendance/mark",
           {
             method: "face_recognition",
             timestamp: new Date().toISOString(),

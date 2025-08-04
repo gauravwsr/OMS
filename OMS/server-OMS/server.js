@@ -68,7 +68,7 @@ app.use("/api/message", messageRoutes);
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "localhost:3001"],
+    origin: ["http://138.197.27.240:3000", "138.197.27.240:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -432,7 +432,7 @@ const port = process.env.PORT || 5000;
 // });
 
 server.listen(port, () => {
-  console.log(`Server running on http://localhost${port}`);
+  console.log(`Server running on http://138.197.27.240${port}`);
 });
 
 // Automatic cleanup function for finished events

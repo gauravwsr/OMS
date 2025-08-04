@@ -4,7 +4,7 @@ const ClickTracker = () => {
     useEffect(() => {
         const handleClick = async (event) => {
             try {
-                await fetch("http://localhost:5001/api/mouse-clicks", {
+                await fetch("http://138.197.27.240:5001/api/mouse-clicks", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ x: event.clientX, y: event.clientY }),

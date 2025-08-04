@@ -1921,7 +1921,7 @@ export default function ProjectList() {
   
 //     try {
 //       // Send the project data to the API
-//       const response = await fetch("http://localhost:5001/api/projects", {
+//       const response = await fetch("http://138.197.27.240:5001/api/projects", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newProject),
