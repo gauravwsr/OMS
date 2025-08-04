@@ -220,42 +220,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Function to count logged-in hours
-const countLoggedInHours = async (req, res) => {
-  try {
-    // Extract token from request headers
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ msg: "Unauthorized, token missing" });
-    }
-
-    // Verify and decode the token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded.loginTime) {
-      return res.status(400).json({ msg: "Login time missing in token" });
-    }
-
-    // Get login time from token
-    const loginTime = new Date(decoded.loginTime);
-    const now = new Date();
-
-    // Calculate the difference
-    const diffMs = Math.abs(now - loginTime);
-    const diffHrs = Math.floor(diffMs / 36e5);
-    const diffMins = Math.floor((diffMs % 36e5) / 60000);
-    const diffSecs = Math.floor((diffMs % 60000) / 1000);
-
-    const loggedInHours = `${String(diffHrs).padStart(2, "0")}:${String(
-      diffMins
-    ).padStart(2, "0")}:${String(diffSecs).padStart(2, "0")}`;
-
-    res.status(200).json({ loggedInHours });
-  } catch (error) {
-    console.error("Error counting logged-in hours:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
 const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -269,6 +233,5 @@ module.exports = {
   registerUser,
   loginUser,
   getUser,
-  countLoggedInHours,
   getCurrentUser,
 };

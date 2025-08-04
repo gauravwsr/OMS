@@ -55,21 +55,29 @@ const createTask = async (req, res) => {
     console.log('Project assignedTeamLead:', project.assignedTeamLead);
     console.log('Current user ID:', currentUser.id);
     console.log('Current user name:', currentUser.name);
+    console.log('Current user role:', currentUser.role);
+    console.log('Current user subRole:', currentUser.subRole);
 
     // Check if current user is the team lead for this project
     const isTeamLeadById = project.teamLeadId && project.teamLeadId.toString() === currentUser.id;
     const isTeamLeadByName = project.assignedTeamLead === currentUser.name;
     
+    // Check if current user is a Project Manager
+    const isProjectManager = currentUser.role === 'Project Manager' || currentUser.subRole === 'Project Manager';
+    
     console.log('Is team lead by ID:', isTeamLeadById);
     console.log('Is team lead by name:', isTeamLeadByName);
+    console.log('Is Project Manager:', isProjectManager);
 
-    // For now, let's be more permissive during testing - allow if either condition is met OR if no team lead is assigned
-    if (!isTeamLeadById && !isTeamLeadByName && project.assignedTeamLead && project.teamLeadId) {
+    // Allow access if user is team lead OR Project Manager OR if no team lead is assigned
+    const hasAccess = isTeamLeadById || isTeamLeadByName || isProjectManager || (!project.assignedTeamLead && !project.teamLeadId);
+    
+    if (!hasAccess) {
       return res
         .status(403)
         .json({
           error:
-            "Only the assigned team lead can create tasks for this project",
+            "Only the assigned team lead or Project Manager can create tasks for this project",
         });
     }
 
