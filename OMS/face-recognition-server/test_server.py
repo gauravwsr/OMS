@@ -9,7 +9,7 @@ import base64
 import cv2
 import time
 
-SERVER_URL = "http://localhost:5001"
+SERVER_URL = "http://localhost5001"
 
 def test_server_status():
     """Test if the server is running"""

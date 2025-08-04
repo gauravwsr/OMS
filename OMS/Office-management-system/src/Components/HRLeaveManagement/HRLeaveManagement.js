@@ -22,7 +22,7 @@ const HRLeaveManagement = () => {
     setLoading(true);
     try {
       console.log('Fetching employee leave applications...');
-      const response = await axios.get('http://142.93.213.81:5001/api/leave/employees');
+      const response = await axios.get('http://localhost:5001/api/leave/employees');
       console.log('Employee leave applications response:', response.data);
       
       if (response.data.success) {
@@ -67,9 +67,9 @@ const HRLeaveManagement = () => {
       };
       
       console.log('Request data:', requestData);
-      console.log('Making API call to:', `http://142.93.213.81:5001/api/leave/status/${leaveId}`);
+      console.log('Making API call to:', `http://localhost:5001/api/leave/status/${leaveId}`);
 
-      const response = await axios.patch(`http://142.93.213.81:5001/api/leave/status/${leaveId}`, requestData, {
+      const response = await axios.patch(`http://localhost:5001/api/leave/status/${leaveId}`, requestData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

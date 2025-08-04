@@ -28,9 +28,9 @@ d:\OMS\OMS\start-servers.bat
 
 ### Step 2: Check Server Status
 
-1. **Backend Server** (Port 5000): http://localhost:5000/api/health
-2. **Face Recognition** (Port 5001): http://localhost:5001
-3. **Frontend** (Port 3000): http://localhost:3000
+1. **Backend Server** (Port 5000): http://localhost5000/api/health
+2. **Face Recognition** (Port 5001): http://localhost5001
+3. **Frontend** (Port 3000): http://localhost3000
 
 ### Step 3: Fix MongoDB Connection
 

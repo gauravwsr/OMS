@@ -21,9 +21,9 @@ echo.
 echo ✅ All servers are starting...
 echo.
 echo 📋 Server URLs:
-echo - Frontend: http://localhost:3000
-echo - Backend API: http://localhost:5000
-echo - Face Recognition: http://localhost:5001
+echo - Frontend: http://localhost3000
+echo - Backend API: http://localhost5000
+echo - Face Recognition: http://localhost5001
 echo.
 echo 💡 Check each terminal window for server status
 echo 💡 Press Ctrl+C in any terminal to stop that server
