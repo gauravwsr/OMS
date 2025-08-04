@@ -71,7 +71,7 @@ app.use("/api/message", messageRoutes);
 
 app.use(
   cors({
-    origin: ["http://138.197.27.240:3000", "138.197.27.240:3001"],
+    origin: ["http://138.197.27.240:3000", "http://138.197.27.240:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -120,7 +120,7 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/hr-leave", hrLeaveRoutes);
 
 // Analytics routes
-app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics", analyticsRoutes);C
 
 // Attendance routes
 app.use("/api/attendance", attendanceRoutes);
