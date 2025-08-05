@@ -29,6 +29,7 @@ const Chat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -1275,7 +1276,11 @@ const Chat = () => {
                 <div className="chat-header-actions">
                   {selectedChat.isGroupChat && (
                     <>
-                      <button className="chat-header-button" title="Group Info">
+                      <button 
+                        className="chat-header-button" 
+                        title="Group Info"
+                        onClick={() => setShowGroupInfoModal(true)}
+                      >
                         <i className="fas fa-info-circle"></i>
                       </button>
                       <button
@@ -1497,17 +1502,18 @@ const Chat = () => {
         show={showAddFriendModal}
         onHide={() => setShowAddFriendModal(false)}
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Connection</Modal.Title>
+        <Modal.Header closeButton className="bg-light border-bottom border-2 sticky-top">
+          <Modal.Title className="fw-bold text-primary">Add New Connection</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <div className="sticky-top bg-white px-3 pt-3 border-bottom pb-3">
           <Form.Control
             type="text"
             placeholder="Search people..."
-            className="mb-3"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+        <Modal.Body className="pt-2" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           <ListGroup variant="flush">
             {getAvailableUsers()
               .filter(
@@ -1566,8 +1572,8 @@ const Chat = () => {
         show={showNewGroupModal}
         onHide={() => setShowNewGroupModal(false)}
       >
-        <Modal.Header closeButton>
-          <Modal.Title>Create New Group</Modal.Title>
+        <Modal.Header closeButton className="bg-light border-bottom border-2">
+          <Modal.Title className="fw-bold text-primary">Create New Group</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && (
@@ -1710,6 +1716,153 @@ const Chat = () => {
             ) : (
               "Create Group"
             )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Group Info Modal */}
+      <Modal
+        show={showGroupInfoModal && selectedChat?.isGroupChat}
+        onHide={() => setShowGroupInfoModal(false)}
+        size="lg"
+        dialogClassName="modal-dialog-scrollable"
+      >
+        <Modal.Header closeButton className="bg-light border-bottom border-2 sticky-top">
+          <Modal.Title className="fw-bold text-primary">Group Information</Modal.Title>
+        </Modal.Header>
+        
+        {selectedChat && (
+          <>
+            <div className="sticky-top bg-white px-3 pt-3">
+              <div className="d-flex align-items-center mb-3">
+                <div className="avatar group-avatar me-3" style={{ width: "60px", height: "60px", fontSize: "1.5rem" }}>
+                  {getAvatarText(selectedChat.chatName)}
+                </div>
+                <div>
+                  <h4>{selectedChat.chatName}</h4>
+                  <p className="text-muted mb-0">
+                    {selectedChat.participants && Array.isArray(selectedChat.participants)
+                      ? `${selectedChat.participants.length} members`
+                      : "0 members"}
+                  </p>
+                </div>
+              </div>
+              <hr />
+              <h5 className="mb-3">Members</h5>
+            </div>
+            
+            <Modal.Body className="p-0">
+              <div className="px-3 mb-3" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                <ListGroup variant="flush">
+                  {selectedChat.participants &&
+                    Array.isArray(selectedChat.participants) &&
+                    selectedChat.participants.map((member) => (
+                      <ListGroup.Item key={member._id} className="d-flex align-items-center">
+                        <div className="avatar me-3">
+                          {getAvatarText(member.name)}
+                        </div>
+                        <div className="flex-grow-1">
+                          <div className="fw-bold">
+                            {member.name}
+                            {member._id === user?._id && " (You)"}
+                          </div>
+                          <div className="text-muted small">
+                            {member.email || member.personalMail || "No email"}
+                          </div>
+                        </div>
+                        {member._id !== user?._id && (
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleRemoveFromGroup(member._id)}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </ListGroup.Item>
+                    ))}
+                </ListGroup>
+              </div>
+
+              <hr className="mx-3" />
+
+              <div className="px-3 pb-3">
+                <Form className="mt-2">
+                  <Form.Group className="mb-3">
+                    <Form.Label>Group Name</Form.Label>
+                    <div className="d-flex">
+                      <Form.Control
+                        type="text"
+                        defaultValue={selectedChat.chatName}
+                        id="groupNameInput"
+                      />
+                      <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => {
+                          const newName = document.getElementById("groupNameInput").value;
+                          if (newName && newName !== selectedChat.chatName) {
+                            handleRenameGroup(newName);
+                          }
+                        }}
+                      >
+                        Update
+                      </Button>
+                    </div>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label>Add Members</Form.Label>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search users to add..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="mb-2"
+                    />
+                    <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                      {getAvailableUsers()
+                        .filter(
+                          (u) =>
+                            (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              u.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+                            !selectedChat.participants.some((p) => p._id === u._id)
+                        )
+                        .map((user) => (
+                          <div
+                            key={user._id}
+                            className="d-flex align-items-center justify-content-between p-2 border-bottom"
+                          >
+                            <div className="d-flex align-items-center">
+                              <div className="avatar me-2">{getAvatarText(user.name)}</div>
+                              <span>{user.name}</span>
+                            </div>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleAddToGroup(user._id)}
+                            >
+                              Add
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </Form.Group>
+                </Form>
+              </div>
+            </Modal.Body>
+          </>
+        )}
+        
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowGroupInfoModal(false)}>
+            Close
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteChat}
+          >
+            Leave Group
           </Button>
         </Modal.Footer>
       </Modal>
