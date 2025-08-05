@@ -7,7 +7,7 @@ const Message = () => {
 
   useEffect(() => {
     // Fetch data from Express
-    axios.get('http://142.93.213.81:5001/api/message')
+    axios.get('http://localhost:5001/api/message')
       .then(response => setMessage(response.data.message))
       .catch(error => console.error('Error:', error));
   }, []);

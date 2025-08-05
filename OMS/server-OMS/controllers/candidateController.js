@@ -263,7 +263,7 @@ exports.deleteCandidate = async (req, res) => {
 
         // Call face recognition server to delete user images
         const faceDeleteResponse = await axios.delete(
-          `http://142.93.213.81:5001/api/delete-user/${encodeURIComponent(
+          `http://localhost:5001/api/delete-user/${encodeURIComponent(
             candidate.fullName
           )}`,
           { timeout: 5000 }

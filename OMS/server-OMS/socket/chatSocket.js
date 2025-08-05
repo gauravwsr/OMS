@@ -6,7 +6,7 @@
 // exports.init = (server) => {
 //   io = socketio(server, {
 //     cors: {
-//       origin: process.env.CLIENT_URL || 'http://142.93.213.81:3000',
+//       origin: process.env.CLIENT_URL || 'http://localhost:3000',
 //       methods: ['GET', 'POST'],
 //       credentials: true
 //     }
@@ -75,7 +75,7 @@ let io;
 exports.init = (server) => {
   io = socketio(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://142.93.213.81:3000',
+      origin: process.env.CLIENT_URL || 'http://localhost:3000',
       methods: ['GET', 'POST']
     },
     pingTimeout: 60000

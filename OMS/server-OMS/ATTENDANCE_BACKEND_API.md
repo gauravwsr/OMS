@@ -7,7 +7,7 @@ This document describes the comprehensive attendance management backend system t
 ## Base URL
 
 ```
-http://142.93.213.81:5001/api/attendance
+http://localhost:5001/api/attendance
 ```
 
 ## Authentication
@@ -350,10 +350,10 @@ Update your frontend API calls to point to the new backend:
 
 ```javascript
 // Old frontend URL (if using local face recognition)
-const oldUrl = "http://142.93.213.81:5001/api/mark-attendance";
+const oldUrl = "http://localhost:5001/api/mark-attendance";
 
 // New backend URL
-const newUrl = "http://142.93.213.81:5001/api/attendance/mark";
+const newUrl = "http://localhost:5001/api/attendance/mark";
 
 // Example usage
 const response = await axios.post(
@@ -395,7 +395,7 @@ Ensure these packages are installed in server-OMS:
 Set these environment variables in your `.env` file:
 
 ```
-MONGODB_URI=mongodb://142.93.213.81:27017/oms
+MONGODB_URI=mongodb://localhost:27017/oms
 JWT_SECRET=your-secret-key
 PORT=5000
 ```

@@ -1,4 +1,4 @@
-const API_URL = "http://142.93.213.81:5001/api/auth"; // Change for production
+const API_URL = "http://localhost:5001/api/auth"; // Change for production
 
 // Forgot Password - Send OTP
 export const forgotPassword = async (email) => {

@@ -112,7 +112,7 @@ const Completion = () => {
       }
 
       // Save to database via API (you can create a separate completion API endpoint)
-      const response = await fetch("http://142.93.213.81:5000/api/completions", {
+      const response = await fetch("http://localhost:5000/api/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -368,7 +368,7 @@ const Completion = () => {
         const token = localStorage.getItem("token");
         if (token) {
           console.log("Attempting to save completion to database...");
-          const response = await fetch("http://142.93.213.81:5000/api/completions", {
+          const response = await fetch("http://localhost:5000/api/completions", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

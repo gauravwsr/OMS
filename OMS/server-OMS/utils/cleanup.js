@@ -21,7 +21,7 @@ const cleanupEmployeeData = async (employee) => {
     if (employee.fullName) {
       try {
         const faceDeleteResponse = await axios.delete(
-          `http://142.93.213.81:5001/api/delete-user/${encodeURIComponent(
+          `http://localhost:5001/api/delete-user/${encodeURIComponent(
             employee.fullName
           )}`,
           { timeout: 5000 }
@@ -110,7 +110,7 @@ const bulkCleanupEmployees = async (employees) => {
  */
 const getFaceRecognitionDiskUsage = async () => {
   try {
-    const response = await axios.get("http://142.93.213.81:5001/api/disk-usage");
+    const response = await axios.get("http://localhost:5001/api/disk-usage");
     return response.data;
   } catch (error) {
     console.error("Error getting disk usage:", error.message);
@@ -134,7 +134,7 @@ const cleanOrphanedFiles = async (allEmployees) => {
   try {
     // Check face recognition server for registered users
     const response = await axios.get(
-      "http://142.93.213.81:5001/api/registered-users"
+      "http://localhost:5001/api/registered-users"
     );
     if (response.data && response.data.users_with_images) {
       // Find orphaned face recognition folders
@@ -146,7 +146,7 @@ const cleanOrphanedFiles = async (allEmployees) => {
       for (const orphanedUser of orphanedFaceUsers) {
         try {
           await axios.delete(
-            `http://142.93.213.81:5001/api/delete-user/${encodeURIComponent(
+            `http://localhost:5001/api/delete-user/${encodeURIComponent(
               orphanedUser.name
             )}`
           );

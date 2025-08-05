@@ -64,7 +64,7 @@ python test_server.py
 ```javascript
 const registerUser = async (name, images) => {
   try {
-    const response = await fetch("http://142.93.213.81:5001/register_user", {
+    const response = await fetch("http://localhost:5001/register_user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -93,7 +93,7 @@ const registerUser = async (name, images) => {
 ```javascript
 const markAttendance = async (imageBase64) => {
   try {
-    const response = await fetch("http://142.93.213.81:5001/recognize_face", {
+    const response = await fetch("http://localhost:5001/recognize_face", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -176,13 +176,13 @@ Modify in attendance functions:
 ### 1. Test Server Status
 
 ```bash
-curl http://142.93.213.81:5001/api/test-recognition
+curl http://localhost:5001/api/test-recognition
 ```
 
 ### 2. Register Test User
 
 ```bash
-curl -X POST http://142.93.213.81:5001/register_user \
+curl -X POST http://localhost:5001/register_user \
   -H "Content-Type: application/json" \
   -d '{"name": "test_user", "images": [...]}'
 ```
@@ -190,7 +190,7 @@ curl -X POST http://142.93.213.81:5001/register_user \
 ### 3. Test Recognition
 
 ```bash
-curl -X POST http://142.93.213.81:5001/recognize_face \
+curl -X POST http://localhost:5001/recognize_face \
   -H "Content-Type: application/json" \
   -d '{"image": "base64_image_data"}'
 ```
@@ -198,7 +198,7 @@ curl -X POST http://142.93.213.81:5001/recognize_face \
 ### 4. Check Attendance
 
 ```bash
-curl http://142.93.213.81:5001/get_all_attendance
+curl http://localhost:5001/get_all_attendance
 ```
 
 ## 🚨 Troubleshooting
