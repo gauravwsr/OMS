@@ -315,6 +315,12 @@ const Certificate = () => {
       );
 
       setIsSaved(true);
+      
+      // Refresh certificate history if it's currently being shown
+      if (showCertificateHistory) {
+        fetchCertificateHistory();
+      }
+      
       setTimeout(() => {
         setCertificateData(initialCertificateData);
         setIsSaved(false);
@@ -327,49 +333,64 @@ const Certificate = () => {
     }
   };
 
-  //View History certificates
+  //View History certificates - Database Based
   const fetchCertificateHistory = async () => {
     try {
       setHistoryLoading(true);
+      
+      // Get auth token from localStorage
       const token = localStorage.getItem("token");
-
       if (!token) {
-        // Fallback to localStorage data
-        const localData = JSON.parse(
-          localStorage.getItem("certificates") || "[]"
-        );
-        setCertificateHistory(localData);
+        console.warn("No token found for fetching certificate history");
+        setCertificateHistory([]);
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/certificates", {
+      // Fetch all certificates from database
+      const response = await fetch("http://localhost:5001/api/certificates", {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setCertificateHistory(data.certificates || []);
+        const result = await response.json();
+        console.log("📋 Fetching certificate history from database:", result);
+        setCertificateHistory(result.certificates || []);
       } else {
-        // Fallback to localStorage
-        const localData = JSON.parse(
-          localStorage.getItem("certificates") || "[]"
-        );
-        setCertificateHistory(localData);
+        console.error("Failed to fetch certificate history");
+        setCertificateHistory([]);
       }
     } catch (error) {
       console.error("Error fetching certificate history:", error);
-      // Fallback to localStorage
-      const localData = JSON.parse(
-        localStorage.getItem("certificates") || "[]"
-      );
-      setCertificateHistory(localData);
+      setCertificateHistory([]);
     } finally {
       setHistoryLoading(false);
     }
   };
+
+  const handleCertificateHistoryToggle = () => {
+  if (!showCertificateHistory) {
+    fetchCertificateHistory();
+  }
+  setShowCertificateHistory(!showCertificateHistory);
+};
+
+const handleCompletionHistoryToggle = () => {
+  if (!showCompletionHistory) {
+    fetchCompletionHistory();
+  }
+  setShowCompletionHistory(!showCompletionHistory);
+};
+
+const handleOfferHistoryToggle = () => {
+  if (!showOfferHistory) {
+    fetchOfferHistory();
+  }
+  setShowOfferHistory(!showOfferHistory);
+};
 
   // Download certificate as PDF
   const downloadCertificate = async () => {
@@ -626,7 +647,6 @@ const Certificate = () => {
   };
 
   // Handle save button click for completion
-  // Handle save button click for completion - FIXED
   const handleCompletionSave = async () => {
     try {
       setIsLoading(true);
@@ -704,6 +724,12 @@ const Certificate = () => {
       );
 
       setIsSaved(true);
+      
+      // Refresh completion history if it's currently being shown
+      if (showCompletionHistory) {
+        fetchCompletionHistory();
+      }
+      
       setTimeout(() => {
         setCompletionData(initialCompletionData);
         setIsSaved(false);
@@ -712,6 +738,44 @@ const Certificate = () => {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // View Completion History - Database Based
+  const fetchCompletionHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      
+      // Get auth token from localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.warn("No token found for fetching completion history");
+        setCompletionHistory([]);
+        return;
+      }
+
+      // Fetch all completions from database
+      const response = await fetch("http://localhost:5001/api/completions", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("🎓 Fetching completion history from database:", result);
+        setCompletionHistory(result.completions || []);
+      } else {
+        console.error("Failed to fetch completion history");
+        setCompletionHistory([]);
+      }
+    } catch (error) {
+      console.error("Error fetching completion history:", error);
+      setCompletionHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -796,14 +860,6 @@ const Certificate = () => {
               line-height: 1.6;
             ">conducted by <strong>${
               completionData.organizationName
-            }</strong></p>
-            <p style="
-              font-size: 16px;
-              color: #333;
-              margin: 15px 0;
-              line-height: 1.6;
-            ">with grade: <strong style="color: #10b981;">${
-              completionData.grade
             }</strong></p>
 
             <!-- Footer Section -->
@@ -1085,6 +1141,12 @@ const Certificate = () => {
       );
 
       setIsSaved(true);
+      
+      // Refresh offer history if it's currently being shown
+      if (showOfferHistory) {
+        fetchOfferHistory();
+      }
+      
       setTimeout(() => {
         setOfferData(initialOfferData);
         setIsSaved(false);
@@ -1093,6 +1155,44 @@ const Certificate = () => {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // View Offer History - Database Based
+  const fetchOfferHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      
+      // Get auth token from localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.warn("No token found for fetching offer history");
+        setOfferHistory([]);
+        return;
+      }
+
+      // Fetch all offers from database
+      const response = await fetch("http://localhost:5001/api/offers", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("💼 Fetching offer history from database:", result);
+        setOfferHistory(result.offers || []);
+      } else {
+        console.error("Failed to fetch offer history");
+        setOfferHistory([]);
+      }
+    } catch (error) {
+      console.error("Error fetching offer history:", error);
+      setOfferHistory([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -1572,22 +1672,62 @@ const Certificate = () => {
               </button>
 
               <button
-                onClick={() => navigate("/certificate-history")}
+                onClick={handleCertificateHistoryToggle}
                 className="history-button"
               >
-                View Certificate History
+                {showCertificateHistory ? "Hide History" : "View Certificate History"}
               </button>
 
               <button
                 onClick={downloadCertificate}
                 className="download-button"
-                disabled={
-                  !certificateData.candidateName || !certificateData.certID
-                }
+                disabled={!certificateData.candidateName || !certificateData.certID}
               >
                 Download Certificate
               </button>
             </div>
+
+            {/* Certificate History Section */}
+            {showCertificateHistory && (
+              <div className="history-section">
+                {historyLoading ? (
+                  <div className="loading-message">Loading history...</div>
+                ) : certificateHistory.length === 0 ? (
+                  <div className="no-data-message">No certificates found in database.</div>
+                ) : (
+                  <div className="history-table-container">
+                    <table className="history-table">
+                      <thead>
+                        <tr>
+                          <th>Candidate Name</th>
+                          <th>College Name</th>
+                          <th>Internship Type</th>
+                          <th>Certificate ID</th>
+                          <th>Start Date</th>
+                          <th>End Date</th>
+                          <th>Issue Date</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {certificateHistory.map((cert, index) => (
+                          <tr key={cert._id || index}>
+                            <td>{cert.candidateName}</td>
+                            <td>{cert.collegeName}</td>
+                            <td>{cert.internshipType}</td>
+                            <td>{cert.certID}</td>
+                            <td>{cert.startDate || "N/A"}</td>
+                            <td>{cert.endDate || "N/A"}</td>
+                            <td>{cert.issueDate || "N/A"}</td>
+                            <td>{cert.createdAt ? new Date(cert.createdAt).toLocaleDateString() : "N/A"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1778,22 +1918,65 @@ const Certificate = () => {
               </button>
 
               <button
-                onClick={() => navigate("/completion-history")}
+                onClick={handleCompletionHistoryToggle}
                 className="history-button"
               >
-                View Completion History
+                {showCompletionHistory ? "Hide History" : "View Completion History"}
               </button>
 
               <button
                 onClick={downloadCompletion}
                 className="download-button"
-                disabled={
-                  !completionData.candidateName || !completionData.certID
-                }
+                disabled={!completionData.candidateName || !completionData.certID}
               >
                 {isLoading ? "Generating..." : "Download Certificate"}
               </button>
             </div>
+
+            {/* Completion History Section */}
+            {showCompletionHistory && (
+              <div className="history-section">
+                <h4>Completion Certificate History</h4>
+                {historyLoading ? (
+                  <div className="loading-message">Loading history...</div>
+                ) : completionHistory.length === 0 ? (
+                  <div className="no-data-message">No completion certificates found in database.</div>
+                ) : (
+                  <div className="history-table-container">
+                    <table className="history-table">
+                      <thead>
+                        <tr>
+                          <th>Candidate Name</th>
+                          <th>Course Type</th>
+                          <th>Organization</th>
+                          <th>Duration</th>
+                          <th>Certificate ID</th>
+                          <th>Start Date</th>
+                          <th>End Date</th>
+                          <th>Issue Date</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {completionHistory.map((completion, index) => (
+                          <tr key={completion._id || index}>
+                            <td>{completion.candidateName}</td>
+                            <td>{completion.courseType}</td>
+                            <td>{completion.organizationName}</td>
+                            <td>{completion.duration}</td>
+                            <td>{completion.certID}</td>
+                            <td>{completion.startDate || "N/A"}</td>
+                            <td>{completion.endDate || "N/A"}</td>
+                            <td>{completion.issueDate}</td>
+                            <td>{completion.createdAt ? new Date(completion.createdAt).toLocaleDateString() : "N/A"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1913,10 +2096,10 @@ const Certificate = () => {
               </button>
 
               <button
-                onClick={() => navigate("/offer-history")}
+                onClick={handleOfferHistoryToggle}
                 className="history-button"
               >
-                View Offer History
+                {showOfferHistory ? "Hide History" : "View Offer History"}
               </button>
 
               <button
@@ -1927,6 +2110,45 @@ const Certificate = () => {
                 {isLoading ? "Generating..." : "Download Offer Letter"}
               </button>
             </div>
+
+            {/* Offer History Section */}
+            {showOfferHistory && (
+              <div className="history-section">
+                <h4>Offer Letter History</h4>
+                {historyLoading ? (
+                  <div className="loading-message">Loading history...</div>
+                ) : offerHistory.length === 0 ? (
+                  <div className="no-data-message">No offer letters found in database.</div>
+                ) : (
+                  <div className="history-table-container">
+                    <table className="history-table">
+                      <thead>
+                        <tr>
+                          <th>Candidate Name</th>
+                          <th>Position</th>
+                          <th>Joining Date</th>
+                          <th>Offer ID</th>
+                          <th>Issue Date</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {offerHistory.map((offer, index) => (
+                          <tr key={offer._id || index}>
+                            <td>{offer.candidateName}</td>
+                            <td>{offer.position}</td>
+                            <td>{offer.joiningDate}</td>
+                            <td>{offer.offerID}</td>
+                            <td>{offer.issueDate}</td>
+                            <td>{offer.createdAt ? new Date(offer.createdAt).toLocaleDateString() : "N/A"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
