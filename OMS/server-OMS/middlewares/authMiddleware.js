@@ -57,10 +57,17 @@ exports.authenticate = async (req, res, next) => {
         }
       }
     }
-    //     // Attach user information to the request
+    // Attach user information to the request
     req.user = user;
     req.userType = userType; 
     req.decodedToken = decoded;
+
+    console.log('User authenticated:', {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      userType
+    });
 
     next();
   } catch (error) {
@@ -82,49 +89,97 @@ exports.authorize = (...roles) => {
   };
 };
 
-// Add this to your authMiddleware file (after the existing code)
+// Improved protect middleware with detailed error handling
 exports.protect = catchAsync(async (req, res, next) => {
-  // 1) Get token and check if it's there
+  // 1) Check if token exists in request
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
+  
   let token;
-  const authHeader = req.headers.authorization || req.header('Authorization'); 
-  if (authHeader && authHeader.startsWith('Bearer')) {
-    token = authHeader.split(' ')[1];
+  
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+    console.log('Token from Authorization header:', token?.substring(0, 20) + '...');
+  } else if (req.cookies && req.cookies.jwt) {
+    token = req.cookies.jwt;
+    console.log('Token from cookies:', token?.substring(0, 20) + '...');
   }
-
+  
   if (!token) {
-    return next(
-      new AppError('You are not logged in! Please log in to get access.', 401)
-    );
+    console.log('No token found in request');
+    return res.status(401).json({
+      status: 'fail',
+      message: 'You are not logged in. Please log in to get access'
+    });
   }
-
-  // 2) Verify token using your existing authenticate function
-  // We'll wrap it in a way that works with the existing code
-  const authReq = { 
-    ...req, 
-    header: (name) => req.headers[name.toLowerCase()] 
-  };
-  const authRes = {
-    status: (code) => ({
-      json: (data) => {
-        if (code >= 400) {
-          throw new AppError(data.message || 'Authentication failed', code);
-        }
-        return data;
-      }
-    })
-  };
-
+  
+  // 2) Verify token
   try {
-    // Use your existing authenticate function
-    await authenticate(authReq, authRes, next);
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is missing in environment variables!');
+      return res.status(500).json({
+        status: 'error',
+        message: 'Server configuration error'
+      });
+    }
     
-    // 3) Check if user still exists (already handled in authenticate)
-    // 4) Check if user changed password after the token was issued (you can add this if needed)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Token decoded successfully:', JSON.stringify(decoded));
     
-    // Grant access to protected route
+    // 3) Check if user exists - Try multiple fields from the token
+    let currentUser;
+    
+    // Try different ID fields that might be in the token
+    const possibleIdFields = ['id', 'userId', '_id', 'sub'];
+    
+    for (const field of possibleIdFields) {
+      if (decoded[field]) {
+        console.log(`Trying to find user by ${field}: ${decoded[field]}`);
+        currentUser = await User.findById(decoded[field]);
+        
+        if (currentUser) {
+          console.log(`User found using ${field}`);
+          break;
+        }
+      }
+    }
+    
+    // If still not found, check if it's a candidate
+    if (!currentUser && decoded.userId) {
+      console.log('Checking if it\'s a candidate:', decoded.userId);
+      currentUser = await Candidate.findById(decoded.userId);
+      if (currentUser) {
+        req.userType = 'Candidate';
+      }
+    }
+    
+    if (!currentUser) {
+      console.log('No user found for token payload:', decoded);
+      return res.status(401).json({
+        status: 'fail',
+        message: 'User not found or no longer exists'
+      });
+    }
+    
+    // Set user on request object
+    req.user = currentUser;
+    req.userType = req.userType || 'User';
+    req.decodedToken = decoded;
+    
+    console.log('User authenticated:', {
+      id: currentUser._id,
+      name: currentUser.name || currentUser.username,
+      email: currentUser.email,
+      userType: req.userType
+    });
+    
     next();
   } catch (err) {
-    return next(err);
+    console.error('Token verification error:', err);
+    return res.status(401).json({
+      status: 'fail',
+      message: err.name === 'TokenExpiredError' ? 'Your token has expired' : 'Invalid token'
+    });
   }
 });
 

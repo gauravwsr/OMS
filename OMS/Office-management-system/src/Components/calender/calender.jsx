@@ -79,11 +79,8 @@ const Calender = () => {
 
     return new DataManager({
       url: baseUrl,
-
-      // crudUrl: "http://localhost:5000/BatchData",
-      // adaptor: new CustomAuthAdaptor(),
-      crudUrl: "http://localhost:5001/BatchData",
-      adaptor: new UrlAdaptor(),
+      crudUrl: "http://localhost:5000/BatchData",
+      adaptor: new CustomAuthAdaptor(),
 
       crossDomain: true,
       requestType: 'POST',
@@ -151,10 +148,7 @@ const Calender = () => {
       try {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
-
-        // const response = await fetch("http://localhost:5000/users/me", {
-      
-        const response = await fetch("http://localhost:5001/users/me", {
+        const response = await fetch("http://localhost:5000/users/me", {
 
           method: "GET",
           headers: {

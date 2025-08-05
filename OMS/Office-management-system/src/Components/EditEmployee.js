@@ -83,7 +83,7 @@ const EditEmployee = () => {
   const checkFaceRegistrationStatus = async (fullName) => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/registered-users"
+        "http://localhost5001/api/registered-users"
       );
       if (response.data && response.data.registered_users) {
         const isRegistered = response.data.registered_users.some(
@@ -185,7 +185,7 @@ const EditEmployee = () => {
 
     try {
       // Register face with the face recognition server
-      const response = await axios.post("http://localhost:5001/register_face", {
+      const response = await axios.post("http://localhost5001/register_face", {
         name: formData.fullName,
         images: capturedImages,
       });

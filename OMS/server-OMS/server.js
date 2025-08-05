@@ -55,35 +55,56 @@ chatSocket.init(server);
 // Make io accessible in routes
 app.set("io", chatSocket.getIO());
 
-// Then your routes
-app.use("/api/chat", chatRoutes);
-app.use("/api/message", messageRoutes);
+// CORS request logging middleware for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} request for ${req.url} from origin ${req.headers.origin}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Request body:', req.body);
+    console.log('Content-Type:', req.headers['content-type']);
+  }
+  next();
+});
 
-// const io = new Server(server, {
-//   cors: {
-//     origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST'],
-//   },
-// });
-// require('./socket/socketHandler')(io);
-
-// Middleware
-
+// Apply CORS middleware BEFORE routes
 app.use(
   cors({
-    origin: ["http://localhost:3000", "localhost:3001"],
+    origin: ["http://localhost:3000", "http://localhost:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Length", "X-Requested-With", "Access-Control-Allow-Origin"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
 
-// Pre-flight requests
+// Additional CORS headers for extra security
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  next();
+});
+
+// Pre-flight requests handling
 app.options("*", cors());
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Apply body parsing middleware BEFORE routes
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Additional middleware to log parsed body for debugging
+app.use((req, res, next) => {
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Parsed request body:', req.body);
+  }
+  next();
+});
+
+// Then your routes
+app.use("/api/chat", chatRoutes);
+app.use("/api/message", messageRoutes);
 
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -434,13 +455,15 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
-// mongoose.connect('mongodb://localhost:27017/projectdb', {
+// mongoose.connect('mongodb://localhost27017/projectdb', {
 //   useNewUrlParser: true,
 //   useUnifiedTopology: true,
 // });
 
 server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://localhost:3000", "http://localhost:3001"])}`);
+  console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
 });
 
 // Automatic cleanup function for finished events

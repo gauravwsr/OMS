@@ -8,7 +8,7 @@ const User = require("./models/userModel");
 const AttendanceService = require("./utils/attendanceService");
 
 // MongoDB connection string - update this with your actual connection
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/oms";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost27017/oms";
 
 async function testAttendanceBackend() {
   try {

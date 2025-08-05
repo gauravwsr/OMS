@@ -120,7 +120,7 @@ const FaceAttendance = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/mark-attendance",
+        "http://localhost5001/api/mark-attendance",
         { image: imageData },
         { timeout: 10000 }
       );

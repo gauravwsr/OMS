@@ -14,6 +14,7 @@ const {
   importRemoteProjects,
   forceSyncWithCrm,
   getCrmSyncStatus,
+  getProjectTaskHistory,
 } = require("../controllers/clientProjectController");
 
 // Import authentication and authorization middleware
@@ -27,6 +28,11 @@ router.use(protect);
 // @desc    Get all client projects
 // @access  Private
 router.get("/", getAllClientProjects);
+
+// @route   GET /api/client-projects/tasks/history
+// @desc    Get task history for all projects managed by project manager
+// @access  Private (Project Manager)
+router.get("/tasks/history", authorize("Project Manager"), getProjectTaskHistory);
 
 // @route   POST /api/client-projects/import-remote
 // @desc    Import remote projects from external API
