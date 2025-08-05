@@ -21,7 +21,7 @@
 //     }
 
 //     try {
-//       const response = await fetch('http://138.197.27.240:5001/api/send-email', {
+//       const response = await fetch('http://localhost:5001/api/send-email', {
 //         method: 'POST',
 //         body: formData,
 //       });
@@ -227,7 +227,7 @@ const SendEmail = () => {
     };
 
     try {
-      const response = await fetch('http://138.197.27.240:5001/api/save-draft', {
+      const response = await fetch('http://localhost:5001/api/save-draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -268,7 +268,7 @@ const SendEmail = () => {
     }
 
     try {
-      const response = await fetch('http://138.197.27.240:5001/api/send-email', {
+      const response = await fetch('http://localhost:5001/api/send-email', {
         method: 'POST',
         body: formData,
       });
