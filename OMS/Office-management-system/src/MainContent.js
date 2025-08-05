@@ -737,7 +737,7 @@ const MainContent = ({ nav }) => {
           </div>
 
           {/* Support section */}
-          <div className="support-section">
+          {/* <div className="support-section">
             <h2 className="section-title">Support</h2>
             <nav aria-label="Support navigation">
               <ul className="support-links">
@@ -755,7 +755,7 @@ const MainContent = ({ nav }) => {
                 </li>
               </ul>
             </nav>
-          </div>
+          </div> */}
 
           {/* User section */}
           <div className="user-section">
