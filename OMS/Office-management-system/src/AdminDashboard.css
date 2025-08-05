@@ -8,7 +8,7 @@
   padding: 20px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 /* Dashboard Header */
@@ -1333,7 +1333,10 @@
 
 .card-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(clamp(120px, 20vw, 150px), 1fr));
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(clamp(120px, 20vw, 150px), 1fr)
+  );
   gap: clamp(0.5rem, 2vw, 1rem);
   margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
 }
@@ -1351,7 +1354,7 @@
 }
 
 .finance-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -1388,25 +1391,25 @@
 }
 
 .revenue-bg {
-  background-color: #E3F2FD;
+  background-color: #e3f2fd;
 }
 
 .expenses-bg {
-  background-color: #FFF3E0;
+  background-color: #fff3e0;
 }
 
 .profit-bg {
-  background-color: #E8F5E9;
+  background-color: #e8f5e9;
 }
 
 .loss-bg {
-  background-color: #FFEBEE;
+  background-color: #ffebee;
 }
 
 .card-value {
   font-size: clamp(1.4rem, 3vw, 1.8rem);
   font-weight: 900;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .finance-summary {
@@ -1431,7 +1434,7 @@
 }
 
 .error-text {
-  color: #F44336;
+  color: #f44336;
   font-weight: bold;
 }
 
@@ -1440,8 +1443,7 @@
   padding: clamp(1rem, 3vw, 2rem);
   background: linear-gradient(145deg, #ffffff, #f8fafc);
   border-radius: clamp(8px, 2vw, 16px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 
-              0 8px 25px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
 }
@@ -1455,10 +1457,11 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.loading-text, .no-data-text {
+.loading-text,
+.no-data-text {
   color: #6b7280;
   text-align: center;
   font-size: clamp(0.875rem, 2vw, 1rem);
@@ -1495,12 +1498,12 @@
 }
 
 /* Deals Overview and Quotations Sections */
-.deals-overview-container, .quotations-container {
+.deals-overview-container,
+.quotations-container {
   background: linear-gradient(145deg, #ffffff, #f8fafc);
   padding: clamp(1rem, 3vw, 2rem);
   border-radius: clamp(8px, 2vw, 16px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 
-              0 8px 25px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
 }
@@ -1532,7 +1535,7 @@
   font-size: clamp(0.75rem, 1.8vw, 1rem);
   white-space: nowrap;
   color: black;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .table-cell {
@@ -1619,8 +1622,7 @@
   background: linear-gradient(145deg, #ffffff, #f8fafc);
   padding: clamp(1rem, 3vw, 2rem);
   border-radius: clamp(8px, 2vw, 16px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 
-              0 8px 25px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.08);
   max-width: 100%;
   width: 100%;
   margin: 0 auto;
@@ -1638,7 +1640,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .events-list {
@@ -1667,8 +1669,8 @@
   background: linear-gradient(145deg, #ffffff, #f8fafc);
   border-radius: clamp(6px, 1.5vw, 12px);
   border-left: 4px solid transparent;
-  background-image: linear-gradient(145deg, #ffffff, #f8fafc), 
-                    linear-gradient(135deg, #667eea, #764ba2);
+  background-image: linear-gradient(145deg, #ffffff, #f8fafc),
+    linear-gradient(135deg, #667eea, #764ba2);
   background-origin: border-box;
   background-clip: padding-box, border-box;
   margin-bottom: clamp(0.5rem, 1.5vw, 1rem);
@@ -1680,7 +1682,7 @@
 }
 
 .event-item::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -1783,7 +1785,7 @@
 .quotations-container {
   background-color: #fff;
   border-radius: 10px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
   border: 1px solid #e0e7ef;
   margin-bottom: 2rem;
   padding: 2rem 1.5rem;
@@ -1808,14 +1810,14 @@
 .event-item {
   background: #f8fafc;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
   border: 1px solid #e5e7eb;
   margin-bottom: 1rem;
   transition: box-shadow 0.2s, transform 0.2s;
 }
 .finance-card:hover,
 .event-item:hover {
-  box-shadow: 0 6px 16px rgba(0,0,0,0.13);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.13);
   transform: translateY(-2px) scale(1.01);
 }
 
@@ -1829,7 +1831,8 @@
 .table-header-row {
   background: #f1f5f9;
 }
-.table-header-cell, .table-cell {
+.table-header-cell,
+.table-cell {
   border: 1px solid #e5e7eb;
   padding: 0.85rem 0.5rem;
 }
@@ -1841,7 +1844,10 @@
 }
 
 /* No data, loading, error: More visible */
-.no-events, .loading-text, .error-text, .no-data-text {
+.no-events,
+.loading-text,
+.error-text,
+.no-data-text {
   color: #334155;
   background: #f1f5f9;
   border-radius: 6px;
@@ -1852,23 +1858,6 @@
 }
 
 /* Responsive tweaks */
-@media (max-width: 767px) {
-  .finance-container,
-  .upcoming-events-container,
-  .task-progress-container,
-  .deals-overview-container,
-  .quotations-container {
-    padding: 1rem 0.5rem;
-    margin-bottom: 1.25rem;
-  }
-  .section-title,
-  .finance-title,
-  .modal-title {
-    font-size: 1.1rem;
-  }
-}
-
-/* Media queries for responsiveness */
 
 /* Large Tablets and Small Desktops */
 @media (min-width: 768px) {
@@ -1995,6 +1984,23 @@
 
   .events-list {
     max-height: 300px;
+  }
+
+  /* Mobile view adjustments for calendar icon */
+  .calendar-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align icon to the left */
+    gap: 0.5rem; /* Add spacing between the icon and text */
+  }
+
+  .calendar-icon {
+    order: -1; /* Ensure the icon appears before the text */
+    font-size: 1.2rem; /* Adjust icon size for mobile */
+  }
+
+  .calendar-text {
+    font-size: 0.9rem; /* Adjust text size for mobile */
   }
 }
 
@@ -2129,13 +2135,18 @@
 }
 
 .loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
   animation: loading-shimmer 1.5s infinite;
 }
 
