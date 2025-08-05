@@ -69,7 +69,25 @@
 .header-title p {
   font-size: 1.125rem;
   color: var(--text-secondary);
+  margin: 0 0 1rem 0;
+}
+
+.auto-refresh-toggle {
+  margin-top: 0.5rem;
+}
+
+.auto-refresh-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.auto-refresh-toggle input[type="checkbox"] {
   margin: 0;
+  cursor: pointer;
 }
 
 .header-actions {
@@ -758,6 +776,15 @@
   100% { transform: rotate(360deg); }
 }
 
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.rotating {
+  animation: rotate 1s linear infinite;
+}
+
 .error-container svg {
   color: var(--danger-color);
   margin-bottom: 1rem;
@@ -971,5 +998,336 @@
   .tech-tag {
     padding: 0.1875rem 0.5rem;
     font-size: 0.6875rem;
+  }
+}
+
+/* ========== More Actions Menu ========== */
+.more-actions-container {
+  position: relative;
+}
+
+.more-actions-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  min-width: 150px;
+  padding: 0.5rem 0;
+  animation: slideDown 0.2s ease-out;
+}
+
+.more-actions-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.more-actions-menu button:hover {
+  background: var(--surface-hover);
+}
+
+.more-actions-menu button.delete-action {
+  color: var(--danger-color);
+}
+
+.more-actions-menu button.delete-action:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Project Details Modal ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.project-details-modal {
+  background: var(--background);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-modal:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.modal-content {
+  padding: 2rem;
+}
+
+.project-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.overview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.overview-item label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overview-item span {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.status-completed { color: var(--success-color); }
+.status-in_progress { color: var(--info-color); }
+.status-planning { color: var(--warning-color); }
+.status-on_hold { color: var(--danger-color); }
+
+.priority-high { color: var(--danger-color); }
+.priority-medium { color: var(--warning-color); }
+.priority-low { color: var(--success-color); }
+
+.project-description-modal,
+.project-technologies-modal,
+.project-risks-modal,
+.project-milestones-modal,
+.project-tasks-modal {
+  margin-bottom: 2rem;
+}
+
+.project-description-modal label,
+.project-technologies-modal label,
+.project-risks-modal label,
+.project-milestones-modal label,
+.project-tasks-modal label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.project-description-modal p {
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.project-risks-modal ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.project-risks-modal li {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.milestones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.milestone-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.milestone-card.completed {
+  border-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.milestone-card.pending {
+  border-color: var(--warning-color);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.milestone-card .milestone-status {
+  color: var(--success-color);
+  font-size: 1.25rem;
+}
+
+.milestone-card.pending .milestone-status {
+  color: var(--warning-color);
+}
+
+.milestone-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.milestone-info span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.task-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.task-stat {
+  text-align: center;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.task-stat.completed {
+  border-color: var(--success-color);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.task-stat.in-progress {
+  border-color: var(--info-color);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.task-stat.pending {
+  border-color: var(--warning-color);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.task-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.task-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Responsive Modal ========== */
+@media (max-width: 768px) {
+  .project-details-modal {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .modal-content {
+    padding: 1.5rem;
+  }
+  
+  .project-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .milestones-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .task-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

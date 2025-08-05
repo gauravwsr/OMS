@@ -41,6 +41,197 @@ const SuperAdminProjectView = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [projectsPerPage] = useState(12);
+  const [refreshing, setRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectDetails, setShowProjectDetails] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(null);
+
+  // Handler functions for project actions
+  const handleViewDetails = (project) => {
+    setSelectedProject(project);
+    setShowProjectDetails(true);
+  };
+
+  const handleEditProject = (project) => {
+    console.log('Edit project:', project);
+    // Add edit functionality here
+    alert(`Edit functionality for ${project.name} - Coming soon!`);
+  };
+
+  const handleMoreActions = (projectId, event) => {
+    event.stopPropagation();
+    setShowMoreActions(showMoreActions === projectId ? null : projectId);
+  };
+
+  const handleDeleteProject = (project) => {
+    if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
+      console.log('Delete project:', project);
+      // Add delete functionality here
+      alert(`Delete functionality for ${project.name} - Coming soon!`);
+    }
+    setShowMoreActions(null);
+  };
+
+  const handleCloneProject = (project) => {
+    console.log('Clone project:', project);
+    // Add clone functionality here
+    alert(`Clone functionality for ${project.name} - Coming soon!`);
+    setShowMoreActions(null);
+  };
+
+  const handleArchiveProject = (project) => {
+    console.log('Archive project:', project);
+    // Add archive functionality here
+    alert(`Archive functionality for ${project.name} - Coming soon!`);
+    setShowMoreActions(null);
+  };
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      refreshProjects();
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
+  // Function to refresh projects data
+  const refreshProjects = async () => {
+    setRefreshing(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      // Fetch fresh data from API
+      const response = await fetch("http://localhost:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const projectsData = Array.isArray(result)
+        ? result
+        : result.data || result.projects || [];
+
+      // Fetch updated task counts
+      const projectsWithTaskCounts = await Promise.all(
+        projectsData.map(async (project) => {
+          try {
+            const taskCountsResponse = await fetch(
+              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            
+            if (taskCountsResponse.ok) {
+              const taskResult = await taskCountsResponse.json();
+              if (taskResult.success && taskResult.data) {
+                const tasks = taskResult.data;
+                const taskCounts = {
+                  total: tasks.length,
+                  completed: tasks.filter(task => task.status === "Completed").length,
+                  inProgress: tasks.filter(task => task.status === "In Progress").length,
+                  pending: tasks.filter(task => task.status === "Pending").length,
+                };
+
+                const progress = taskCounts.total > 0 
+                  ? Math.round((taskCounts.completed / taskCounts.total) * 100) 
+                  : 0;
+
+                return { 
+                  ...project, 
+                  tasks: taskCounts, 
+                  progress: progress,
+                  id: project._id,
+                  name: project.projectName || project.name,
+                  client: project.clientName || project.client,
+                  status: project.status || 'planning',
+                  priority: project.priority || 'medium',
+                  budget: project.budget || 0,
+                  spent: project.spent || 0,
+                  startDate: project.startDate || project.createdAt,
+                  endDate: project.endDate || project.deadline,
+                  teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+                  description: project.description || 'No description available',
+                  projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                  technologies: project.technologies || project.techStack || [],
+                  risks: project.risks || [],
+                  milestones: project.milestones || []
+                };
+              }
+            }
+            
+            return { 
+              ...project, 
+              tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+              progress: 0,
+              id: project._id,
+              name: project.projectName || project.name,
+              client: project.clientName || project.client,
+              status: project.status || 'planning',
+              priority: project.priority || 'medium',
+              budget: project.budget || 0,
+              spent: project.spent || 0,
+              startDate: project.startDate || project.createdAt,
+              endDate: project.endDate || project.deadline,
+              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+              description: project.description || 'No description available',
+              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              technologies: project.technologies || project.techStack || [],
+              risks: project.risks || [],
+              milestones: project.milestones || []
+            };
+          } catch (taskError) {
+            console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
+            return { 
+              ...project, 
+              tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+              progress: 0,
+              id: project._id,
+              name: project.projectName || project.name,
+              client: project.clientName || project.client,
+              status: project.status || 'planning',
+              priority: project.priority || 'medium',
+              budget: project.budget || 0,
+              spent: project.spent || 0,
+              startDate: project.startDate || project.createdAt,
+              endDate: project.endDate || project.deadline,
+              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+              description: project.description || 'No description available',
+              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              technologies: project.technologies || project.techStack || [],
+              risks: project.risks || [],
+              milestones: project.milestones || []
+            };
+          }
+        })
+      );
+
+      setProjects(projectsWithTaskCounts);
+      setFilteredProjects(projectsWithTaskCounts);
+      
+    } catch (error) {
+      console.error("Error refreshing projects:", error);
+      setError(error.message || 'Failed to refresh projects');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Mock data - Replace with actual API call
   const mockProjects = [
@@ -162,16 +353,163 @@ const SuperAdminProjectView = () => {
   ];
 
   useEffect(() => {
-    // Simulate API call
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        // Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setError(null);
+
+        // Get JWT token for authentication
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("Authentication token not found. Please login again.");
+        }
+
+        // First, try to import/sync remote projects to local database
+        try {
+          await fetch("http://localhost:5001/api/client-projects/import-remote", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        } catch (importError) {
+          console.warn("Failed to import remote projects:", importError);
+        }
+
+        // Fetch projects from local database
+        const response = await fetch("http://localhost:5001/api/client-projects", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("Super Admin - API Response:", result);
+
+        const projectsData = Array.isArray(result)
+          ? result
+          : result.data || result.projects || [];
+
+        // Fetch real-time task counts for each project
+        const projectsWithTaskCounts = await Promise.all(
+          projectsData.map(async (project) => {
+            try {
+              const taskCountsResponse = await fetch(
+                `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+              
+              if (taskCountsResponse.ok) {
+                const taskResult = await taskCountsResponse.json();
+                if (taskResult.success && taskResult.data) {
+                  const tasks = taskResult.data;
+                  const taskCounts = {
+                    total: tasks.length,
+                    completed: tasks.filter(task => task.status === "Completed").length,
+                    inProgress: tasks.filter(task => task.status === "In Progress").length,
+                    pending: tasks.filter(task => task.status === "Pending").length,
+                  };
+
+                  // Calculate project progress based on completed tasks
+                  const progress = taskCounts.total > 0 
+                    ? Math.round((taskCounts.completed / taskCounts.total) * 100) 
+                    : 0;
+
+                  return { 
+                    ...project, 
+                    tasks: taskCounts, 
+                    progress: progress,
+                    // Map API fields to component expected fields
+                    id: project._id,
+                    name: project.projectName || project.name,
+                    client: project.clientName || project.client,
+                    status: project.status || 'planning',
+                    priority: project.priority || 'medium',
+                    budget: project.budget || 0,
+                    spent: project.spent || 0,
+                    startDate: project.startDate || project.createdAt,
+                    endDate: project.endDate || project.deadline,
+                    teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+                    description: project.description || 'No description available',
+                    projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                    technologies: project.technologies || project.techStack || [],
+                    risks: project.risks || [],
+                    milestones: project.milestones || []
+                  };
+                }
+              }
+              
+              // Return project with default task counts if fetch fails
+              const progress = 0;
+              return { 
+                ...project, 
+                tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+                progress: progress,
+                id: project._id,
+                name: project.projectName || project.name,
+                client: project.clientName || project.client,
+                status: project.status || 'planning',
+                priority: project.priority || 'medium',
+                budget: project.budget || 0,
+                spent: project.spent || 0,
+                startDate: project.startDate || project.createdAt,
+                endDate: project.endDate || project.deadline,
+                teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+                description: project.description || 'No description available',
+                projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                technologies: project.technologies || project.techStack || [],
+                risks: project.risks || [],
+                milestones: project.milestones || []
+              };
+            } catch (taskError) {
+              console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
+              const progress = 0;
+              return { 
+                ...project, 
+                tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+                progress: progress,
+                id: project._id,
+                name: project.projectName || project.name,
+                client: project.clientName || project.client,
+                status: project.status || 'planning',
+                priority: project.priority || 'medium',
+                budget: project.budget || 0,
+                spent: project.spent || 0,
+                startDate: project.startDate || project.createdAt,
+                endDate: project.endDate || project.deadline,
+                teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+                description: project.description || 'No description available',
+                projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                technologies: project.technologies || project.techStack || [],
+                risks: project.risks || [],
+                milestones: project.milestones || []
+              };
+            }
+          })
+        );
+
+        console.log("Super Admin - Projects with task counts:", projectsWithTaskCounts);
+        setProjects(projectsWithTaskCounts);
+        setFilteredProjects(projectsWithTaskCounts);
+
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+        setError(err.message || 'Failed to fetch projects');
+        
+        // Fallback to mock data if API fails
         setProjects(mockProjects);
         setFilteredProjects(mockProjects);
-      } catch (err) {
-        setError('Failed to fetch projects');
       } finally {
         setLoading(false);
       }
@@ -183,9 +521,13 @@ const SuperAdminProjectView = () => {
   // Filter and search functionality
   useEffect(() => {
     let filtered = projects.filter(project => {
-      const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           project.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           project.projectManager.toLowerCase().includes(searchTerm.toLowerCase());
+      const projectName = project.name || project.projectName || '';
+      const clientName = project.client || project.clientName || '';
+      const managerName = project.projectManager || project.assignedTeamLead || '';
+      
+      const matchesSearch = projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           managerName.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
       const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
@@ -319,13 +661,28 @@ const SuperAdminProjectView = () => {
         <div className="header-title">
           <h1>Project Management</h1>
           <p>Comprehensive overview of all projects and their details</p>
+          <div className="auto-refresh-toggle">
+            <label>
+              <input
+                type="checkbox"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+              />
+              Auto-refresh every 5 minutes
+            </label>
+          </div>
         </div>
         <div className="header-actions">
+          <button 
+            className="btn-secondary"
+            onClick={refreshProjects}
+            disabled={refreshing}
+          >
+            <FiRefreshCw className={refreshing ? 'rotating' : ''} /> 
+            {refreshing ? 'Refreshing...' : 'Refresh Data'}
+          </button>
           <button className="btn-secondary">
             <FiDownload /> Export Report
-          </button>
-          <button className="btn-primary">
-            <FiPlus /> New Project
           </button>
         </div>
       </div>
@@ -489,15 +846,45 @@ const SuperAdminProjectView = () => {
                   </div>
                 </div>
                 <div className="project-actions">
-                  <button className="action-btn" title="View Details">
+                  <button 
+                    className="action-btn" 
+                    title="View Details"
+                    onClick={() => handleViewDetails(project)}
+                  >
                     <FiEye />
                   </button>
-                  <button className="action-btn" title="Edit Project">
+                  <button 
+                    className="action-btn" 
+                    title="Edit Project"
+                    onClick={() => handleEditProject(project)}
+                  >
                     <FiEdit />
                   </button>
-                  <button className="action-btn more-actions" title="More Actions">
-                    <FiMoreVertical />
-                  </button>
+                  <div className="more-actions-container">
+                    <button 
+                      className="action-btn more-actions" 
+                      title="More Actions"
+                      onClick={(e) => handleMoreActions(project.id, e)}
+                    >
+                      <FiMoreVertical />
+                    </button>
+                    {showMoreActions === project.id && (
+                      <div className="more-actions-menu">
+                        <button onClick={() => handleCloneProject(project)}>
+                          <FiPlus /> Clone Project
+                        </button>
+                        <button onClick={() => handleArchiveProject(project)}>
+                          <FiDownload /> Archive
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteProject(project)}
+                          className="delete-action"
+                        >
+                          <FiTrash2 /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -568,11 +955,23 @@ const SuperAdminProjectView = () => {
                       </span>
                     </div>
                   </div>
+                </div>
+
+                <div className="detail-row">
                   <div className="detail-item">
                     <FiUser className="detail-icon" />
                     <div className="detail-content">
                       <span className="detail-label">Team Size</span>
                       <span className="detail-value">{project.teamMembers} members</span>
+                    </div>
+                  </div>
+                  <div className="detail-item">
+                    <FiCheckCircle className="detail-icon" />
+                    <div className="detail-content">
+                      <span className="detail-label">Tasks</span>
+                      <span className="detail-value">
+                        {project.tasks ? `${project.tasks.completed}/${project.tasks.total}` : '0/0'} completed
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -653,6 +1052,133 @@ const SuperAdminProjectView = () => {
           >
             Next
           </button>
+        </div>
+      )}
+
+      {/* Project Details Modal */}
+      {showProjectDetails && selectedProject && (
+        <div className="modal-overlay" onClick={() => setShowProjectDetails(false)}>
+          <div className="project-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{selectedProject.name}</h2>
+              <button 
+                className="close-modal"
+                onClick={() => setShowProjectDetails(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-content">
+              <div className="project-overview">
+                <div className="overview-item">
+                  <label>Client:</label>
+                  <span>{selectedProject.client}</span>
+                </div>
+                <div className="overview-item">
+                  <label>Project Manager:</label>
+                  <span>{selectedProject.projectManager}</span>
+                </div>
+                <div className="overview-item">
+                  <label>Status:</label>
+                  <span className={`status-${selectedProject.status}`}>
+                    {selectedProject.status.replace('_', ' ').toUpperCase()}
+                  </span>
+                </div>
+                <div className="overview-item">
+                  <label>Priority:</label>
+                  <span className={`priority-${selectedProject.priority}`}>
+                    {selectedProject.priority.toUpperCase()}
+                  </span>
+                </div>
+                <div className="overview-item">
+                  <label>Progress:</label>
+                  <span>{selectedProject.progress}%</span>
+                </div>
+                <div className="overview-item">
+                  <label>Budget:</label>
+                  <span>{formatCurrency(selectedProject.budget)}</span>
+                </div>
+                <div className="overview-item">
+                  <label>Spent:</label>
+                  <span>{formatCurrency(selectedProject.spent)}</span>
+                </div>
+                <div className="overview-item">
+                  <label>Team Size:</label>
+                  <span>{selectedProject.teamMembers} members</span>
+                </div>
+                <div className="overview-item">
+                  <label>Duration:</label>
+                  <span>{formatDate(selectedProject.startDate)} - {formatDate(selectedProject.endDate)}</span>
+                </div>
+              </div>
+              
+              <div className="project-description-modal">
+                <label>Description:</label>
+                <p>{selectedProject.description}</p>
+              </div>
+
+              <div className="project-technologies-modal">
+                <label>Technologies:</label>
+                <div className="tech-tags">
+                  {selectedProject.technologies.map((tech, index) => (
+                    <span key={index} className="tech-tag">{tech}</span>
+                  ))}
+                </div>
+              </div>
+
+              {selectedProject.risks.length > 0 && (
+                <div className="project-risks-modal">
+                  <label>Risks:</label>
+                  <ul>
+                    {selectedProject.risks.map((risk, index) => (
+                      <li key={index}>{risk}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="project-milestones-modal">
+                <label>Milestones:</label>
+                <div className="milestones-grid">
+                  {selectedProject.milestones.map((milestone, index) => (
+                    <div key={index} className={`milestone-card ${milestone.completed ? 'completed' : 'pending'}`}>
+                      <div className="milestone-status">
+                        {milestone.completed ? <FiCheckCircle /> : <FiClock />}
+                      </div>
+                      <div className="milestone-info">
+                        <h4>{milestone.name}</h4>
+                        <span>{formatDate(milestone.date)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedProject.tasks && (
+                <div className="project-tasks-modal">
+                  <label>Task Summary:</label>
+                  <div className="task-summary-grid">
+                    <div className="task-stat">
+                      <span className="task-number">{selectedProject.tasks.total}</span>
+                      <span className="task-label">Total Tasks</span>
+                    </div>
+                    <div className="task-stat completed">
+                      <span className="task-number">{selectedProject.tasks.completed}</span>
+                      <span className="task-label">Completed</span>
+                    </div>
+                    <div className="task-stat in-progress">
+                      <span className="task-number">{selectedProject.tasks.inProgress}</span>
+                      <span className="task-label">In Progress</span>
+                    </div>
+                    <div className="task-stat pending">
+                      <span className="task-number">{selectedProject.tasks.pending}</span>
+                      <span className="task-label">Pending</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
