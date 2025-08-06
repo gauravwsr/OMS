@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import DailyIframe from "@daily-co/daily-js";
-import { FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaCopy, FaSignOutAlt, FaLink, FaUserPlus } from "react-icons/fa";
+import {
+  FaVideo,
+  FaVideoSlash,
+  FaMicrophone,
+  FaMicrophoneSlash,
+  FaCopy,
+  FaSignOutAlt,
+  FaLink,
+  FaUserPlus,
+} from "react-icons/fa";
 import "./Meeting.css";
 
 const Meeting = () => {
@@ -17,7 +26,8 @@ const Meeting = () => {
   const [participants, setParticipants] = useState(0);
 
   // API key should be stored securely in environment variables in a real application
-  const API_KEY = "4e0988f781f1d0eda3c64fbdda8465d5282923b87db26911019bfe637b57c1aa";
+  const API_KEY =
+    "4e0988f781f1d0eda3c64fbdda8465d5282923b87db26911019bfe637b57c1aa";
 
   const createRoom = async () => {
     if (!userName) {
@@ -178,7 +188,8 @@ const Meeting = () => {
         {isMeetingStarted && (
           <div className="meeting-info">
             <span className="participant-count">
-              <FaUserPlus /> {participants} participant{participants !== 1 ? 's' : ''}
+              <FaUserPlus /> {participants} participant
+              {participants !== 1 ? "s" : ""}
             </span>
           </div>
         )}
@@ -189,7 +200,7 @@ const Meeting = () => {
           <div className="meeting-setup">
             <div className="setup-card">
               <h2>Start or Join a Meeting</h2>
-              
+
               <div className="input-group">
                 <label htmlFor="userName">Your Name</label>
                 <input
@@ -200,25 +211,25 @@ const Meeting = () => {
                   onChange={(e) => setUserName(e.target.value)}
                 />
               </div>
-              
+
               <div className="media-toggles">
-                <button 
-                  className={`media-toggle ${isVideoOn ? 'active' : ''}`} 
+                <button
+                  className={`media-toggle ${isVideoOn ? "active" : ""}`}
                   onClick={toggleVideo}
                 >
                   {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
-                  {isVideoOn ? 'Video On' : 'Video Off'}
+                  {isVideoOn ? "Video On" : "Video Off"}
                 </button>
-                
-                <button 
-                  className={`media-toggle ${isAudioOn ? 'active' : ''}`} 
+
+                <button
+                  className={`media-toggle ${isAudioOn ? "active" : ""}`}
                   onClick={toggleAudio}
                 >
                   {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
-                  {isAudioOn ? 'Audio On' : 'Audio Off'}
+                  {isAudioOn ? "Audio On" : "Audio Off"}
                 </button>
               </div>
-              
+
               <div className="meeting-actions">
                 <div className="action-card">
                   <h3>Create a Meeting</h3>
@@ -234,9 +245,9 @@ const Meeting = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="action-divider">OR</div>
-                
+
                 <div className="action-card">
                   <h3>Join a Meeting</h3>
                   <div className="input-with-button">
@@ -257,26 +268,26 @@ const Meeting = () => {
         ) : (
           <div className="meeting-active">
             <div className="video-container" ref={containerRef}></div>
-            
+
             <div className="meeting-controls">
               <div className="control-group">
                 <button
-                  className={`control-button ${isVideoOn ? 'active' : ''}`}
+                  className={`control-button ${isVideoOn ? "active" : ""}`}
                   onClick={toggleVideo}
                 >
                   {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
                 </button>
                 <button
-                  className={`control-button ${isAudioOn ? 'active' : ''}`}
+                  className={`control-button ${isAudioOn ? "active" : ""}`}
                   onClick={toggleAudio}
                 >
                   {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
                 </button>
               </div>
-              
+
               <div className="control-group">
                 <button className="share-button" onClick={copyToClipboard}>
-                  <FaCopy /> {isLinkCopied ? 'Copied!' : 'Copy Link'}
+                  <FaCopy /> {isLinkCopied ? "Copied!" : "Copy Link"}
                 </button>
                 <button className="end-button" onClick={endMeeting}>
                   <FaSignOutAlt /> End Meeting
@@ -291,7 +302,6 @@ const Meeting = () => {
 };
 
 export default Meeting;
-
 
 // import React, { useState } from "react";
 // import "./Meeting.css";
@@ -320,7 +330,7 @@ export default Meeting;
 //     { title: "Strategy Review", dateTime: new Date(), location: "Room 201", participants: "Team A, B" },
 //     { title: "Product Launch Prep", dateTime: new Date(new Date().setDate(new Date().getDate() + 1)), location: "Room 301", participants: "Marketing Team" },
 //   ]);
-  
+
 //   const [formData, setFormData] = useState({
 //     title: '',
 //     dateTime: '',
@@ -350,12 +360,12 @@ export default Meeting;
 //     };
 
 //     try {
-//       const response = await fetch("http://142.93.213.81:5001/api/schedule", {
+//       const response = await fetch("http://localhost:5001/api/schedule", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newMeeting),
 //       });
-  
+
 //       if (response.ok) {
 //         const savedMeeting = await response.json();
 //         setMeetings([...meetings, savedMeeting]);
@@ -373,7 +383,6 @@ export default Meeting;
 //     setFormVisible(false);
 //   };
 
-  
 //   const today = new Date().setHours(0, 0, 0, 0);
 //   const todayMeetings = meetings.filter(meeting => new Date(meeting.dateTime).setHours(0, 0, 0, 0) === today);
 //   const upcomingMeetings = meetings.filter(meeting => new Date(meeting.dateTime).setHours(0, 0, 0, 0) > today);
@@ -476,7 +485,7 @@ export default Meeting;
 //           //     </tbody>
 //           //   </table>
 //           // </div>
-          
+
 //         )}
 //       </div>
 
@@ -518,8 +527,6 @@ export default Meeting;
 // };
 
 // export default Meeting;
-
-
 
 // import { useState, useEffect, useRef } from "react";
 // import DailyIframe from "@daily-co/daily-js";

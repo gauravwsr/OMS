@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const candidateController = require("../controllers/candidateController");
 const upload = require("../middlewares/uploadMiddleware");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 // Handle both file uploads (photo and cv) in one request
 const uploadFields = upload.fields([
@@ -26,16 +27,45 @@ const optionalUpload = (req, res, next) => {
 
 // Routes
 router.post("/", uploadFields, candidateController.createCandidate);
-router.get("/", candidateController.getAllCandidates);
-router.get("/:id", candidateController.getCandidateById);
-router.put("/:id", uploadFields, candidateController.updateCandidate);
-router.delete("/:id", candidateController.deleteCandidate);
+router.get(
+  "/",
+  authMiddleware.authenticate,
+  candidateController.getAllCandidates
+);
+router.get(
+  "/:id",
+  authMiddleware.authenticate,
+  candidateController.getCandidateById
+);
+router.put(
+  "/:id",
+  authMiddleware.authenticate,
+  uploadFields,
+  candidateController.updateCandidate
+);
+router.delete(
+  "/:id",
+  authMiddleware.authenticate,
+  candidateController.deleteCandidate
+);
 router.post("/login", candidateController.loginCandidate);
 
 // Face Recognition and Attendance routes
 router.post("/attendance/mark", candidateController.markAttendance);
-router.get("/:id/attendance/history", candidateController.getAttendanceHistory);
-router.put("/:id/face-encodings", candidateController.updateFaceEncodings);
-router.get("/attendance/all", candidateController.getAllAttendanceRecords);
+router.get(
+  "/:id/attendance/history",
+  authMiddleware.authenticate,
+  candidateController.getAttendanceHistory
+);
+router.put(
+  "/:id/face-encodings",
+  authMiddleware.authenticate,
+  candidateController.updateFaceEncodings
+);
+router.get(
+  "/attendance/all",
+  authMiddleware.authenticate,
+  candidateController.getAllAttendanceRecords
+);
 
 module.exports = router;

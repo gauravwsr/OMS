@@ -1,15 +1,19 @@
 # Client Project Management API Documentation
 
 ## Overview
+
 This API provides comprehensive client project management with team lead assignment functionality for the Office Management System (OMS).
 
 ## Base URL
+
 ```
-http://142.93.213.81:5001/api
+http://localhost:5001/api
 ```
 
 ## Authentication
+
 All endpoints require authentication via JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your-jwt-token>
 ```
@@ -17,12 +21,15 @@ Authorization: Bearer <your-jwt-token>
 ## Endpoints
 
 ### 1. Get All Client Projects
+
 ```http
 GET /client-projects
 ```
+
 **Description:** Retrieves all client projects with populated team lead information.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -62,12 +69,15 @@ GET /client-projects
 ```
 
 ### 2. Get Team Leads
+
 ```http
 GET /client-projects/team-leads
 ```
+
 **Description:** Retrieves all users with Team Lead role for assignment dropdown.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -87,15 +97,19 @@ GET /client-projects/team-leads
 ```
 
 ### 3. Get Projects for Team Lead
+
 ```http
 GET /client-projects/team-lead/:identifier
 ```
+
 **Description:** Retrieves projects assigned to a specific team lead.
 
 **Parameters:**
+
 - `identifier` (string): Can be user ID, name, or email
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -110,12 +124,15 @@ GET /client-projects/team-lead/:identifier
 ```
 
 ### 4. Get Single Project
+
 ```http
 GET /client-projects/:id
 ```
+
 **Description:** Retrieves detailed information about a specific project.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -136,12 +153,15 @@ GET /client-projects/:id
 ```
 
 ### 5. Create New Project
+
 ```http
 POST /client-projects
 ```
+
 **Access:** Project Manager only
 
 **Request Body:**
+
 ```json
 {
   "clientName": "ABC Corp",
@@ -160,6 +180,7 @@ POST /client-projects
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -171,12 +192,15 @@ POST /client-projects
 ```
 
 ### 6. Assign Team Lead to Project
+
 ```http
 PUT /client-projects/:id/assign-team-lead
 ```
+
 **Access:** Project Manager only
 
 **Request Body:**
+
 ```json
 {
   "teamLeadId": "user_object_id",
@@ -185,6 +209,7 @@ PUT /client-projects/:id/assign-team-lead
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -196,21 +221,25 @@ PUT /client-projects/:id/assign-team-lead
 ```
 
 ### 7. Update Project
+
 ```http
 PUT /client-projects/:id
 ```
+
 **Description:** Updates project information.
 
 **Request Body:**
+
 ```json
 {
   "status": "In Progress",
-  "priority": "Medium",
+  "priority": "Medium"
   // Any other fields to update
 }
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -222,12 +251,15 @@ PUT /client-projects/:id
 ```
 
 ### 8. Delete Project
+
 ```http
 DELETE /client-projects/:id
 ```
+
 **Access:** Project Manager only
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -236,12 +268,15 @@ DELETE /client-projects/:id
 ```
 
 ### 9. Add Project Note
+
 ```http
 POST /client-projects/:id/notes
 ```
+
 **Description:** Adds a note to a project.
 
 **Request Body:**
+
 ```json
 {
   "content": "This is a project update note"
@@ -249,6 +284,7 @@ POST /client-projects/:id/notes
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -262,6 +298,7 @@ POST /client-projects/:id/notes
 ## Error Responses
 
 All endpoints return errors in the following format:
+
 ```json
 {
   "success": false,
@@ -271,6 +308,7 @@ All endpoints return errors in the following format:
 ```
 
 ## Status Codes
+
 - `200` - Success
 - `201` - Created
 - `400` - Bad Request
@@ -282,19 +320,24 @@ All endpoints return errors in the following format:
 ## Frontend Integration Notes
 
 ### For Project Manager Dashboard:
+
 1. Use `GET /client-projects/team-leads` to populate team lead dropdown
 2. Use `PUT /client-projects/:id/assign-team-lead` to assign team leads
 3. Use `GET /client-projects` to fetch all projects for display
 
 ### For Team Lead Dashboard:
+
 1. Use `GET /client-projects/team-lead/:identifier` where identifier is the logged-in user's ID, name, or email
 2. Projects will be filtered to show only those assigned to the current team lead
 
 ### Authentication Context:
+
 Make sure to include the JWT token in all API requests and handle authentication errors appropriately.
 
 ## Database Schema
+
 The client project model includes:
+
 - Automatic project ID generation
 - Team lead assignment tracking
 - Assignment history

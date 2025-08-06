@@ -15,7 +15,7 @@
 //                 alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
 //                 try {
-//                     await fetch("http://142.93.213.81:5001/api/idle-warning", {
+//                     await fetch("http://localhost:5001/api/idle-warning", {
 //                         method: "POST",
 //                         headers: { "Content-Type": "application/json" },
 //                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -50,7 +50,6 @@
 
 // export default IdleTracker;
 
-
 // import { useEffect, useState } from "react";
 
 // const IdleTracker = () => {
@@ -69,7 +68,7 @@
 //                 alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
 //                 try {
-//                     await fetch("http://142.93.213.81:5001/api/idle-warning", {
+//                     await fetch("http://localhost:5001/api/idle-warning", {
 //                         method: "POST",
 //                         headers: { "Content-Type": "application/json" },
 //                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -107,59 +106,61 @@
 
 // export default IdleTracker;
 
-
 import { useEffect, useState, useRef } from "react";
 
 const IdleTracker = () => {
-    const [warningCount, setWarningCount] = useState(0);
-    const idleTimerRef = useRef(null);
+  const [warningCount, setWarningCount] = useState(0);
+  const idleTimerRef = useRef(null);
 
-    useEffect(() => {
-        const resetTimer = () => {
-            if (!localStorage.getItem("token")) return; // Stop tracking if user is logged out
+  useEffect(() => {
+    const resetTimer = () => {
+      if (!localStorage.getItem("token")) return; // Stop tracking if user is logged out
 
-            clearTimeout(idleTimerRef.current);
-            idleTimerRef.current = setTimeout(async () => {
-                setWarningCount((prevCount) => {
-                    const newWarningCount = prevCount + 1;
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(async () => {
+        setWarningCount((prevCount) => {
+          const newWarningCount = prevCount + 1;
 
-                    alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
+          alert(
+            `⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`
+          );
 
-                    fetch("http://142.93.213.81:5001/api/idle-warning", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ userId: localStorage.getItem("userId") }),
-                    }).catch((error) => console.error("Error sending idle warning:", error));
+          fetch("http://localhost:5001/api/idle-warning", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: localStorage.getItem("userId") }),
+          }).catch((error) =>
+            console.error("Error sending idle warning:", error)
+          );
 
-                    return newWarningCount;
-                });
-            }, 60000); // 1 minute
-        };
+          return newWarningCount;
+        });
+      }, 60000); // 1 minute
+    };
 
-        window.addEventListener("mousemove", resetTimer);
-        window.addEventListener("keydown", resetTimer);
-        resetTimer(); // Start the timer initially
+    window.addEventListener("mousemove", resetTimer);
+    window.addEventListener("keydown", resetTimer);
+    resetTimer(); // Start the timer initially
 
-        return () => {
-            clearTimeout(idleTimerRef.current);
-            window.removeEventListener("mousemove", resetTimer);
-            window.removeEventListener("keydown", resetTimer);
-        };
-    }, []);
+    return () => {
+      clearTimeout(idleTimerRef.current);
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+    };
+  }, []);
 
-    useEffect(() => {
-        if (warningCount >= 3) {
-            if (!localStorage.getItem("token")) return; // Ensure user is logged in before logging out
+  useEffect(() => {
+    if (warningCount >= 3) {
+      if (!localStorage.getItem("token")) return; // Ensure user is logged in before logging out
 
-            alert("🚨 You have been logged out due to inactivity.");
-            localStorage.removeItem("token");
-            localStorage.removeItem("userId");
-            window.location.href = "/login"; // Redirect to login page
-        }
-    }, [warningCount]);
+      alert("🚨 You have been logged out due to inactivity.");
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      window.location.href = "/login"; // Redirect to login page
+    }
+  }, [warningCount]);
 
-    return null; // No UI component, just tracking
+  return null; // No UI component, just tracking
 };
 
 export default IdleTracker;
-

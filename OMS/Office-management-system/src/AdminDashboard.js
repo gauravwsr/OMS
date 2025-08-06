@@ -7,7 +7,7 @@ import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const { user, notifications, fetchNotifications } = useAuth();
-  
+
   // TopDeals states
   const [topDeals, setTopDeals] = useState([]);
   const [dealsStats, setDealsStats] = useState({
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
 
   // Fetch notifications when component mounts and user is available
   useEffect(() => {
-    if (user && user.role === 'Super_Admin') {
+    if (user && user.role === "Super_Admin") {
       // Clean up test notifications on Super Admin login
       cleanupTestNotifications();
       // Then fetch fresh notifications
@@ -87,7 +87,7 @@ const AdminDashboard = () => {
   const cleanupTestNotifications = async () => {
     try {
       await axios.delete(
-        "http://142.93.213.81:5001/api/notifications/cleanup-test",
+        "http://localhost:5001/api/notifications/cleanup-test",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -136,7 +136,9 @@ const AdminDashboard = () => {
         (deal) => deal.stage === "Qualified"
       ).length;
 
-      const quotationsResponse = await axios.get(`${API_BASE_URL}/newquotations`);
+      const quotationsResponse = await axios.get(
+        `${API_BASE_URL}/newquotations`
+      );
       const quotations = quotationsResponse.data;
 
       const totalDeals = filteredDeals.length + quotations.length;
@@ -370,7 +372,7 @@ const AdminDashboard = () => {
       }
       const data = await response.json();
       const tasks = data.tasks || [];
-      
+
       // Categorize tasks based on status
       const taskCounts = {
         Open: 0,
@@ -403,31 +405,31 @@ const AdminDashboard = () => {
   // Upcoming Events functions
   const fetchUpcomingEvents = async () => {
     setEventsLoading(true);
-    console.log('Fetching upcoming events...');
+    console.log("Fetching upcoming events...");
     try {
-      const response = await axios.post('http://142.93.213.81:5001/GetData');
-      console.log('Events API response:', response.data);
+      const response = await axios.post("http://localhost:5001/GetData");
+      console.log("Events API response:", response.data);
       const allEvents = response.data || [];
-      console.log('All events fetched:', allEvents);
-      
+      console.log("All events fetched:", allEvents);
+
       // Filter upcoming events (events that haven't ended yet)
       const now = new Date();
-      console.log('Current date and time:', now);
-      
+      console.log("Current date and time:", now);
+
       const upcoming = allEvents
-        .filter(event => {
+        .filter((event) => {
           const eventEnd = new Date(event.EndTime);
           const eventStart = new Date(event.StartTime);
-          console.log('Event:', event.Subject);
-          console.log('Event start time:', eventStart);
-          console.log('Event end time:', eventEnd);
-          console.log('Is event still active or upcoming?', eventEnd >= now);
+          console.log("Event:", event.Subject);
+          console.log("Event start time:", eventStart);
+          console.log("Event end time:", eventEnd);
+          console.log("Is event still active or upcoming?", eventEnd >= now);
           return eventEnd >= now; // Include events that haven't ended yet
         })
         .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime)) // Sort by start time
         .slice(0, 5); // Show only next 5 events
-      
-      console.log('Filtered upcoming events:', upcoming);
+
+      console.log("Filtered upcoming events:", upcoming);
       setUpcomingEvents(upcoming);
       setEventsError(null);
     } catch (error) {
@@ -447,42 +449,42 @@ const AdminDashboard = () => {
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Check if event is currently ongoing
     if (startDate <= now && endDate >= now) {
-      return `🔴 Ongoing - Ends ${endDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+      return `🔴 Ongoing - Ends ${endDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       })}`;
     }
-    
+
     // Check if event starts today
     if (startDate.toDateString() === today.toDateString()) {
-      return `Today, ${startDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+      return `Today, ${startDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       })}`;
     }
-    
+
     // Check if event starts tomorrow
     if (startDate.toDateString() === tomorrow.toDateString()) {
-      return `Tomorrow, ${startDate.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
+      return `Tomorrow, ${startDate.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       })}`;
     }
-    
+
     // Other dates
-    return startDate.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    return startDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -492,343 +494,318 @@ const AdminDashboard = () => {
 
   return (
     <>
-
       <NotificationPopup />
 
       {/* Show NotificationPopup only for Super Admin */}
-      {user?.role === 'Super_Admin' && <NotificationPopup />}
+      {user?.role === "Super_Admin" && <NotificationPopup />}
 
-      
       <div className="dashboard-container">
-      {/* FIRST ROW: Financial Performance Summary - Full Width */}
-      <div className="grid-row financial-row">
-        {/* TotalRevenue Section */}
-        <div className="finance-container">
-          <h2 className="finance-title">Financial Performance Summary</h2>
+        {/* FIRST ROW: Financial Performance Summary - Full Width */}
+        <div className="grid-row financial-row">
+          {/* TotalRevenue Section */}
+          <div className="finance-container">
+            <h2 className="finance-title">Financial Performance Summary</h2>
 
-          <div className="year-selector">
-            <label className="year-label">Select Year: </label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="year-select"
-            >
-              {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="card-container">
-            <div className="finance-card">
-              <div className="card-header">
-                <h3 className="card-title">Total Revenue</h3>
-              </div>
-              <div className="card-body revenue-bg">
-                <p className="card-value">
-                  ₹{financialData.totalRevenue.toLocaleString()}
-                </p>
-              </div>
+            <div className="year-selector">
+              <label className="year-label">Select Year: </label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="year-select"
+              >
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Expenses card with click handler */}
-            <div
-              className="finance-card clickable"
-              onClick={handleOpenExpensesChart}
-              title="Click to view detailed expense breakdown"
-            >
-              <div className="card-header">
-                <h3 className="card-title">Total Expenses</h3>
+            <div className="card-container">
+              <div className="finance-card">
+                <div className="card-header">
+                  <h3 className="card-title">Total Revenue</h3>
+                </div>
+                <div className="card-body revenue-bg">
+                  <p className="card-value">
+                    ₹{financialData.totalRevenue.toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <div className="card-body expenses-bg">
-                <p className="card-value">
-                  ₹{financialData.totalExpenses.toLocaleString()}
-                </p>
-              </div>
-            </div>
 
-            <div className="finance-card">
-              <div className="card-header">
-                <h3 className="card-title">
-                  {financialData.profit >= 0 ? "Profit" : "Loss"}
-                </h3>
+              {/* Expenses card with click handler */}
+              <div
+                className="finance-card clickable"
+                onClick={handleOpenExpensesChart}
+                title="Click to view detailed expense breakdown"
+              >
+                <div className="card-header">
+                  <h3 className="card-title">Total Expenses</h3>
+                </div>
+                <div className="card-body expenses-bg">
+                  <p className="card-value">
+                    ₹{financialData.totalExpenses.toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <div className={`card-body ${financialData.profit >= 0 ? "profit-bg" : "loss-bg"}`}>
-                <p
-                  className="card-value"
-                  style={{ color: getStatusColor(financialData.profit) }}
+
+              <div className="finance-card">
+                <div className="card-header">
+                  <h3 className="card-title">
+                    {financialData.profit >= 0 ? "Profit" : "Loss"}
+                  </h3>
+                </div>
+                <div
+                  className={`card-body ${
+                    financialData.profit >= 0 ? "profit-bg" : "loss-bg"
+                  }`}
                 >
+                  <p
+                    className="card-value"
+                    style={{ color: getStatusColor(financialData.profit) }}
+                  >
+                    ₹{Math.abs(financialData.profit).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              <div className="finance-card">
+                <div className="card-header">
+                  <h3 className="card-title">Profit Margin</h3>
+                </div>
+                <div
+                  className={`card-body ${
+                    financialData.profit >= 0 ? "profit-bg" : "loss-bg"
+                  }`}
+                >
+                  <p
+                    className="card-value"
+                    style={{ color: getStatusColor(financialData.profit) }}
+                  >
+                    {financialData.profitPercentage}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="finance-summary">
+              <h3 className="summary-title">
+                Financial Summary for {selectedYear}
+              </h3>
+              <p className="summary-text">
+                In {selectedYear}, the total revenue generated was{" "}
+                <strong>₹{financialData.totalRevenue.toLocaleString()}</strong>{" "}
+                against total expenses of{" "}
+                <strong>₹{financialData.totalExpenses.toLocaleString()}</strong>
+                , resulting in a {financialData.profit >= 0 ? "profit" : "loss"}{" "}
+                of{" "}
+                <strong style={{ color: getStatusColor(financialData.profit) }}>
                   ₹{Math.abs(financialData.profit).toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            <div className="finance-card">
-              <div className="card-header">
-                <h3 className="card-title">Profit Margin</h3>
-              </div>
-              <div className={`card-body ${financialData.profit >= 0 ? "profit-bg" : "loss-bg"}`}>
-                <p
-                  className="card-value"
-                  style={{ color: getStatusColor(financialData.profit) }}
-                >
+                </strong>{" "}
+                with a profit margin of
+                <strong style={{ color: getStatusColor(financialData.profit) }}>
+                  {" "}
                   {financialData.profitPercentage}%
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="finance-summary">
-            <h3 className="summary-title">
-              Financial Summary for {selectedYear}
-            </h3>
-            <p className="summary-text">
-              In {selectedYear}, the total revenue generated was{" "}
-              <strong>₹{financialData.totalRevenue.toLocaleString()}</strong>{" "}
-              against total expenses of{" "}
-              <strong>₹{financialData.totalExpenses.toLocaleString()}</strong>,
-              resulting in a {financialData.profit >= 0 ? "profit" : "loss"} of{" "}
-              <strong style={{ color: getStatusColor(financialData.profit) }}>
-                ₹{Math.abs(financialData.profit).toLocaleString()}
-              </strong>{" "}
-              with a profit margin of
-              <strong style={{ color: getStatusColor(financialData.profit) }}>
-                {" "}
-                {financialData.profitPercentage}%
-              </strong>
-              .
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* SECOND ROW: Task Progress, Deals Overview, and Quotations all in one row */}
-      <div className="grid-row-three-cols">
-        {/* TaskProgress Section */}
-        <div className="task-progress-container">
-          <h3 className="section-title">Task Progress</h3>
-
-          {tasksLoading ? (
-            <p className="loading-text">Loading task data...</p>
-          ) : tasksError ? (
-            <p className="error-text">Error loading tasks: {tasksError}</p>
-          ) : !hasTaskData ? (
-            <div className="no-data-container">
-              <p className="no-data-text">
-                No TASKs Assigned
+                </strong>
+                .
               </p>
             </div>
-          ) : (
-            <div className="chart-container">
-              <PieChart
-                width={220}
-                height={220}
-                className="pie-chart"
-              >
-                <Pie
-                  data={taskData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  label
-                >
-                  {taskData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
-            </div>
-          )}
-        </div>
-
-        {/* Deals Statistics Section */}
-        <div className="deals-overview-container">
-          <h3 className="section-title">Deals Overview</h3>
-          <div className="table-container">
-            <table className="data-table">
-              <thead>
-                <tr className="table-header-row">
-                  <th className="table-header-cell">
-                    Category
-                  </th>
-                  <th className="table-header-cell">
-                    Count
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="table-cell">
-                    Total Deals
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.totalDeals}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="table-cell">
-                    Contacted Deals
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.contactedDeals}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="table-cell">
-                    Qualified Deals
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.qualifiedDeals}
-                  </td>
-                </tr>
-                <tr>
-                  <td className="table-cell">
-                    Proposals Accepted
-                  </td>
-                  <td className="table-cell">
-                    {dealsStats.proposalsAccepted}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
 
-        {/* Saved Quotations Section */}
-        <div className="quotations-container">
-          <h3 className="section-title">Saved Quotations</h3>
-          {savedQuotations.length === 0 ? (
-            <p className="no-data-text">No saved quotations available</p>
-          ) : (
+        {/* SECOND ROW: Task Progress, Deals Overview, and Quotations all in one row */}
+        <div className="grid-row-three-cols">
+          {/* TaskProgress Section */}
+          <div className="task-progress-container">
+            <h3 className="section-title">Task Progress</h3>
+
+            {tasksLoading ? (
+              <p className="loading-text">Loading task data...</p>
+            ) : tasksError ? (
+              <p className="error-text">Error loading tasks: {tasksError}</p>
+            ) : !hasTaskData ? (
+              <div className="no-data-container">
+                <p className="no-data-text">No TASKs Assigned</p>
+              </div>
+            ) : (
+              <div className="chart-container">
+                <PieChart width={220} height={220} className="pie-chart">
+                  <Pie
+                    data={taskData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label
+                  >
+                    {taskData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Legend />
+                  <Tooltip />
+                </PieChart>
+              </div>
+            )}
+          </div>
+
+          {/* Deals Statistics Section */}
+          <div className="deals-overview-container">
+            <h3 className="section-title">Deals Overview</h3>
             <div className="table-container">
               <table className="data-table">
-                <thead className="sticky-header">
-                  <tr>
-                    <th className="table-header-cell">
-                      Client Name
-                    </th>
-                    <th className="table-header-cell">
-                      Total Amount
-                    </th>
+                <thead>
+                  <tr className="table-header-row">
+                    <th className="table-header-cell">Category</th>
+                    <th className="table-header-cell">Count</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {savedQuotations.map((quotation, index) => (
-                    <tr key={index}>
-                      <td className="table-cell">
-                        {quotation.clientName}
-                      </td>
-                      <td className="table-cell">
-                        ₹{quotation.Totalamount}
-                      </td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td className="table-cell">Total Deals</td>
+                    <td className="table-cell">{dealsStats.totalDeals}</td>
+                  </tr>
+                  <tr>
+                    <td className="table-cell">Contacted Deals</td>
+                    <td className="table-cell">{dealsStats.contactedDeals}</td>
+                  </tr>
+                  <tr>
+                    <td className="table-cell">Qualified Deals</td>
+                    <td className="table-cell">{dealsStats.qualifiedDeals}</td>
+                  </tr>
+                  <tr>
+                    <td className="table-cell">Proposals Accepted</td>
+                    <td className="table-cell">
+                      {dealsStats.proposalsAccepted}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* Upcoming Events Section */}
-            <div className="activity-section">
-              <div className="section-header">
-                <h3>Upcoming Events</h3>
+          {/* Saved Quotations Section */}
+          <div className="quotations-container">
+            <h3 className="section-title">Saved Quotations</h3>
+            {savedQuotations.length === 0 ? (
+              <p className="no-data-text">No saved quotations available</p>
+            ) : (
+              <div className="table-container">
+                <table className="data-table">
+                  <thead className="sticky-header">
+                    <tr>
+                      <th className="table-header-cell">Client Name</th>
+                      <th className="table-header-cell">Total Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {savedQuotations.map((quotation, index) => (
+                      <tr key={index}>
+                        <td className="table-cell">{quotation.clientName}</td>
+                        <td className="table-cell">₹{quotation.Totalamount}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-
-              {eventsLoading ? (
-                <div className="activity-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-icon notification">⏳</div>
-                    <div className="timeline-content">
-                      <h4>Loading Events</h4>
-                      <p>Please wait while we fetch your events...</p>
-                      <span className="timeline-time">Just now</span>
-                    </div>
-                  </div>
-                </div>
-              ) : eventsError ? (
-                <div className="activity-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-icon notification">❌</div>
-                    <div className="timeline-content">
-                      <h4>Error Loading Events</h4>
-                      <p>Unable to fetch upcoming events</p>
-                      <span className="timeline-time">Just now</span>
-                    </div>
-                  </div>
-                </div>
-              ) : upcomingEvents.length === 0 ? (
-                <div className="activity-timeline">
-                  <div className="timeline-item">
-                    <div className="timeline-icon notification">📅</div>
-                    <div className="timeline-content">
-                      <h4>No Upcoming Events</h4>
-                      <p>No events scheduled for today</p>
-                      <span className="timeline-time">
-                        {new Date().toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="activity-timeline">
-                  {upcomingEvents.map((event) => (
-                    <div key={event._id} className="timeline-item">
-                      <div className="timeline-icon notification">📅</div>
-                      <div className="timeline-content">
-                        <h4>{event.Subject}</h4>
-                        <p>{event.Description || "Event scheduled"}</p>
-                        <span className="timeline-time">
-                          {formatEventDate(event.StartTime, event.EndTime)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-      {/* Expenses Chart Modal */}
-      {showExpensesChart && (
-        <div className="modal">
-          <div className="modal-content">
-            <span
-              className="close-button"
-              onClick={handleCloseExpensesChart}
-              title="Close"
-            >
-              &times;
-            </span>
-            <h3 className="modal-title">
-              Expenses Breakdown for {selectedYear}
-            </h3>
-            <div className="modal-chart-container">
-              {/* Here you would place your expenses chart component */}
-              <p className="centered-text">
-                Detailed expenses chart would be displayed here.
-              </p>
-            </div>
+            )}
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Upcoming Events Section */}
+        <div className="activity-section">
+          <div className="section-header">
+            <h3>Upcoming Events</h3>
+          </div>
+
+          {eventsLoading ? (
+            <div className="activity-timeline">
+              <div className="timeline-item">
+                <div className="timeline-icon notification">⏳</div>
+                <div className="timeline-content">
+                  <h4>Loading Events</h4>
+                  <p>Please wait while we fetch your events...</p>
+                  <span className="timeline-time">Just now</span>
+                </div>
+              </div>
+            </div>
+          ) : eventsError ? (
+            <div className="activity-timeline">
+              <div className="timeline-item">
+                <div className="timeline-icon notification">❌</div>
+                <div className="timeline-content">
+                  <h4>Error Loading Events</h4>
+                  <p>Unable to fetch upcoming events</p>
+                  <span className="timeline-time">Just now</span>
+                </div>
+              </div>
+            </div>
+          ) : upcomingEvents.length === 0 ? (
+            <div className="activity-timeline">
+              <div className="timeline-item">
+                <div className="timeline-icon notification">📅</div>
+                <div className="timeline-content">
+                  <h4>No Upcoming Events</h4>
+                  <p>No events scheduled for today</p>
+                  <span className="timeline-time">
+                    {new Date().toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="activity-timeline">
+              {upcomingEvents.map((event) => (
+                <div key={event._id} className="timeline-item">
+                  <div className="timeline-icon notification">📅</div>
+                  <div className="timeline-content">
+                    <h4>{event.Subject}</h4>
+                    <p>{event.Description || "Event scheduled"}</p>
+                    <span className="timeline-time">
+                      {formatEventDate(event.StartTime, event.EndTime)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Expenses Chart Modal */}
+        {showExpensesChart && (
+          <div className="modal">
+            <div className="modal-content">
+              <span
+                className="close-button"
+                onClick={handleCloseExpensesChart}
+                title="Close"
+              >
+                &times;
+              </span>
+              <h3 className="modal-title">
+                Expenses Breakdown for {selectedYear}
+              </h3>
+              <div className="modal-chart-container">
+                {/* Here you would place your expenses chart component */}
+                <p className="centered-text">
+                  Detailed expenses chart would be displayed here.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 };

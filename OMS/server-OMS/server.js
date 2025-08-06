@@ -27,6 +27,7 @@ const trackingRoutes = require("./routes/trackingRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const noteRoutes = require("./routes/noteRoutes");
 const path = require("path");
 const calenderRoutes = require("./routes/calenderRoutes");
 const errorHandler = require("./middlewares/errorMiddleware");
@@ -43,6 +44,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
+const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -52,26 +54,21 @@ chatSocket.init(server);
 // Make io accessible in routes
 app.set("io", chatSocket.getIO());
 
-// Then your routes
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
-// const io = new Server(server, {
-//   cors: {
-//     origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST'],
-//   },
-// });
-// require('./socket/socketHandler')(io);
-
-// Middleware
-
 app.use(
   cors({
-    origin: ["http://142.93.213.81:3000", "142.93.213.81:3001"],
+    origin: ["http://localhost:3000", "localhost:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "X-Requested-With",
+      "Pragma",
+    ],
   })
 );
 
@@ -98,7 +95,10 @@ app.use("/api/auth", authRoutes);
 
 // User routes
 app.use("/users", userRoutes);
-app.use(userRoutes);
+app.use("/api", userRoutes);
+
+// Note routes
+app.use("/api", noteRoutes);
 
 // Other routes
 app.use("/tasks", taskRoutes);
@@ -122,6 +122,10 @@ app.use("/api/analytics", analyticsRoutes);
 // Attendance routes
 app.use("/api/attendance", attendanceRoutes);
 
+// Direct route for registered users (for backward compatibility)
+const { getRegisteredUsersAPI } = require("./controllers/attendanceController");
+app.get("/api/registered-users", getRegisteredUsersAPI);
+
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
 
@@ -130,6 +134,9 @@ app.use("/api/team-lead", teamLeadTaskRoutes);
 
 // Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
+
+// Charge Handover routes
+app.use("/api/charge-handovers", chargeHandoverRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);
@@ -409,27 +416,10 @@ app.get("/fetch-inbox-emails", async (req, res) => {
   }
 });
 
-// Socket.io Integration
-// require('./socket/socketHandler')(io);
-
-// Make Socket Available in Routes
-// app.use((req, res, next) => {
-//   req.io = io;
-//   next();
-// });
-
-// app.use('/api/messages', messageRoutes);
-
 // Error Handling
 app.use(errorHandler);
 
-const port = process.env.PORT || 5000;
-
-// Connect to MongoDB
-// mongoose.connect('mongodb://localhost:27017/projectdb', {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// });
+const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);

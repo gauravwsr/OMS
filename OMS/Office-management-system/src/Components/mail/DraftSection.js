@@ -12,7 +12,7 @@
 //     const fetchDrafts = async () => {
 //         try {
 //             console.log("Fetching drafts...");
-//             const response = await fetch("http://142.93.213.81:5001/fetch-drafts");
+//             const response = await fetch("http://localhost:5001/fetch-drafts");
 
 //             if (!response.ok) {
 //                 throw new Error(`Failed to fetch drafts: ${response.status} ${response.statusText}`);
@@ -50,7 +50,7 @@
 //         setLoading(true);
 
 //         try {
-//             const response = await fetch("http://142.93.213.81:5001/api/send-email", {
+//             const response = await fetch("http://localhost:5001/api/send-email", {
 //                 method: "POST",
 //                 body: formData,
 //             });
@@ -134,7 +134,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://142.93.213.81:5001/api/send-email", {
+      const response = await fetch("http://localhost:5001/api/send-email", {
         method: "POST",
         body: formData,
       });
@@ -143,7 +143,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
       if (response.ok) {
         alert("Email sent successfully!");
         // Remove the draft from the list
-        setDrafts(drafts.filter(d => d.id !== draft.id));
+        setDrafts(drafts.filter((d) => d.id !== draft.id));
       } else {
         alert(`Failed to send email: ${data.message}`);
       }
@@ -176,17 +176,21 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 id={`draft-${draft.id || index}`}
                 className="email-checkbox"
               />
-              <label htmlFor={`draft-${draft.id || index}`} className="email-label draft-label">
+              <label
+                htmlFor={`draft-${draft.id || index}`}
+                className="email-label draft-label"
+              >
                 {draft.to || "No recipient"}
               </label>
             </div>
-            <div className="email-content">
-              {draft.subject || "No subject"}
-            </div>
+            <div className="email-content">{draft.subject || "No subject"}</div>
             <div className="email-time-actions">
               <span className="email-time">
                 {draft.date && !isNaN(new Date(draft.date))
-                  ? new Date(draft.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  ? new Date(draft.date).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "No date"}
               </span>
               <button className="send-button" onClick={() => sendMail(draft)}>

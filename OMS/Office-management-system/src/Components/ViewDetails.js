@@ -13,7 +13,9 @@ const ViewDetails = () => {
   useEffect(() => {
     const fetchCandidateDetails = async () => {
       try {
-        const response = await axios.get(`http://142.93.213.81:5001/api/candidates/${id}`);
+        const response = await axios.get(
+          `http://localhost:5001/api/candidates/${id}`
+        );
         setCandidate(response.data.data);
         console.log("Candidate details:", response.data.data);
       } catch (error) {
@@ -31,7 +33,7 @@ const ViewDetails = () => {
 
   const handleDownload = () => {
     const cvUrl = candidate.cvPath
-      ? `http://142.93.213.81:5001/uploads/cvs/${candidate.cvPath}`
+      ? `http://localhost:5001/uploads/cvs/${candidate.cvPath}`
       : "/default_cv.pdf";
     const link = document.createElement("a");
     link.href = cvUrl;
@@ -49,7 +51,11 @@ const ViewDetails = () => {
     <div className="containerr">
       {/* Header */}
       <div className="header">
-        <FaArrowLeft className="back-icon" onClick={handleGoBack} style={{ cursor: "pointer" }} />
+        <FaArrowLeft
+          className="back-icon"
+          onClick={handleGoBack}
+          style={{ cursor: "pointer" }}
+        />
         <h2 className="title">Candidate Profile</h2>
       </div>
 
@@ -72,14 +78,30 @@ const ViewDetails = () => {
 
       {/* Details Section */}
       <div className="details-card">
-        <p><strong>Phone No.</strong> - {candidate.phoneNo || "N/A"}</p>
-        <p><strong>Department</strong> - {candidate.role || "N/A"}</p>
-        <p><strong>Employee Role</strong> - {candidate.subRole || "N/A"}</p>
-        <p><strong>Qualification</strong> - {candidate.qualification || "N/A"}</p>
-        <p><strong>Birth Date</strong> - {candidate.birthDate || "N/A"}</p>
-        <p><strong>Address</strong> - {candidate.address || "N/A"}</p>
-        <p><strong>Country</strong> - {candidate.country || "N/A"}</p>
-        <p><strong>Emergency Contact</strong> - {candidate.emergencyNo || "N/A"}</p>
+        <p>
+          <strong>Phone No.</strong> - {candidate.phoneNo || "N/A"}
+        </p>
+        <p>
+          <strong>Department</strong> - {candidate.role || "N/A"}
+        </p>
+        <p>
+          <strong>Employee Role</strong> - {candidate.subRole || "N/A"}
+        </p>
+        <p>
+          <strong>Qualification</strong> - {candidate.qualification || "N/A"}
+        </p>
+        <p>
+          <strong>Birth Date</strong> - {candidate.birthDate || "N/A"}
+        </p>
+        <p>
+          <strong>Address</strong> - {candidate.address || "N/A"}
+        </p>
+        <p>
+          <strong>Country</strong> - {candidate.country || "N/A"}
+        </p>
+        <p>
+          <strong>Emergency Contact</strong> - {candidate.emergencyNo || "N/A"}
+        </p>
       </div>
     </div>
   );

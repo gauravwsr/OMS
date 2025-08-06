@@ -67,7 +67,7 @@ const EmployeeProjects = () => {
         currentUser.id || currentUser.email || currentUser.name;
 
       const response = await fetch(
-        `http://142.93.213.81:5001/api/client-projects/employee/${identifier}`,
+        `http://localhost:5001/api/client-projects/employee/${identifier}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -84,7 +84,7 @@ const EmployeeProjects = () => {
         assignedProjects.map(async (project) => {
           try {
             const taskResponse = await fetch(
-              `http://142.93.213.81:5001/api/employee/projects/${project._id}/tasks`,
+              `http://localhost:5001/api/employee/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -285,7 +285,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://142.93.213.81:5001/api/employee/projects/${projectId}/tasks`,
+        `http://localhost:5001/api/employee/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -331,7 +331,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://142.93.213.81:5001/api/employee/tasks/${taskId}/status`,
+        `http://localhost:5001/api/employee/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -357,7 +357,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://142.93.213.81:5001/api/employee/tasks/${taskId}/points/${pointId}`,
+        `http://localhost:5001/api/employee/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -399,7 +399,9 @@ const EmployeeProjects = () => {
             </div>
             <div className="loading-content">
               <h3>Loading Employee Projects</h3>
-              <p>Please wait while we fetch your assigned projects and tasks...</p>
+              <p>
+                Please wait while we fetch your assigned projects and tasks...
+              </p>
               <div className="loading-dots">
                 <span></span>
                 <span></span>

@@ -1,5 +1,11 @@
 import "./ProjectList.css";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 // import Navbar from "./Navbar";
 import { FiBell, FiMenu, FiChevronDown, FiChevronUp } from "react-icons/fi";
@@ -33,27 +39,39 @@ export default function ProjectList() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch("https://crm-brown-gamma.vercel.app/api/client-projects");
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch(
+          "https://crm-brown-gamma.vercel.app/api/client-projects"
+        );
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        
-        const formattedProjects = data.map(project => ({
-          id: project._id || project.id || Math.random().toString(36).substr(2, 9),
+
+        const formattedProjects = data.map((project) => ({
+          id:
+            project._id ||
+            project.id ||
+            Math.random().toString(36).substr(2, 9),
           title: project.clientName || project.leadName || "Untitled Project",
-          description: `Lead: ${project.leadName || 'N/A'} | Status: ${project.projectStatus || 'N/A'}`,
-          dueDate: project.createdAt ? new Date(project.createdAt).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
-          }).replace(/\s/g, " - ") : "No deadline set",
+          description: `Lead: ${project.leadName || "N/A"} | Status: ${
+            project.projectStatus || "N/A"
+          }`,
+          dueDate: project.createdAt
+            ? new Date(project.createdAt)
+                .toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+                .replace(/\s/g, " - ")
+            : "No deadline set",
           projectId: project.projectId || "N/A",
           projectPassword: project.projectPassword || "N/A",
           status: project.projectStatus || "N/A",
           amount: project.finalAmount || 0,
           createdAt: project.createdAt || new Date().toISOString(),
-          assignedEmployees: []
+          assignedEmployees: [],
         }));
-        
+
         setProjects(formattedProjects);
         setFilteredProjects(formattedProjects);
         setLoading(false);
@@ -74,9 +92,12 @@ export default function ProjectList() {
       const filtered = projects.filter((project) => {
         const searchLower = searchTerm.toLowerCase();
         return (
-          (project.title && project.title.toLowerCase().includes(searchLower)) ||
-          (project.description && project.description.toLowerCase().includes(searchLower)) ||
-          (project.projectId && project.projectId.toLowerCase().includes(searchLower)) ||
+          (project.title &&
+            project.title.toLowerCase().includes(searchLower)) ||
+          (project.description &&
+            project.description.toLowerCase().includes(searchLower)) ||
+          (project.projectId &&
+            project.projectId.toLowerCase().includes(searchLower)) ||
           (project.status && project.status.toLowerCase().includes(searchLower))
         );
       });
@@ -108,11 +129,11 @@ export default function ProjectList() {
           { id: "home-2", text: "Implement navigation", checked: false },
           { id: "home-3", text: "Add footer", checked: false },
         ],
-      }
+      },
     ],
     pending: [],
     inProgress: [],
-    completed: []
+    completed: [],
   };
 
   const [tasks, setTasks] = useState(initialTasks);
@@ -129,11 +150,12 @@ export default function ProjectList() {
 
     useEffect(() => {
       const initialState = {};
-      Object.keys(initialTasks).forEach(column => {
-        initialTasks[column].forEach(task => {
+      Object.keys(initialTasks).forEach((column) => {
+        initialTasks[column].forEach((task) => {
           if (task.subtasks) {
-            task.subtasks.forEach(subtask => {
-              initialState[`${task.id}_${subtask.id}`] = subtask.checked || false;
+            task.subtasks.forEach((subtask) => {
+              initialState[`${task.id}_${subtask.id}`] =
+                subtask.checked || false;
             });
           }
         });
@@ -190,8 +212,13 @@ export default function ProjectList() {
       if (draggedColumn === targetColumn) return;
 
       const updatedTasks = { ...kanbanTasks };
-      updatedTasks[draggedColumn] = updatedTasks[draggedColumn].filter((task) => task.id !== draggedTask.id);
-      updatedTasks[targetColumn] = [...updatedTasks[targetColumn], { ...draggedTask, status: targetColumn }];
+      updatedTasks[draggedColumn] = updatedTasks[draggedColumn].filter(
+        (task) => task.id !== draggedTask.id
+      );
+      updatedTasks[targetColumn] = [
+        ...updatedTasks[targetColumn],
+        { ...draggedTask, status: targetColumn },
+      ];
       setKanbanTasks(updatedTasks);
       setDraggedTask(null);
       setDraggedColumn(null);
@@ -208,7 +235,7 @@ export default function ProjectList() {
       if (selectedTasks.length === 0) return;
 
       const updatedTasks = { ...kanbanTasks };
-      
+
       selectedTasks.forEach((taskKey) => {
         const [column, taskId] = taskKey.split("_");
         if (updatedTasks[column]) {
@@ -217,7 +244,7 @@ export default function ProjectList() {
           );
         }
       });
-      
+
       setKanbanTasks(updatedTasks);
       setSelectedTasks([]);
       toast.success("Tasks deleted successfully");
@@ -225,9 +252,9 @@ export default function ProjectList() {
 
     const handleToggleSubtask = (taskId, subtaskId) => {
       const key = `${taskId}_${subtaskId}`;
-      setSubtaskCheckedState(prev => ({
+      setSubtaskCheckedState((prev) => ({
         ...prev,
-        [key]: !prev[key]
+        [key]: !prev[key],
       }));
     };
 
@@ -237,44 +264,48 @@ export default function ProjectList() {
         return;
       }
 
-      const todoTaskKeys = selectedTasks.filter(taskKey => taskKey.startsWith("todo_"));
-      
+      const todoTaskKeys = selectedTasks.filter((taskKey) =>
+        taskKey.startsWith("todo_")
+      );
+
       if (todoTaskKeys.length === 0) {
         toast.info("No 'todo' tasks selected");
         return;
       }
-      
+
       const updatedTasks = { ...kanbanTasks };
       const newPendingTasks = [];
-      
+
       todoTaskKeys.forEach((taskKey) => {
         const taskId = taskKey.split("_")[1];
-        
+
         if (!updatedTasks.todo) {
           updatedTasks.todo = [];
           return;
         }
-        
+
         const taskIndex = updatedTasks.todo.findIndex(
           (task) => task && task.id && String(task.id) === String(taskId)
         );
-        
+
         if (taskIndex !== -1) {
           const task = updatedTasks.todo[taskIndex];
-          
+
           if (task.subtasks && task.subtasks.length > 0) {
             const checkedSubtasks = task.subtasks.filter(
-              subtask => subtaskCheckedState[`${task.id}_${subtask.id}`]
+              (subtask) => subtaskCheckedState[`${task.id}_${subtask.id}`]
             );
-            
+
             if (checkedSubtasks.length > 0) {
               const newTask = {
                 ...task,
-                id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-                subtasks: checkedSubtasks.map(subtask => ({
+                id: `pending_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .substring(2, 9)}`,
+                subtasks: checkedSubtasks.map((subtask) => ({
                   ...subtask,
-                  checked: true
-                }))
+                  checked: true,
+                })),
               };
               newPendingTasks.push(newTask);
             } else {
@@ -283,22 +314,24 @@ export default function ProjectList() {
           } else {
             const newTask = {
               ...task,
-              id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+              id: `pending_${Date.now()}_${Math.random()
+                .toString(36)
+                .substring(2, 9)}`,
             };
             newPendingTasks.push(newTask);
           }
         }
       });
-      
+
       if (newPendingTasks.length === 0) {
         toast.info("No tasks were moved to pending");
         return;
       }
-      
+
       if (!updatedTasks.pending) {
         updatedTasks.pending = [];
       }
-      
+
       updatedTasks.pending = [...updatedTasks.pending, ...newPendingTasks];
       setKanbanTasks(updatedTasks);
       toast.success(`${newPendingTasks.length} task(s) moved to pending`);
@@ -336,7 +369,7 @@ export default function ProjectList() {
           {selectedTasks.length > 0 && (
             <div className="bulk-actions">
               <span>{selectedTasks.length} task(s) selected</span>
-              <button 
+              <button
                 className="submit-selected-btn"
                 onClick={handleSubmitSelectedTasks}
                 style={{
@@ -350,7 +383,7 @@ export default function ProjectList() {
               >
                 Submit Selected to Pending
               </button>
-              <button 
+              <button
                 className="delete-selected-btn"
                 onClick={handleDeleteSelected}
               >
@@ -364,7 +397,10 @@ export default function ProjectList() {
             {Object.keys(columnTitles).map((column) => {
               const columnTasks = kanbanTasks[column] || [];
               const allSelected =
-                columnTasks.length > 0 && columnTasks.every((task) => selectedTasks.includes(`${column}_${task.id}`));
+                columnTasks.length > 0 &&
+                columnTasks.every((task) =>
+                  selectedTasks.includes(`${column}_${task.id}`)
+                );
 
               return (
                 <div
@@ -392,7 +428,9 @@ export default function ProjectList() {
                       return (
                         <div
                           key={task.id}
-                          className={`task-card ${isSelected ? "selected" : ""}`}
+                          className={`task-card ${
+                            isSelected ? "selected" : ""
+                          }`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, task, column)}
                         >
@@ -410,11 +448,17 @@ export default function ProjectList() {
                             <div className="subtasks-list">
                               {task.subtasks.map((subtask) => (
                                 <div key={subtask.id} className="subtask-item">
-                                  <input 
-                                    type="checkbox" 
+                                  <input
+                                    type="checkbox"
                                     className="subtask-checkbox"
-                                    checked={subtaskCheckedState[`${task.id}_${subtask.id}`] || false}
-                                    onChange={() => handleToggleSubtask(task.id, subtask.id)}
+                                    checked={
+                                      subtaskCheckedState[
+                                        `${task.id}_${subtask.id}`
+                                      ] || false
+                                    }
+                                    onChange={() =>
+                                      handleToggleSubtask(task.id, subtask.id)
+                                    }
                                   />
                                   <span className="subtask-bullet">•</span>
                                   <span>{subtask.text}</span>
@@ -458,10 +502,10 @@ export default function ProjectList() {
       dueDate: new Date(),
       time: "12:00",
     });
-  
+
     const [subtasks, setSubtasks] = useState([]);
     const [newSubtaskText, setNewSubtaskText] = useState("");
-  
+
     const handleTaskChange = (e) => {
       const { name, value } = e.target;
       setNewTask((prev) => ({
@@ -469,32 +513,32 @@ export default function ProjectList() {
         [name]: value,
       }));
     };
-  
+
     const handleDateChange = (date) => {
       setNewTask((prev) => ({
         ...prev,
         dueDate: date,
       }));
     };
-  
+
     const handleAddSubtask = () => {
       if (newSubtaskText.trim() !== "") {
         const newSubtask = {
           id: Date.now(),
           text: newSubtaskText,
-          checked: false
+          checked: false,
         };
         setSubtasks([...subtasks, newSubtask]);
         setNewSubtaskText("");
       }
     };
-  
+
     const handleTaskSubmit = () => {
       if (!newTask.title) {
         alert("Please enter a task title");
         return;
       }
-  
+
       const formattedDate = newTask.dueDate
         .toLocaleDateString("en-GB", {
           day: "2-digit",
@@ -502,7 +546,7 @@ export default function ProjectList() {
           year: "numeric",
         })
         .replace(/\s/g, " ");
-  
+
       const newTaskWithSubtasks = {
         id: Date.now() + Math.random(),
         title: newTask.title,
@@ -511,14 +555,14 @@ export default function ProjectList() {
         time: newTask.time,
         assignedTo: "Unassigned",
         assigneeId: "ID" + Math.floor(Math.random() * 1000000),
-        subtasks: subtasks
+        subtasks: subtasks,
       };
-  
+
       setTasks((prev) => ({
         ...prev,
         todo: [...prev.todo, newTaskWithSubtasks],
       }));
-  
+
       setNewTask({
         title: "",
         description: "",
@@ -529,7 +573,7 @@ export default function ProjectList() {
       setNewSubtaskText("");
       setShowPopup(false);
     };
-  
+
     return (
       <>
         <div className="add-task-btn">
@@ -538,17 +582,20 @@ export default function ProjectList() {
             <span>Add New Task</span>
           </button>
         </div>
-  
+
         {showPopup && (
           <div className="popup-overlay">
             <div className="schedule-task-container">
               <div className="popup-header">
                 <h2>Add New Task</h2>
-                <button className="close-popup-btn" onClick={() => setShowPopup(false)}>
+                <button
+                  className="close-popup-btn"
+                  onClick={() => setShowPopup(false)}
+                >
                   ×
                 </button>
               </div>
-  
+
               <div className="form-group">
                 <label>Task Title :</label>
                 <input
@@ -559,7 +606,7 @@ export default function ProjectList() {
                   placeholder="Enter main task title"
                 />
               </div>
-  
+
               <div className="form-group">
                 <label>Description:</label>
                 <textarea
@@ -571,10 +618,10 @@ export default function ProjectList() {
                   className="task-textarea"
                 />
               </div>
-  
+
               <div className="subtasks-container">
                 <h3>Subtasks</h3>
-                
+
                 <div className="add-subtask-container">
                   <input
                     type="text"
@@ -583,14 +630,14 @@ export default function ProjectList() {
                     placeholder="Enter subtask"
                     className="subtask-input"
                   />
-                  <button 
+                  <button
                     className="add-subtask-btn"
                     onClick={handleAddSubtask}
                   >
                     Add Subtask
                   </button>
                 </div>
-  
+
                 {subtasks.map((task) => (
                   <div key={task.id} className="subtask-item">
                     <div className="subtask-title">
@@ -599,9 +646,13 @@ export default function ProjectList() {
                         className="subtask-checkbox"
                         checked={task.checked}
                         onChange={() => {
-                          setSubtasks(subtasks.map((t) => 
-                            t.id === task.id ? { ...t, checked: !t.checked } : t
-                          ));
+                          setSubtasks(
+                            subtasks.map((t) =>
+                              t.id === task.id
+                                ? { ...t, checked: !t.checked }
+                                : t
+                            )
+                          );
                         }}
                       />
                       <span>{task.text}</span>
@@ -609,7 +660,7 @@ export default function ProjectList() {
                   </div>
                 ))}
               </div>
-  
+
               <div className="form-group">
                 <label>Due Date:</label>
                 <div className="date-input-container">
@@ -622,9 +673,12 @@ export default function ProjectList() {
                   <span className="calendar-icon">📅</span>
                 </div>
               </div>
-  
+
               <div className="buttons">
-                <button className="cancel-button" onClick={() => setShowPopup(false)}>
+                <button
+                  className="cancel-button"
+                  onClick={() => setShowPopup(false)}
+                >
                   Cancel
                 </button>
                 <button className="save-button" onClick={handleTaskSubmit}>
@@ -689,24 +743,37 @@ export default function ProjectList() {
                     <input type="checkbox" className="mobile-task-checkbox" />
                     <p className="mobile-card-text">{project.title}</p>
                   </div>
-                  <div className="mobile-card-footer" onClick={() => toggleCardExpanded(index)}>
+                  <div
+                    className="mobile-card-footer"
+                    onClick={() => toggleCardExpanded(index)}
+                  >
                     <span className="mobile-card-date">{project.dueDate}</span>
-                    {expandedCards[index] ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+                    {expandedCards[index] ? (
+                      <FiChevronUp size={18} />
+                    ) : (
+                      <FiChevronDown size={18} />
+                    )}
                   </div>
                   {expandedCards[index] && (
                     <div className="mobile-card-expanded">
                       <div className="meeting-details-grid">
                         <div className="meeting-detail-item">
                           <span className="detail-label">Description</span>
-                          <span className="detail-value">{project.description}</span>
+                          <span className="detail-value">
+                            {project.description}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Project ID</span>
-                          <span className="detail-value">{project.projectId}</span>
+                          <span className="detail-value">
+                            {project.projectId}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Password</span>
-                          <span className="detail-value">{project.projectPassword}</span>
+                          <span className="detail-value">
+                            {project.projectPassword}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Status</span>
@@ -714,20 +781,28 @@ export default function ProjectList() {
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Amount</span>
-                          <span className="detail-value">₹{project.amount}</span>
+                          <span className="detail-value">
+                            ₹{project.amount}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Created At</span>
                           <span className="detail-value">
-                            {new Date(project.createdAt).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            })}
+                            {new Date(project.createdAt).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
                           </span>
                         </div>
                       </div>
-                      <button className="view-details-btn" onClick={handleViewDetails}>
+                      <button
+                        className="view-details-btn"
+                        onClick={handleViewDetails}
+                      >
                         View Details
                       </button>
                     </div>
@@ -736,7 +811,9 @@ export default function ProjectList() {
               ))
             ) : (
               <div className="no-projects-message">
-                {searchTerm ? "No projects match your search" : "No projects found"}
+                {searchTerm
+                  ? "No projects match your search"
+                  : "No projects found"}
               </div>
             )}
           </div>
@@ -774,7 +851,10 @@ export default function ProjectList() {
         <div className="project-container" style={{ width: "100%" }}>
           <SearchBar onSearch={(term) => setSearchTerm(term)} />
           <div className="border-radius-container">
-            <div className="top-container" style={{ backgroundColor: "#ffffff" }}>
+            <div
+              className="top-container"
+              style={{ backgroundColor: "#ffffff" }}
+            >
               <h1 className="projects-heading">Projects</h1>
             </div>
           </div>
@@ -811,13 +891,19 @@ export default function ProjectList() {
                           <div className="table-title">{project.title}</div>
                         </td>
                         <td>
-                          <div className="table-description">{project.description}</div>
+                          <div className="table-description">
+                            {project.description}
+                          </div>
                         </td>
                         <td>
-                          <div className="table-project-id">{project.projectId}</div>
+                          <div className="table-project-id">
+                            {project.projectId}
+                          </div>
                         </td>
                         <td>
-                          <div className={`status-badge ${project.status.toLowerCase()}`}>
+                          <div
+                            className={`status-badge ${project.status.toLowerCase()}`}
+                          >
                             {project.status}
                           </div>
                         </td>
@@ -826,15 +912,21 @@ export default function ProjectList() {
                         </td>
                         <td>
                           <div className="table-created-at">
-                            {new Date(project.createdAt).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            })}
+                            {new Date(project.createdAt).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
                           </div>
                         </td>
                         <td>
-                          <button className="btn btn-outline view-details-btn" onClick={handleViewDetails}>
+                          <button
+                            className="btn btn-outline view-details-btn"
+                            onClick={handleViewDetails}
+                          >
                             View Details
                           </button>
                         </td>
@@ -843,7 +935,9 @@ export default function ProjectList() {
                   ) : (
                     <tr>
                       <td colSpan="8" className="no-results">
-                        {searchTerm ? "No projects match your search" : "No projects found"}
+                        {searchTerm
+                          ? "No projects match your search"
+                          : "No projects found"}
                       </td>
                     </tr>
                   )}
@@ -856,8 +950,12 @@ export default function ProjectList() {
                 <button className="btn btn-outline pagination-btn" disabled>
                   {"<"}
                 </button>
-                <button className="btn btn-outline pagination-btn active">1</button>
-                <button className="btn btn-outline pagination-btn" disabled>{">"}</button>
+                <button className="btn btn-outline pagination-btn active">
+                  1
+                </button>
+                <button className="btn btn-outline pagination-btn" disabled>
+                  {">"}
+                </button>
               </div>
             </div>
           </div>
@@ -873,9 +971,6 @@ export default function ProjectList() {
     </>
   );
 }
-
-
-
 
 // import "./ProjectList.css";
 // import { Calendar } from "lucide-react";
@@ -894,15 +989,15 @@ export default function ProjectList() {
 //         const checkScreenSize = () => {
 //             const newIsMobile = window.innerWidth <= 768;
 //             console.log("Window width:", window.innerWidth, "isMobile:", newIsMobile);
-//             setIsMobile(newIsMobile); 
+//             setIsMobile(newIsMobile);
 //         };
-        
+
 //         // Initial check
 //         checkScreenSize();
-        
+
 //         // Add listener for window resize
 //         window.addEventListener('resize', checkScreenSize);
-        
+
 //         // Cleanup
 //         return () => window.removeEventListener('resize', checkScreenSize);
 //     }, []);
@@ -925,7 +1020,7 @@ export default function ProjectList() {
 //         ppt: null,
 //         coveringLetter: null,
 //     });
-  
+
 //     // Handle input change
 //     const handleChange = (e) => {
 //         const { name, value } = e.target;
@@ -934,7 +1029,7 @@ export default function ProjectList() {
 //             [name]: value,
 //         }));
 //     };
-  
+
 //     // Handle file input change
 //     const handleFileChange = (e) => {
 //         const { name, files } = e.target;
@@ -943,17 +1038,17 @@ export default function ProjectList() {
 //             [name]: files[0],
 //         }));
 //     };
-  
+
 //     // Show modal when Add Project button is clicked
 //     const handleAddProject = () => {
 //         setShowModal(true);
 //     };
-  
+
 //     // Close modal
 //     const closeModal = () => {
 //         setShowModal(false);
 //     };
-  
+
 //     // Submit form data
 //     const handleSubmit = (e) => {
 //         e.preventDefault();
@@ -1022,17 +1117,17 @@ export default function ProjectList() {
 //                             <p className="mobile-card-text">
 //                                 {meeting.title}
 //                             </p>
-//                             <div 
-//                                 className="mobile-card-footer" 
+//                             <div
+//                                 className="mobile-card-footer"
 //                                 onClick={() => toggleCardExpanded(index)}
 //                             >
 //                                 <span className="mobile-card-date">{meeting.date}</span>
-//                                 {expandedCards[index] ? 
-//                                     <FiChevronUp size={18} /> : 
+//                                 {expandedCards[index] ?
+//                                     <FiChevronUp size={18} /> :
 //                                     <FiChevronDown size={18} />
 //                                 }
 //                             </div>
-                            
+
 //                             {/* Expanded details section */}
 //                             {expandedCards[index] && (
 //                                 <div className="mobile-card-expanded">
@@ -1070,7 +1165,7 @@ export default function ProjectList() {
 //             <Navbar />
 //             <div className="project-container" style={{width:"80%"}}>
 //                 <SearchBar/>
-                
+
 //                 {/* Outer container with border radius */}
 //                 <div className="border-radius-container">
 //                     {/* New container with Projects heading and Add Project button */}
@@ -1090,7 +1185,7 @@ export default function ProjectList() {
 //                             07 Aug, 2024
 //                         </button>
 //                     </div>
-                
+
 //                     <div className="table-container">
 //                         <table className="project-table">
 //                             <thead className="table-header">
@@ -1127,7 +1222,7 @@ export default function ProjectList() {
 //                             </tbody>
 //                         </table>
 //                     </div>
-                
+
 //                     <div className="pagination-container">
 //                         <div className="pagination-text">
 //                             Page 1 of 100
@@ -1239,8 +1334,6 @@ export default function ProjectList() {
 //     );
 // }
 
-
-
 // import "./ProjectList.css";
 // import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 // import React, { useState, useEffect } from "react";
@@ -1263,13 +1356,13 @@ export default function ProjectList() {
 //             console.log("Window width:", window.innerWidth, "isMobile:", newIsMobile);
 //             setIsMobile(newIsMobile);
 //         };
-        
+
 //         // Initial check
 //         checkScreenSize();
-        
+
 //         // Add listener for window resize
 //         window.addEventListener('resize', checkScreenSize);
-        
+
 //         // Cleanup
 //         return () => window.removeEventListener('resize', checkScreenSize);
 //     }, []);
@@ -1292,7 +1385,7 @@ export default function ProjectList() {
 //         ppt: null,
 //         coveringLetter: null,
 //     });
-  
+
 //     // Handle input change
 //     const handleChange = (e) => {
 //         const { name, value } = e.target;
@@ -1301,7 +1394,7 @@ export default function ProjectList() {
 //             [name]: value,
 //         }));
 //     };
-  
+
 //     // Handle file input change
 //     const handleFileChange = (e) => {
 //         const { name, files } = e.target;
@@ -1310,17 +1403,17 @@ export default function ProjectList() {
 //             [name]: files[0],
 //         }));
 //     };
-  
+
 //     // Show modal when Add Project button is clicked
 //     const handleAddProject = () => {
 //         setShowModal(true);
 //     };
-  
+
 //     // Close modal
 //     const closeModal = () => {
 //         setShowModal(false);
 //     };
-  
+
 //     // Submit form data
 //     const handleSubmit = (e) => {
 //         e.preventDefault();
@@ -1441,13 +1534,13 @@ export default function ProjectList() {
 //             <div className="task-card">
 //                 <div className="task-title">TASK</div>
 //                 <div className="task-content">{task.title}</div>
-                
+
 //                 <div className="task-meta">
 //                     <div className="meta-item">
 //                         <span className="meta-label">Due Date:</span>
 //                         <span className="meta-value">{task.dueDate}</span>
 //                     </div>
-                    
+
 //                     <div className="meta-item">
 //                         <span className="meta-label">Assigned To:</span>
 //                         <div className="assignee">
@@ -1470,7 +1563,7 @@ export default function ProjectList() {
 //                     <h2>Task Management</h2>
 //                     <button className="close-kanban-btn" onClick={handleCloseKanban}>×</button>
 //                 </div>
-                
+
 //                 <div className="app-header">
 //                     <div className="title-section">
 //                         <h2>TO DO List</h2>
@@ -1580,17 +1673,17 @@ export default function ProjectList() {
 //                             <p className="mobile-card-text">
 //                                 {meeting.title}
 //                             </p>
-//                             <div 
-//                                 className="mobile-card-footer" 
+//                             <div
+//                                 className="mobile-card-footer"
 //                                 onClick={() => toggleCardExpanded(index)}
 //                             >
 //                                 <span className="mobile-card-date">{meeting.date}</span>
-//                                 {expandedCards[index] ? 
-//                                     <FiChevronUp size={18} /> : 
+//                                 {expandedCards[index] ?
+//                                     <FiChevronUp size={18} /> :
 //                                     <FiChevronDown size={18} />
 //                                 }
 //                             </div>
-                            
+
 //                             {/* Expanded details section */}
 //                             {expandedCards[index] && (
 //                                 <div className="mobile-card-expanded">
@@ -1628,7 +1721,7 @@ export default function ProjectList() {
 //             <Navbar />
 //             <div className="project-container" style={{width:"80%"}}>
 //                 <SearchBar/>
-                
+
 //                 {/* Outer container with border radius */}
 //                 <div className="border-radius-container">
 //                     {/* New container with Projects heading and Add Project button */}
@@ -1648,7 +1741,7 @@ export default function ProjectList() {
 //                             07 Aug, 2024
 //                         </button>
 //                     </div>
-                
+
 //                     <div className="table-container">
 //                         <table className="project-table">
 //                             <thead className="table-header">
@@ -1685,7 +1778,7 @@ export default function ProjectList() {
 //                             </tbody>
 //                         </table>
 //                     </div>
-                
+
 //                     <div className="pagination-container">
 //                         <div className="pagination-text">
 //                             Page 1 of 100
@@ -1802,8 +1895,6 @@ export default function ProjectList() {
 //     );
 // }
 
-
-
 // import "./ProjectList.css"
 // import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 // import { useState, useEffect } from "react"
@@ -1880,13 +1971,13 @@ export default function ProjectList() {
 
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
-  
+
 //     // Basic form validation
 //     if (!formData.title || !formData.description || !formData.startDate || !formData.dueDate) {
 //       alert("Please fill out all required fields.");
 //       return;
 //     }
-  
+
 //     // Format dates for display
 //     const startDateFormatted = formData.startDate
 //       ? new Date(formData.startDate).toLocaleDateString("en-GB", {
@@ -1895,7 +1986,7 @@ export default function ProjectList() {
 //           year: "numeric",
 //         })
 //       : "Not set";
-  
+
 //     const dueDateFormatted = formData.dueDate
 //       ? new Date(formData.dueDate).toLocaleDateString("en-GB", {
 //           day: "2-digit",
@@ -1903,7 +1994,7 @@ export default function ProjectList() {
 //           year: "numeric",
 //         })
 //       : "Not set";
-  
+
 //     // Create a new project object
 //     const newProject = {
 //       id: Date.now(), // Generate a unique ID
@@ -1918,19 +2009,19 @@ export default function ProjectList() {
 //       ppt: formData.ppt,
 //       coveringLetter: formData.coveringLetter,
 //     };
-  
+
 //     try {
 //       // Send the project data to the API
-//       const response = await fetch("http://142.93.213.81:5001/api/projects", {
+//       const response = await fetch("http://localhost:5001/api/projects", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newProject),
 //       });
-  
+
 //       if (response.ok) {
 //         // Add the new project to the projects array
 //         setProjects([...projects, newProject]);
-  
+
 //         // Reset form data
 //         setFormData({
 //           title: "",
@@ -1941,13 +2032,13 @@ export default function ProjectList() {
 //           ppt: null,
 //           coveringLetter: null,
 //         });
-  
+
 //         // Reset selected employees
 //         setSelectedEmployees([]);
-  
+
 //         // Close the modal
 //         closeModal();
-  
+
 //         console.log("Project added:", newProject);
 //         alert("Project added successfully!");
 //       } else {
@@ -1956,29 +2047,28 @@ export default function ProjectList() {
 //         console.error("Failed to add project:", errorData);
 //       }
 //     } catch (error) {
-    
+
 //       // alert("Error adding project. Please try again.");
-  
+
 //       // If API call fails, still update local state for demo purposes
 //       setProjects([...projects, newProject]);
-  
+
 //       // Reset form data
 //       setFormData({
 //         title: "",
 //         description: "",
 //         startDate: null,
 //         dueDate: null,
-        
+
 //       });
-  
+
 //       // Reset selected employees
 //       setSelectedEmployees([]);
-  
+
 //       // Close the modal
 //       closeModal();
 //     }
 //   };
-
 
 //   const handleViewDetails = () => setShowKanban(true)
 //   const handleCloseKanban = () => setShowKanban(false)

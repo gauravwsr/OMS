@@ -21,7 +21,7 @@
 //     }
 
 //     try {
-//       const response = await fetch('http://142.93.213.81:5001/api/send-email', {
+//       const response = await fetch('http://localhost:5001/api/send-email', {
 //         method: 'POST',
 //         body: formData,
 //       });
@@ -193,15 +193,14 @@
 
 // export default SendEmail;
 
-
-import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import './SendEmail.css';
+import React, { useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import "./SendEmail.css";
 
 const SendEmail = () => {
-  const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
   const [attachment, setAttachment] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -213,7 +212,7 @@ const SendEmail = () => {
 
   const saveDraft = async () => {
     if (!email && !subject && !body) {
-      alert('Draft is empty. Nothing to save.');
+      alert("Draft is empty. Nothing to save.");
       return;
     }
 
@@ -223,27 +222,27 @@ const SendEmail = () => {
       to: email,
       subject: subject,
       body: body,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
     };
 
     try {
-      const response = await fetch('http://142.93.213.81:5001/api/save-draft', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5001/api/save-draft", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(draftData),
       });
 
       const data = await response.json();
       if (response.ok) {
-        alert('Draft saved successfully!');
+        alert("Draft saved successfully!");
       } else {
         alert(`Failed to save draft: ${data.message}`);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while saving the draft.');
+      console.error("Error:", error);
+      alert("An error occurred while saving the draft.");
     } finally {
       setIsSaving(false);
     }
@@ -253,40 +252,40 @@ const SendEmail = () => {
     e.preventDefault();
 
     if (!email || !subject || !body) {
-      alert('Please fill in all required fields.');
+      alert("Please fill in all required fields.");
       return;
     }
 
     setIsSending(true);
 
     const formData = new FormData();
-    formData.append('email', email);
-    formData.append('subject', subject);
-    formData.append('body', body);
+    formData.append("email", email);
+    formData.append("subject", subject);
+    formData.append("body", body);
     if (attachment) {
-      formData.append('attachment', attachment);
+      formData.append("attachment", attachment);
     }
 
     try {
-      const response = await fetch('http://142.93.213.81:5001/api/send-email', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5001/api/send-email", {
+        method: "POST",
         body: formData,
       });
 
       const data = await response.json();
       if (response.ok) {
-        alert('Email sent successfully!');
+        alert("Email sent successfully!");
         // Clear form after successful send
-        setEmail('');
-        setSubject('');
-        setBody('');
+        setEmail("");
+        setSubject("");
+        setBody("");
         setAttachment(null);
       } else {
         alert(`Failed to send email: ${data.message}`);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while sending the email.');
+      console.error("Error:", error);
+      alert("An error occurred while sending the email.");
     } finally {
       setIsSending(false);
     }
@@ -357,14 +356,14 @@ const SendEmail = () => {
             onClick={saveDraft}
             disabled={isSaving || isSending}
           >
-            {isSaving ? 'Saving...' : 'Save Draft'}
+            {isSaving ? "Saving..." : "Save Draft"}
           </button>
           <button
             type="submit"
             className="send-button"
             disabled={isSaving || isSending}
           >
-            {isSending ? 'Sending...' : 'Send'}
+            {isSending ? "Sending..." : "Send"}
           </button>
         </div>
       </form>
