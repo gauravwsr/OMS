@@ -5,10 +5,31 @@ const candidateController = require("../controllers/candidateController");
 const upload = require("../middlewares/uploadMiddleware");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-// Handle both file uploads (photo and cv) in one request
+// Handle file uploads for candidate registration
 const uploadFields = upload.fields([
   { name: "photo", maxCount: 1 },
   { name: "cv", maxCount: 1 },
+  // Common documents
+  { name: "document_resume", maxCount: 1 },
+  { name: "document_governmentId", maxCount: 1 },
+  { name: "document_panCard", maxCount: 1 },
+  { name: "document_passportPhoto", maxCount: 1 },
+  { name: "document_signedOfferLetter", maxCount: 1 },
+  { name: "document_nda", maxCount: 1 },
+  // Employee specific documents
+  { name: "document_addressProof", maxCount: 1 },
+  { name: "document_educationalCertificates", maxCount: 1 },
+  { name: "document_experienceCertificates", maxCount: 1 },
+  { name: "document_salarySlips", maxCount: 1 },
+  { name: "document_bankDetails", maxCount: 1 },
+  { name: "document_joiningForm", maxCount: 1 },
+  { name: "document_medicalCertificate", maxCount: 1 },
+  // Intern specific documents
+  { name: "document_collegeId", maxCount: 1 },
+  { name: "document_bonafideCertificate", maxCount: 1 },
+  { name: "document_letterOfRecommendation", maxCount: 1 },
+  { name: "document_transcripts", maxCount: 1 },
+  { name: "document_portfolioSamples", maxCount: 1 },
 ]);
 
 // Middleware to handle optional file uploads
@@ -57,11 +78,7 @@ router.get(
   authMiddleware.authenticate,
   candidateController.getAttendanceHistory
 );
-router.put(
-  "/:id/face-encodings",
-  authMiddleware.authenticate,
-  candidateController.updateFaceEncodings
-);
+router.put("/:id/face-encodings", candidateController.updateFaceEncodings);
 router.get(
   "/attendance/all",
   authMiddleware.authenticate,

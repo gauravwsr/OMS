@@ -29,9 +29,12 @@
 //       let url = '';
 //       if (activeTab === 'inbox') {
 //         url = 'http://localhost:5001/fetch-inbox-emails';
+//         url = 'http://localhost:5001/fetch-inbox-emails';
 //       } else if (activeTab === 'sent') {
 //         url = 'http://localhost:5001/fetch-sent-emails';
+//         url = 'http://localhost:5001/fetch-sent-emails';
 //       } else if (activeTab === 'drafts') {
+//         url = 'http://localhost:5001/fetch-drafts';
 //         url = 'http://localhost:5001/fetch-drafts';
 //       }
 

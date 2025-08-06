@@ -13,8 +13,14 @@ const ViewDetails = () => {
   useEffect(() => {
     const fetchCandidateDetails = async () => {
       try {
+        const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://localhost:5001/api/candidates/${id}`
+          `http://localhost:5001/api/candidates/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         setCandidate(response.data.data);
         console.log("Candidate details:", response.data.data);

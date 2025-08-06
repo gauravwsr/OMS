@@ -21,12 +21,10 @@ const HRLeaveManagement = () => {
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
-      console.log("Fetching employee leave applications...");
-      const response = await axios.get(
-        "http://localhost:5001/api/leave/employees"
-      );
-      console.log("Employee leave applications response:", response.data);
-
+      console.log('Fetching employee leave applications...');
+      const response = await axios.get('http://localhost:5001/api/leave/employees');
+      console.log('Employee leave applications response:', response.data);
+      
       if (response.data.success) {
         setLeaveApplications(response.data.data);
         console.log("Employee leave applications set:", response.data.data);
@@ -48,6 +46,7 @@ const HRLeaveManagement = () => {
     }
   };
 
+  // ...existing code...
   const handleLeaveAction = async (leaveId, action, comments = "") => {
     try {
       console.log("handleLeaveAction called with:", {
@@ -67,6 +66,14 @@ const HRLeaveManagement = () => {
       }
 
       const token = localStorage.getItem("token");
+      if (!token) {
+        setMessage({
+          type: "error",
+          text: "Authentication token not found. Please login again.",
+        });
+        return;
+      }
+      
       console.log("Token available:", !!token);
 
       const requestData = {
@@ -74,23 +81,16 @@ const HRLeaveManagement = () => {
         reviewComments: comments,
         reviewedBy: user._id,
       };
+      
+      console.log('Request data:', requestData);
+      console.log('Making API call to:', `http://localhost:5001/api/leave/status/${leaveId}`);
 
-      console.log("Request data:", requestData);
-      console.log(
-        "Making API call to:",
-        `http://localhost:5001/api/leave/status/${leaveId}`
-      );
-
-      const response = await axios.patch(
-        `http://localhost:5001/api/leave/status/${leaveId}`,
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const response = await axios.patch(`http://localhost:5001/api/leave/status/${leaveId}`, requestData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
 
       console.log("API Response:", response.data);
 
@@ -100,6 +100,11 @@ const HRLeaveManagement = () => {
           text: `Leave application ${action.toLowerCase()} successfully`,
         });
         fetchLeaveApplications(); // Refresh the list
+        
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setMessage({ type: "", text: "" });
+        }, 3000);
       } else {
         console.log("API returned success: false");
         setMessage({
@@ -115,7 +120,12 @@ const HRLeaveManagement = () => {
       console.error("Error status:", error.response?.status);
 
       let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
-      if (error.response?.data?.message) {
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Authentication failed. Please login again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to perform this action.";
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = `${errorMessage}: ${error.message}`;
@@ -127,6 +137,7 @@ const HRLeaveManagement = () => {
       });
     }
   };
+// ...existing code...
 
   const approveLeave = (leaveId) => {
     handleLeaveAction(leaveId, "Approved");

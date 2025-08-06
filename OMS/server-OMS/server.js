@@ -44,6 +44,9 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
+const certificateRoutes = require("./routes/certificateRoutes");
+const completionRoutes = require("./routes/completionRoutes");
+const offerRoutes = require("./routes/offerRoutes");
 const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 
 const app = express();
@@ -54,12 +57,28 @@ chatSocket.init(server);
 // Make io accessible in routes
 app.set("io", chatSocket.getIO());
 
-app.use("/api/chat", chatRoutes);
-app.use("/api/message", messageRoutes);
+// CORS request logging middleware for debugging
+app.use((req, res, next) => {
+  console.log(
+    `${new Date().toISOString()} - ${req.method} request for ${
+      req.url
+    } from origin ${req.headers.origin}`
+  );
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Request body:", req.body);
+    console.log("Content-Type:", req.headers["content-type"]);
+  }
+  next();
+});
 
+// Apply CORS middleware BEFORE routes
 app.use(
   cors({
-    origin: ["http://localhost:3000", "localhost:3001"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5002",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -68,16 +87,52 @@ app.use(
       "Cache-Control",
       "X-Requested-With",
       "Pragma",
+      "Accept",
+      "Origin",
     ],
+    exposedHeaders: [
+      "Content-Length",
+      "X-Requested-With",
+      "Access-Control-Allow-Origin",
+    ],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   })
 );
 
-// Pre-flight requests
+// Additional CORS headers for extra security
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin);
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  next();
+});
+
+// Pre-flight requests handling
 app.options("*", cors());
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Apply body parsing middleware BEFORE routes
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Additional middleware to log parsed body for debugging
+app.use((req, res, next) => {
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Parsed request body:", req.body);
+  }
+  next();
+});
+
+// Chat and message routes (after CORS middleware)
+app.use("/api/chat", chatRoutes);
+app.use("/api/message", messageRoutes);
 
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -134,6 +189,11 @@ app.use("/api/team-lead", teamLeadTaskRoutes);
 
 // Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
+
+// Certificate management routes
+app.use("/api/certificates", require("./routes/certificateRoutes"));
+app.use("/api/completions", require("./routes/completionRoutes"));
+app.use("/api/offers", require("./routes/offerRoutes"));
 
 // Charge Handover routes
 app.use("/api/charge-handovers", chargeHandoverRoutes);
@@ -419,10 +479,23 @@ app.get("/fetch-inbox-emails", async (req, res) => {
 // Error Handling
 app.use(errorHandler);
 
+// Connect to MongoDB
+// mongoose.connect('mongodb://localhost27017/projectdb', {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// });
 const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.log(
+    `✅ CORS enabled for origins: ${JSON.stringify([
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5002",
+    ])}`
+  );
+  console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
 });
 
 // Automatic cleanup function for finished events

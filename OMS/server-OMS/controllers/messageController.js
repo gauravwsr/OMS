@@ -45,13 +45,36 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.allMessages = async (req, res) => {
+// @desc    Get all messages for a chat
+// @route   GET /api/message/:chatId
+// @access  Protected
+exports.allMessages = catchAsync(async (req, res, next) => {
   try {
+    // Log the request for debugging
+    console.log('Fetching messages for chat ID:', req.params.chatId);
+    console.log('Current user:', req.user ? req.user._id : 'undefined');
+    
+    // Validation check
+    if (!req.params.chatId) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Chat ID is required'
+      });
+    }
+    
+    // Check if user exists
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        status: 'fail',
+        message: 'Authentication required'
+      });
+    }
+
     // Check if chat exists
     const chat = await Chat.findById(req.params.chatId);
     if (!chat) {
       return res.status(404).json({ 
-        success: false,
+        status: 'fail',
         message: 'Chat not found' 
       });
     }
@@ -63,27 +86,31 @@ exports.allMessages = async (req, res) => {
 
     if (!isParticipant) {
       return res.status(403).json({ 
-        success: false,
+        status: 'fail',
         message: 'Not authorized to view messages in this chat' 
       });
     }
 
+    // Fetch messages
     const messages = await Message.find({ chat: req.params.chatId })
       .populate('sender', '-password')
-      .populate('chat');
+      .populate('chat')
+      .sort({ createdAt: 1 }); // Sort from oldest to newest
 
-    res.status(200).json({ 
-      success: true,
-      messages 
-    });
+    console.log(`Found ${messages.length} messages for chat ${req.params.chatId}`);
+    
+    // Return messages directly in an array as expected by the client
+    res.status(200).json(messages);
+    
   } catch (error) {
+    console.error('Error in allMessages controller:', error);
     res.status(500).json({ 
       success: false,
       message: 'Error fetching messages',
       error: error.message 
     });
   }
-};
+});
 
 // @desc    Mark message as read
 // @route   PUT /api/message/:messageId/read

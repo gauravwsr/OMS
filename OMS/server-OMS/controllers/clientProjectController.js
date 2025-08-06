@@ -887,6 +887,94 @@ const getCrmSyncStatus = async (req, res) => {
   }
 };
 
+// @desc    Get task history for all projects managed by project manager
+// @route   GET /api/client-projects/tasks/history
+// @access  Private (Project Manager)
+const getProjectTaskHistory = async (req, res) => {
+  try {
+    const Task = require("../models/taskModel");
+    const currentUser = req.user;
+    console.log('Getting task history for project manager:', currentUser.id);
+
+    // Get all projects where user is project manager
+    const workingProjects = await WorkingProject.find({
+      projectManager: currentUser.id,
+    });
+
+    const clientProjects = await ClientProject.find({
+      projectManager: currentUser.id,
+    });
+
+    // Get all project IDs
+    const workingProjectIds = workingProjects.map(p => p._id);
+    const clientProjectIds = clientProjects.map(p => p._id);
+    const allProjectIds = [...workingProjectIds, ...clientProjectIds];
+
+    if (allProjectIds.length === 0) {
+      return res.json({
+        success: true,
+        message: "No projects found for this project manager",
+        data: []
+      });
+    }
+
+    // Get all tasks from these projects that have status history
+    const tasks = await Task.find({
+      projectId: { $in: allProjectIds },
+      'statusHistory.0': { $exists: true } // Only tasks with history
+    })
+    .populate('assignedTo.employeeId', 'name email')
+    .populate('projectId', 'title client')
+    .sort({ updatedAt: -1 });
+
+    // Extract and format history entries
+    const historyEntries = [];
+    
+    tasks.forEach(task => {
+      task.statusHistory.forEach(history => {
+        historyEntries.push({
+          taskId: task._id,
+          taskTitle: task.title,
+          projectTitle: task.projectId?.title || 'Unknown Project',
+          projectType: workingProjectIds.includes(task.projectId?._id) ? 'Working' : 'Client',
+          previousStatus: history.previousStatus,
+          newStatus: history.newStatus,
+          changedBy: history.changedBy,
+          timestamp: history.timestamp,
+          reason: history.reason,
+          assignedEmployees: task.assignedTo?.map(emp => ({
+            name: emp.name || emp.employeeId?.name,
+            email: emp.email || emp.employeeId?.email
+          })) || []
+        });
+      });
+    });
+
+    // Sort by timestamp (most recent first)
+    historyEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    res.json({
+      success: true,
+      message: "Task history retrieved successfully",
+      data: {
+        total: historyEntries.length,
+        history: historyEntries,
+        stats: {
+          totalTasksWithHistory: tasks.length,
+          totalProjects: allProjectIds.length
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching project task history:", error);
+    res.status(500).json({ 
+      success: false,
+      error: "Failed to fetch task history",
+      message: error.message 
+    });
+  }
+};
+
 module.exports = {
   getAllClientProjects,
   getProjectsForTeamLead,
@@ -905,4 +993,5 @@ module.exports = {
   updateProjectProgress,
   forceSyncWithCrm,
   getCrmSyncStatus,
+  getProjectTaskHistory,
 };

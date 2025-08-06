@@ -24,7 +24,7 @@ const FinanceDashboard = () => {
   const [budgetAnalysis, setBudgetAnalysis] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost5001/api';
 
   useEffect(() => {
     fetchDashboardData();
@@ -95,7 +95,7 @@ const FinanceDashboard = () => {
     <div className="finance-dashboard">
       <div className="dashboard-header">
         <h1>Finance Department Dashboard</h1>
-        <p>Monitor financial performance, budgets, and cash flow</p>
+        <p>Monitor performance, budgets, and cash flow</p>
       </div>
 
       {loading ? (

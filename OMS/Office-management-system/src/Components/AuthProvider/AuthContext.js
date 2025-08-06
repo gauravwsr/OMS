@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem("token");
+    sessionStorage.removeItem("welcomeAnimationShown"); // Clear welcome animation flag
     message.success("Logout successful!");
   };
 

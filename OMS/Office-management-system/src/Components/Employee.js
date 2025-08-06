@@ -110,7 +110,7 @@ const Employee = () => {
 
     try {
       // Register face with the face recognition server
-      const response = await axios.post("http://localhost:5001/register_face", {
+      const response = await axios.post("http://localhost:5002/register_face", {
         name: formData.fullName,
         images: capturedImages,
       });
@@ -144,7 +144,7 @@ const Employee = () => {
       console.error("Error registering face:", error);
       const errorMessage =
         error.response?.data?.error ||
-        "Failed to register face. Please ensure the face recognition server is running on port 5001.";
+        "Failed to register face. Please ensure the face recognition server is running on port 5002.";
       alert(`❌ ${errorMessage}`);
       startVideoStream();
     } finally {

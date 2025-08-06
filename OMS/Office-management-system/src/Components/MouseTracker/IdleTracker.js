@@ -125,6 +125,7 @@ const IdleTracker = () => {
             `⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`
           );
 
+<<<<<<< HEAD
           fetch("http://localhost:5001/api/idle-warning", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -132,6 +133,13 @@ const IdleTracker = () => {
           }).catch((error) =>
             console.error("Error sending idle warning:", error)
           );
+=======
+                    fetch("http://localhost:5001/api/idle-warning", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: localStorage.getItem("userId") }),
+                    }).catch((error) => console.error("Error sending idle warning:", error));
+>>>>>>> 6b39d69f82f56048090d9f1ca6abedb01c4ded46
 
           return newWarningCount;
         });

@@ -1,6 +1,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Legend, 
+  Tooltip, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Area,
+  AreaChart
+} from "recharts";
 import NotificationPopup from "./Components/NotificationPopup/NotificationPopup";
 import { useAuth } from "./Components/AuthProvider/AuthContext";
 import "./AdminDashboard.css";
@@ -31,6 +47,7 @@ const AdminDashboard = () => {
     new Date().getFullYear().toString()
   );
   const [availableYears, setAvailableYears] = useState([]);
+  const [monthlyFinancialData, setMonthlyFinancialData] = useState([]);
 
   const [showExpensesChart, setShowExpensesChart] = useState(false);
 
@@ -49,6 +66,16 @@ const AdminDashboard = () => {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
 
+  // Project summary states
+  const [projectSummary, setProjectSummary] = useState({
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    overdueProjects: 0,
+    totalProjectValue: 0,
+    loading: true
+  });
+
   const API_BASE_URL = "https://crm-brown-gamma.vercel.app/api";
 
   useEffect(() => {
@@ -60,6 +87,7 @@ const AdminDashboard = () => {
     fetchMeetings();
     fetchTasks();
     fetchUpcomingEvents();
+    fetchProjectSummary();
 
     // Set up auto-refresh for upcoming events every 5 minutes
     const eventsInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
@@ -87,6 +115,7 @@ const AdminDashboard = () => {
   const cleanupTestNotifications = async () => {
     try {
       await axios.delete(
+        "http://localhost:5001/api/notifications/cleanup-test",
         "http://localhost:5001/api/notifications/cleanup-test",
         {
           headers: {
@@ -238,6 +267,17 @@ const AdminDashboard = () => {
   const calculateFinancials = (revenueData, services, year) => {
     const yearNumber = parseInt(year);
 
+    // Initialize monthly data structure
+    const monthlyData = [];
+    for (let month = 0; month < 12; month++) {
+      monthlyData.push({
+        month: new Date(yearNumber, month).toLocaleDateString('en-US', { month: 'short' }),
+        revenue: 0,
+        expenses: 0,
+        profit: 0
+      });
+    }
+
     // Calculate total revenue for selected year
     let totalRevenue = 0;
     revenueData.forEach((finance) => {
@@ -255,7 +295,9 @@ const AdminDashboard = () => {
 
       paymentDates.forEach((date, index) => {
         if (date && new Date(date).getFullYear() === yearNumber) {
+          const month = new Date(date).getMonth();
           totalRevenue += payments[index];
+          monthlyData[month].revenue += payments[index];
         }
       });
     });
@@ -268,7 +310,11 @@ const AdminDashboard = () => {
           (service) => new Date(service.buyDate).getFullYear() === yearNumber
         )
       )
-      .reduce((sum, service) => sum + service.serviceCost, 0);
+      .reduce((sum, service) => {
+        const month = new Date(service.buyDate).getMonth();
+        monthlyData[month].expenses += service.serviceCost;
+        return sum + service.serviceCost;
+      }, 0);
 
     // 2. Service renewals
     const totalRenewalCost = services
@@ -280,7 +326,16 @@ const AdminDashboard = () => {
           )
         )
       )
-      .reduce((sum, renewal) => sum + renewal.renewalCost, 0);
+      .reduce((sum, renewal) => {
+        const month = new Date(renewal.renewalDate).getMonth();
+        monthlyData[month].expenses += renewal.renewalCost;
+        return sum + renewal.renewalCost;
+      }, 0);
+
+    // Calculate monthly profits
+    monthlyData.forEach(data => {
+      data.profit = data.revenue - data.expenses;
+    });
 
     const totalExpenses = totalServiceCost + totalRenewalCost;
     const profit = totalRevenue - totalExpenses;
@@ -295,6 +350,8 @@ const AdminDashboard = () => {
       loading: false,
       error: null,
     });
+
+    setMonthlyFinancialData(monthlyData);
   };
 
   const getStatusColor = (profit) => {
@@ -307,6 +364,38 @@ const AdminDashboard = () => {
 
   const handleCloseExpensesChart = () => {
     setShowExpensesChart(false);
+  };
+
+  // Fetch project summary data
+  const fetchProjectSummary = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const projects = result.data || [];
+        
+        const summary = {
+          totalProjects: projects.length,
+          activeProjects: projects.filter(p => p.projectStatus === 'Active').length,
+          completedProjects: projects.filter(p => p.projectStatus === 'Completed').length,
+          overdueProjects: projects.filter(p => p.projectStatus === 'Overdue').length,
+          totalProjectValue: projects.reduce((sum, p) => sum + (p.finalAmount || 0), 0),
+          loading: false
+        };
+        
+        setProjectSummary(summary);
+      }
+    } catch (error) {
+      console.error("Error fetching project summary:", error);
+      setProjectSummary(prev => ({ ...prev, loading: false }));
+    }
   };
 
   // MeetingNotifications functions
@@ -491,6 +580,34 @@ const AdminDashboard = () => {
   // Check if there are actual tasks with values greater than 0
   const hasTaskData = taskData.some((item) => item.value > 0);
   const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]; // Colors for different statuses
+  
+  // Colors for charts
+  const CHART_COLORS = {
+    primary: "#3b82f6",
+    secondary: "#10b981", 
+    accent: "#f59e0b",
+    danger: "#ef4444",
+    purple: "#8b5cf6",
+    teal: "#14b8a6"
+  };
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Format large numbers
+  const formatNumber = (num) => {
+    if (num >= 10000000) return (num / 10000000).toFixed(1) + 'Cr';
+    if (num >= 100000) return (num / 100000).toFixed(1) + 'L';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
 
   return (
     <>

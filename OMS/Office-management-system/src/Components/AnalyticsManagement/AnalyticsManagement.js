@@ -39,14 +39,11 @@ const AnalyticsManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5001/api/users/all-users",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setEmployees(response.data.filter((user) => user.role === "Employee"));
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5001/api/users/all-users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEmployees(response.data.filter(user => user.role === 'Employee'));
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
@@ -96,11 +93,8 @@ const AnalyticsManagement = () => {
 
   const fetchLeaveData = async (config) => {
     try {
-      const response = await axios.get(
-        "http://localhost:5001/api/analytics/leave-analytics",
-        config
-      );
-      console.log("Fetched Leave Data:", response.data); // Debugging log
+      const response = await axios.get('http://localhost:5001/api/analytics/leave-analytics', config);
+      console.log('Fetched Leave Data:', response.data); // Debugging log
       setLeaveData(response.data || []);
     } catch (error) {
       console.error("Error fetching leave data:", error);
@@ -110,10 +104,7 @@ const AnalyticsManagement = () => {
 
   const fetchAttendanceData = async (config) => {
     try {
-      const response = await axios.get(
-        "http://localhost:5001/api/analytics/attendance-analytics",
-        config
-      );
+      const response = await axios.get('http://localhost:5001/api/analytics/attendance-analytics', config);
       setAttendanceData(response.data || []);
     } catch (error) {
       console.error("Error fetching attendance data:", error);
@@ -123,10 +114,7 @@ const AnalyticsManagement = () => {
 
   const fetchCheckInOutData = async (config) => {
     try {
-      const response = await axios.get(
-        "http://localhost:5001/api/analytics/checkinout-analytics",
-        config
-      );
+      const response = await axios.get('http://localhost:5001/api/analytics/checkinout-analytics', config);
       setCheckInOutData(response.data || []);
     } catch (error) {
       console.error("Error fetching check-in/out data:", error);
@@ -163,28 +151,23 @@ const AnalyticsManagement = () => {
     let fileName = "";
 
     switch (activeTab) {
-      case "leave":
-        dataToExport = leaveData.map((leave) => ({
-          "Employee Name": leave.employeeName || leave.name || "Unknown",
-          "Employee ID": leave.employeeId || "N/A",
-          "Employee Email": leave.employeeEmail || leave.email || "N/A",
-          Department: leave.department || "General",
-          "Leave Type": leave.leaveType,
-          "Start Date": new Date(leave.startDate).toLocaleDateString("en-IN"),
-          "End Date": new Date(leave.endDate).toLocaleDateString("en-IN"),
-          "Total Days": leave.totalDays,
-          Reason: leave.reason,
-          Status: leave.status,
-          "Applied Date": new Date(
-            leave.appliedDate || leave.createdAt
-          ).toLocaleDateString("en-IN"),
-          "Approved By": leave.approvedBy || "Pending",
-          "Approved Date": leave.approvedDate
-            ? new Date(leave.approvedDate).toLocaleDateString("en-IN")
-            : "N/A",
-          Comments: leave.comments || "N/A",
-          "Emergency Contact": leave.emergencyContact || "N/A",
-          "Leave Balance": leave.leaveBalance + " days" || "N/A",
+      case 'leave':
+        dataToExport = leaveData.map(leave => ({
+          'Employee Name': leave.employeeName || leave.name || 'Unknown',
+          'Employee ID': leave.employeeId || 'N/A',
+          'Employee Email': leave.employeeEmail || leave.email || 'N/A',
+          'Department': leave.department || 'General',
+          'Leave Type': leave.leaveType,
+          'Start Date': new Date(leave.startDate).toLocaleDateString('en-IN'),
+          'End Date': new Date(leave.endDate).toLocaleDateString('en-IN'),
+          'Total Days': leave.totalDays,
+          'Reason': leave.reason,
+          'Status': leave.status,
+          'Applied Date': new Date(leave.appliedDate || leave.createdAt).toLocaleDateString('en-IN'),
+          'Approved By': leave.approvedBy || 'Pending',
+          'Approved Date': leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A',
+          'Comments': leave.comments || 'N/A',
+          'Emergency Contact': leave.emergencyContact || 'N/A',
         }));
         fileName = "Employee_Leave_Applications_Report";
         break;
@@ -297,7 +280,6 @@ const AnalyticsManagement = () => {
                 <th>Status</th>
                 <th>Applied</th>
                 <th>Approval</th>
-                <th>Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -439,15 +421,6 @@ const AnalyticsManagement = () => {
                           )}
                         </div>
                       )}
-                    </td>
-                    <td>
-                      <span
-                        className={`badge badge-balance ${
-                          leave.leaveBalance <= 5 ? "low" : "normal"
-                        }`}
-                      >
-                        {leave.leaveBalance} days
-                      </span>
                     </td>
                   </tr>
                 ))

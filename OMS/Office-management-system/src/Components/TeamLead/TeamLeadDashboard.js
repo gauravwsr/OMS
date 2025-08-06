@@ -81,6 +81,24 @@ const TeamLeadDashboard = () => {
     useState([]);
   const [assigningEmployees, setAssigningEmployees] = useState(false);
 
+  // Employee Task Viewing States
+  const [showEmployeeTasksModal, setShowEmployeeTasksModal] = useState(false);
+  const [selectedEmployeeForTasks, setSelectedEmployeeForTasks] = useState(null);
+  const [employeeTasks, setEmployeeTasks] = useState({
+    Pending: [],
+    "In Progress": [],
+    Completed: [],
+  });
+  const [loadingEmployeeTasks, setLoadingEmployeeTasks] = useState(false);
+
+  // Task History Dashboard States
+  const [showTaskHistoryDashboard, setShowTaskHistoryDashboard] = useState(false);
+  const [taskHistory, setTaskHistory] = useState([]);
+  const [loadingTaskHistory, setLoadingTaskHistory] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState("all"); // all, today, week, month
+  const [historySearchTerm, setHistorySearchTerm] = useState("");
+  const [filteredTaskHistory, setFilteredTaskHistory] = useState([]);
+
   // Get current user (Team Lead) info from auth context
   const currentUser = user || {
     name: "Team Lead",
@@ -412,6 +430,16 @@ const TeamLeadDashboard = () => {
   // Update task status
   const updateTaskStatus = async (taskId, status) => {
     try {
+      // Add confirmation when marking task as completed
+      if (status === "Completed") {
+        const confirmComplete = window.confirm(
+          "Are you sure you want to mark this task as completed? This will update the project progress."
+        );
+        if (!confirmComplete) {
+          return; // Cancel the operation if user clicks "No"
+        }
+      }
+
       const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:5001/api/team-lead/tasks/${taskId}/status`,
@@ -801,6 +829,199 @@ const TeamLeadDashboard = () => {
     }
   };
 
+  // Employee Task Management Functions
+  
+  // Function to fetch tasks for a specific employee
+  const fetchEmployeeTasks = async (employee, projectId = null) => {
+    try {
+      setLoadingEmployeeTasks(true);
+      const token = localStorage.getItem("token");
+      
+      // Extract employee ID - handle different object structures
+      let employeeId;
+      if (typeof employee === 'string') {
+        employeeId = employee;
+      } else if (typeof employee === 'object' && employee !== null) {
+        employeeId = employee._id || employee.id || employee.employeeId;
+      }
+      
+      if (!employeeId) {
+        console.error("Employee ID not found. Employee object:", employee);
+        throw new Error("Employee ID not found");
+      }
+
+      let url = `http://localhost:5001/api/team-lead/employees/${employeeId}/tasks`;
+      if (projectId) {
+        url += `?projectId=${projectId}`;
+      }
+
+      console.log("Fetching employee tasks from URL:", url);
+
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setEmployeeTasks(result.data.groupedTasks);
+        return result.data;
+      } else {
+        throw new Error(result.message || "Failed to fetch employee tasks");
+      }
+    } catch (error) {
+      console.error("Error fetching employee tasks:", error);
+      alert("Failed to fetch employee tasks. Please try again.");
+      return null;
+    } finally {
+      setLoadingEmployeeTasks(false);
+    }
+  };  // Function to view tasks for a specific employee
+  const handleViewEmployeeTasks = async (employee, projectId = null) => {
+    try {
+      // Ensure we have a valid employee object
+      if (!employee) {
+        console.error("No employee provided");
+        return;
+      }
+      
+      // Create a clean employee object for state storage
+      const cleanEmployee = {
+        _id: employee._id || employee.id || employee.employeeId,
+        id: employee._id || employee.id || employee.employeeId,
+        name: employee.name || 'Unknown',
+        email: employee.email || '',
+        role: employee.role || '',
+        subRole: employee.subRole || ''
+      };
+      
+      console.log("Viewing tasks for employee:", cleanEmployee);
+      
+      setSelectedEmployeeForTasks(cleanEmployee);
+      setShowEmployeeTasksModal(true);
+      
+      const taskData = await fetchEmployeeTasks(cleanEmployee, projectId);
+      if (taskData) {
+        console.log(`Loaded ${taskData.total} tasks for employee: ${cleanEmployee.name}`);
+      }
+    } catch (error) {
+      console.error("Error viewing employee tasks:", error);
+      alert("Failed to load employee tasks. Please try again.");
+    }
+  };
+
+  // Function to close employee tasks modal
+  const handleCloseEmployeeTasksModal = () => {
+    setShowEmployeeTasksModal(false);
+    setSelectedEmployeeForTasks(null);
+    setEmployeeTasks({
+      Pending: [],
+      "In Progress": [],
+      Completed: [],
+    });
+  };
+
+  // Function to fetch task history for team lead
+  const fetchTaskHistory = async () => {
+    try {
+      setLoadingTaskHistory(true);
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch("/api/team-lead/tasks/history", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Task history response:", data);
+      
+      if (data.success) {
+        setTaskHistory(data.data.history || []);
+        setFilteredTaskHistory(data.data.history || []);
+      } else {
+        console.error("Failed to fetch task history:", data.message);
+        setTaskHistory([]);
+        setFilteredTaskHistory([]);
+      }
+    } catch (error) {
+      console.error("Error fetching task history:", error);
+      setTaskHistory([]);
+      setFilteredTaskHistory([]);
+    } finally {
+      setLoadingTaskHistory(false);
+    }
+  };
+
+  // Function to filter task history
+  const filterTaskHistory = () => {
+    let filtered = [...taskHistory];
+
+    // Apply search filter
+    if (historySearchTerm.trim()) {
+      const searchLower = historySearchTerm.toLowerCase();
+      filtered = filtered.filter(
+        entry =>
+          entry.taskTitle?.toLowerCase().includes(searchLower) ||
+          entry.projectTitle?.toLowerCase().includes(searchLower) ||
+          entry.changedBy?.name?.toLowerCase().includes(searchLower) ||
+          entry.newStatus?.toLowerCase().includes(searchLower) ||
+          entry.previousStatus?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply time filter
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    switch (historyFilter) {
+      case "today":
+        filtered = filtered.filter(entry => new Date(entry.timestamp) >= today);
+        break;
+      case "week":
+        filtered = filtered.filter(entry => new Date(entry.timestamp) >= weekAgo);
+        break;
+      case "month":
+        filtered = filtered.filter(entry => new Date(entry.timestamp) >= monthAgo);
+        break;
+      default:
+        // "all" - no additional filtering
+        break;
+    }
+
+    setFilteredTaskHistory(filtered);
+  };
+
+  // Effect to filter task history when filters change
+  useEffect(() => {
+    filterTaskHistory();
+  }, [historySearchTerm, historyFilter, taskHistory]);
+
+  // Function to open task history dashboard
+  const handleOpenTaskHistoryDashboard = () => {
+    setShowTaskHistoryDashboard(true);
+    fetchTaskHistory();
+  };
+
+  // Function to close task history dashboard
+  const handleCloseTaskHistoryDashboard = () => {
+    setShowTaskHistoryDashboard(false);
+  };
+
   if (loading) {
     return (
       <div className="dashboard-wrapper">
@@ -915,6 +1136,28 @@ const TeamLeadDashboard = () => {
               Project value
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions-section">
+        <div className="quick-actions-header">
+          <h2>Quick Actions</h2>
+          <p>Access important features and reports</p>
+        </div>
+        <div className="quick-actions-grid">
+          <button 
+            className="action-button task-history-btn"
+            onClick={handleOpenTaskHistoryDashboard}
+          >
+            <div className="action-icon">
+              <FaClock size={20} />
+            </div>
+            <div className="action-content">
+              <div className="action-title">Task History</div>
+              <div className="action-description">View all task status changes</div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -1095,19 +1338,55 @@ const TeamLeadDashboard = () => {
                       </h6>
                       {project.assignedEmployees &&
                       project.assignedEmployees.length > 0 ? (
-                        <div className="team-members-container">
-                          {project.assignedEmployees
-                            .slice(0, 3)
-                            .map((emp, idx) => (
-                              <span key={idx} className="team-member-badge">
-                                {emp.name}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <div className="team-members-container">
+                            {project.assignedEmployees
+                              .slice(0, 3)
+                              .map((emp, idx) => (
+                                <span 
+                                  key={idx} 
+                                  className="team-member-badge"
+                                  onClick={() => {
+                                    const employeeData = {
+                                      _id: emp.employeeId || emp._id,
+                                      id: emp.employeeId || emp._id,
+                                      name: emp.name || 'Unknown',
+                                      role: emp.role || '',
+                                      subRole: emp.subRole || '',
+                                      email: emp.email || ''
+                                    };
+                                    console.log("Clicking employee:", employeeData);
+                                    handleViewEmployeeTasks(employeeData, project._id);
+                                  }}
+                                  style={{ 
+                                    cursor: "pointer", 
+                                    transition: "all 0.2s",
+                                    border: "1px solid transparent" 
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.backgroundColor = "#3b82f6";
+                                    e.target.style.color = "white";
+                                    e.target.style.borderColor = "#2563eb";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.backgroundColor = "";
+                                    e.target.style.color = "";
+                                    e.target.style.borderColor = "transparent";
+                                  }}
+                                  title={`Click to view ${emp?.name || 'Unknown'}'s tasks`}
+                                >
+                                  {emp?.name || 'Unknown'}
+                                </span>
+                              ))}
+                            {project.assignedEmployees.length > 3 && (
+                              <span className="team-member-more">
+                                +{project.assignedEmployees.length - 3} more
                               </span>
-                            ))}
-                          {project.assignedEmployees.length > 3 && (
-                            <span className="team-member-more">
-                              +{project.assignedEmployees.length - 3} more
-                            </span>
-                          )}
+                            )}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#6b7280", fontStyle: "italic" }}>
+                            💡 Click on team member names to view their tasks
+                          </div>
                         </div>
                       ) : (
                         <span className="no-team-assigned">
@@ -1549,22 +1828,28 @@ const TeamLeadDashboard = () => {
                                           gap: 4,
                                         }}
                                       >
-                                        {task.assignedTo.map((emp, idx) => (
-                                          <span
-                                            key={`${task._id}-pending-${
-                                              emp.employeeId || emp.name
-                                            }-${idx}`}
-                                            style={{
-                                              background: "#fecaca",
-                                              color: "#991b1b",
-                                              padding: "2px 6px",
-                                              borderRadius: 4,
-                                              fontSize: 10,
-                                            }}
-                                          >
-                                            {emp.name}
+                                        {task.assignedTo && task.assignedTo.length > 0 ? (
+                                          task.assignedTo.map((emp, idx) => (
+                                            <span
+                                              key={`${task._id}-pending-${
+                                                emp?.employeeId || emp?._id || emp?.name || idx
+                                              }-${idx}`}
+                                              style={{
+                                                background: "#fecaca",
+                                                color: "#991b1b",
+                                                padding: "2px 6px",
+                                                borderRadius: 4,
+                                                fontSize: 10,
+                                              }}
+                                            >
+                                              {emp?.name || 'Unknown'}
+                                            </span>
+                                          ))
+                                        ) : (
+                                          <span style={{ fontSize: 10, color: "#6b7280", fontStyle: "italic" }}>
+                                            No assignments
                                           </span>
-                                        ))}
+                                        )}
                                       </div>
                                     ) : (
                                       <div
@@ -1874,22 +2159,28 @@ const TeamLeadDashboard = () => {
                                         gap: 4,
                                       }}
                                     >
-                                      {task.assignedTo.map((emp, idx) => (
-                                        <span
-                                          key={`${task._id}-inprogress-${
-                                            emp.employeeId || emp.name
-                                          }-${idx}`}
-                                          style={{
-                                            background: "#bfdbfe",
-                                            color: "#1e40af",
-                                            padding: "2px 6px",
-                                            borderRadius: 4,
-                                            fontSize: 10,
-                                          }}
-                                        >
-                                          {emp.name}
+                                      {task.assignedTo && task.assignedTo.length > 0 ? (
+                                        task.assignedTo.map((emp, idx) => (
+                                          <span
+                                            key={`${task._id}-inprogress-${
+                                              emp?.employeeId || emp?._id || emp?.name || idx
+                                            }-${idx}`}
+                                            style={{
+                                              background: "#bfdbfe",
+                                              color: "#1e40af",
+                                              padding: "2px 6px",
+                                              borderRadius: 4,
+                                              fontSize: 10,
+                                            }}
+                                          >
+                                            {emp?.name || 'Unknown'}
+                                          </span>
+                                        ))
+                                      ) : (
+                                        <span style={{ fontSize: 10, color: "#6b7280", fontStyle: "italic" }}>
+                                          No assignments
                                         </span>
-                                      ))}
+                                      )}
                                     </div>
                                   </div>
 
@@ -2096,22 +2387,28 @@ const TeamLeadDashboard = () => {
                                         gap: 4,
                                       }}
                                     >
-                                      {task.assignedTo.map((emp, idx) => (
-                                        <span
-                                          key={`${task._id}-completed-${
-                                            emp.employeeId || emp.name
-                                          }-${idx}`}
-                                          style={{
-                                            background: "#86efac",
-                                            color: "#047857",
-                                            padding: "2px 6px",
-                                            borderRadius: 4,
-                                            fontSize: 10,
-                                          }}
-                                        >
-                                          {emp.name}
+                                      {task.assignedTo && task.assignedTo.length > 0 ? (
+                                        task.assignedTo.map((emp, idx) => (
+                                          <span
+                                            key={`${task._id}-completed-${
+                                              emp?.employeeId || emp?._id || emp?.name || idx
+                                            }-${idx}`}
+                                            style={{
+                                              background: "#86efac",
+                                              color: "#047857",
+                                              padding: "2px 6px",
+                                              borderRadius: 4,
+                                              fontSize: 10,
+                                            }}
+                                          >
+                                            {emp?.name || 'Unknown'}
+                                          </span>
+                                        ))
+                                      ) : (
+                                        <span style={{ fontSize: 10, color: "#6b7280", fontStyle: "italic" }}>
+                                          No assignments
                                         </span>
-                                      ))}
+                                      )}
                                     </div>
                                   </div>
 
@@ -3009,10 +3306,10 @@ const TeamLeadDashboard = () => {
                             color: "#1e40af",
                           }}
                         >
-                          {emp.name}
+                          {emp?.name || 'Unknown'}
                         </div>
                         <div style={{ fontSize: 11, color: "#6b7280" }}>
-                          {emp.role} • {emp.email}
+                          {emp?.role || 'Unknown'} • {emp?.email || 'No email'}
                         </div>
                       </div>
                     ))}
@@ -3561,6 +3858,328 @@ const TeamLeadDashboard = () => {
               >
                 {assigningEmployees ? "Assigning..." : "Assign Employees"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Tasks View Modal */}
+      {showEmployeeTasksModal && selectedEmployeeForTasks && (
+        <div className="modal-overlay">
+          <div className="modal-content large-modal">
+            <div className="modal-header">
+              <div>
+                <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: "#3b82f6" }}>
+                  <FaUser style={{ marginRight: 8 }} />
+                  Tasks Assigned to {selectedEmployeeForTasks?.name || 'Unknown Employee'}
+                </h3>
+                <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: 14 }}>
+                  Employee ID: {selectedEmployeeForTasks?.id || selectedEmployeeForTasks?._id || 'Unknown'} | Role: {selectedEmployeeForTasks?.role || 'Unknown'}
+                </p>
+              </div>
+              <button className="modal-close" onClick={handleCloseEmployeeTasksModal}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ padding: 24 }}>
+              {loadingEmployeeTasks ? (
+                <div style={{ textAlign: "center", padding: "40px" }}>
+                  <div className="modern-spinner">
+                    <div className="spinner-ring"></div>
+                    <div className="spinner-ring"></div>
+                    <div className="spinner-ring"></div>
+                  </div>
+                  <p style={{ marginTop: 16, color: "#6b7280" }}>Loading employee tasks...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Task Statistics */}
+                  <div className="task-stats" style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+                    <div className="task-stat-card" style={{
+                      flex: 1, background: "#fef3c7", padding: 16, borderRadius: 8, textAlign: "center"
+                    }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: "#f59e0b" }}>
+                        {employeeTasks.Pending.length}
+                      </div>
+                      <div style={{ color: "#92400e", fontSize: 14, fontWeight: 500 }}>
+                        Pending Tasks
+                      </div>
+                    </div>
+                    <div className="task-stat-card" style={{
+                      flex: 1, background: "#dbeafe", padding: 16, borderRadius: 8, textAlign: "center"
+                    }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: "#3b82f6" }}>
+                        {employeeTasks["In Progress"].length}
+                      </div>
+                      <div style={{ color: "#1e40af", fontSize: 14, fontWeight: 500 }}>
+                        In Progress
+                      </div>
+                    </div>
+                    <div className="task-stat-card" style={{
+                      flex: 1, background: "#d1fae5", padding: 16, borderRadius: 8, textAlign: "center"
+                    }}>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: "#10b981" }}>
+                        {employeeTasks.Completed.length}
+                      </div>
+                      <div style={{ color: "#047857", fontSize: 14, fontWeight: 500 }}>
+                        Completed
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Task Board */}
+                  <div className="task-board" style={{
+                    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20
+                  }}>
+                    {/* Pending Tasks */}
+                    <div className="task-column">
+                      <h4 style={{ color: "#f59e0b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                        <FaClock /> Pending ({employeeTasks.Pending.length})
+                      </h4>
+                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        {employeeTasks.Pending.map((task) => (
+                          <div key={task._id} className="task-card" style={{
+                            background: "#fffbf0", border: "1px solid #fed7aa", borderRadius: 8, padding: 12,
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                          }}>
+                            <div style={{ fontWeight: 600, fontSize: 14, color: "#92400e", marginBottom: 8 }}>
+                              {task.title}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                              {task.description}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#d97706", marginBottom: 8 }}>
+                              Project: {task.projectId?.projectId || 'Unknown'} | Due: {formatDate(task.dueDate)}
+                            </div>
+                            {task.taskPoints && task.taskPoints.length > 0 && (
+                              <div style={{ fontSize: 11, color: "#92400e" }}>
+                                {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points completed
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {employeeTasks.Pending.length === 0 && (
+                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                            No pending tasks
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* In Progress Tasks */}
+                    <div className="task-column">
+                      <h4 style={{ color: "#3b82f6", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                        <FaPlay /> In Progress ({employeeTasks["In Progress"].length})
+                      </h4>
+                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        {employeeTasks["In Progress"].map((task) => (
+                          <div key={task._id} className="task-card" style={{
+                            background: "#f0f7ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 12,
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                          }}>
+                            <div style={{ fontWeight: 600, fontSize: 14, color: "#1e40af", marginBottom: 8 }}>
+                              {task.title}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                              {task.description}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#2563eb", marginBottom: 8 }}>
+                              Project: {task.projectId?.projectId || 'Unknown'} | Due: {formatDate(task.dueDate)}
+                            </div>
+                            {task.progressPercentage !== undefined && (
+                              <div style={{ marginBottom: 8 }}>
+                                <div style={{
+                                  width: "100%", height: 6, background: "#e5e7eb", borderRadius: 3, overflow: "hidden"
+                                }}>
+                                  <div style={{
+                                    height: "100%", background: "#3b82f6", width: `${task.progressPercentage || 0}%`,
+                                    transition: "width 0.3s ease"
+                                  }}></div>
+                                </div>
+                                <div style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, marginTop: 2 }}>
+                                  {task.progressPercentage || 0}% Complete
+                                </div>
+                              </div>
+                            )}
+                            {task.taskPoints && task.taskPoints.length > 0 && (
+                              <div style={{ fontSize: 11, color: "#1e40af" }}>
+                                {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points completed
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {employeeTasks["In Progress"].length === 0 && (
+                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                            No tasks in progress
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Completed Tasks */}
+                    <div className="task-column">
+                      <h4 style={{ color: "#10b981", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                        <FaCheckCircle /> Completed ({employeeTasks.Completed.length})
+                      </h4>
+                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        {employeeTasks.Completed.map((task) => (
+                          <div key={task._id} className="task-card" style={{
+                            background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: 12,
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                          }}>
+                            <div style={{ fontWeight: 600, fontSize: 14, color: "#047857", marginBottom: 8 }}>
+                              {task.title}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                              {task.description}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#059669", marginBottom: 8 }}>
+                              Project: {task.projectId?.projectId || 'Unknown'} | Completed: {formatDate(task.completedAt)}
+                            </div>
+                            <div style={{
+                              display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
+                              background: "#dcfce7", borderRadius: 4
+                            }}>
+                              <FaCheckCircle style={{ color: "#16a34a", fontSize: 12 }} />
+                              <span style={{ fontSize: 11, color: "#047857", fontWeight: 600 }}>
+                                Task Completed Successfully
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {employeeTasks.Completed.length === 0 && (
+                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                            No completed tasks
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task History Dashboard Modal */}
+      {showTaskHistoryDashboard && (
+        <div className="modal-overlay">
+          <div className="modal-content task-history-modal">
+            <div className="modal-header">
+              <h2>
+                <FaClock className="modal-icon" />
+                Task History Dashboard
+              </h2>
+              <button className="modal-close" onClick={handleCloseTaskHistoryDashboard}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="task-history-dashboard">
+              {/* Filters Section */}
+              <div className="history-filters">
+                <div className="filter-row">
+                  <div className="filter-group">
+                    <label>Search:</label>
+                    <input
+                      type="text"
+                      placeholder="Search tasks, projects, or users..."
+                      value={historySearchTerm}
+                      onChange={(e) => setHistorySearchTerm(e.target.value)}
+                      className="filter-input"
+                    />
+                  </div>
+                  <div className="filter-group">
+                    <label>Time Period:</label>
+                    <select 
+                      value={historyFilter} 
+                      onChange={(e) => setHistoryFilter(e.target.value)}
+                      className="filter-select"
+                    >
+                      <option value="all">All Time</option>
+                      <option value="today">Today</option>
+                      <option value="week">Past Week</option>
+                      <option value="month">Past Month</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="history-stats">
+                  <span className="stat-item">
+                    Total Entries: {filteredTaskHistory.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* History Content */}
+              <div className="history-content">
+                {loadingTaskHistory ? (
+                  <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Loading task history...</p>
+                  </div>
+                ) : filteredTaskHistory.length === 0 ? (
+                  <div className="empty-state">
+                    <FaInfoCircle size={48} color="#6b7280" />
+                    <h3>No task history found</h3>
+                    <p>No task status changes match your current filters.</p>
+                  </div>
+                ) : (
+                  <div className="history-timeline">
+                    {filteredTaskHistory.map((entry, index) => (
+                      <div key={index} className="history-entry">
+                        <div className="history-marker">
+                          <div className={`status-dot ${(entry?.newStatus || 'unknown').toLowerCase().replace(' ', '-')}`}></div>
+                        </div>
+                        <div className="history-content-card">
+                          <div className="history-header">
+                            <div className="history-title">
+                              <strong>{entry?.taskTitle || 'Unknown Task'}</strong>
+                              <span className="project-badge">{entry?.projectTitle || 'Unknown Project'}</span>
+                            </div>
+                            <div className="history-timestamp">
+                              {entry?.timestamp ? new Date(entry.timestamp).toLocaleString() : 'Unknown time'}
+                            </div>
+                          </div>
+                          <div className="history-body">
+                            <div className="status-change">
+                              <span className={`status-badge ${(entry?.previousStatus || 'unknown').toLowerCase().replace(' ', '-')}`}>
+                                {entry?.previousStatus || 'Unknown'}
+                              </span>
+                              <FaArrowDown className="arrow-icon" />
+                              <span className={`status-badge ${(entry?.newStatus || 'unknown').toLowerCase().replace(' ', '-')}`}>
+                                {entry?.newStatus || 'Unknown'}
+                              </span>
+                            </div>
+                            <div className="changed-by">
+                              <FaUser size={12} />
+                              <span>
+                                {entry?.changedBy?.name || 'Unknown'} ({entry?.changedBy?.role || 'Unknown'})
+                              </span>
+                            </div>
+                            {entry?.reason && (
+                              <div className="history-reason">
+                                <strong>Reason:</strong> {entry.reason}
+                              </div>
+                            )}
+                            {entry?.assignedEmployees && entry.assignedEmployees.length > 0 && (
+                              <div className="assigned-employees">
+                                <strong>Assigned to:</strong>
+                                {entry.assignedEmployees.map((emp, empIndex) => (
+                                  <span key={empIndex} className="employee-tag">
+                                    {emp?.name || 'Unknown'}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

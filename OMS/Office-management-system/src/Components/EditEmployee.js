@@ -51,8 +51,14 @@ const EditEmployee = () => {
 
   const fetchEmployeeData = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5001/api/candidates/${id}`
+        `http://localhost:5001/api/candidates/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (response.data.success) {
         const employee = response.data.data;
@@ -119,6 +125,7 @@ const EditEmployee = () => {
 
     try {
       const response = await axios.put(
+        `http://localhost:5001/api/candidates/${id}`,
         `http://localhost:5001/api/candidates/${id}`,
         formData
       );
@@ -195,6 +202,7 @@ const EditEmployee = () => {
       if (formData.candidateId) {
         try {
           const faceEncodingsResponse = await axios.put(
+            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
             `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
             {
               faceEncodings: capturedImages, // Store captured images as face data

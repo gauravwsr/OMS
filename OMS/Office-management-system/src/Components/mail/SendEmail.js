@@ -22,6 +22,7 @@
 
 //     try {
 //       const response = await fetch('http://localhost:5001/api/send-email', {
+//       const response = await fetch('http://localhost:5001/api/send-email', {
 //         method: 'POST',
 //         body: formData,
 //       });

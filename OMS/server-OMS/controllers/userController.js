@@ -1,4 +1,5 @@
 const User = require("../models/userModel"); // Changed from '../models/User'
+const Candidate = require("../models/Candidate");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -169,18 +170,48 @@ const loginUser = async (req, res) => {
   }
 
   try {
-    // Check if user exists
-    console.log("🔍 Looking for user with email:", email);
-    const user = await User.findOne({ email });
+    // First, check if user exists in Users collection
+    console.log("🔍 Looking for user in Users collection with email:", email);
+    let user = await User.findOne({ email });
+    let userType = "User";
+
+    // If not found in Users, check Candidates collection
     if (!user) {
-      console.log("❌ User not found");
+      console.log(
+        "🔍 Looking for user in Candidates collection with email:",
+        email
+      );
+      user = await Candidate.findOne({ email });
+      userType = "Candidate";
+    }
+
+    if (!user) {
+      console.log("❌ User not found in both collections");
       return res.status(400).json({ msg: "Invalid credentials!" });
     }
-    console.log("✅ User found:", user.name);
+
+    console.log(
+      `✅ ${userType} found:`,
+      user.name || user.firstName + " " + user.lastName
+    );
 
     // Check if password matches
     console.log("🔑 Checking password...");
-    const isMatch = await bcrypt.compare(password, user.password);
+    let isMatch;
+
+    if (userType === "User") {
+      // For Users collection, use bcrypt compare
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // For Candidates collection, check if matchPassword method exists
+      if (user.matchPassword && typeof user.matchPassword === "function") {
+        isMatch = await user.matchPassword(password);
+      } else {
+        // Fallback to bcrypt compare
+        isMatch = await bcrypt.compare(password, user.password);
+      }
+    }
+
     console.log("🔑 Password match:", isMatch);
     if (!isMatch) {
       console.log("❌ Password mismatch");
@@ -188,16 +219,37 @@ const loginUser = async (req, res) => {
     }
 
     // Generate JWT token with login timestamp
-    const loginTime = new Date().toISOString(); // Store login time in ISO format
-    const payload = {
-      id: user._id, // Add MongoDB ObjectId
-      userId: user.userId,
-      email: user.email,
-      role: user.role,
-      subRole: user.subRole,
-      name: user.name, // Add user name
-      loginTime,
-    };
+    const loginTime = new Date().toISOString();
+
+    // Create payload based on user type
+    let payload;
+    if (userType === "User") {
+      payload = {
+        id: user._id,
+        userId: user.userId,
+        email: user.email,
+        role: user.role,
+        subRole: user.subRole,
+        name: user.name,
+        userType: "User",
+        loginTime,
+      };
+    } else {
+      // For Candidate
+      payload = {
+        id: user._id,
+        candidateId: user.candidateId,
+        email: user.email,
+        role: user.role || "Employee",
+        subRole: user.subRole,
+        name:
+          user.firstName && user.lastName
+            ? user.firstName + " " + user.lastName
+            : user.fullName || "Unknown",
+        userType: "Candidate",
+        loginTime,
+      };
+    }
 
     // Create a token without expiration
     const token = jwt.sign(payload, JWT_SECRET);
@@ -206,16 +258,35 @@ const loginUser = async (req, res) => {
     user.lastLogin = loginTime;
     await user.save();
 
-    res.status(200).json({
-      msg: "Login successful",
-      userId: user.userId,
-      email: user.email,
-      role: user.role,
-      subRole: user.subRole,
-      token, // Include token in the response
-    });
+    // Send response based on user type
+    if (userType === "User") {
+      res.status(200).json({
+        msg: "Login successful",
+        userId: user.userId,
+        email: user.email,
+        role: user.role,
+        subRole: user.subRole,
+        name: user.name,
+        userType: "User",
+        token,
+      });
+    } else {
+      res.status(200).json({
+        msg: "Login successful",
+        candidateId: user.candidateId,
+        email: user.email,
+        role: user.role || "Employee",
+        subRole: user.subRole,
+        name:
+          user.firstName && user.lastName
+            ? user.firstName + " " + user.lastName
+            : user.fullName || "Unknown",
+        userType: "Candidate",
+        token,
+      });
+    }
   } catch (error) {
-    console.error(error.message);
+    console.error("❌ Login error:", error.message);
     res.status(500).send("Server error");
   }
 };
