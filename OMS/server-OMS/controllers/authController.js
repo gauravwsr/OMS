@@ -63,6 +63,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 const Candidate = require("../models/Candidate");
+const EmailCredentialService = require("../services/emailCredentialService");
 
 // Generate JWT
 const generateToken = (user) => {
@@ -134,6 +135,33 @@ const login = async (req, res) => {
     // Check if user is active (for User collection)
     if (userType === "User" && !user.isActive) {
       return res.status(401).json({ message: "Account is deactivated" });
+    }
+
+    // Auto-configure email credentials using login credentials
+    try {
+      const userEmail = user.email || user.personalMail;
+      
+      // Check if user's email is from allowed domain (tars.co.in)
+      if (userEmail && userEmail.includes('@tars.co.in')) {
+        // Check if email credentials are not already configured
+        const existingCredentials = await EmailCredentialService.getEmailCredentials(user._id);
+        
+        if (!existingCredentials.configured) {
+          // Auto-save email credentials using login password
+          console.log("🔧 Auto-configuring email credentials for:", userEmail);
+          
+          try {
+            await EmailCredentialService.saveEmailCredentials(user._id, userEmail, password);
+            console.log("✅ Email credentials auto-configured successfully");
+          } catch (emailError) {
+            console.log("⚠️ Email auto-configuration failed:", emailError.message);
+            // Don't fail login if email config fails
+          }
+        }
+      }
+    } catch (error) {
+      console.log("⚠️ Email auto-configuration error:", error.message);
+      // Don't fail login if email config fails
     }
 
     // Generate token with appropriate fields

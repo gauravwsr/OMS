@@ -23,7 +23,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const connectDB = require("./config/db");
 const trackingRoutes = require("./routes/trackingRoutes");
-// const emailRoutes = require("./routes/emailRoutes");
+const emailRoutes = require("./routes/emailRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
@@ -154,6 +154,9 @@ app.use("/api/team-lead", teamLeadTaskRoutes);
 
 // Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
+
+// Email management routes
+app.use("/api/emails", emailRoutes);
 
 // Certificate management routes
 app.use("/api/certificates", require("./routes/certificateRoutes"));
