@@ -99,12 +99,19 @@ const Chat = () => {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       forceNew: true, // Force a new connection to avoid sharing
+      autoConnect: true, // Automatically connect
+      upgrade: true, // Allow transport upgrades
     });
 
     newSocket.on("connect", () => {
       console.log("Socket connected successfully with ID:", newSocket.id);
       console.log("Sending setup data for user:", user._id);
+      
+      // Setup user in socket
       newSocket.emit("setup", user);
+      
+      // Join user to their personal room for receiving messages
+      newSocket.emit("join", user._id);
 
       // Emit a test event to verify connection
       newSocket.emit("ping", { userId: user._id, timestamp: new Date() });
@@ -138,6 +145,14 @@ const Chat = () => {
 
     newSocket.on("reconnect", (attemptNumber) => {
       console.log(`Socket reconnected after ${attemptNumber} attempts`);
+      // Re-setup user and re-join chat when reconnected
+      if (user) {
+        newSocket.emit("setup", user);
+        newSocket.emit("join", user._id);
+        if (selectedChat) {
+          newSocket.emit("join chat", selectedChat._id);
+        }
+      }
     });
 
     newSocket.on("reconnect_error", (error) => {
@@ -346,23 +361,31 @@ useEffect(() => {
   const handleMessageReceived = (newMessageReceived) => {
     console.log("New message received via socket:", newMessageReceived);
     
-    // Only add message if it's for the current selected chat
-    if (selectedChat && selectedChat._id === newMessageReceived.chat._id) {
-      setMessages((prev) => [...prev, newMessageReceived]);
-    }
-    
-    // Update the chat list with latest message
+    // Always update the chat list with latest message
     setChats((prev) =>
       prev.map((chat) =>
-        chat._id === newMessageReceived.chat._id
+        chat._id === newMessageReceived.chat._id || chat._id === newMessageReceived.chat
           ? { ...chat, latestMessage: newMessageReceived }
           : chat
       )
     );
+    
+    // Only add message if it's for the current selected chat
+    if (selectedChat && (selectedChat._id === newMessageReceived.chat._id || selectedChat._id === newMessageReceived.chat)) {
+      setMessages((prev) => {
+        // Check if message already exists to avoid duplicates
+        const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
+        if (messageExists) {
+          return prev;
+        }
+        return [...prev, newMessageReceived];
+      });
+    }
   };
 
   // Listen for typing indicators
   const handleTyping = (data) => {
+    console.log("Typing event received:", data);
     if (selectedChat && selectedChat._id === data.chatId && data.userId !== user._id) {
       setIsTyping(true);
       setTypingUsers((prev) => {
@@ -375,6 +398,7 @@ useEffect(() => {
   };
 
   const handleStopTyping = (data) => {
+    console.log("Stop typing event received:", data);
     if (selectedChat && selectedChat._id === data.chatId) {
       setTypingUsers((prev) => {
         const newTypingUsers = prev.filter((userId) => userId !== data.userId);
@@ -386,18 +410,61 @@ useEffect(() => {
     }
   };
 
+  // Join chat room when chat is selected
+  const handleJoinChat = () => {
+    if (selectedChat && socket.connected) {
+      console.log("Joining chat room:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+    }
+  };
+
   // Add event listeners
   socket.on("message received", handleMessageReceived);
   socket.on("typing", handleTyping);
   socket.on("stop typing", handleStopTyping);
+  
+  // Join the chat room for real-time updates
+  handleJoinChat();
 
   // Cleanup function
   return () => {
     socket.off("message received", handleMessageReceived);
     socket.off("typing", handleTyping);
     socket.off("stop typing", handleStopTyping);
+    
+    // Leave chat room when cleanup
+    if (selectedChat && socket.connected) {
+      console.log("Leaving chat room:", selectedChat._id);
+      socket.emit("leave chat", selectedChat._id);
+    }
   };
 }, [socket, selectedChat, user._id]);
+
+// Debug socket connection status
+useEffect(() => {
+  if (socket) {
+    const handleConnect = () => console.log("Socket connected:", socket.id);
+    const handleDisconnect = () => console.log("Socket disconnected");
+    const handleConnectError = (error) => console.error("Socket connection error:", error);
+    
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+    
+    // Log current status
+    console.log("Socket status:", {
+      connected: socket.connected,
+      id: socket.id,
+      transport: socket.io?.engine?.transport?.name
+    });
+    
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+    };
+  }
+}, [socket]);
 
 const handleSendMessage = async () => {
   if (!newMessage.trim() || !selectedChat) {
@@ -433,7 +500,10 @@ const handleSendMessage = async () => {
 
   // Start typing indicator cleanup
   if (socket && socket.connected) {
-    socket.emit("stop typing", selectedChat._id);
+    socket.emit("stop typing", {
+      chatId: selectedChat._id,
+      userId: user._id
+    });
   }
 
   try {
@@ -479,7 +549,7 @@ const handleSendMessage = async () => {
 
     // The server returns data in a different format: { status: 'success', data: { message: {...} } }
     // Extract the actual message object from the response
-    const messageData = response.data.data?.message;
+    const messageData = response.data.data?.message || response.data.message || response.data;
 
     if (!messageData || !messageData._id) {
       console.error("Unexpected response structure:", response.data);
@@ -505,14 +575,15 @@ const handleSendMessage = async () => {
     // Emit to socket for other users to receive the message
     if (socket && socket.connected) {
       console.log("Emitting new message via socket:", messageData._id);
-      // Match the event name expected on the server
-      socket.emit("new message", messageData);
+      // Emit with proper structure
+      socket.emit("new message", {
+        ...messageData,
+        chat: selectedChat._id // Ensure chat ID is properly set
+      });
     } else {
       console.warn(
         "Socket disconnected, message sent but real-time updates unavailable"
       );
-      // If socket is disconnected, we still sent the message via HTTP
-      // When socket reconnects, the next message will trigger a refresh
     }
   } catch (err) {
     networkError = true;
