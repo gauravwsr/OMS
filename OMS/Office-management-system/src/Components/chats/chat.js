@@ -340,35 +340,33 @@ const Chat = () => {
         newMessage.chat &&
         selectedChat._id === newMessage.chat._id
       ) {
-        console.log("Adding new message to current chat");
+        // Add message to current chat
         setMessages((prev) => {
-          // Check if message already exists to prevent duplicates
-          if (prev.some((msg) => msg._id === newMessage._id)) {
-            return prev;
-          }
-
-          // Check if this is replacing a temporary message
+          if (prev.some((msg) => msg._id === newMessage._id)) return prev;
+          // Replace temp message if needed
           const tempIndex = prev.findIndex(
             (msg) =>
               msg.isTemp &&
               msg.content === newMessage.content &&
               msg.sender._id === newMessage.sender._id
           );
-
           if (tempIndex >= 0) {
-            // Replace temp message with real one
             const newMessages = [...prev];
             newMessages[tempIndex] = newMessage;
             return newMessages;
           }
-
-          // Otherwise add as new message
           return [...prev, newMessage];
         });
+        // Update chat list: latestMessage and clear unreadCount
+        setChats((prev) =>
+          prev.map((chat) =>
+            chat._id === newMessage.chat._id
+              ? { ...chat, latestMessage: newMessage, unreadCount: 0, notification: false }
+              : chat
+          )
+        );
       } else {
-        console.log("Message is for a different chat than the selected one");
-
-        // Update the chat list to show new message indicator
+        // Message is for a different chat, update chat list and show notification
         setChats((prev) =>
           prev.map((chat) =>
             chat._id === newMessage.chat._id
@@ -376,27 +374,35 @@ const Chat = () => {
                   ...chat,
                   latestMessage: newMessage,
                   unreadCount: (chat.unreadCount || 0) + 1,
+                  notification: true,
                 }
               : chat
           )
         );
-
-        // Play notification sound or show browser notification here if desired
+        // Browser notification (if permissions granted)
         try {
-          // Browser notification (if permissions granted)
           if (
             "Notification" in window &&
             Notification.permission === "granted"
           ) {
             new Notification(
-              `New message from ${newMessage.sender?.name || "Someone"}`,
+              newMessage.chat.isGroupChat
+                ? newMessage.chat.chatName
+                : newMessage.sender?.name || "New Message",
               {
-                body:
-                  newMessage.content.substring(0, 50) +
-                  (newMessage.content.length > 50 ? "..." : ""),
+                body: newMessage.content,
+                icon: "/favicon.ico",
               }
             );
+          } else if (
+            "Notification" in window &&
+            Notification.permission !== "denied"
+          ) {
+            Notification.requestPermission();
           }
+          // Optionally play a sound here
+          // const audio = new Audio('/notification.mp3');
+          // audio.play();
         } catch (e) {
           console.warn("Failed to create notification:", e);
         }
@@ -858,7 +864,7 @@ const Chat = () => {
 
     try {
       const res = await axios.put(
-        `${API_BASE_URL}/api/group/rename`,
+        `${API_BASE_URL}/api/chat/group/rename`,
         {
           chatId: selectedChat._id,
           chatName: newName,
@@ -868,10 +874,11 @@ const Chat = () => {
         }
       );
 
+      const chatData = res.data?.data?.chat || res.data?.chat || res.data;
       setChats((prev) =>
-        prev.map((chat) => (chat._id === selectedChat._id ? res.data : chat))
+        prev.map((chat) => (chat._id === selectedChat._id ? chatData : chat))
       );
-      setSelectedChat(res.data);
+      setSelectedChat(chatData);
     } catch (err) {
       setError("Failed to rename group");
     }
@@ -882,7 +889,7 @@ const Chat = () => {
 
     try {
       const res = await axios.put(
-        `${API_BASE_URL}/api/group/add`,
+        `${API_BASE_URL}/api/chat/group/add`,
         {
           chatId: selectedChat._id,
           userId,
@@ -892,10 +899,11 @@ const Chat = () => {
         }
       );
 
+      const chatData = res.data?.data?.chat || res.data?.chat || res.data;
       setChats((prev) =>
-        prev.map((chat) => (chat._id === selectedChat._id ? res.data : chat))
+        prev.map((chat) => (chat._id === selectedChat._id ? chatData : chat))
       );
-      setSelectedChat(res.data);
+      setSelectedChat(chatData);
     } catch (err) {
       setError("Failed to add user to group");
     }
@@ -906,7 +914,7 @@ const Chat = () => {
 
     try {
       const res = await axios.put(
-        `${API_BASE_URL}/api/group/remove`,
+        `${API_BASE_URL}/api/chat/group/remove`,
         {
           chatId: selectedChat._id,
           userId,
@@ -916,10 +924,24 @@ const Chat = () => {
         }
       );
 
+      // Extract chat object from response
+      const chatData = res.data?.data?.chat || res.data?.chat || res.data;
+
       setChats((prev) =>
-        prev.map((chat) => (chat._id === selectedChat._id ? res.data : chat))
+        prev.map((chat) => (chat._id === selectedChat._id ? chatData : chat))
       );
-      setSelectedChat(res.data);
+
+      // Check if current user is still a participant
+      const isStillParticipant = Array.isArray(chatData?.participants)
+        ? chatData.participants.some((p) => p && p._id === user._id)
+        : false;
+
+      if (isStillParticipant) {
+        setSelectedChat(chatData);
+      } else {
+        setSelectedChat(null);
+        setShowGroupInfoModal(false);
+      }
     } catch (err) {
       setError("Failed to remove user from group");
     }
@@ -1131,10 +1153,23 @@ const Chat = () => {
                         key={chat._id}
                         action
                         active={selectedChat?._id === chat._id}
-                        onClick={() => setSelectedChat(chat)}
+                        onClick={() => {
+                          setSelectedChat(chat);
+                          // Clear unread count and notification for this chat
+                          setChats((prev) =>
+                            prev.map((c) =>
+                              c._id === chat._id
+                                ? { ...c, unreadCount: 0, notification: false }
+                                : c
+                            )
+                          );
+                        }}
                         className="d-flex align-items-center"
                       >
-                        <div className="avatar me-3">
+                        <div
+                          className="avatar me-3"
+                          style={{ position: "relative" }}
+                        >
                           {getAvatarText(
                             chat.participants &&
                               Array.isArray(chat.participants)
@@ -1147,6 +1182,28 @@ const Chat = () => {
                                     p._id !== user._id
                                 )?.name || "?"
                               : "?"
+                          )}
+                          {(chat.unreadCount > 0 || chat.notification) && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: "-4px",
+                                right: "-4px",
+                                background: "#dc3545",
+                                color: "white",
+                                borderRadius: "50%",
+                                fontSize: "0.7rem",
+                                minWidth: chat.unreadCount > 0 ? "18px" : "10px",
+                                height: chat.unreadCount > 0 ? "18px" : "10px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: chat.unreadCount > 0 ? "0 4px" : 0,
+                                zIndex: 2,
+                              }}
+                            >
+                              {chat.unreadCount > 0 ? (chat.unreadCount > 9 ? "9+" : chat.unreadCount) : ""}
+                            </span>
                           )}
                         </div>
                         <div className="flex-grow-1">
@@ -1192,11 +1249,42 @@ const Chat = () => {
                         key={chat._id}
                         action
                         active={selectedChat?._id === chat._id}
-                        onClick={() => setSelectedChat(chat)}
+                        onClick={() => {
+                          setSelectedChat(chat);
+                          setChats((prev) =>
+                            prev.map((c) =>
+                              c._id === chat._id
+                                ? { ...c, unreadCount: 0, notification: false }
+                                : c
+                            )
+                          );
+                        }}
                         className="d-flex align-items-center"
                       >
-                        <div className="avatar me-3 group-avatar">
+                        <div className="avatar me-3 group-avatar" style={{ position: "relative" }}>
                           {getAvatarText(chat.chatName)}
+                          {(chat.unreadCount > 0 || chat.notification) && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: "-4px",
+                                right: "-4px",
+                                background: "#dc3545",
+                                color: "white",
+                                borderRadius: "50%",
+                                fontSize: "0.7rem",
+                                minWidth: chat.unreadCount > 0 ? "18px" : "10px",
+                                height: chat.unreadCount > 0 ? "18px" : "10px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: chat.unreadCount > 0 ? "0 4px" : 0,
+                                zIndex: 2,
+                              }}
+                            >
+                              {chat.unreadCount > 0 ? (chat.unreadCount > 9 ? "9+" : chat.unreadCount) : ""}
+                            </span>
+                          )}
                         </div>
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between">
@@ -1276,8 +1364,8 @@ const Chat = () => {
                 <div className="chat-header-actions">
                   {selectedChat.isGroupChat && (
                     <>
-                      <button 
-                        className="chat-header-button" 
+                      <button
+                        className="chat-header-button"
                         title="Group Info"
                         onClick={() => setShowGroupInfoModal(true)}
                       >
@@ -1286,7 +1374,7 @@ const Chat = () => {
                       <button
                         className="chat-header-button"
                         title="Leave Group"
-                        onClick={handleDeleteChat}
+                        onClick={() => handleRemoveFromGroup(user._id)}
                       >
                         <i className="fas fa-sign-out-alt"></i>
                       </button>
@@ -1331,6 +1419,14 @@ const Chat = () => {
                         }`}
                       >
                         <div className="message-content">
+                          {/* Show sender name in group chats for received messages */}
+                          {selectedChat.isGroupChat &&
+                            !isSender &&
+                            message.sender && (
+                              <div className="message-sender-name text-muted small mb-1">
+                                {message.sender.name || "Unknown User"}
+                              </div>
+                            )}
                           <div className="message-text">
                             {message.content || ""}
                           </div>
@@ -1410,7 +1506,7 @@ const Chat = () => {
                   <Form.Control
                     as="textarea"
                     rows={1}
-                    placeholder={`Message ${
+                    placeholder={`Message : ${
                       selectedChat.isGroupChat
                         ? selectedChat.chatName || "Group"
                         : selectedChat.participants &&
@@ -1502,8 +1598,13 @@ const Chat = () => {
         show={showAddFriendModal}
         onHide={() => setShowAddFriendModal(false)}
       >
-        <Modal.Header closeButton className="bg-light border-bottom border-2 sticky-top">
-          <Modal.Title className="fw-bold text-primary">Add New Connection</Modal.Title>
+        <Modal.Header
+          closeButton
+          className="bg-light border-bottom border-2 sticky-top"
+        >
+          <Modal.Title className="fw-bold text-primary">
+            Add New Connection
+          </Modal.Title>
         </Modal.Header>
         <div className="sticky-top bg-white px-3 pt-3 border-bottom pb-3">
           <Form.Control
@@ -1513,7 +1614,10 @@ const Chat = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Modal.Body className="pt-2" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+        <Modal.Body
+          className="pt-2"
+          style={{ maxHeight: "60vh", overflowY: "auto" }}
+        >
           <ListGroup variant="flush">
             {getAvailableUsers()
               .filter(
@@ -1531,7 +1635,7 @@ const Chat = () => {
                   <div className="d-flex align-items-center">
                     <div
                       className={`avatar me-3 ${
-                        getStatusText(person).includes("online") ? "online" : ""
+                        getStatusText(person) === "online" ? "online" : ""
                       }`}
                     >
                       {getAvatarText(person.name)}
@@ -1573,7 +1677,9 @@ const Chat = () => {
         onHide={() => setShowNewGroupModal(false)}
       >
         <Modal.Header closeButton className="bg-light border-bottom border-2">
-          <Modal.Title className="fw-bold text-primary">Create New Group</Modal.Title>
+          <Modal.Title className="fw-bold text-primary">
+            Create New Group
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {error && (
@@ -1727,21 +1833,30 @@ const Chat = () => {
         size="lg"
         dialogClassName="modal-dialog-scrollable"
       >
-        <Modal.Header closeButton className="bg-light border-bottom border-2 sticky-top">
-          <Modal.Title className="fw-bold text-primary">Group Information</Modal.Title>
+        <Modal.Header
+          closeButton
+          className="bg-light border-bottom border-2 sticky-top"
+        >
+          <Modal.Title className="fw-bold text-primary">
+            Group Information
+          </Modal.Title>
         </Modal.Header>
-        
+
         {selectedChat && (
           <>
             <div className="sticky-top bg-white px-3 pt-3">
               <div className="d-flex align-items-center mb-3">
-                <div className="avatar group-avatar me-3" style={{ width: "60px", height: "60px", fontSize: "1.5rem" }}>
+                <div
+                  className="avatar group-avatar me-3"
+                  style={{ width: "60px", height: "60px", fontSize: "1.5rem" }}
+                >
                   {getAvatarText(selectedChat.chatName)}
                 </div>
                 <div>
                   <h4>{selectedChat.chatName}</h4>
                   <p className="text-muted mb-0">
-                    {selectedChat.participants && Array.isArray(selectedChat.participants)
+                    {selectedChat.participants &&
+                    Array.isArray(selectedChat.participants)
                       ? `${selectedChat.participants.length} members`
                       : "0 members"}
                   </p>
@@ -1750,14 +1865,20 @@ const Chat = () => {
               <hr />
               <h5 className="mb-3">Members</h5>
             </div>
-            
+
             <Modal.Body className="p-0">
-              <div className="px-3 mb-3" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+              <div
+                className="px-3 mb-3"
+                style={{ maxHeight: "350px", overflowY: "auto" }}
+              >
                 <ListGroup variant="flush">
                   {selectedChat.participants &&
                     Array.isArray(selectedChat.participants) &&
                     selectedChat.participants.map((member) => (
-                      <ListGroup.Item key={member._id} className="d-flex align-items-center">
+                      <ListGroup.Item
+                        key={member._id}
+                        className="d-flex align-items-center"
+                      >
                         <div className="avatar me-3">
                           {getAvatarText(member.name)}
                         </div>
@@ -1800,7 +1921,8 @@ const Chat = () => {
                         variant="primary"
                         className="ms-2"
                         onClick={() => {
-                          const newName = document.getElementById("groupNameInput").value;
+                          const newName =
+                            document.getElementById("groupNameInput").value;
                           if (newName && newName !== selectedChat.chatName) {
                             handleRenameGroup(newName);
                           }
@@ -1824,9 +1946,16 @@ const Chat = () => {
                       {getAvailableUsers()
                         .filter(
                           (u) =>
-                            (u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              u.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-                            !selectedChat.participants.some((p) => p._id === u._id)
+                            (u.name
+                              ?.toLowerCase()
+                              .includes(searchTerm.toLowerCase()) ||
+                              u.email
+                                ?.toLowerCase()
+                                .includes(searchTerm.toLowerCase())) &&
+                            !(
+                              Array.isArray(selectedChat.participants) &&
+                              selectedChat.participants.some((p) => p._id === u._id)
+                            )
                         )
                         .map((user) => (
                           <div
@@ -1834,7 +1963,9 @@ const Chat = () => {
                             className="d-flex align-items-center justify-content-between p-2 border-bottom"
                           >
                             <div className="d-flex align-items-center">
-                              <div className="avatar me-2">{getAvatarText(user.name)}</div>
+                              <div className="avatar me-2">
+                                {getAvatarText(user.name)}
+                              </div>
                               <span>{user.name}</span>
                             </div>
                             <Button
@@ -1853,15 +1984,15 @@ const Chat = () => {
             </Modal.Body>
           </>
         )}
-        
+
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowGroupInfoModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowGroupInfoModal(false)}
+          >
             Close
           </Button>
-          <Button
-            variant="danger"
-            onClick={handleDeleteChat}
-          >
+          <Button variant="danger" onClick={() => handleRemoveFromGroup(user._id)}>
             Leave Group
           </Button>
         </Modal.Footer>

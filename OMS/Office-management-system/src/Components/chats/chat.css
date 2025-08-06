@@ -226,6 +226,14 @@
   margin-bottom: 4px; /* Space between text and timestamp */
 }
 
+.message-sender-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666 !important;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
 .message-time {
   font-size: 0.75rem;
   color: #555; /* Slightly darker for better visibility */

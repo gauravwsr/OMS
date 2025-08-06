@@ -215,9 +215,17 @@ exports.init = (server) => {
     });
 
     // Handle disconnect
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', async (reason) => {
       console.log(`User disconnected (${socket.userId || 'unknown'}), socket: ${socket.id}, reason: ${reason}`);
-      
+      try {
+        if (socket.userId) {
+          // Update lastLogin to now for User
+          const User = require('../models/userModel');
+          await User.findByIdAndUpdate(socket.userId, { lastLogin: new Date() });
+        }
+      } catch (err) {
+        console.error('Error updating lastLogin on disconnect:', err);
+      }
       // Perform any cleanup needed
     });
   });
