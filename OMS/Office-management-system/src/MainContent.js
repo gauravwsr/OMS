@@ -178,6 +178,11 @@ const MainContent = ({ nav }) => {
           label: "HR Attendance",
           icon: <FiClipboard />,
         },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        },
       ],
       Admin_HR_Manager: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -187,6 +192,11 @@ const MainContent = ({ nav }) => {
           path: "/hrAttendance",
           label: "HR Attendance",
           icon: <FiClipboard />,
+        },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
         },
         {
           path: "/charge-handover",
