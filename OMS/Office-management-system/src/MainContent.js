@@ -58,6 +58,7 @@ import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/Su
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
 import AnalyticsManagement from "./Components/AnalyticsManagement/AnalyticsManagement.js";
+import ChargeHandover from "./Components/ChargeHandover/ChargeHandover.js";
 
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
@@ -176,6 +177,21 @@ const MainContent = ({ nav }) => {
           path: "/hrAttendance",
           label: "HR Attendance",
           icon: <FiClipboard />,
+        },
+      ],
+      Admin_HR_Manager: [
+        { path: "/Db", label: "Employees", icon: <FiUsers /> },
+        { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
+        { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hrAttendance",
+          label: "HR Attendance",
+          icon: <FiClipboard />,
+        },
+        {
+          path: "/charge-handover",
+          label: "Charge Handover",
+          icon: <FiFileText />,
         },
       ],
       // "Admin_HR Manager": [
@@ -866,6 +882,7 @@ const MainContent = ({ nav }) => {
             element={<HRLeaveApplication />}
           />
           <Route path="/hr-leave-management" element={<HRLeaveManagement />} />
+          <Route path="/charge-handover" element={<ChargeHandover />} />
         </Routes>
       </div>
     </>

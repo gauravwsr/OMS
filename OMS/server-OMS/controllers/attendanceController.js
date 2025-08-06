@@ -3,6 +3,7 @@ const User = require("../models/userModel");
 const AttendanceService = require("../utils/attendanceService");
 const {
   verifyUserRegistration,
+  getRegisteredUsers,
 } = require("../middlewares/faceRecognitionMiddleware");
 
 // Mark attendance
@@ -545,6 +546,27 @@ const getTodayAttendanceSummary = async (req, res) => {
   }
 };
 
+// Get registered users from face recognition server
+const getRegisteredUsersAPI = async (req, res) => {
+  try {
+    console.log("📋 Fetching registered users from face recognition server");
+
+    const registeredUsers = await getRegisteredUsers();
+
+    res.status(200).json({
+      message: "Registered users fetched successfully",
+      registered_users: registeredUsers,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("❌ Error fetching registered users:", error.message);
+    res.status(500).json({
+      message: "Failed to fetch registered users",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   markAttendance,
   getAttendanceHistory,
@@ -556,4 +578,5 @@ module.exports = {
   getTodayAttendanceSummary,
   deleteAttendance,
   healthCheck,
+  getRegisteredUsersAPI,
 };

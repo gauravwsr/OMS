@@ -7,6 +7,7 @@ const {
 } = require("../controllers/userController");
 const User = require("../models/userModel"); // Mongoose User model
 const Position = require("../models/positionModel"); // Position model
+const Candidate = require("../models/Candidate"); // Candidate model
 // const authenticate = require("../middlewares/authMiddleware"); // Authentication middleware
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -135,6 +136,37 @@ router.get("/all-users", async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Server error", error: error.message });
+  }
+});
+
+// GET /employees - Get all candidates (for HR Manager use)
+router.get("/employees", authMiddleware.authenticate, async (req, res) => {
+  try {
+    // Verify user is HR Manager
+    const currentUser = await User.findOne({ userId: req.user.userId });
+    if (
+      !currentUser ||
+      currentUser.role !== "Admin" ||
+      currentUser.subRole !== "HR Manager"
+    ) {
+      return res.status(403).json({
+        message: "Access denied. Only HR Managers can access employee list.",
+      });
+    }
+
+    const candidates = await Candidate.find()
+      .select(
+        "candidateId fullName email role subRole joiningDate salary company"
+      )
+      .sort({ fullName: 1 });
+
+    res.json(candidates);
+  } catch (error) {
+    console.error("Error fetching candidates:", error);
+    res.status(500).json({
+      message: "Failed to fetch candidates",
+      error: error.message,
+    });
   }
 });
 

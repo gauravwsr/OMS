@@ -1011,7 +1011,7 @@ const ProjectManagerDashboard = () => {
         priority: newTask.priority || "Medium",
         dueDate: newTask.dueDate,
         taskPoints: newTask.taskPoints || [],
-        assignedTo: Array.isArray(newTask.assignedTo) ? newTask.assignedTo : []
+        assignedTo: Array.isArray(newTask.assignedTo) ? newTask.assignedTo : [],
       };
 
       console.log("Sending task data:", taskData);
@@ -1186,12 +1186,21 @@ const ProjectManagerDashboard = () => {
   const deleteTaskEnhanced = async (taskId) => {
     // Check if user has permission to delete tasks
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (!user || (user.role !== 'Manager' && user.subRole !== 'Team Lead' && user.role !== 'Admin')) {
+    if (
+      !user ||
+      (user.role !== "Manager" &&
+        user.subRole !== "Team Lead" &&
+        user.role !== "Admin")
+    ) {
       alert("You don't have permission to delete tasks.");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this task? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -1226,7 +1235,12 @@ const ProjectManagerDashboard = () => {
   };
 
   // Enhanced Mark task point as completed
-  const updateTaskPointEnhanced = async (taskId, pointId, isCompleted, completedBy) => {
+  const updateTaskPointEnhanced = async (
+    taskId,
+    pointId,
+    isCompleted,
+    completedBy
+  ) => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -1279,7 +1293,8 @@ const ProjectManagerDashboard = () => {
     try {
       const totalTasks = Object.values(groupedTasks).flat().length;
       const completedTasks = groupedTasks.Completed.length;
-      const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+      const progress =
+        totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       const token = localStorage.getItem("token");
       await fetch(`http://localhost:5001/api/client-projects/${projectId}/progress`, {
@@ -1452,7 +1467,7 @@ const ProjectManagerDashboard = () => {
       dueDate: "",
       priority: "Medium",
       taskPoints: [],
-      project: project?._id || selectedProject?._id || ""
+      project: project?._id || selectedProject?._id || "",
     });
 
     // Reset task point form
@@ -1555,27 +1570,29 @@ const ProjectManagerDashboard = () => {
       }]);
 
       // Remove from available employees
-      setAvailableEmployees(prev =>
-        prev.filter(emp => emp.employeeId !== employee.employeeId)
+      setAvailableEmployees((prev) =>
+        prev.filter((emp) => emp.employeeId !== employee.employeeId)
       );
     }
   };
 
   // Remove Employee from Task
   const removeEmployeeFromTask = (employeeId) => {
-    const removedEmployee = editAssignment.find(emp => emp.employeeId === employeeId);
+    const removedEmployee = editAssignment.find(
+      (emp) => emp.employeeId === employeeId
+    );
 
-    setEditAssignment(prev =>
-      prev.filter(emp => emp.employeeId !== employeeId)
+    setEditAssignment((prev) =>
+      prev.filter((emp) => emp.employeeId !== employeeId)
     );
 
     // Add back to available employees
     if (removedEmployee) {
       const originalEmployee = selectedProject?.assignedEmployees?.find(
-        emp => emp.employeeId === employeeId
+        (emp) => emp.employeeId === employeeId
       );
       if (originalEmployee) {
-        setAvailableEmployees(prev => [...prev, originalEmployee]);
+        setAvailableEmployees((prev) => [...prev, originalEmployee]);
       }
     }
   };
@@ -1813,7 +1830,10 @@ const ProjectManagerDashboard = () => {
             </div>
             <div className="loading-content">
               <h3>Loading Project Manager Dashboard</h3>
-              <p>Please wait while we prepare your project management workspace...</p>
+              <p>
+                Please wait while we prepare your project management
+                workspace...
+              </p>
               <div className="loading-dots">
                 <span></span>
                 <span></span>
@@ -2094,10 +2114,11 @@ const ProjectManagerDashboard = () => {
                   <div className="assignment-item">
                     <strong>Project Status:</strong>
                     <span
-                      className={`status-indicator ${project.projectStatus
+                      className={`status-indicator ${
+                        project.projectStatus
                           ? project.projectStatus.toLowerCase()
                           : "unknown"
-                        }`}
+                      }`}
                     >
                       {project.projectStatus || "Unknown"}
                     </span>
@@ -2111,8 +2132,9 @@ const ProjectManagerDashboard = () => {
                   <div className="assignment-item">
                     <strong>Assigned Team:</strong>
                     <span
-                      className={`team-lead-status ${project.assignedTeamLead ? "assigned" : "unassigned"
-                        }`}
+                      className={`team-lead-status ${
+                        project.assignedTeamLead ? "assigned" : "unassigned"
+                      }`}
                     >
                       {project.assignedTeamLead || "Not Assigned"}
                     </span>
@@ -2156,10 +2178,11 @@ const ProjectManagerDashboard = () => {
                   <div className="status-header">
                     <span>Project Status</span>
                     <span
-                      className={`status-indicator ${project.projectStatus
+                      className={`status-indicator ${
+                        project.projectStatus
                           ? project.projectStatus.toLowerCase()
                           : "unknown"
-                        }`}
+                      }`}
                     >
                       {project.projectStatus || "Unknown"}
                     </span>
@@ -2188,7 +2211,7 @@ const ProjectManagerDashboard = () => {
                     <span
                       className={
                         (project.budget || 0) - (project.spent || 0) <
-                          (project.budget || 0) * 0.1
+                        (project.budget || 0) * 0.1
                           ? "warning"
                           : ""
                       }
@@ -2595,7 +2618,7 @@ const ProjectManagerDashboard = () => {
                       <span>
                         {formatCurrency(
                           (selectedProject.budget || 0) -
-                          (selectedProject.spent || 0)
+                            (selectedProject.spent || 0)
                         )}
                       </span>
                     </div>
@@ -2717,7 +2740,9 @@ const ProjectManagerDashboard = () => {
                     </button>
                     <button
                       className="btn btn-success btn-sm"
-                      onClick={() => handleOpenTaskCreationModal(selectedProject)}
+                      onClick={() =>
+                        handleOpenTaskCreationModal(selectedProject)
+                      }
                     >
                       <FaPlus /> Add New Task
                     </button>
@@ -2730,7 +2755,9 @@ const ProjectManagerDashboard = () => {
                       <div className="recent-tasks-list">
                         {Object.entries(tasks)
                           .map(([status, taskList]) =>
-                            taskList.slice(0, 2).map(task => ({ ...task, status }))
+                            taskList
+                              .slice(0, 2)
+                              .map((task) => ({ ...task, status }))
                           )
                           .flat()
                           .slice(0, 5)
@@ -2738,14 +2765,23 @@ const ProjectManagerDashboard = () => {
                             <div key={task._id} className="recent-task-item">
                               <div className="task-info">
                                 <span className="task-title">{task.title}</span>
-                                <span className={`task-status ${task.status.toLowerCase().replace(' ', '-')}`}>
+                                <span
+                                  className={`task-status ${task.status
+                                    .toLowerCase()
+                                    .replace(" ", "-")}`}
+                                >
                                   {task.status}
                                 </span>
                               </div>
                               <div className="task-progress">
                                 {task.taskPoints?.length > 0 && (
                                   <span className="task-points-progress">
-                                    {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points
+                                    {
+                                      task.taskPoints.filter(
+                                        (p) => p.isCompleted
+                                      ).length
+                                    }
+                                    /{task.taskPoints.length} points
                                   </span>
                                 )}
                               </div>
@@ -2803,7 +2839,7 @@ const ProjectManagerDashboard = () => {
                 <div className="detail-section">
                   <h5>Team Lead History</h5>
                   {selectedProject.teamLeadHistory &&
-                    selectedProject.teamLeadHistory.length > 0 ? (
+                  selectedProject.teamLeadHistory.length > 0 ? (
                     <table className="team-lead-history-table">
                       <thead>
                         <tr>
@@ -2823,10 +2859,11 @@ const ProjectManagerDashboard = () => {
                             </td>
                             <td>
                               <span
-                                className={`status-indicator ${history.unassignedDate
+                                className={`status-indicator ${
+                                  history.unassignedDate
                                     ? "unassigned"
                                     : "active"
-                                  }`}
+                                }`}
                               >
                                 {history.unassignedDate
                                   ? "Unassigned"
@@ -2880,7 +2917,10 @@ const ProjectManagerDashboard = () => {
           <div className="modal-content task-board-modal">
             <div className="modal-header">
               <h3>
-                <FaTasks /> Task Board - {selectedProject.projectId || selectedProject.name || "Untitled Project"}
+                <FaTasks /> Task Board -{" "}
+                {selectedProject.projectId ||
+                  selectedProject.name ||
+                  "Untitled Project"}
               </h3>
               <div className="task-board-actions">
                 <button
@@ -2909,7 +2949,9 @@ const ProjectManagerDashboard = () => {
                     <FaClock />
                   </div>
                   <div className="stat-info">
-                    <span className="stat-number">{tasks.Pending?.length || 0}</span>
+                    <span className="stat-number">
+                      {tasks.Pending?.length || 0}
+                    </span>
                     <span className="stat-label">Pending</span>
                   </div>
                 </div>
@@ -2918,7 +2960,9 @@ const ProjectManagerDashboard = () => {
                     <FaPlay />
                   </div>
                   <div className="stat-info">
-                    <span className="stat-number">{tasks["In Progress"]?.length || 0}</span>
+                    <span className="stat-number">
+                      {tasks["In Progress"]?.length || 0}
+                    </span>
                     <span className="stat-label">In Progress</span>
                   </div>
                 </div>
@@ -2927,7 +2971,9 @@ const ProjectManagerDashboard = () => {
                     <FaCheckCircle />
                   </div>
                   <div className="stat-info">
-                    <span className="stat-number">{tasks.Completed?.length || 0}</span>
+                    <span className="stat-number">
+                      {tasks.Completed?.length || 0}
+                    </span>
                     <span className="stat-label">Completed</span>
                   </div>
                 </div>
@@ -2936,7 +2982,12 @@ const ProjectManagerDashboard = () => {
               {/* Task Board Columns */}
               <div className="task-board-columns">
                 {Object.entries(tasks).map(([status, taskList]) => (
-                  <div key={status} className={`task-column ${status.toLowerCase().replace(' ', '-')}`}>
+                  <div
+                    key={status}
+                    className={`task-column ${status
+                      .toLowerCase()
+                      .replace(" ", "-")}`}
+                  >
                     <div className="column-header">
                       <h4>{status}</h4>
                       <span className="task-count">{taskList.length}</span>
@@ -2966,11 +3017,15 @@ const ProjectManagerDashboard = () => {
                           </div>
 
                           <div className="task-content">
-                            <p className="task-description">{task.description}</p>
+                            <p className="task-description">
+                              {task.description}
+                            </p>
 
                             <div className="task-meta">
                               <div className="task-priority">
-                                <span className={`priority-badge ${task.priority?.toLowerCase()}`}>
+                                <span
+                                  className={`priority-badge ${task.priority?.toLowerCase()}`}
+                                >
                                   {task.priority}
                                 </span>
                               </div>
@@ -2978,7 +3033,11 @@ const ProjectManagerDashboard = () => {
                               {task.dueDate && (
                                 <div className="task-due-date">
                                   <FaCalendarAlt />
-                                  <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                                  <span>
+                                    {new Date(
+                                      task.dueDate
+                                    ).toLocaleDateString()}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -2989,7 +3048,12 @@ const ProjectManagerDashboard = () => {
                                 <div className="task-points-header">
                                   <strong>Task Points:</strong>
                                   <span className="points-progress">
-                                    {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length}
+                                    {
+                                      task.taskPoints.filter(
+                                        (p) => p.isCompleted
+                                      ).length
+                                    }
+                                    /{task.taskPoints.length}
                                   </span>
                                 </div>
                                 <div className="task-points-list">
@@ -3004,11 +3068,18 @@ const ProjectManagerDashboard = () => {
                                               task._id,
                                               point._id,
                                               e.target.checked,
-                                              JSON.parse(localStorage.getItem("user") || "{}")._id
+                                              JSON.parse(
+                                                localStorage.getItem("user") ||
+                                                  "{}"
+                                              )._id
                                             )
                                           }
                                         />
-                                        <span className={point.isCompleted ? 'completed' : ''}>
+                                        <span
+                                          className={
+                                            point.isCompleted ? "completed" : ""
+                                          }
+                                        >
                                           {point.pointTitle}
                                         </span>
                                       </label>
@@ -3017,7 +3088,7 @@ const ProjectManagerDashboard = () => {
                                 </div>
                               </div>
                             )}
-                            
+
                             {/* Assigned Employees */}
                             {task.assignedTo && task.assignedTo.length > 0 && (
                               <div className="task-assignees">
@@ -3027,8 +3098,12 @@ const ProjectManagerDashboard = () => {
                                 <div className="assignees-list">
                                   {task.assignedTo.map((assignee, idx) => (
                                     <div key={idx} className="assignee-item">
-                                      <span className="assignee-name">{assignee.name}</span>
-                                      <small className="assignee-role">({assignee.role})</small>
+                                      <span className="assignee-name">
+                                        {assignee.name}
+                                      </span>
+                                      <small className="assignee-role">
+                                        ({assignee.role})
+                                      </small>
                                     </div>
                                   ))}
                                 </div>
@@ -3037,34 +3112,54 @@ const ProjectManagerDashboard = () => {
 
                             {/* Status Change Buttons */}
                             <div className="task-status-actions">
-                              {status === 'Pending' && (
+                              {status === "Pending" && (
                                 <button
                                   className="btn btn-primary btn-sm"
-                                  onClick={() => updateTaskStatusEnhanced(task._id, 'In Progress')}
+                                  onClick={() =>
+                                    updateTaskStatusEnhanced(
+                                      task._id,
+                                      "In Progress"
+                                    )
+                                  }
                                 >
                                   Start Task
                                 </button>
                               )}
-                              {status === 'In Progress' && (
+                              {status === "In Progress" && (
                                 <>
                                   <button
                                     className="btn btn-warning btn-sm"
-                                    onClick={() => updateTaskStatusEnhanced(task._id, 'Pending')}
+                                    onClick={() =>
+                                      updateTaskStatusEnhanced(
+                                        task._id,
+                                        "Pending"
+                                      )
+                                    }
                                   >
                                     Move to Pending
                                   </button>
                                   <button
                                     className="btn btn-success btn-sm"
-                                    onClick={() => updateTaskStatusEnhanced(task._id, 'Completed')}
+                                    onClick={() =>
+                                      updateTaskStatusEnhanced(
+                                        task._id,
+                                        "Completed"
+                                      )
+                                    }
                                   >
                                     Complete
                                   </button>
                                 </>
                               )}
-                              {status === 'Completed' && (
+                              {status === "Completed" && (
                                 <button
                                   className="btn btn-secondary btn-sm"
-                                  onClick={() => updateTaskStatusEnhanced(task._id, 'In Progress')}
+                                  onClick={() =>
+                                    updateTaskStatusEnhanced(
+                                      task._id,
+                                      "In Progress"
+                                    )
+                                  }
                                 >
                                   Reopen
                                 </button>
@@ -3103,20 +3198,20 @@ const ProjectManagerDashboard = () => {
         <div className="modal-overlay">
           <div className="modal-content task-modal">
             <div className="modal-header">
-              <h3>{editTask ? 'Edit Task' : 'Create New Task'}</h3>
+              <h3>{editTask ? "Edit Task" : "Create New Task"}</h3>
               <button
                 className="close-btn"
                 onClick={() => {
                   setShowTaskModal(false);
                   setEditTask(null);
                   setNewTask({
-                    title: '',
-                    description: '',
-                    priority: 'Medium',
-                    dueDate: '',
+                    title: "",
+                    description: "",
+                    priority: "Medium",
+                    dueDate: "",
                     assignedTo: [],
-                    project: '',
-                    taskPoints: []
+                    project: "",
+                    taskPoints: [],
                   });
                 }}
               >
@@ -3126,29 +3221,41 @@ const ProjectManagerDashboard = () => {
             <div className="modal-body">
               {/* Project Info Section */}
               {selectedProject && (
-                <div className="project-info-section" style={{ 
-                  backgroundColor: '#f8f9fa', 
-                  padding: '12px', 
-                  borderRadius: '6px', 
-                  marginBottom: '20px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <h5 style={{ margin: '0 0 8px 0', color: '#495057' }}>
-                    Creating task for: <strong>{selectedProject.projectId || selectedProject.name || "Untitled Project"}</strong>
+                <div
+                  className="project-info-section"
+                  style={{
+                    backgroundColor: "#f8f9fa",
+                    padding: "12px",
+                    borderRadius: "6px",
+                    marginBottom: "20px",
+                    border: "1px solid #e9ecef",
+                  }}
+                >
+                  <h5 style={{ margin: "0 0 8px 0", color: "#495057" }}>
+                    Creating task for:{" "}
+                    <strong>
+                      {selectedProject.projectId ||
+                        selectedProject.name ||
+                        "Untitled Project"}
+                    </strong>
                   </h5>
-                  <p style={{ margin: '0', fontSize: '14px', color: '#6c757d' }}>
+                  <p
+                    style={{ margin: "0", fontSize: "14px", color: "#6c757d" }}
+                  >
                     Client: {selectedProject.clientName || "Unknown Client"}
                   </p>
                 </div>
               )}
-              
+
               <div className="form-row">
                 <div className="form-group">
                   <label>Task Title *</label>
                   <input
                     type="text"
                     value={newTask.title}
-                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, title: e.target.value })
+                    }
                     placeholder="Enter task title"
                     required
                   />
@@ -3158,7 +3265,9 @@ const ProjectManagerDashboard = () => {
                   <label>Priority</label>
                   <select
                     value={newTask.priority}
-                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, priority: e.target.value })
+                    }
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
@@ -3171,7 +3280,9 @@ const ProjectManagerDashboard = () => {
                 <label>Description</label>
                 <textarea
                   value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, description: e.target.value })
+                  }
                   placeholder="Enter task description"
                   rows="3"
                 />
@@ -3182,7 +3293,9 @@ const ProjectManagerDashboard = () => {
                 <input
                   type="date"
                   value={newTask.dueDate}
-                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, dueDate: e.target.value })
+                  }
                 />
               </div>
 
@@ -3230,7 +3343,9 @@ const ProjectManagerDashboard = () => {
                           <div className="task-point-content">
                             <strong>{point.pointTitle}</strong>
                             {point.description && (
-                              <div className="task-point-desc">{point.description}</div>
+                              <div className="task-point-desc">
+                                {point.description}
+                              </div>
                             )}
                           </div>
                           <button
@@ -3250,15 +3365,21 @@ const ProjectManagerDashboard = () => {
               {/* Employee Assignment Section */}
               <div className="form-group">
                 <label>Assign to Employees</label>
-                {selectedProject && selectedProject.assignedEmployees && selectedProject.assignedEmployees.length > 0 ? (
+                {selectedProject &&
+                selectedProject.assignedEmployees &&
+                selectedProject.assignedEmployees.length > 0 ? (
                   <div className="employee-assignment-grid">
                     {selectedProject.assignedEmployees.map((emp) => (
                       <label key={emp.employeeId} className="employee-checkbox">
                         <input
                           type="checkbox"
-                          checked={Array.isArray(newTask.assignedTo) && newTask.assignedTo.some(
-                            (assigned) => assigned.employeeId === emp.employeeId
-                          )}
+                          checked={
+                            Array.isArray(newTask.assignedTo) &&
+                            newTask.assignedTo.some(
+                              (assigned) =>
+                                assigned.employeeId === emp.employeeId
+                            )
+                          }
                           onChange={(e) => {
                             if (e.target.checked) {
                               setNewTask((prev) => ({
@@ -3277,7 +3398,8 @@ const ProjectManagerDashboard = () => {
                               setNewTask((prev) => ({
                                 ...prev,
                                 assignedTo: prev.assignedTo.filter(
-                                  (assigned) => assigned.employeeId !== emp.employeeId
+                                  (assigned) =>
+                                    assigned.employeeId !== emp.employeeId
                                 ),
                               }));
                             }
@@ -3319,13 +3441,13 @@ const ProjectManagerDashboard = () => {
                   setShowTaskModal(false);
                   setEditTask(null);
                   setNewTask({
-                    title: '',
-                    description: '',
-                    priority: 'Medium',
-                    dueDate: '',
+                    title: "",
+                    description: "",
+                    priority: "Medium",
+                    dueDate: "",
                     assignedTo: [],
-                    project: '',
-                    taskPoints: []
+                    project: "",
+                    taskPoints: [],
                   });
                 }}
               >
@@ -3337,7 +3459,7 @@ const ProjectManagerDashboard = () => {
                 onClick={editTask ? updateTask : createTaskEnhanced}
                 disabled={!newTask.title || !selectedProject}
               >
-                {editTask ? 'Update Task' : 'Create Task'}
+                {editTask ? "Update Task" : "Create Task"}
               </button>
             </div>
           </div>
@@ -3350,7 +3472,12 @@ const ProjectManagerDashboard = () => {
           <div className="modal-content assignment-modal">
             <div className="modal-header">
               <h3>Edit Task Assignment</h3>
-              <button className="close-btn" onClick={() => setShowEditModal(false)}>×</button>
+              <button
+                className="close-btn"
+                onClick={() => setShowEditModal(false)}
+              >
+                ×
+              </button>
             </div>
             <div className="modal-body">
               <div className="task-info">
@@ -3363,7 +3490,9 @@ const ProjectManagerDashboard = () => {
                 <div className="available-employees">
                   {availableEmployees.map((employee) => (
                     <div key={employee._id} className="employee-item">
-                      <span>{employee.name} ({employee.role})</span>
+                      <span>
+                        {employee.name} ({employee.role})
+                      </span>
                       <button
                         className="btn btn-sm btn-primary"
                         onClick={() => addEmployeeToTask(employee)}
@@ -3380,7 +3509,9 @@ const ProjectManagerDashboard = () => {
                 <div className="assigned-employees">
                   {editAssignment.map((employee) => (
                     <div key={employee._id} className="assigned-employee">
-                      <span>{employee.name} ({employee.role})</span>
+                      <span>
+                        {employee.name} ({employee.role})
+                      </span>
                       <button
                         className="btn btn-sm btn-danger"
                         onClick={() => removeEmployeeFromTask(employee._id)}
@@ -3393,10 +3524,16 @@ const ProjectManagerDashboard = () => {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowEditModal(false)}
+              >
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={saveAssignmentChanges}>
+              <button
+                className="btn btn-primary"
+                onClick={saveAssignmentChanges}
+              >
                 Save Changes
               </button>
             </div>

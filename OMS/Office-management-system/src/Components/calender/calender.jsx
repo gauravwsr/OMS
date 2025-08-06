@@ -24,18 +24,18 @@ const Calender = () => {
   const { user } = useAuth(); // Get user info to check role
 
   // Check if current user is Super Admin, Admin, or HR Manager
-  const isSuperAdmin = user?.role === 'Super_Admin';
-  const isAdmin = user?.role === 'Admin';
+  const isSuperAdmin = user?.role === "Super_Admin";
+  const isAdmin = user?.role === "Admin";
   // Check if current user is HR Manager (Admin with HR Manager subRole)
   const isHRManager = user?.role === "Admin" && user?.subRole === "HR Manager";
 
-  console.log('Calendar User Info:', {
+  console.log("Calendar User Info:", {
     userName: user?.name,
     role: user?.role,
     subRole: user?.subRole,
     isSuperAdmin: isSuperAdmin,
     isAdmin: isAdmin,
-    isHRManager: isHRManager
+    isHRManager: isHRManager,
   });
 
   // HR Manager uses regular GetData route (backend will handle showing all events)
@@ -73,7 +73,9 @@ const Calender = () => {
     console.log('Calendar DataManager - Using URL:', baseUrl);
 
     if (!token) {
-      console.error('❌ No token found in localStorage! User needs to login again.');
+      console.error(
+        "❌ No token found in localStorage! User needs to login again."
+      );
       return null;
     }
 
@@ -103,11 +105,11 @@ const Calender = () => {
         }
 
         // Log all headers being sent
-        console.log('Calendar beforeSend - All headers:', {
-          authorization: request.httpRequest.getRequestHeader('Authorization'),
-          contentType: request.httpRequest.getRequestHeader('Content-Type')
+        console.log("Calendar beforeSend - All headers:", {
+          authorization: request.httpRequest.getRequestHeader("Authorization"),
+          contentType: request.httpRequest.getRequestHeader("Content-Type"),
         });
-      }
+      },
     });
   }, [user, isAdmin, isHRManager, baseUrl]);
 
@@ -118,7 +120,9 @@ const Calender = () => {
       args.requestType === 'eventChange' ||
       args.requestType === 'eventRemove')) {
       args.cancel = true;
-      console.log('Action prevented: Super Admin has read-only access to calendar');
+      console.log(
+        "Action prevented: Super Admin has read-only access to calendar"
+      );
     }
   };
 
@@ -152,16 +156,20 @@ const Calender = () => {
 
           method: "GET",
           headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (response.ok) {
           const userData = await response.json();
           console.log("✅ Token is valid. User data:", userData);
         } else {
-          console.log("❌ Token test failed:", response.status, response.statusText);
+          console.log(
+            "❌ Token test failed:",
+            response.status,
+            response.statusText
+          );
           const errorText = await response.text();
           console.log("❌ Error response:", errorText);
 
@@ -186,7 +194,7 @@ const Calender = () => {
       isAuthenticated: !!user,
       role: user?.role,
       subRole: user?.subRole,
-      userId: user?._id
+      userId: user?._id,
     });
   }, [user]);
 
@@ -205,7 +213,7 @@ const Calender = () => {
   }, []);
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: "100%", height: "100%" }}>
       {!dataManager ? (
         <div style={{
           display: 'flex',
@@ -230,15 +238,15 @@ const Calender = () => {
           eventSettings={{
             dataSource: dataManager,
             fields: {
-              id: '_id',
-              subject: { name: 'Subject' },
-              startTime: { name: 'StartTime' },
-              endTime: { name: 'EndTime' },
-              description: { name: 'Description' },
-              location: { name: 'Location' },
-              isAllDay: { name: 'IsAllDay' },
-              resourceFields: 'Users'
-            }
+              id: "_id",
+              subject: { name: "Subject" },
+              startTime: { name: "StartTime" },
+              endTime: { name: "EndTime" },
+              description: { name: "Description" },
+              location: { name: "Location" },
+              isAllDay: { name: "IsAllDay" },
+              resourceFields: "Users",
+            },
           }} // Event data source
           actionBegin={onActionBegin} // Handle action restrictions
           cellClick={onCellClick} // Handle cell click restrictions
@@ -262,7 +270,9 @@ const Calender = () => {
             <ViewDirective option="Month" />
             <ViewDirective option="Agenda" />
           </ViewsDirective>
-          <Inject services={[Day, Week, WorkWeek, Month, Agenda, DragAndDrop]} />
+          <Inject
+            services={[Day, Week, WorkWeek, Month, Agenda, DragAndDrop]}
+          />
         </ScheduleComponent>
       )}
     </div>

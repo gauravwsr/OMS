@@ -424,9 +424,6 @@ const Chat = () => {
     // Handle typing indicators
     const handleTyping = (data) => {
       if (selectedChat && data.chatId === selectedChat._id) {
-        // Set typing indicator for this chat
-        console.log("User is typing in current chat:", data);
-
         // Don't show typing indicator for current user
         if (data.userId === user._id) return;
 
@@ -446,21 +443,16 @@ const Chat = () => {
 
     const handleStopTyping = (data) => {
       if (selectedChat && data.chatId === selectedChat._id) {
-        // Clear typing indicator
-        console.log("User stopped typing in current chat:", data);
-
         if (data.userId === user._id) return;
 
-        // For group chats, remove this user from typing users
         if (selectedChat.isGroupChat) {
-          setTypingUsers((prev) => prev.filter((id) => id !== data.userId));
-
-          // If no one is typing anymore, hide the indicator
-          if (typingUsers.length <= 1 && typingUsers[0] === data.userId) {
-            setIsTyping(false);
-          }
+          setTypingUsers((prev) => {
+            const updated = prev.filter((id) => id !== data.userId);
+            // Hide indicator if no one is typing
+            if (updated.length === 0) setIsTyping(false);
+            return updated;
+          });
         } else {
-          // For 1:1 chats, just hide the indicator
           setIsTyping(false);
         }
       }
@@ -1521,26 +1513,19 @@ const Chat = () => {
                     value={newMessage}
                     onChange={(e) => {
                       setNewMessage(e.target.value);
-
                       // Handle typing indicators
                       if (socket && socket.connected && selectedChat) {
-                        // Use a debounced typing indicator to avoid spamming
+                        // Emit 'typing' event only if not already typing
                         if (!typingTimeout.current) {
-                          socket.emit("typing", selectedChat._id);
-
-                          // Set a timeout to stop typing indicator after 3 seconds of inactivity
-                          typingTimeout.current = setTimeout(() => {
-                            socket.emit("stop typing", selectedChat._id);
-                            typingTimeout.current = null;
-                          }, 3000);
+                          socket.emit("typing", { chatId: selectedChat._id, userId: user._id });
                         } else {
-                          // Clear and reset typing timeout
                           clearTimeout(typingTimeout.current);
-                          typingTimeout.current = setTimeout(() => {
-                            socket.emit("stop typing", selectedChat._id);
-                            typingTimeout.current = null;
-                          }, 3000);
                         }
+                        // Always reset the timeout
+                        typingTimeout.current = setTimeout(() => {
+                          socket.emit("stop typing", { chatId: selectedChat._id, userId: user._id });
+                          typingTimeout.current = null;
+                        }, 1500); // 1.5s after last keypress
                       }
                     }}
                     onKeyPress={(e) =>

@@ -27,6 +27,7 @@ const trackingRoutes = require("./routes/trackingRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+const noteRoutes = require("./routes/noteRoutes");
 const path = require("path");
 const calenderRoutes = require("./routes/calenderRoutes");
 const errorHandler = require("./middlewares/errorMiddleware");
@@ -46,6 +47,7 @@ const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const completionRoutes = require("./routes/completionRoutes");
 const offerRoutes = require("./routes/offerRoutes");
+const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -57,10 +59,14 @@ app.set("io", chatSocket.getIO());
 
 // CORS request logging middleware for debugging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} request for ${req.url} from origin ${req.headers.origin}`);
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Request body:', req.body);
-    console.log('Content-Type:', req.headers['content-type']);
+  console.log(
+    `${new Date().toISOString()} - ${req.method} request for ${
+      req.url
+    } from origin ${req.headers.origin}`
+  );
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Request body:", req.body);
+    console.log("Content-Type:", req.headers["content-type"]);
   }
   next();
 });
@@ -68,13 +74,29 @@ app.use((req, res, next) => {
 // Apply CORS middleware BEFORE routes
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5002",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Length", "X-Requested-With", "Access-Control-Allow-Origin"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "X-Requested-With",
+      "Pragma",
+      "Accept",
+      "Origin",
+    ],
+    exposedHeaders: [
+      "Content-Length",
+      "X-Requested-With",
+      "Access-Control-Allow-Origin",
+    ],
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
   })
 );
 
@@ -82,8 +104,14 @@ app.use(
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", req.headers.origin);
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
   next();
 });
 
@@ -91,18 +119,18 @@ app.use((req, res, next) => {
 app.options("*", cors());
 
 // Apply body parsing middleware BEFORE routes
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Additional middleware to log parsed body for debugging
 app.use((req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Parsed request body:', req.body);
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Parsed request body:", req.body);
   }
   next();
 });
 
-// Then your routes
+// Chat and message routes (after CORS middleware)
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
@@ -122,7 +150,10 @@ app.use("/api/auth", authRoutes);
 
 // User routes
 app.use("/users", userRoutes);
-app.use(userRoutes);
+app.use("/api", userRoutes);
+
+// Note routes
+app.use("/api", noteRoutes);
 
 // Other routes
 app.use("/tasks", taskRoutes);
@@ -146,6 +177,10 @@ app.use("/api/analytics", analyticsRoutes);
 // Attendance routes
 app.use("/api/attendance", attendanceRoutes);
 
+// Direct route for registered users (for backward compatibility)
+const { getRegisteredUsersAPI } = require("./controllers/attendanceController");
+app.get("/api/registered-users", getRegisteredUsersAPI);
+
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
 
@@ -159,6 +194,9 @@ app.use("/api/employee", employeeTaskRoutes);
 app.use("/api/certificates", require("./routes/certificateRoutes"));
 app.use("/api/completions", require("./routes/completionRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
+
+// Charge Handover routes
+app.use("/api/charge-handovers", chargeHandoverRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);
@@ -438,31 +476,25 @@ app.get("/fetch-inbox-emails", async (req, res) => {
   }
 });
 
-// Socket.io Integration
-// require('./socket/socketHandler')(io);
-
-// Make Socket Available in Routes
-// app.use((req, res, next) => {
-//   req.io = io;
-//   next();
-// });
-
-// app.use('/api/messages', messageRoutes);
-
 // Error Handling
 app.use(errorHandler);
-
-const port = process.env.PORT || 5000;
 
 // Connect to MongoDB
 // mongoose.connect('mongodb://localhost27017/projectdb', {
 //   useNewUrlParser: true,
 //   useUnifiedTopology: true,
 // });
+const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://localhost:3000", "http://localhost:3001"])}`);
+  console.log(
+    `✅ CORS enabled for origins: ${JSON.stringify([
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5002",
+    ])}`
+  );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
 });
 

@@ -244,11 +244,11 @@ export const AuthProvider = ({ children }) => {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         return { notifications: [], unreadCount: 0 };
       }
-      
+
       const response = await axios.get(
         "http://localhost:5001/api/notifications",
         {
@@ -257,16 +257,20 @@ export const AuthProvider = ({ children }) => {
           },
         }
       );
-      
+
       const notificationsData = response.data.notifications || [];
       const unreadCount = response.data.unreadCount || 0;
-      
+
       setNotifications(notificationsData);
       setUnreadNotifications(unreadCount);
-      
+
       return response.data;
     } catch (error) {
-      console.error("Error fetching notifications:", error.response?.status, error.response?.data?.message);
+      console.error(
+        "Error fetching notifications:",
+        error.response?.status,
+        error.response?.data?.message
+      );
       return { notifications: [], unreadCount: 0 };
     }
   };
@@ -283,14 +287,12 @@ export const AuthProvider = ({ children }) => {
         }
       );
       // Update local state
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif._id === notificationId 
-            ? { ...notif, isRead: true }
-            : notif
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif._id === notificationId ? { ...notif, isRead: true } : notif
         )
       );
-      setUnreadNotifications(prev => Math.max(0, prev - 1));
+      setUnreadNotifications((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -316,14 +318,11 @@ export const AuthProvider = ({ children }) => {
 
   const clearAllNotifications = async () => {
     try {
-      await axios.delete(
-        "http://localhost:5001/api/notifications/clear",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await axios.delete("http://localhost:5001/api/notifications/clear", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setNotifications([]);
       setUnreadNotifications(0);
     } catch (error) {

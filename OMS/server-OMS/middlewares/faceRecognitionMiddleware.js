@@ -2,7 +2,7 @@ const axios = require("axios");
 
 // Face Recognition Server Configuration
 const FACE_RECOGNITION_SERVER = {
-  baseURL: "http://localhost5001",
+  baseURL: "http://localhost:5002",
   timeout: 30000,
 };
 

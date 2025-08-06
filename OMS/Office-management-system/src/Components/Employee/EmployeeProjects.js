@@ -409,7 +409,9 @@ const EmployeeProjects = () => {
             </div>
             <div className="loading-content">
               <h3>Loading Employee Projects</h3>
-              <p>Please wait while we fetch your assigned projects and tasks...</p>
+              <p>
+                Please wait while we fetch your assigned projects and tasks...
+              </p>
               <div className="loading-dots">
                 <span></span>
                 <span></span>
