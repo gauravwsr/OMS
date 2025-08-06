@@ -924,11 +924,11 @@ if (!user) {
 
 return (
   <Container fluid className="chat-container">
-    <Row className="h-100">
+    <Row className="h-100 g-0">
       {/* Left sidebar - Chats list */}
       <Col md={4} className="p-0 border-end">
         <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
-          <h5>Office Chat</h5>
+          <h5 className="mb-0">Office Chat</h5>
           <div className="btn-cont">
             <Button
               variant="primary"
@@ -948,8 +948,8 @@ return (
           </div>
         </div>
 
-        <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-          <Nav variant="tabs" className="px-3 pt-2">
+        <Tab.Container activeKey={activeTab} onSelect={setActiveTab} className="tab-container">
+          <Nav variant="tabs" className="px-3 pt-2 flex-shrink-0">
             <Nav.Item>
               <Nav.Link eventKey="personal">Chats</Nav.Link>
             </Nav.Item>
@@ -958,7 +958,7 @@ return (
             </Nav.Item>
           </Nav>
 
-          <Tab.Content className="p-2">
+          <Tab.Content className="tab-content p-2">
             <Tab.Pane eventKey="personal">
               <Form.Control
                 type="text"
@@ -1147,7 +1147,7 @@ return (
       </Col>
 
       {/* Right side - Chat area */}
-      <Col md={8} className="chat-area p-0 d-flex flex-column">
+      <Col md={8} className="chat-area p-0">
         {selectedChat ? (
           <>
             <div className="chat-header">
@@ -1178,11 +1178,7 @@ return (
                       )?.name || "Chat"
                     : "Chat"}
                 </div>
-                <div
-                  className={`chat-header-status ${
-                    !selectedChat.isGroupChat && "online"
-                  }`}
-                >
+                <div className="chat-header-status">
                   {selectedChat.isGroupChat
                     ? `${
                         selectedChat.participants &&
@@ -1224,7 +1220,7 @@ return (
               </div>
             </div>
 
-            <div className="messages-container flex-grow-1 p-3">
+            <div className="messages-container">
               {messages.length === 0 ? (
                 <div className="d-flex justify-content-center align-items-center h-100">
                   <p className="text-muted">
