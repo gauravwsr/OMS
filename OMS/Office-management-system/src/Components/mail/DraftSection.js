@@ -40,11 +40,8 @@ const DraftSection = ({ drafts: propDrafts }) => {
       const data = await response.json();
       if (response.ok) {
         alert("Email sent successfully!");
-<<<<<<< HEAD
         // Remove the draft from the list
         setDrafts(drafts.filter((d) => d.id !== draft.id));
-=======
-        
         // Delete the draft after successful send
         try {
           await fetch(`http://localhost:5001/api/emails/delete-draft/${draft._id}`, {
@@ -60,7 +57,6 @@ const DraftSection = ({ drafts: propDrafts }) => {
           // Still remove from UI even if delete fails
           setDrafts(drafts.filter(d => d._id !== draft._id));
         }
->>>>>>> f352f76c519260eac44ee5a784da470c43b78238
       } else {
         alert(`Failed to send email: ${data.message}`);
       }
@@ -93,14 +89,9 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 id={`draft-${draft._id || index}`}
                 className="email-checkbox"
               />
-<<<<<<< HEAD
-              <label
-                htmlFor={`draft-${draft.id || index}`}
-                className="email-label draft-label"
-              >
-=======
+            
               <label htmlFor={`draft-${draft._id || index}`} className="email-label draft-label">
->>>>>>> f352f76c519260eac44ee5a784da470c43b78238
+
                 {draft.to || "No recipient"}
               </label>
             </div>
