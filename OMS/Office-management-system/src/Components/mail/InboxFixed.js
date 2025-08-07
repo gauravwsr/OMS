@@ -63,7 +63,7 @@ const Inbox = () => {
   };
 
   const handleEditConfig = () => {
-    navigate('../email-config');
+    navigate('/email-config');
   };
 
   useEffect(() => {
@@ -75,22 +75,36 @@ const Inbox = () => {
   useEffect(() => {
     const filterEmails = () => {
       if (typeof searchTerm !== "string" || searchTerm === "") {
-        return activeTab === "inbox" ? emails : activeTab === "sent" ? sentEmails : drafts;
+        return activeTab === "inbox"
+          ? emails
+          : activeTab === "sent"
+          ? sentEmails
+          : drafts;
       }
 
-      const sourceEmails = activeTab === "inbox"
-        ? emails
-        : activeTab === "sent"
+      const sourceEmails =
+        activeTab === "inbox"
+          ? emails
+          : activeTab === "sent"
           ? sentEmails
           : drafts;
 
-      return (sourceEmails || []).filter((email) =>
-        (email.sender?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.recipient?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.to?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.subject?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.content?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.body?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      return (sourceEmails || []).filter(
+        (email) =>
+          (email.sender?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.recipient?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.to?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (email.subject?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.content?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.body?.toLowerCase() || "").includes(searchTerm.toLowerCase())
       );
     };
 
@@ -172,7 +186,7 @@ const Inbox = () => {
   };
 
   const handleComposeClick = () => {
-    navigate('send-email');
+    navigate("send-email");
   };
 
   const handleSortByDate = () => {
@@ -215,32 +229,30 @@ const Inbox = () => {
   };
 
   const formatDate = (date) => {
-    const options = { day: 'numeric', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
+    const options = { day: "numeric", month: "short", year: "numeric" };
+    return date.toLocaleDateString("en-US", options);
   };
 
   return (
-    // <div className="main-cont">
-
     <div className="meetings-container">
       <SearchBar setSearchTerm={setSearchTerm} />
       <div className="meetings-header">
         <div className="tabs">
           <button
             className={`tab-button ${activeTab === "inbox" ? "active" : ""}`}
-            onClick={() => handleTabClick('inbox')}
+            onClick={() => handleTabClick("inbox")}
           >
             Inbox
           </button>
           <button
             className={`tab-button ${activeTab === "sent" ? "active" : ""}`}
-            onClick={() => handleTabClick('sent')}
+            onClick={() => handleTabClick("sent")}
           >
             Sent
           </button>
           <button
             className={`tab-button ${activeTab === "drafts" ? "active" : ""}`}
-            onClick={() => handleTabClick('drafts')}
+            onClick={() => handleTabClick("drafts")}
           >
             Drafts
           </button>
@@ -260,7 +272,10 @@ const Inbox = () => {
       <div className="date-nav">
         <h2>E-MAILS</h2>
         <div className="date-controls">
-          <button className="date-nav-content-button" onClick={handlePreviousDay}>
+          <button
+            className="date-nav-content-button"
+            onClick={handlePreviousDay}
+          >
             <ChevronLeft />
           </button>
           <span onClick={handleSortByDate}>{formatDate(currentDate)}</span>
@@ -275,16 +290,15 @@ const Inbox = () => {
           <p className="loading-message">Loading...</p>
         ) : error ? (
           <p className="error-message">{error}</p>
-        ) : activeTab === 'inbox' ? (
+        ) : activeTab === "inbox" ? (
           <InboxSection emails={filteredEmails} />
-        ) : activeTab === 'sent' ? (
+        ) : activeTab === "sent" ? (
           <SentSection emails={sentEmails} />
         ) : (
           <DraftSection drafts={drafts} />
         )}
       </main>
     </div>
-    // </div>
   );
 };
 
