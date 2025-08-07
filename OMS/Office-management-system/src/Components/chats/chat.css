@@ -1,5 +1,6 @@
 .chat-container {
-  height: calc(100vh - 56px); /* Adjust based on your navbar height */
+  height: calc(100vh - 56px);
+  color: black; /* Adjust based on your navbar height */
 }
 
 .sidebar {
@@ -83,19 +84,113 @@
 .messages-container {
   overflow-y: auto;
   background-color: #e5ddd5;
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4AkEEjIZJgR2LQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAJUlEQVQ4y2NgGAWjYBTQEzAyMDAw/AeRjP8ZGBj+g1hQNlQcCgAASV8I1R5LkZkAAAAASUVORK5CYII=');
+  background-image: linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)),
+                    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z' fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
   height: calc(100% - 70px); /* Adjust based on your input area height */
+  padding: 15px; /* Add padding for messages */
+  display: flex;
+  flex-direction: column;
 }
 
 .message {
   display: flex;
-  max-width: 80%;
-  margin-bottom: 12px;
+  max-width: 75%; /* Slightly narrower for better readability */
+  margin-bottom: 16px; /* Spacing between messages */
+  position: relative; /* For proper positioning of child elements */
+  animation: fadeIn 0.3s ease; /* Subtle animation when messages appear */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .message.sent {
   margin-left: auto;
   justify-content: flex-end;
+}
+
+/* Temporary message styles */
+.message.temp {
+  opacity: 0.85; /* Slightly increased opacity for better visibility */
+}
+
+.message.temp .message-content {
+  border: 1.5px dashed #aaa; /* Darker and thicker border for visibility */
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05); /* Subtle shadow for depth */
+}
+
+.message.send-failed .message-content {
+  background-color: #ffe8e8; /* Slightly lighter for better text contrast */
+  border: 1.5px solid #ffcccc;
+  box-shadow: 0 1px 3px rgba(255,0,0,0.1); /* Red-tinted shadow */
+}
+
+.message-status {
+  font-size: 10px;
+  margin-top: 2px;
+  text-align: right;
+}
+
+.message-status.sending {
+  color: #888;
+}
+
+.message-status.error {
+  color: #d9534f;
+}
+
+.message-status.delivered {
+  color: #5cb85c;
+}
+
+/* Typing indicator styles */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 15px;
+  padding: 8px 12px;
+  margin: 0 15px 10px;
+  max-width: 200px;
+}
+
+.typing-animation {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.typing-animation span {
+  height: 8px;
+  width: 8px;
+  margin: 0 1px;
+  background-color: #888;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1.3s linear infinite;
+}
+
+.typing-animation span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-animation span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.typing-text {
+  color: #666;
+  font-size: 12px;
+}
+
+@keyframes bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
 }
 
 .message.received {
@@ -104,36 +199,86 @@
 }
 
 .message-content {
-  padding: 8px 12px;
+  padding: 10px 14px; /* Increased padding for better text spacing */
   border-radius: 18px;
   position: relative;
   word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+  min-width: 60px; /* Ensure minimum width for short messages */
+  max-width: 100%; /* Ensure content doesn't overflow */
 }
 
 .message.sent .message-content {
-  background-color: #dcf8c6;
+  background-color: #dcf8c6; /* WhatsApp style green bubble */
+  border: 1px solid #c5e9a5; /* Subtle border for definition */
+  color: #2c3e50; /* Darker text for better contrast */
 }
 
 .message.received .message-content {
   background-color: white;
+  border: 1px solid #e6e6e6; /* Subtle border for definition */
+  color: #2c3e50; /* Darker text for better contrast */
+}
+
+.message-text {
+  font-size: 1rem; /* Explicit font size */
+  line-height: 1.4; /* Better line spacing for readability */
+  margin-bottom: 4px; /* Space between text and timestamp */
 }
 
 .message-time {
   font-size: 0.75rem;
-  color: #666;
+  color: #555; /* Slightly darker for better visibility */
   text-align: right;
   margin-top: 4px;
+  opacity: 0.9;
 }
 
 .message-input {
-  padding: 10px;
+  padding: 12px 15px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+  position: relative;
 }
 
 .message-input textarea {
   resize: none;
-  border-radius: 20px;
-  padding: 10px 15px;
+  border-radius: 24px;
+  padding: 12px 50px 12px 15px; /* Space for send button */
   width: 100%;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.message-input textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Style for send button if you have one */
+.send-button {
+  position: absolute;
+  right: 25px;
+  bottom: 22px; /* Adjust as needed to vertically center */
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.send-button:hover {
+  background-color: #3a80d2;
 }
 
 /* Custom scrollbar */

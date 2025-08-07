@@ -95,7 +95,7 @@ const FinanceDashboard = () => {
     <div className="finance-dashboard">
       <div className="dashboard-header">
         <h1>Finance Department Dashboard</h1>
-        <p>Monitor financial performance, budgets, and cash flow</p>
+        <p>Monitor performance, budgets, and cash flow</p>
       </div>
 
       {loading ? (

@@ -1,8 +1,35 @@
-import "./ProjectList.css";
+import "./ProjectListNew.css";
 import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../Firebase";
 // import Navbar from "./Navbar";
-import { FiBell, FiMenu, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { 
+  FiBell, 
+  FiMenu, 
+  FiChevronDown, 
+  FiChevronUp,
+  FiSearch,
+  FiFilter,
+  FiRefreshCw,
+  FiEye,
+  FiEdit,
+  FiEdit2,
+  FiMoreVertical,
+  FiUser,
+  FiCalendar,
+  FiDollarSign,
+  FiClock,
+  FiBarChart2,
+  FiCheckCircle,
+  FiPlay,
+  FiPause,
+  FiAlertCircle,
+  FiGrid,
+  FiList,
+  FiTrendingUp,
+  FiFolder,
+  FiX
+} from "react-icons/fi";
 import SearchBar from "./Search-bar/SearchBar";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -19,6 +46,14 @@ export default function ProjectList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [viewMode, setViewMode] = useState('grid');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showProjectDetails, setShowProjectDetails] = useState(false);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -30,59 +65,202 @@ export default function ProjectList() {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
+  // Auto-refresh every 5 minutes
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const response = await fetch("https://crm-brown-gamma.vercel.app/api/client-projects");
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        
-        const formattedProjects = data.map(project => ({
-          id: project._id || project.id || Math.random().toString(36).substr(2, 9),
-          title: project.clientName || project.leadName || "Untitled Project",
-          description: `Lead: ${project.leadName || 'N/A'} | Status: ${project.projectStatus || 'N/A'}`,
-          dueDate: project.createdAt ? new Date(project.createdAt).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
-          }).replace(/\s/g, " - ") : "No deadline set",
-          projectId: project.projectId || "N/A",
-          projectPassword: project.projectPassword || "N/A",
-          status: project.projectStatus || "N/A",
-          amount: project.finalAmount || 0,
-          createdAt: project.createdAt || new Date().toISOString(),
-          assignedEmployees: []
-        }));
-        
-        setProjects(formattedProjects);
-        setFilteredProjects(formattedProjects);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        setError(error.message);
-        setLoading(false);
-      }
-    };
+    if (!autoRefresh) return;
 
+    const interval = setInterval(() => {
+      refreshProjects();
+    }, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
+  // Function to refresh projects data
+  const refreshProjects = async () => {
+    setRefreshing(true);
+    await fetchProjects();
+    setRefreshing(false);
+  };
+
+  // Function to fetch projects from API
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get JWT token for authentication
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found. Please login again.");
+      }
+
+      // Fetch projects from local database
+      const response = await fetch("http://localhost:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Project List - API Response:", result);
+
+      const projectsData = Array.isArray(result)
+        ? result
+        : result.data || result.projects || [];
+
+      // Fetch real-time task counts for each project
+      const projectsWithDetails = await Promise.all(
+        projectsData.map(async (project) => {
+          try {
+            const taskCountsResponse = await fetch(
+              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+            
+            let taskCounts = { total: 0, completed: 0, inProgress: 0, pending: 0 };
+            let progress = 0;
+
+            if (taskCountsResponse.ok) {
+              const taskResult = await taskCountsResponse.json();
+              if (taskResult.success && taskResult.data) {
+                const tasks = taskResult.data;
+                taskCounts = {
+                  total: tasks.length,
+                  completed: tasks.filter(task => task.status === "Completed").length,
+                  inProgress: tasks.filter(task => task.status === "In Progress").length,
+                  pending: tasks.filter(task => task.status === "Pending").length,
+                };
+
+                progress = taskCounts.total > 0 
+                  ? Math.round((taskCounts.completed / taskCounts.total) * 100) 
+                  : 0;
+              }
+            }
+
+            return {
+              id: project._id,
+              name: project.projectName || project.clientName || "Untitled Project",
+              title: project.projectName || project.clientName || "Untitled Project",
+              client: project.clientName || project.client || 'Unknown Client',
+              clientName: project.clientName || project.client || 'Unknown Client',
+              description: project.description || `Project: ${project.projectName || 'Untitled'} | Client: ${project.clientName || 'Unknown'}`,
+              status: project.status || 'planning',
+              priority: project.priority || 'medium',
+              progress: progress,
+              budget: project.budget || 0,
+              spent: project.spent || 0,
+              startDate: project.startDate || project.createdAt,
+              endDate: project.endDate || project.deadline,
+              dueDate: project.endDate || project.deadline,
+              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              technologies: project.technologies || project.techStack || [],
+              completedTasks: taskCounts.completed,
+              pendingTasks: taskCounts.pending + taskCounts.inProgress,
+              overdueTasks: 0, // Calculate based on due dates if needed
+              projectId: project.projectId || project._id,
+              projectPassword: project.projectPassword || "N/A",
+              amount: project.finalAmount || project.budget || 0,
+              createdAt: project.createdAt || new Date().toISOString(),
+              updatedAt: project.updatedAt || project.createdAt || new Date().toISOString(),
+              assignedEmployees: project.assignedEmployees || [],
+              _id: project._id
+            };
+          } catch (taskError) {
+            console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
+            return {
+              id: project._id,
+              name: project.projectName || project.clientName || "Untitled Project",
+              title: project.projectName || project.clientName || "Untitled Project",
+              client: project.clientName || project.client || 'Unknown Client',
+              clientName: project.clientName || project.client || 'Unknown Client',
+              description: project.description || `Project: ${project.projectName || 'Untitled'} | Client: ${project.clientName || 'Unknown'}`,
+              status: project.status || 'planning',
+              priority: project.priority || 'medium',
+              progress: 0,
+              budget: project.budget || 0,
+              spent: project.spent || 0,
+              startDate: project.startDate || project.createdAt,
+              endDate: project.endDate || project.deadline,
+              dueDate: project.endDate || project.deadline,
+              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
+              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              technologies: project.technologies || project.techStack || [],
+              completedTasks: 0,
+              pendingTasks: 0,
+              overdueTasks: 0,
+              projectId: project.projectId || project._id,
+              projectPassword: project.projectPassword || "N/A",
+              amount: project.finalAmount || project.budget || 0,
+              createdAt: project.createdAt || new Date().toISOString(),
+              updatedAt: project.updatedAt || project.createdAt || new Date().toISOString(),
+              assignedEmployees: project.assignedEmployees || [],
+              _id: project._id
+            };
+          }
+        })
+      );
+
+      console.log("Project List - Projects with details:", projectsWithDetails);
+      setProjects(projectsWithDetails);
+      setFilteredProjects(projectsWithDetails);
+
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      setError(err.message || 'Failed to fetch projects');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProjects();
   }, []);
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredProjects(projects);
-    } else {
-      const filtered = projects.filter((project) => {
-        const searchLower = searchTerm.toLowerCase();
+    let filtered = projects;
+
+    // Apply search filter
+    if (searchTerm.trim() !== "") {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((project) => {
         return (
           (project.title && project.title.toLowerCase().includes(searchLower)) ||
           (project.description && project.description.toLowerCase().includes(searchLower)) ||
           (project.projectId && project.projectId.toLowerCase().includes(searchLower)) ||
-          (project.status && project.status.toLowerCase().includes(searchLower))
+          (project.status && project.status.toLowerCase().includes(searchLower)) ||
+          (project.clientName && project.clientName.toLowerCase().includes(searchLower))
         );
       });
-      setFilteredProjects(filtered);
     }
-  }, [searchTerm, projects]);
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((project) => 
+        project.status && project.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    // Apply priority filter
+    if (priorityFilter !== "all") {
+      filtered = filtered.filter((project) => 
+        project.priority && project.priority.toLowerCase() === priorityFilter.toLowerCase()
+      );
+    }
+
+    setFilteredProjects(filtered);
+  }, [searchTerm, projects, statusFilter, priorityFilter]);
 
   const toggleCardExpanded = (index) => {
     setExpandedCards((prev) => ({
@@ -641,11 +819,254 @@ export default function ProjectList() {
   const MobileView = () => {
     if (loading) {
       return (
-        <div className="mobile-container">
-          <div className="loading-spinner">Loading projects...</div>
+        <div className="project-list-container mobile">
+          <div className="loading-container">
+            <FiRefreshCw className="loading-spinner" />
+            <p>Loading projects...</p>
+          </div>
         </div>
       );
     }
+
+    if (error) {
+      return (
+        <div className="project-list-container mobile">
+          <div className="error-container">
+            <p>Error: {error}</p>
+            <button onClick={() => window.location.reload()} className="retry-btn">
+              <FiRefreshCw /> Retry
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="project-list-container mobile">
+        {/* Mobile Header */}
+        <div className="mobile-header">
+          <h1 className="page-title">
+            <FiFolder className="title-icon" />
+            Projects
+          </h1>
+          <div className="mobile-actions">
+            <button 
+              onClick={fetchProjects}
+              className="action-btn refresh-btn"
+              disabled={refreshing}
+            >
+              <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Search */}
+        <div className="mobile-search">
+          <div className="search-container">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+        </div>
+
+        {/* Mobile Filters */}
+        <div className="mobile-filters">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="on-hold">On Hold</option>
+          </select>
+          
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Priority</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        {/* Mobile Stats */}
+        <div className="mobile-stats">
+          <div className="stat-item">
+            <span className="stat-number">{filteredProjects.length}</span>
+            <span className="stat-label">Total</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">
+              {filteredProjects.filter(p => p.status?.toLowerCase() === 'active').length}
+            </span>
+            <span className="stat-label">Active</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">
+              {filteredProjects.filter(p => p.status?.toLowerCase() === 'completed').length}
+            </span>
+            <span className="stat-label">Done</span>
+          </div>
+        </div>
+
+        {/* Mobile Projects List */}
+        <div className="mobile-projects">
+          {filteredProjects.length === 0 ? (
+            <div className="empty-state">
+              <FiFolder className="empty-icon" />
+              <h3>No projects found</h3>
+              <p>Try adjusting your search</p>
+            </div>
+          ) : (
+            filteredProjects.map((project, index) => (
+              <div key={project._id || index} className="mobile-project-card">
+                <div className="mobile-card-header">
+                  <div className="project-title-section">
+                    <h3 className="project-title">{project.title || 'Untitled'}</h3>
+                    <span className="project-id">#{project.projectId || 'N/A'}</span>
+                  </div>
+                  <span className={`status-badge ${project.status?.toLowerCase() || 'unknown'}`}>
+                    {project.status || 'Unknown'}
+                  </span>
+                </div>
+
+                <div className="mobile-card-body">
+                  <p className="project-description">
+                    {project.description || 'No description'}
+                  </p>
+                  
+                  <div className="mobile-details">
+                    <div className="detail-row">
+                      <FiUser className="detail-icon" />
+                      <span>{project.clientName || 'No client'}</span>
+                    </div>
+                    <div className="detail-row">
+                      <FiCalendar className="detail-icon" />
+                      <span>{project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No due date'}</span>
+                    </div>
+                  </div>
+
+                  <div className="mobile-progress">
+                    <div className="progress-header">
+                      <span>Progress</span>
+                      <span>{project.progress || 0}%</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${project.progress || 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mobile-card-footer">
+                  <div className="task-summary">
+                    <span className="task-count completed">
+                      <FiCheckCircle /> {project.completedTasks || 0}
+                    </span>
+                    <span className="task-count pending">
+                      <FiClock /> {project.pendingTasks || 0}
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedProject(project)}
+                    className="view-btn"
+                  >
+                    <FiEye />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Mobile Project Details Modal - Same as desktop */}
+        {selectedProject && (
+          <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
+            <div className="modal-content mobile" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{selectedProject.title}</h2>
+                <button 
+                  onClick={() => setSelectedProject(null)}
+                  className="close-btn"
+                >
+                  <FiX />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="project-overview">
+                  <div className="overview-section">
+                    <h3>Project Information</h3>
+                    <div className="info-list">
+                      <div className="info-item">
+                        <label>Project ID:</label>
+                        <span>{selectedProject.projectId || 'N/A'}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Client:</label>
+                        <span>{selectedProject.clientName || 'N/A'}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Status:</label>
+                        <span className={`status-badge ${selectedProject.status?.toLowerCase()}`}>
+                          {selectedProject.status || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="info-item">
+                        <label>Budget:</label>
+                        <span>${selectedProject.budget || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="overview-section">
+                    <h3>Description</h3>
+                    <p>{selectedProject.description || 'No description available'}</p>
+                  </div>
+                  
+                  <div className="overview-section">
+                    <h3>Tasks</h3>
+                    <div className="mobile-task-summary">
+                      <div className="summary-item">
+                        <FiCheckCircle className="completed" />
+                        <span>{selectedProject.completedTasks || 0} Completed</span>
+                      </div>
+                      <div className="summary-item">
+                        <FiClock className="pending" />
+                        <span>{selectedProject.pendingTasks || 0} Pending</span>
+                      </div>
+                      <div className="summary-item">
+                        <FiAlertCircle className="overdue" />
+                        <span>{selectedProject.overdueTasks || 0} Overdue</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setSelectedProject(null)}>
+                  Close
+                </button>
+                <button className="btn btn-primary">
+                  <FiEdit2 /> Edit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
 
     if (error) {
       return (
@@ -748,10 +1169,10 @@ export default function ProjectList() {
   const DesktopView = () => {
     if (loading) {
       return (
-        <div className="main-cont">
-          {/* <Navbar /> */}
-          <div className="project-container" style={{ width: "100%" }}>
-            <div className="loading-spinner">Loading projects...</div>
+        <div className="project-list-container">
+          <div className="loading-container">
+            <FiRefreshCw className="loading-spinner" />
+            <p>Loading projects...</p>
           </div>
         </div>
       );
@@ -759,109 +1180,374 @@ export default function ProjectList() {
 
     if (error) {
       return (
-        <div className="main-cont">
-          {/* <Navbar /> */}
-          <div className="project-container" style={{ width: "100%" }}>
-            <div className="error-message">Error: {error}</div>
+        <div className="project-list-container">
+          <div className="error-container">
+            <p>Error: {error}</p>
+            <button onClick={() => window.location.reload()} className="retry-btn">
+              <FiRefreshCw /> Retry
+            </button>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="">
-        {/* <Navbar /> */}
-        <div className="project-container" style={{ width: "100%" }}>
-          <SearchBar onSearch={(term) => setSearchTerm(term)} />
-          <div className="border-radius-container">
-            <div className="top-container" style={{ backgroundColor: "#ffffff" }}>
-              <h1 className="projects-heading">Projects</h1>
+      <div className="project-list-container">
+        {/* Header Section */}
+        <div className="project-header">
+          <div className="header-content">
+            <div className="header-left">
+              <h1 className="page-title">
+                <FiFolder className="title-icon" />
+                Project Dashboard
+              </h1>
+              <p className="page-subtitle">Manage and monitor your projects in real-time</p>
             </div>
-          </div>
-          <div className="sub-modal">
-            <div className="project-header">
-              <h1 className="project-title">Project List</h1>
-              <button className="project-date-button">
-                <Calendar size={18} className="calendar-icon" />
-                07 Aug, 2024
+            <div className="header-actions">
+              <button 
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={`action-btn ${autoRefresh ? 'active' : ''}`}
+                title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+              >
+                <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+                {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
               </button>
-            </div>
-            <div className="table-container">
-              <table className="project-table">
-                <thead className="table-header">
-                  <tr>
-                    <th></th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Project ID</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Created At</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody className="table-body">
-                  {filteredProjects.length > 0 ? (
-                    filteredProjects.map((project) => (
-                      <tr key={project.id}>
-                        <td>
-                          <input type="checkbox" className="table-checkbox" />
-                        </td>
-                        <td>
-                          <div className="table-title">{project.title}</div>
-                        </td>
-                        <td>
-                          <div className="table-description">{project.description}</div>
-                        </td>
-                        <td>
-                          <div className="table-project-id">{project.projectId}</div>
-                        </td>
-                        <td>
-                          <div className={`status-badge ${project.status.toLowerCase()}`}>
-                            {project.status}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="table-amount">₹{project.amount}</div>
-                        </td>
-                        <td>
-                          <div className="table-created-at">
-                            {new Date(project.createdAt).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            })}
-                          </div>
-                        </td>
-                        <td>
-                          <button className="btn btn-outline view-details-btn" onClick={handleViewDetails}>
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="8" className="no-results">
-                        {searchTerm ? "No projects match your search" : "No projects found"}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div className="pagination-container">
-              <div className="pagination-text">Page 1 of 1</div>
-              <div className="pagination-controls">
-                <button className="btn btn-outline pagination-btn" disabled>
-                  {"<"}
-                </button>
-                <button className="btn btn-outline pagination-btn active">1</button>
-                <button className="btn btn-outline pagination-btn" disabled>{">"}</button>
-              </div>
+              <button 
+                onClick={fetchProjects}
+                className="action-btn refresh-btn"
+                disabled={refreshing}
+                title="Refresh projects"
+              >
+                <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+                Refresh
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Search and Filter Section */}
+        <div className="search-filter-section">
+          <div className="search-container">
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search projects by name, ID, client..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div className="filter-container">
+            <div className="filter-group">
+              <FiFilter className="filter-icon" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="on-hold">On Hold</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            
+            <div className="filter-group">
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">All Priority</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+
+            <div className="view-toggle">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                title="Grid view"
+              >
+                <FiGrid />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                title="List view"
+              >
+                <FiList />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        <div className="stats-container">
+          <div className="stat-card">
+            <div className="stat-icon total">
+              <FiFolder />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{filteredProjects.length}</div>
+              <div className="stat-label">Total Projects</div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon active">
+              <FiPlay />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">
+                {filteredProjects.filter(p => p.status?.toLowerCase() === 'active').length}
+              </div>
+              <div className="stat-label">Active</div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon completed">
+              <FiCheckCircle />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">
+                {filteredProjects.filter(p => p.status?.toLowerCase() === 'completed').length}
+              </div>
+              <div className="stat-label">Completed</div>
+            </div>
+          </div>
+          
+          <div className="stat-card">
+            <div className="stat-icon progress">
+              <FiClock />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">
+                {Math.round(filteredProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / filteredProjects.length) || 0}%
+              </div>
+              <div className="stat-label">Avg Progress</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Projects Display */}
+        <div className={`projects-container ${viewMode}`}>
+          {filteredProjects.length === 0 ? (
+            <div className="empty-state">
+              <FiFolder className="empty-icon" />
+              <h3>No projects found</h3>
+              <p>Try adjusting your search criteria or filters</p>
+            </div>
+          ) : (
+            filteredProjects.map((project, index) => (
+              <div key={project._id || index} className="project-card">
+                <div className="project-card-header">
+                  <div className="project-title-section">
+                    <h3 className="project-title">{project.title || 'Untitled Project'}</h3>
+                    <span className="project-id">#{project.projectId || 'N/A'}</span>
+                  </div>
+                  <div className="project-status-section">
+                    <span className={`status-badge ${project.status?.toLowerCase() || 'unknown'}`}>
+                      {project.status || 'Unknown'}
+                    </span>
+                    {project.priority && (
+                      <span className={`priority-badge ${project.priority.toLowerCase()}`}>
+                        {project.priority}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="project-card-body">
+                  <p className="project-description">
+                    {project.description || 'No description available'}
+                  </p>
+                  
+                  <div className="project-details">
+                    <div className="detail-item">
+                      <FiUser className="detail-icon" />
+                      <span>Client: {project.clientName || 'N/A'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <FiCalendar className="detail-icon" />
+                      <span>Due: {project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No due date'}</span>
+                    </div>
+                    <div className="detail-item">
+                      <FiDollarSign className="detail-icon" />
+                      <span>Budget: ${project.budget || 0}</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="progress-section">
+                    <div className="progress-header">
+                      <span className="progress-label">Progress</span>
+                      <span className="progress-percentage">{project.progress || 0}%</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${project.progress || 0}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Task Statistics */}
+                  <div className="task-stats">
+                    <div className="task-stat">
+                      <FiCheckCircle className="task-icon completed" />
+                      <span>{project.completedTasks || 0} Completed</span>
+                    </div>
+                    <div className="task-stat">
+                      <FiClock className="task-icon pending" />
+                      <span>{project.pendingTasks || 0} Pending</span>
+                    </div>
+                    <div className="task-stat">
+                      <FiAlertCircle className="task-icon overdue" />
+                      <span>{project.overdueTasks || 0} Overdue</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="project-card-footer">
+                  <div className="project-meta">
+                    <span className="last-updated">
+                      Updated {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="project-actions">
+                    <button 
+                      onClick={() => setSelectedProject(project)}
+                      className="action-btn view-btn"
+                      title="View Details"
+                    >
+                      <FiEye />
+                    </button>
+                    <button 
+                      className="action-btn edit-btn"
+                      title="Edit Project"
+                    >
+                      <FiEdit2 />
+                    </button>
+                    <button 
+                      className="action-btn more-btn"
+                      title="More Actions"
+                    >
+                      <FiMoreVertical />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Project Details Modal */}
+        {selectedProject && (
+          <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{selectedProject.title}</h2>
+                <button 
+                  onClick={() => setSelectedProject(null)}
+                  className="close-btn"
+                >
+                  <FiX />
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="project-overview">
+                  <div className="overview-section">
+                    <h3>Project Information</h3>
+                    <div className="info-grid">
+                      <div className="info-item">
+                        <label>Project ID:</label>
+                        <span>{selectedProject.projectId || 'N/A'}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Client:</label>
+                        <span>{selectedProject.clientName || 'N/A'}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Status:</label>
+                        <span className={`status-badge ${selectedProject.status?.toLowerCase()}`}>
+                          {selectedProject.status || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="info-item">
+                        <label>Priority:</label>
+                        <span className={`priority-badge ${selectedProject.priority?.toLowerCase()}`}>
+                          {selectedProject.priority || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="info-item">
+                        <label>Start Date:</label>
+                        <span>{selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Due Date:</label>
+                        <span>{selectedProject.dueDate ? new Date(selectedProject.dueDate).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Budget:</label>
+                        <span>${selectedProject.budget || 0}</span>
+                      </div>
+                      <div className="info-item">
+                        <label>Progress:</label>
+                        <span>{selectedProject.progress || 0}%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="overview-section">
+                    <h3>Description</h3>
+                    <p>{selectedProject.description || 'No description available'}</p>
+                  </div>
+                  
+                  <div className="overview-section">
+                    <h3>Task Summary</h3>
+                    <div className="task-summary-grid">
+                      <div className="summary-item completed">
+                        <FiCheckCircle />
+                        <div>
+                          <span className="summary-number">{selectedProject.completedTasks || 0}</span>
+                          <span className="summary-label">Completed</span>
+                        </div>
+                      </div>
+                      <div className="summary-item pending">
+                        <FiClock />
+                        <div>
+                          <span className="summary-number">{selectedProject.pendingTasks || 0}</span>
+                          <span className="summary-label">Pending</span>
+                        </div>
+                      </div>
+                      <div className="summary-item overdue">
+                        <FiAlertCircle />
+                        <div>
+                          <span className="summary-number">{selectedProject.overdueTasks || 0}</span>
+                          <span className="summary-label">Overdue</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setSelectedProject(null)}>
+                  Close
+                </button>
+                <button className="btn btn-primary">
+                  <FiEdit2 /> Edit Project
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1921,7 +2607,7 @@ export default function ProjectList() {
   
 //     try {
 //       // Send the project data to the API
-//       const response = await fetch("http://138.197.27.240:5001/api/projects", {
+//       const response = await fetch("http://localhost:5001/api/projects", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newProject),

@@ -113,7 +113,7 @@ const TeamLeadDashboard = () => {
       const identifier =
         currentUser.id || currentUser.name || currentUser.email;
       const response = await fetch(
-        `http://138.197.27.240:5001/api/client-projects/team-lead/${identifier}`,
+        `http://localhost:5001/api/client-projects/team-lead/${identifier}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -129,7 +129,7 @@ const TeamLeadDashboard = () => {
         assignedProjects.map(async (project) => {
           try {
             const taskResponse = await fetch(
-              `http://138.197.27.240:5001/api/team-lead/projects/${project._id}/tasks`,
+              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -301,7 +301,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://138.197.27.240:5001/api/team-lead/projects/${projectId}/tasks`,
+        `http://localhost:5001/api/team-lead/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -358,7 +358,7 @@ const TeamLeadDashboard = () => {
       console.log("Sending task data:", taskData);
 
       const response = await fetch(
-        `http://138.197.27.240:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
+        `http://localhost:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
         {
           method: "POST",
           headers: {
@@ -406,7 +406,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://138.197.27.240:5001/api/team-lead/tasks/${taskId}/assignment`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}/assignment`,
         {
           method: "PUT",
           headers: {
@@ -442,7 +442,7 @@ const TeamLeadDashboard = () => {
 
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://138.197.27.240:5001/api/team-lead/tasks/${taskId}/status`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -487,7 +487,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://138.197.27.240:5001/api/team-lead/tasks/${taskId}`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}`,
         {
           method: "DELETE",
           headers: {
@@ -517,7 +517,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://138.197.27.240:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -691,7 +691,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://138.197.27.240:5001/api/team-lead/employees",
+        "http://localhost:5001/api/team-lead/employees",
         {
           headers: {
             "Content-Type": "application/json",
@@ -709,7 +709,7 @@ const TeamLeadDashboard = () => {
       try {
         const token = localStorage.getItem("token");
         const fallbackResponse = await fetch(
-          "http://138.197.27.240:5001/api/candidates/employees",
+          "http://localhost:5001/api/candidates/employees",
           {
             headers: {
               "Content-Type": "application/json",
@@ -760,7 +760,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://138.197.27.240:5001/api/client-projects/${selectedProjectForAssignment._id}/assign-employees`,
+        `http://localhost:5001/api/client-projects/${selectedProjectForAssignment._id}/assign-employees`,
         {
           method: "PUT",
           headers: {
@@ -798,7 +798,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       await fetch(
-        `http://138.197.27.240:5001/api/client-projects/${projectId}/progress`,
+        `http://localhost:5001/api/client-projects/${projectId}/progress`,
         {
           method: "PUT",
           headers: {
@@ -838,19 +838,26 @@ const TeamLeadDashboard = () => {
       const token = localStorage.getItem("token");
       
       // Extract employee ID - handle different object structures
-      let employeeId;
-      if (typeof employee === 'string') {
-        employeeId = employee;
-      } else if (typeof employee === 'object' && employee !== null) {
-        employeeId = employee._id || employee.id || employee.employeeId;
-      }
+      const extractEmployeeId = (empData) => {
+        if (typeof empData === 'string') return empData;
+        if (typeof empData === 'object' && empData !== null) {
+          const id = empData._id || empData.id || empData.employeeId;
+          if (typeof id === 'string') return id;
+          if (typeof id === 'object' && id !== null) {
+            return id._id || id.id || id.employeeId || '';
+          }
+        }
+        return '';
+      };
+      
+      const employeeId = extractEmployeeId(employee);
       
       if (!employeeId) {
         console.error("Employee ID not found. Employee object:", employee);
         throw new Error("Employee ID not found");
       }
 
-      let url = `http://138.197.27.240:5001/api/team-lead/employees/${employeeId}/tasks`;
+      let url = `http://localhost:5001/api/team-lead/employees/${employeeId}/tasks`;
       if (projectId) {
         url += `?projectId=${projectId}`;
       }
@@ -892,9 +899,17 @@ const TeamLeadDashboard = () => {
       }
       
       // Create a clean employee object for state storage
+      const extractId = (idField) => {
+        if (typeof idField === 'string') return idField;
+        if (typeof idField === 'object' && idField !== null) {
+          return idField._id || idField.id || idField.employeeId || '';
+        }
+        return '';
+      };
+      
       const cleanEmployee = {
-        _id: employee._id || employee.id || employee.employeeId,
-        id: employee._id || employee.id || employee.employeeId,
+        _id: extractId(employee._id) || extractId(employee.id) || extractId(employee.employeeId),
+        id: extractId(employee._id) || extractId(employee.id) || extractId(employee.employeeId),
         name: employee.name || 'Unknown',
         email: employee.email || '',
         role: employee.role || '',
@@ -1347,9 +1362,17 @@ const TeamLeadDashboard = () => {
                                   key={idx} 
                                   className="team-member-badge"
                                   onClick={() => {
+                                    const extractId = (idField) => {
+                                      if (typeof idField === 'string') return idField;
+                                      if (typeof idField === 'object' && idField !== null) {
+                                        return idField._id || idField.id || idField.employeeId || '';
+                                      }
+                                      return '';
+                                    };
+                                    
                                     const employeeData = {
-                                      _id: emp.employeeId || emp._id,
-                                      id: emp.employeeId || emp._id,
+                                      _id: extractId(emp.employeeId) || extractId(emp._id) || idx,
+                                      id: extractId(emp.employeeId) || extractId(emp._id) || idx,
                                       name: emp.name || 'Unknown',
                                       role: emp.role || '',
                                       subRole: emp.subRole || '',
@@ -1842,7 +1865,7 @@ const TeamLeadDashboard = () => {
                                                 fontSize: 10,
                                               }}
                                             >
-                                              {emp?.name || 'Unknown'}
+                                              {String(emp?.name || 'Unknown')}
                                             </span>
                                           ))
                                         ) : (
@@ -2972,7 +2995,7 @@ const TeamLeadDashboard = () => {
                         <div>
                           <div style={{ fontWeight: 600 }}>{emp.name}</div>
                           <div style={{ fontSize: 11, color: "#6b7280" }}>
-                            {emp.role} - {emp.subRole}
+                            {emp.role}{emp.subRole ? ` - ${emp.subRole}` : ''}
                           </div>
                         </div>
                       </label>
@@ -3807,7 +3830,7 @@ const TeamLeadDashboard = () => {
                             {employee.name}
                           </div>
                           <div style={{ fontSize: 12, color: "#6b7280" }}>
-                            {employee.role} - {employee.subRole}
+                            {employee.role}{employee.subRole ? ` - ${employee.subRole}` : ''}
                           </div>
                           <div style={{ fontSize: 11, color: "#9ca3af" }}>
                             {employee.email}
@@ -3871,10 +3894,16 @@ const TeamLeadDashboard = () => {
               <div>
                 <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: "#3b82f6" }}>
                   <FaUser style={{ marginRight: 8 }} />
-                  Tasks Assigned to {selectedEmployeeForTasks?.name || 'Unknown Employee'}
+                  Tasks Assigned to {String(selectedEmployeeForTasks?.name || 'Unknown Employee')}
                 </h3>
                 <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: 14 }}>
-                  Employee ID: {selectedEmployeeForTasks?.id || selectedEmployeeForTasks?._id || 'Unknown'} | Role: {selectedEmployeeForTasks?.role || 'Unknown'}
+                  Employee ID: {(() => {
+                    const empId = selectedEmployeeForTasks?.id || selectedEmployeeForTasks?._id;
+                    if (typeof empId === 'object' && empId !== null) {
+                      return String(empId._id || empId.id || empId.employeeId || 'Unknown');
+                    }
+                    return String(empId || 'Unknown');
+                  })()} | Role: {String(selectedEmployeeForTasks?.role || 'Unknown')}
                 </p>
               </div>
               <button className="modal-close" onClick={handleCloseEmployeeTasksModal}>

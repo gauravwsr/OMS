@@ -115,7 +115,7 @@ const AdminDashboard = () => {
   const cleanupTestNotifications = async () => {
     try {
       await axios.delete(
-        "http://138.197.27.240:5001/api/notifications/cleanup-test",
+        "http://localhost:5001/api/notifications/cleanup-test",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -367,7 +367,7 @@ const AdminDashboard = () => {
   const fetchProjectSummary = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://138.197.27.240:5001/api/client-projects", {
+      const response = await fetch("http://localhost:5001/api/client-projects", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -493,7 +493,7 @@ const AdminDashboard = () => {
     setEventsLoading(true);
     console.log('Fetching upcoming events...');
     try {
-      const response = await axios.post('http://138.197.27.240:5001/GetData');
+      const response = await axios.post('http://localhost:5001/GetData');
       console.log('Events API response:', response.data);
       const allEvents = response.data || [];
       console.log('All events fetched:', allEvents);
