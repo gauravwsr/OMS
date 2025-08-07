@@ -257,7 +257,7 @@ const NewDashboard = () => {
         <div className="dashboard-container-new">
           <div className="dashboard-main">
             {/* Enhanced Header */}
-            <header className="dashboard-header-modern">
+            {/* <header className="dashboard-header-modern">
               <div className="header-content">
                 <div className="greeting-section">
                   <div className="greeting-text">
@@ -288,7 +288,72 @@ const NewDashboard = () => {
                   </div>
                 </div>
               </div>
-            </header>
+            </header> */}
+
+{/* Enhanced User Profile Card */}
+              <div className="profile-section">
+                <h2 className="section-title">
+                  <span className="title-icon">👤</span>
+                  Employee Profile
+                </h2>
+                <div className="user-profile-card-modern">
+                  <div className="profile-header">
+                    <div className="profile-avatar">
+                      <div className="avatar-circle">
+                        <span>{user?.name?.charAt(0) || "U"}</span>
+                      </div>
+                      <div className="avatar-decoration">
+                        <div className="decoration-ring"></div>
+                        <div className="status-indicator online"></div>
+                      </div>
+                    </div>
+                    <div className="profile-basic">
+                      <h3 className="profile-name">{user?.name || "N/A"}</h3>
+                      <p className="profile-id">ID: {user?.userId || "N/A"}</p>
+                      <span className="profile-status active">
+                        <span className="status-dot"></span>
+                        Active
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="profile-details-modern">
+                    <div className="details-grid">
+                      <div className="detail-card">
+                        <div className="detail-icon">📧</div>
+                        <div className="detail-content">
+                          <label>Email Address</label>
+                          <p className="email-value">{user?.email || "N/A"}</p>
+                        </div>
+                      </div>
+
+                      <div className="detail-card">
+                        <div className="detail-icon">🏢</div>
+                        <div className="detail-content">
+                          <label>Department</label>
+                          <p>{user?.department || "General"}</p>
+                        </div>
+                      </div>
+
+                      <div className="detail-card">
+                        <div className="detail-icon">💼</div>
+                        <div className="detail-content">
+                          <label>Position</label>
+                          <p>{user?.position || user?.role || "Employee"}</p>
+                        </div>
+                      </div>
+
+                      <div className="detail-card">
+                        <div className="detail-icon">🎯</div>
+                        <div className="detail-content">
+                          <label>Specialization</label>
+                          <p>{user?.subRole || "N/A"}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             <div className="dashboard-content">
               {/* Enhanced Quick Stats */}
@@ -353,71 +418,6 @@ const NewDashboard = () => {
                         {user?.subRole || "N/A"}
                       </p>
                       <span className="stat-subtitle">Specialization</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Enhanced User Profile Card */}
-              <div className="profile-section">
-                <h2 className="section-title">
-                  <span className="title-icon">👤</span>
-                  Employee Profile
-                </h2>
-                <div className="user-profile-card-modern">
-                  <div className="profile-header">
-                    <div className="profile-avatar">
-                      <div className="avatar-circle">
-                        <span>{user?.name?.charAt(0) || "U"}</span>
-                      </div>
-                      <div className="avatar-decoration">
-                        <div className="decoration-ring"></div>
-                        <div className="status-indicator online"></div>
-                      </div>
-                    </div>
-                    <div className="profile-basic">
-                      <h3 className="profile-name">{user?.name || "N/A"}</h3>
-                      <p className="profile-id">ID: {user?.userId || "N/A"}</p>
-                      <span className="profile-status active">
-                        <span className="status-dot"></span>
-                        Active
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="profile-details-modern">
-                    <div className="details-grid">
-                      <div className="detail-card">
-                        <div className="detail-icon">📧</div>
-                        <div className="detail-content">
-                          <label>Email Address</label>
-                          <p className="email-value">{user?.email || "N/A"}</p>
-                        </div>
-                      </div>
-
-                      <div className="detail-card">
-                        <div className="detail-icon">🏢</div>
-                        <div className="detail-content">
-                          <label>Department</label>
-                          <p>{user?.department || "General"}</p>
-                        </div>
-                      </div>
-
-                      <div className="detail-card">
-                        <div className="detail-icon">💼</div>
-                        <div className="detail-content">
-                          <label>Position</label>
-                          <p>{user?.position || user?.role || "Employee"}</p>
-                        </div>
-                      </div>
-
-                      <div className="detail-card">
-                        <div className="detail-icon">🎯</div>
-                        <div className="detail-content">
-                          <label>Specialization</label>
-                          <p>{user?.subRole || "N/A"}</p>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>

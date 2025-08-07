@@ -43,6 +43,41 @@ const Chat = () => {
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
+  // Request notification permission on component mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Function to show browser notification
+  const showNotification = (message) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      const senderName = message.sender?.name || "Someone";
+      const chatName = message.chat?.chatName || (
+        message.chat?.isGroupChat ? "Group Chat" : senderName
+      );
+      
+      const notification = new Notification(`New message from ${senderName}`, {
+        body: message.content,
+        icon: "/favicon.ico", // You can change this to your app icon
+        tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
+        badge: "/favicon.ico"
+      });
+
+      // Auto close notification after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      // Handle notification click to focus on chat
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+  };
+
   // Debug user authentication
   useEffect(() => {
     console.log("Current user:", user);
@@ -361,17 +396,32 @@ useEffect(() => {
   const handleMessageReceived = (newMessageReceived) => {
     console.log("New message received via socket:", newMessageReceived);
     
-    // Always update the chat list with latest message
+    // Determine the chat ID from the message
+    const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
+    
+    // Check if this message is for the currently selected chat
+    const isCurrentChat = selectedChat && selectedChat._id === chatId;
+    
+    // Update the chat list with latest message and notification status
     setChats((prev) =>
-      prev.map((chat) =>
-        chat._id === newMessageReceived.chat._id || chat._id === newMessageReceived.chat
-          ? { ...chat, latestMessage: newMessageReceived }
-          : chat
-      )
+      prev.map((chat) => {
+        if (chat._id === chatId) {
+          // If it's not the current chat and message is not from current user, increment unread count
+          const shouldIncrementUnread = !isCurrentChat && newMessageReceived.sender._id !== user._id;
+          
+          return {
+            ...chat,
+            latestMessage: newMessageReceived,
+            unreadCount: shouldIncrementUnread ? (chat.unreadCount || 0) + 1 : (chat.unreadCount || 0),
+            notification: shouldIncrementUnread ? true : chat.notification
+          };
+        }
+        return chat;
+      })
     );
     
     // Only add message if it's for the current selected chat
-    if (selectedChat && (selectedChat._id === newMessageReceived.chat._id || selectedChat._id === newMessageReceived.chat)) {
+    if (isCurrentChat) {
       setMessages((prev) => {
         // Check if message already exists to avoid duplicates
         const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
@@ -380,6 +430,9 @@ useEffect(() => {
         }
         return [...prev, newMessageReceived];
       });
+    } else if (newMessageReceived.sender._id !== user._id) {
+      // Show browser notification if not on current chat and message is not from current user
+      showNotification(newMessageReceived);
     }
   };
 
@@ -885,6 +938,91 @@ const toggleUserSelection = (userId) => {
   });
 };
 
+// Function to clear notifications for a specific chat
+const clearChatNotifications = (chatId) => {
+  setChats((prev) =>
+    prev.map((chat) =>
+      chat._id === chatId
+        ? { ...chat, unreadCount: 0, notification: false }
+        : chat
+    )
+  );
+};
+
+// Enhanced chat selection handler
+const handleChatSelect = (chat) => {
+  setSelectedChat(chat);
+  clearChatNotifications(chat._id);
+  
+  // Add mobile chat open class for mobile view
+  const chatContainer = document.querySelector('.chat-container');
+  if (chatContainer && window.innerWidth <= 768) {
+    chatContainer.classList.add('mobile-chat-open');
+  }
+};
+
+// Function to handle mobile back button
+const handleMobileBack = () => {
+  const chatContainer = document.querySelector('.chat-container');
+  if (chatContainer) {
+    chatContainer.classList.remove('mobile-chat-open');
+  }
+};
+
+// Function to detect and render clickable links in messages
+const renderMessageWithLinks = (text) => {
+  if (!text || typeof text !== 'string') return text;
+
+  // Enhanced regular expression to detect URLs (including email addresses)
+  const urlRegex = /(https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?|www\.(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?|(?:[-\w.])+\.(?:[a-zA-Z]{2,})(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?)/gi;
+  
+  // Split text by URLs while keeping the URLs
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    // Reset regex for testing (regex has global flag)
+    urlRegex.lastIndex = 0;
+    
+    // Check if this part is a URL
+    if (urlRegex.test(part)) {
+      // Ensure the URL has a protocol
+      let fullUrl = part;
+      if (!part.startsWith('http://') && !part.startsWith('https://')) {
+        fullUrl = part.startsWith('www.') ? `https://${part}` : `https://${part}`;
+      }
+      
+      // Truncate long URLs for display
+      const displayUrl = part.length > 50 ? `${part.substring(0, 47)}...` : part;
+      
+      return (
+        <a
+          key={index}
+          href={fullUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="message-link"
+          title={fullUrl} // Show full URL on hover
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent any parent click handlers
+            // Additional confirmation for external links
+            if (!fullUrl.includes(window.location.hostname)) {
+              const confirmed = window.confirm(`This link will open in a new tab:\n${fullUrl}\n\nDo you want to continue?`);
+              if (!confirmed) {
+                e.preventDefault();
+              }
+            }
+          }}
+        >
+          {displayUrl}
+        </a>
+      );
+    }
+    
+    // Return regular text
+    return part;
+  });
+};
+
 const getAvatarText = (name) => {
   if (!name || typeof name !== "string") return "??";
   try {
@@ -997,7 +1135,31 @@ return (
   <Container fluid className="chat-container">
     <Row className="h-100 g-0">
       {/* Left sidebar - Chats list */}
-      <Col md={4} className="p-0 border-end">
+      <Col md={4} className="p-0 border-end sidebar">
+        {/* Mobile Office Chat Header */}
+        <div className="office-chat-header">
+          Office Chat
+        </div>
+        
+        {/* Mobile Buttons Container */}
+        <div className="mobile-buttons-container">
+          <div className="sidebar-buttons">
+            <button 
+              className="sidebar-button"
+              onClick={() => setShowAddFriendModal(true)}
+            >
+              Add Friend
+            </button>
+            <button 
+              className="sidebar-button"
+              onClick={() => setShowNewGroupModal(true)}
+            >
+              New Group
+            </button>
+          </div>
+        </div>
+        
+        {/* Desktop Header */}
         <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Office Chat</h5>
           <div className="btn-cont">
@@ -1055,17 +1217,7 @@ return (
                       key={chat._id}
                       action
                       active={selectedChat?._id === chat._id}
-                      onClick={() => {
-                        setSelectedChat(chat);
-                        // Clear unread count and notification for this chat
-                        setChats((prev) =>
-                          prev.map((c) =>
-                            c._id === chat._id
-                              ? { ...c, unreadCount: 0, notification: false }
-                              : c
-                          )
-                        );
-                      }}
+                      onClick={() => handleChatSelect(chat)}
                       className="d-flex align-items-center"
                     >
                       <div
@@ -1154,16 +1306,7 @@ return (
                       key={chat._id}
                       action
                       active={selectedChat?._id === chat._id}
-                      onClick={() => {
-                        setSelectedChat(chat);
-                        setChats((prev) =>
-                          prev.map((c) =>
-                            c._id === chat._id
-                              ? { ...c, unreadCount: 0, notification: false }
-                              : c
-                          )
-                        );
-                      }}
+                      onClick={() => handleChatSelect(chat)}
                       className="d-flex align-items-center"
                     >
                       <div
@@ -1221,6 +1364,30 @@ return (
       <Col md={8} className="chat-area p-0">
         {selectedChat ? (
           <>
+            {/* Mobile Chat Header */}
+            <div className="mobile-chat-header">
+              <button 
+                className="mobile-back-button" 
+                onClick={handleMobileBack}
+                aria-label="Back to chat list"
+              >
+                ←
+              </button>
+              <div className="mobile-chat-title">
+                {selectedChat.isGroupChat
+                  ? selectedChat.chatName
+                  : selectedChat.participants &&
+                    Array.isArray(selectedChat.participants) &&
+                    user &&
+                    user._id
+                  ? selectedChat.participants.find(
+                      (p) => p && p._id && p._id !== user._id
+                    )?.name || "Chat"
+                  : "Chat"}
+              </div>
+            </div>
+            
+            {/* Desktop Chat Header */}
             <div className="chat-header">
               <div className="chat-header-avatar">
                 {getAvatarText(
@@ -1336,7 +1503,7 @@ return (
                             </div>
                           )}
                         <div className="message-text">
-                          {message.content || ""}
+                          {renderMessageWithLinks(message.content || "")}
                         </div>
                         <div className="message-time">
                           {message.createdAt

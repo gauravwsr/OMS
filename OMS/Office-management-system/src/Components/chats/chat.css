@@ -27,7 +27,7 @@
 }
 
 .avatar.online::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   right: 0;
@@ -39,7 +39,7 @@
 }
 
 .avatar.away::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   right: 0;
@@ -73,7 +73,7 @@
   flex: 1; /* Make buttons take equal width */
   text-align: center;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: background-color 0.2s ease;
 }
 
@@ -81,11 +81,75 @@
   background-color: #0069d9;
 }
 
+/* Mobile-specific styles for WhatsApp-like behavior */
+.mobile-chat-open .sidebar {
+  display: none;
+}
+
+.mobile-chat-open .chat-area {
+  width: 100%;
+  height: 100vh;
+}
+
+.mobile-chat-header {
+  display: none;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #128c7e;
+  color: black;
+  border-bottom: 1px solid #075e54;
+}
+
+.mobile-back-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  margin-right: 12px;
+  padding: 4px;
+}
+
+.mobile-chat-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.office-chat-header {
+  display: none;
+  padding: 12px 15px;
+  background-color: #128c7e;
+  color: black;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-bottom: 1px solid #075e54;
+}
+
+.mobile-buttons-container {
+  display: none;
+}
+
+.mobile-buttons-container .sidebar-buttons {
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.mobile-buttons-container .sidebar-button {
+  font-size: 0.9rem;
+  padding: 8px 15px;
+  border-radius: 20px;
+}
+
 .messages-container {
   overflow-y: auto;
   background-color: #e5ddd5;
-  background-image: linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)),
-                    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z' fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.6),
+      rgba(255, 255, 255, 0.6)
+    ),
+    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z' fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
   height: calc(100% - 70px); /* Adjust based on your input area height */
   padding: 15px; /* Add padding for messages */
   display: flex;
@@ -101,8 +165,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message.sent {
@@ -117,13 +187,13 @@
 
 .message.temp .message-content {
   border: 1.5px dashed #aaa; /* Darker and thicker border for visibility */
-  box-shadow: 0 1px 1px rgba(0,0,0,0.05); /* Subtle shadow for depth */
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
 }
 
 .message.send-failed .message-content {
   background-color: #ffe8e8; /* Slightly lighter for better text contrast */
   border: 1.5px solid #ffcccc;
-  box-shadow: 0 1px 3px rgba(255,0,0,0.1); /* Red-tinted shadow */
+  box-shadow: 0 1px 3px rgba(255, 0, 0, 0.1); /* Red-tinted shadow */
 }
 
 .message-status {
@@ -185,7 +255,9 @@
 }
 
 @keyframes bounce {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
   }
   30% {
@@ -203,7 +275,7 @@
   border-radius: 18px;
   position: relative;
   word-break: break-word;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
   min-width: 60px; /* Ensure minimum width for short messages */
   max-width: 100%; /* Ensure content doesn't overflow */
 }
@@ -224,6 +296,47 @@
   font-size: 1rem; /* Explicit font size */
   line-height: 1.4; /* Better line spacing for readability */
   margin-bottom: 4px; /* Space between text and timestamp */
+}
+
+/* Link styles in messages */
+.message-link {
+  color: #0066cc;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  word-break: break-all;
+  display: inline;
+}
+
+.message-link:hover {
+  color: #004499;
+  text-decoration: underline;
+  background-color: rgba(0, 102, 204, 0.1);
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+
+.message-link:visited {
+  color: #551a8b;
+}
+
+/* Different link colors for sent vs received messages */
+.message.sent .message-link {
+  color: #0056b3;
+}
+
+.message.sent .message-link:hover {
+  color: #003d82;
+  background-color: rgba(0, 86, 179, 0.1);
+}
+
+.message.received .message-link {
+  color: #0066cc;
+}
+
+.message.received .message-link:hover {
+  color: #004499;
+  background-color: rgba(0, 102, 204, 0.1);
 }
 
 .message-sender-name {
@@ -257,14 +370,14 @@
   border: 1px solid #ddd;
   font-size: 1rem;
   line-height: 1.4;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .message-input textarea:focus {
   outline: none;
   border-color: #4a90e2;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Style for send button if you have one */
@@ -314,20 +427,29 @@
   .chat-container {
     height: calc(100vh - 50px);
   }
-  
+
   .message {
     max-width: 85%;
   }
-  
+
   /* Maintain button layout down to 768px */
   .sidebar-buttons {
     padding: 10px;
     gap: 15px;
+    flex-wrap: nowrap;
   }
-  
+
   .sidebar-button {
     padding: 8px 15px;
     font-size: 0.9rem;
+  }
+
+  .messages-container {
+    padding: 12px;
+  }
+
+  .message-input {
+    padding: 10px 12px;
   }
 }
 
@@ -336,33 +458,47 @@
   .chat-container {
     flex-direction: column;
   }
-  
+
   .sidebar {
     height: auto;
     max-height: 130px; /* Increased to accommodate buttons */
     overflow-x: auto;
     overflow-y: hidden;
   }
-  
+
+  /* Show mobile elements for tablet and below */
+  .office-chat-header {
+    display: block;
+  }
+
+  .mobile-buttons-container {
+    display: block;
+  }
+
+  /* Hide desktop buttons in mobile/tablet */
+  .sidebar > .sidebar-buttons {
+    display: none;
+  }
+
   /* Still maintain the same button layout at 768px */
-  .sidebar-buttons {
+  .mobile-buttons-container .sidebar-buttons {
     padding: 10px;
     gap: 15px;
     justify-content: space-between;
   }
-  
-  .sidebar-button {
+
+  .mobile-buttons-container .sidebar-button {
     padding: 8px 15px;
     font-size: 0.9rem;
   }
-  
+
   .sidebar .contact-list {
     display: flex;
     flex-direction: row;
     padding: 10px;
     overflow-x: auto;
   }
-  
+
   .sidebar .contact-item {
     margin-right: 15px;
     display: flex;
@@ -370,11 +506,11 @@
     align-items: center;
     flex-shrink: 0;
   }
-  
+
   .chat-area {
     height: calc(100vh - 180px); /* Adjusted for larger sidebar */
   }
-  
+
   .message {
     max-width: 90%;
   }
@@ -386,20 +522,53 @@
     height: calc(100vh - 40px);
   }
   
-  /* Change button layout for smaller screens */
-  .sidebar-buttons {
-    padding: 8px;
-    gap: 10px;
+  /* Enable mobile chat functionality */
+  .mobile-chat-header {
+    display: flex;
   }
   
-  .sidebar-button {
-    font-size: 0.85rem;
-    padding: 6px 10px;
-    border-radius: 15px;
+  .chat-container.mobile-chat-open .mobile-chat-header {
+    display: flex;
+  }
+  
+  .chat-container.mobile-chat-open .office-chat-header,
+  .chat-container.mobile-chat-open .mobile-buttons-container {
+    display: none;
+  }
+  
+  /* Mobile buttons styling */
+  .mobile-buttons-container .sidebar-buttons {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  
+  .mobile-buttons-container .sidebar-button {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    min-width: 80px;
+  }
+  
+  /* Mobile chat layout */
+  .chat-container.mobile-chat-open .chat-area {
+    height: calc(100vh - 40px);
+  }
+  
+  .mobile-chat-header {
+    padding: 10px 12px;
+  }
+  
+  .mobile-back-button {
+    font-size: 1.1rem;
+    margin-right: 10px;
+  }
+  
+  .mobile-chat-title {
+    font-size: 1rem;
   }
   
   .messages-container {
-    height: calc(100% - 60px);
+    height: calc(100% - 110px);
+    padding: 10px;
   }
   
   .avatar {
@@ -407,8 +576,26 @@
     height: 35px;
   }
   
+  .contact-item {
+    padding: 12px;
+  }
+  
+  .contact-name {
+    font-size: 0.95rem;
+  }
+  
+  .contact-last-message {
+    font-size: 0.8rem;
+  }
+  
+  .contact-time {
+    font-size: 0.7rem;
+    min-width: 45px;
+  }
+  
   .message {
     max-width: 95%;
+    margin-bottom: 12px;
   }
   
   .message-content {
@@ -420,56 +607,130 @@
     font-size: 0.7rem;
   }
   
-  .message-input textarea {
-    padding: 8px 12px;
-  }
-}
-
-/* Extra small screens (portrait phones, 375px and below) */
-@media (max-width: 375px) {
-  /* Now we change to vertical layout for very small screens */
-  .sidebar-buttons {
-    flex-direction: column;
-    gap: 5px;
-    padding: 6px;
+  .message-input {
+    padding: 8px;
   }
   
-  .sidebar-button {
+  .message-input textarea {
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+  
+  .send-button {
+    width: 32px;
+    height: 32px;
+    right: 20px;
+    bottom: 18px;
+  }
+  
+  /* Mobile link styles */
+  .message-link {
+    font-size: 0.9rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+  }
+  
+  .message-link:hover {
+    padding: 2px 4px;
+  }
+}/* Extra small screens (portrait phones, 375px and below) */
+@media (max-width: 375px) {
+  /* Mobile layout for very small screens */
+  .mobile-buttons-container {
+    padding: 6px 10px;
+  }
+
+  .mobile-buttons-container .sidebar-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .mobile-buttons-container .sidebar-button {
     width: 100%;
-    max-width: none;
     font-size: 0.8rem;
     padding: 5px 8px;
   }
-  
-  .sidebar {
-    max-height: 160px; /* Increased for vertical buttons */
+
+  .chat-container {
+    height: calc(100vh - 35px);
   }
-  
-  .chat-area {
-    height: calc(100vh - 200px); /* Adjusted for larger sidebar */
+
+  .chat-container.mobile-chat-open .chat-area {
+    height: calc(100vh - 35px);
   }
-  
+
+  .mobile-chat-header {
+    padding: 8px 10px;
+  }
+
+  .mobile-back-button {
+    font-size: 1rem;
+    margin-right: 8px;
+  }
+
+  .mobile-chat-title {
+    font-size: 0.9rem;
+  }
+
+  .contact-item {
+    padding: 10px;
+  }
+
   .avatar {
     width: 30px;
     height: 30px;
+    font-size: 0.8rem;
   }
-  
+
   .avatar.online::after,
   .avatar.away::after {
     width: 8px;
     height: 8px;
   }
-  
+
+  .contact-name {
+    font-size: 0.9rem;
+  }
+
+  .contact-last-message {
+    font-size: 0.75rem;
+  }
+
+  .contact-time {
+    font-size: 0.65rem;
+    min-width: 40px;
+  }
+
+  .messages-container {
+    height: calc(100% - 100px);
+    padding: 8px;
+  }
+
   .message-content {
     padding: 5px 8px;
     font-size: 0.9rem;
+    border-radius: 15px;
   }
-  
+
   .message-input {
     padding: 5px;
   }
-  
+
   .message-input textarea {
+    padding: 6px 35px 6px 10px;
+    font-size: 0.9rem;
+    border-radius: 20px;
+  }
+
+  .send-button {
+    width: 28px;
+    height: 28px;
+    right: 15px;
+    bottom: 15px;
+  }
+
+  .typing-indicator {
+    margin: 0 8px 8px;
     padding: 6px 10px;
   }
 }
@@ -489,20 +750,20 @@
   border-radius: 20px;
   font-weight: 500;
   padding: 8px 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 }
 
 .btn-cont .btn-primary:hover {
   background-color: #0069d9;
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 .btn-cont .btn-secondary:hover {
   background-color: #5a6268;
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 /* Media Queries for Different Screen Sizes */
@@ -512,7 +773,7 @@
   .btn-cont {
     padding: 10px;
   }
-  
+
   .btn-cont .btn-primary,
   .btn-cont .btn-secondary {
     padding: 6px 14px;
@@ -526,7 +787,7 @@
     padding: 8px;
     gap: 10px;
   }
-  
+
   .btn-cont .btn-primary,
   .btn-cont .btn-secondary {
     padding: 5px 12px;
@@ -542,12 +803,164 @@
     gap: 8px;
     padding: 6px;
   }
-  
+
   .btn-cont .btn-primary,
   .btn-cont .btn-secondary {
     width: 100%;
     margin-right: 0 !important; /* Override Bootstrap's me-2 */
     padding: 6px 10px;
     font-size: 0.8rem;
+  }
+}
+
+/* Ultra small screens (320px and below) */
+@media (max-width: 320px) {
+  .chat-container {
+    height: calc(100vh - 30px);
+  }
+
+  .chat-container.mobile-chat-open .chat-area {
+    height: calc(100vh - 30px);
+  }
+
+  .mobile-buttons-container {
+    padding: 4px 8px;
+  }
+
+  .mobile-buttons-container .sidebar-button {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+  }
+
+  .mobile-chat-header {
+    padding: 6px 8px;
+  }
+
+  .mobile-back-button {
+    font-size: 0.9rem;
+    margin-right: 6px;
+  }
+
+  .mobile-chat-title {
+    font-size: 0.85rem;
+  }
+
+  .contact-item {
+    padding: 8px;
+  }
+
+  .messages-container {
+    padding: 6px;
+    height: calc(100% - 90px);
+  }
+
+  .message {
+    margin-bottom: 8px;
+  }
+
+  .message-content {
+    padding: 4px 6px;
+    font-size: 0.85rem;
+    border-radius: 12px;
+  }
+
+  .message-time {
+    font-size: 0.65rem;
+  }
+
+  .message-input {
+    padding: 4px;
+  }
+
+  .message-input textarea {
+    padding: 5px 30px 5px 8px;
+    font-size: 0.85rem;
+    border-radius: 18px;
+  }
+
+  .send-button {
+    width: 24px;
+    height: 24px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .contact-name {
+    font-size: 0.85rem;
+  }
+
+  .contact-last-message {
+    font-size: 0.7rem;
+  }
+
+  .contact-time {
+    font-size: 0.6rem;
+    min-width: 35px;
+  }
+
+  .typing-indicator {
+    margin: 0 6px 6px;
+    padding: 4px 8px;
+  }
+
+  .typing-text {
+    font-size: 0.7rem;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+  .chat-container {
+    height: calc(100vh - 20px);
+  }
+
+  .chat-container.mobile-chat-open .chat-area {
+    height: calc(100vh - 20px);
+  }
+
+  .mobile-buttons-container {
+    padding: 4px 8px;
+  }
+
+  .mobile-buttons-container .sidebar-buttons {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .mobile-buttons-container .sidebar-button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    flex: 1;
+  }
+
+  .mobile-chat-header {
+    padding: 6px 10px;
+  }
+
+  .messages-container {
+    padding: 8px;
+    height: calc(100% - 80px);
+  }
+
+  .contact-item {
+    padding: 8px 12px;
+  }
+}
+
+/* High DPI / Retina display adjustments */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .avatar.online::after,
+  .avatar.away::after {
+    border-width: 1px;
+  }
+
+  .message-content {
+    box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.1);
   }
 }
