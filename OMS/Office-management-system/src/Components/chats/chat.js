@@ -954,10 +954,11 @@ const handleChatSelect = (chat) => {
   setSelectedChat(chat);
   clearChatNotifications(chat._id);
   
-  // Add mobile chat open class for mobile view
+  // Add mobile chat open class for mobile view with better detection
   const chatContainer = document.querySelector('.chat-container');
-  if (chatContainer && window.innerWidth <= 768) {
+  if (chatContainer && (window.innerWidth <= 768 || window.matchMedia('(max-width: 768px)').matches)) {
     chatContainer.classList.add('mobile-chat-open');
+    console.log('Mobile chat opened for:', chat.chatName || 'Chat');
   }
 };
 
@@ -966,6 +967,8 @@ const handleMobileBack = () => {
   const chatContainer = document.querySelector('.chat-container');
   if (chatContainer) {
     chatContainer.classList.remove('mobile-chat-open');
+    setSelectedChat(null); // Clear selected chat to show the chat list
+    console.log('Mobile chat closed, returning to chat list');
   }
 };
 
@@ -1135,7 +1138,7 @@ return (
   <Container fluid className="chat-container">
     <Row className="h-100 g-0">
       {/* Left sidebar - Chats list */}
-      <Col md={4} className="p-0 border-end sidebar">
+      <Col xs={12} md={4} className="p-0 border-end sidebar">
         {/* Mobile Office Chat Header */}
         <div className="office-chat-header">
           Office Chat
@@ -1361,7 +1364,7 @@ return (
       </Col>
 
       {/* Right side - Chat area */}
-      <Col md={8} className="chat-area p-0">
+      <Col xs={12} md={8} className="chat-area p-0">
         {selectedChat ? (
           <>
             {/* Mobile Chat Header */}

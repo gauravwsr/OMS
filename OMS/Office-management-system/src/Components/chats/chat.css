@@ -536,6 +536,29 @@
     display: none;
   }
   
+  /* Ensure sidebar is hidden in mobile chat view */
+  .chat-container.mobile-chat-open .sidebar {
+    display: none !important;
+  }
+  
+  /* Ensure chat area is visible and full width in mobile */
+  .chat-container.mobile-chat-open .chat-area {
+    display: block !important;
+    width: 100% !important;
+    height: calc(100vh - 40px) !important;
+    position: relative !important;
+  }
+  
+  /* Default mobile view - show sidebar, hide chat area */
+  .chat-area {
+    display: none;
+  }
+  
+  .sidebar {
+    display: block !important;
+    width: 100% !important;
+  }
+  
   /* Mobile buttons styling */
   .mobile-buttons-container .sidebar-buttons {
     padding: 8px 12px;
@@ -546,11 +569,6 @@
     font-size: 0.8rem;
     padding: 6px 12px;
     min-width: 80px;
-  }
-  
-  /* Mobile chat layout */
-  .chat-container.mobile-chat-open .chat-area {
-    height: calc(100vh - 40px);
   }
   
   .mobile-chat-header {
@@ -567,8 +585,10 @@
   }
   
   .messages-container {
-    height: calc(100% - 110px);
+    height: calc(100% - 110px) !important;
     padding: 10px;
+    overflow-y: auto;
+    display: block !important;
   }
   
   .avatar {
@@ -596,11 +616,14 @@
   .message {
     max-width: 95%;
     margin-bottom: 12px;
+    display: block !important;
+    visibility: visible !important;
   }
   
   .message-content {
     padding: 6px 10px;
     font-size: 0.95rem;
+    display: block !important;
   }
   
   .message-time {
