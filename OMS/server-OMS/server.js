@@ -120,6 +120,9 @@ app.get("/", (req, res) => {
 // Authentication routes
 app.use("/api/auth", authRoutes);
 
+// Email routes (user-specific)
+app.use("/api/emails", emailRoutes);
+
 // User routes
 app.use("/users", userRoutes);
 app.use(userRoutes);

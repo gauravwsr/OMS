@@ -3,19 +3,20 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f1f3f4;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
 }
 
 /* Meetings container */
 .meetings-container {
   width: 100%;
-  max-width: 1200px;
-  margin: 20px auto;
+  max-width: 1400px;
+  margin: 0 auto;
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
-
+  backdrop-filter: blur(20px);
 }
 
 /* Meetings header */
@@ -23,62 +24,99 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 24px 32px;
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
   border-bottom: 1px solid #e2e8f0;
-  height: 50px;
 }
 
 /* Tabs */
 .tabs {
   display: flex;
-  gap: 1rem;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 
 .tab-button {
-  padding: 8px 16px;
+  padding: 12px 24px;
   border: none;
-  background: none;
+  background: transparent;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   color: #64748b;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .tab-button.active {
-  background-color: #f1f5f9;
-  color: #0f172a;
-  font-weight: 500;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
 }
 
 .tab-button:hover:not(.active) {
-  background-color: #f8fafc;
+  background: #e2e8f0;
+  color: #334155;
 }
 
 /* Compose button */
 .compose-button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 12px;
+  padding: 12px 24px;
   border: none;
-  background-color: #1a73e8;
-  border-radius: 24px;
-  cursor: pointer;
-  font-size: 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
-  transition: background-color 0.2s ease;
-  white-space: nowrap;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.3);
 }
 
 .compose-button:hover {
-  background-color: #1557b0;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.4);
 }
 
-.icon {
-  width: 16px;
-  height: 16px;
-  min-width: 16px;
+.compose-button .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Config button */
+.config-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.3);
+  margin-left: 12px;
+}
+
+.config-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(102, 126, 234, 0.4);
+}
+
+.config-button .icon {
+  width: 18px;
+  height: 18px;
 }
 
 /* Date navigation */

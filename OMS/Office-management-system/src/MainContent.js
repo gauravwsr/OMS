@@ -37,8 +37,8 @@ import Todo from "./Components/Todo-list/Todo";
 import Chat from "./Components/chats/chat";
 import Inbox from "./Components/mail/Inbox";
 import SendEmail from "./Components/mail/SendEmail";
-import EmailManager from "./Components/mail/EmailManager";
 import EmailDetails from "./Components/mail/EmailDetails";
+import EmailConfig from "./Components/mail/EmailConfig";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate.js";
 import CertificateHistory from "./Components/Certificates/CertificateHistory.js";
@@ -839,9 +839,10 @@ const MainContent = ({ nav }) => {
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
           <Route path="/chat" element={<Chat />} />
-          <Route path="/Inbox" element={<EmailManager />} />
+          <Route path="/Inbox" element={<Inbox />} />
           <Route path="/Inbox/send-email" element={<SendEmail />} />
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
+          <Route path="/email-config" element={<EmailConfig />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
           <Route path="/CertificateHistory" element={<CertificateHistory />} />

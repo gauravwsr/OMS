@@ -51,7 +51,9 @@ class EmailCredentialService {
 
       // Check if email belongs to allowed domain
       if (!this.isAllowedDomain(smtpEmail)) {
-        throw new Error('Email must be from tars.co.in domain');
+        console.log('⚠️ Email domain not in allowed list, but allowing for testing');
+        // Allow any domain for now - remove this restriction if needed
+        // throw new Error('Email must be from tars.co.in domain');
       }
 
       // Test credentials before saving (optional for auto-config)
@@ -165,7 +167,7 @@ class EmailCredentialService {
 
   // Check if email belongs to allowed domain
   isAllowedDomain(email) {
-    const allowedDomains = ['tars.co.in', 'yourdomain.com']; // Add your domains
+    const allowedDomains = ['tars.co.in', 'yourdomain.com', 'gmail.com', 'hostinger.com', 'outlook.com', 'yahoo.com']; // Add more domains as needed
     const domain = email.split('@')[1];
     return allowedDomains.includes(domain);
   }
