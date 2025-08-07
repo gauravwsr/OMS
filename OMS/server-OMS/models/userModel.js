@@ -139,6 +139,25 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Email Configuration for Hostinger
+  emailConfig: {
+    smtpEmail: {
+      type: String,
+      default: null, // e.g., user@tars.co.in
+    },
+    smtpPassword: {
+      type: String,
+      default: null, // Encrypted password
+    },
+    isEmailConfigured: {
+      type: Boolean,
+      default: false,
+    },
+    lastEmailSync: {
+      type: Date,
+      default: null,
+    },
+  },
 });
 
 // Hash password before saving

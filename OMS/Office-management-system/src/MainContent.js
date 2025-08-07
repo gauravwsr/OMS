@@ -38,6 +38,7 @@ import Chat from "./Components/chats/chat";
 import Inbox from "./Components/mail/Inbox";
 import SendEmail from "./Components/mail/SendEmail";
 import EmailDetails from "./Components/mail/EmailDetails";
+import EmailConfig from "./Components/mail/EmailConfig";
 import Calender from "./Components/calender/calender";
 import Certificate from "./Components/Certificates/Certificate.js";
 import CertificateHistory from "./Components/Certificates/CertificateHistory.js";
@@ -238,11 +239,6 @@ const MainContent = ({ nav }) => {
         },
       ],
       Employee_Team_Lead: [
-        {
-          path: "/team-lead-dashboard",
-          label: "My Projects",
-          icon: <FiFileText />,
-        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -872,6 +868,7 @@ const MainContent = ({ nav }) => {
           <Route path="/Inbox" element={<Inbox />} />
           <Route path="/Inbox/send-email" element={<SendEmail />} />
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
+          <Route path="/email-config" element={<EmailConfig />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
           <Route path="/CertificateHistory" element={<CertificateHistory />} />

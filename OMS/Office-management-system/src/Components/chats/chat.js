@@ -207,6 +207,23 @@ const Chat = () => {
     };
   }, [user, API_BASE_URL]);
 
+  // Handle window resize for mobile responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      const chatContainer = document.querySelector('.chat-container');
+      if (chatContainer && selectedChat) {
+        if (window.innerWidth <= 768 || window.matchMedia('(max-width: 768px)').matches) {
+          chatContainer.classList.add('mobile-chat-open');
+        } else {
+          chatContainer.classList.remove('mobile-chat-open');
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [selectedChat]);
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {

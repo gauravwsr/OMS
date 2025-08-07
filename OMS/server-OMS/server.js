@@ -23,7 +23,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const connectDB = require("./config/db");
 const trackingRoutes = require("./routes/trackingRoutes");
-// const emailRoutes = require("./routes/emailRoutes");
+const emailRoutes = require("./routes/emailRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
@@ -149,6 +149,9 @@ app.get("/", (req, res) => {
 // Authentication routes
 app.use("/api/auth", authRoutes);
 
+// Email routes (user-specific)
+app.use("/api/emails", emailRoutes);
+
 // User routes
 app.use("/users", userRoutes);
 app.use("/api", userRoutes);
@@ -190,6 +193,9 @@ app.use("/api/team-lead", teamLeadTaskRoutes);
 
 // Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
+
+// Email management routes
+app.use("/api/emails", emailRoutes);
 
 // Certificate management routes
 app.use("/api/certificates", require("./routes/certificateRoutes"));
@@ -279,7 +285,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// IMAP Configuration
+// IMAP Configuration (commented out to prevent connection errors)
+// Only enable if IMAP credentials are properly configured
 const imap = new Imap({
   user: process.env.IMAP_USER,
   password: process.env.IMAP_PASS,
@@ -290,32 +297,47 @@ const imap = new Imap({
   authTimeout: 30000, // Authentication timeout
 });
 
-// Function to connect IMAP
+// Function to connect IMAP (only call when needed)
 function connectImap() {
-  imap.connect();
+  // Only connect if IMAP credentials are available
+  if (process.env.IMAP_USER && process.env.IMAP_PASS && process.env.IMAP_HOST) {
+    console.log("Attempting IMAP connection...");
+    imap.connect();
+  } else {
+    console.log("IMAP credentials not configured, skipping IMAP connection");
+  }
 }
 
 imap.on("error", (err) => {
   console.error("IMAP error:", err);
-  // Attempt to reconnect after a delay
-  setTimeout(connectImap, 5000);
+  // Don't automatically reconnect to prevent infinite timeout loops
+  // setTimeout(connectImap, 5000);
 });
 
 imap.on("end", () => {
-  console.log("IMAP connection ended. Reconnecting...");
-  setTimeout(connectImap, 5000);
+  console.log("IMAP connection ended.");
+  // Don't automatically reconnect to prevent infinite timeout loops
+  // setTimeout(connectImap, 5000);
 });
 
-// Initial connection
-connectImap();
+// Don't automatically connect IMAP on server start
+// connectImap();
 
 // Error handling for uncaught exceptions and unhandled rejections
 process.on("uncaughtException", (err) => {
   console.error("Uncaught exception:", err);
+  // Don't exit the process for IMAP-related errors
+  if (!err.message?.includes('IMAP') && !err.message?.includes('timeout')) {
+    process.exit(1);
+  }
 });
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled rejection:", reason);
+  // Don't exit the process for IMAP-related errors
+  if (!reason?.message?.includes('IMAP') && !reason?.message?.includes('timeout')) {
+    process.exit(1);
+  }
 });
 
 // Send Email Route
@@ -409,23 +431,37 @@ app.get("/fetch-sent-emails", async (req, res) => {
 
 // Fetch Inbox Emails API
 app.get("/fetch-inbox-emails", async (req, res) => {
+  // Check if IMAP is configured
+  if (!process.env.IMAP_USER || !process.env.IMAP_PASS || !process.env.IMAP_HOST) {
+    return res.status(200).send({ 
+      emails: [], 
+      message: "IMAP not configured. No inbox emails available." 
+    });
+  }
+
   const emails = [];
 
   try {
     await new Promise((resolve, reject) => {
+      // Set a timeout for the entire operation
+      const operationTimeout = setTimeout(() => {
+        reject(new Error("IMAP operation timed out"));
+      }, 10000); // 10 second timeout
+
       imap.once("ready", () => {
+        clearTimeout(operationTimeout);
         const folderToOpen = "INBOX";
 
         imap.openBox(folderToOpen, true, (err, box) => {
           if (err)
             return reject(
-              `new Error(Error opening folder '${folderToOpen}': ${err.message})`
+              new Error(`Error opening folder '${folderToOpen}': ${err.message}`)
             );
 
           imap.search(["ALL"], (err, results) => {
             if (err)
               return reject(
-                `new Error(Error searching emails: ${err.message})`
+                new Error(`Error searching emails: ${err.message}`)
               );
 
             if (results.length === 0) {
@@ -463,20 +499,32 @@ app.get("/fetch-inbox-emails", async (req, res) => {
         });
       });
 
-      imap.once("error", (err) =>
-        reject(new Error(`IMAP connection error: ${err.message}`))
-      );
-      imap.once("end", () => console.log("IMAP connection closed."));
-      imap.connect();
+      imap.once("error", (err) => {
+        clearTimeout(operationTimeout);
+        reject(new Error(`IMAP connection error: ${err.message}`));
+      });
+      
+      imap.once("end", () => {
+        clearTimeout(operationTimeout);
+        console.log("IMAP connection closed.");
+      });
+      
+      // Only try to connect if not already connected
+      if (imap.state !== 'authenticated') {
+        connectImap();
+      }
     });
 
     emails.sort((a, b) => new Date(b.date) - new Date(a.date));
     res.status(200).send({ emails });
   } catch (err) {
     console.error("Error fetching inbox emails:", err);
-    res
-      .status(500)
-      .send({ message: "Error fetching inbox emails", error: err.message });
+    // Return empty array instead of error for better UX
+    res.status(200).send({ 
+      emails: [], 
+      message: "Could not fetch inbox emails. IMAP service may be unavailable.",
+      error: err.message 
+    });
   }
 });
 

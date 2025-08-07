@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // import React, { useState } from 'react';
 
 // const SendEmail = () => {
@@ -197,6 +198,11 @@
 import React, { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import "./SendEmail.css";
+=======
+import React, { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import './SendEmail.css';
+>>>>>>> f352f76c519260eac44ee5a784da470c43b78238
 
 const SendEmail = () => {
   const [email, setEmail] = useState("");
@@ -227,12 +233,24 @@ const SendEmail = () => {
     };
 
     try {
+<<<<<<< HEAD
       const response = await fetch("http://localhost:5001/api/save-draft", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+=======
+      const response = await fetch('http://localhost:5001/api/emails/save-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+>>>>>>> f352f76c519260eac44ee5a784da470c43b78238
         },
-        body: JSON.stringify(draftData),
+        body: JSON.stringify({
+          to: email,
+          subject: subject,
+          body: body
+        })
       });
 
       const data = await response.json();
@@ -268,9 +286,23 @@ const SendEmail = () => {
     }
 
     try {
+<<<<<<< HEAD
       const response = await fetch("http://localhost:5001/api/send-email", {
         method: "POST",
         body: formData,
+=======
+      const response = await fetch('http://localhost:5001/api/emails/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          to: email,
+          subject: subject,
+          body: body
+        })
+>>>>>>> f352f76c519260eac44ee5a784da470c43b78238
       });
 
       const data = await response.json();

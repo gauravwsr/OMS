@@ -678,6 +678,27 @@
     height: calc(100vh - 35px);
   }
 
+  /* Default mobile view - show sidebar, hide chat area */
+  .chat-area {
+    display: none;
+  }
+  
+  .sidebar {
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  /* Mobile chat open state */
+  .chat-container.mobile-chat-open .sidebar {
+    display: none !important;
+  }
+  
+  .chat-container.mobile-chat-open .chat-area {
+    display: block !important;
+    width: 100% !important;
+    height: calc(100vh - 35px) !important;
+  }
+
   .chat-container.mobile-chat-open .chat-area {
     height: calc(100vh - 35px);
   }

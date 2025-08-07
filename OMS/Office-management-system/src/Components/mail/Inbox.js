@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // import { useState, useEffect } from "react";
 // import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
 // import Navbar from "../Navbar";
@@ -216,8 +217,21 @@ import InboxSection from "./InboxSection";
 import SentSection from "./SentSection";
 import DraftSection from "./DraftSection";
 import "./Inbox.css";
+=======
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Pencil, Settings } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthProvider/AuthContext';
+import SearchBar from "../Search-bar/SearchBar";
+import InboxSection from './InboxSection';
+import SentSection from './SentSection';
+import DraftSection from './DraftSection';
+import EmailConfig from './EmailConfig';
+import './Inbox.css';
+>>>>>>> f352f76c519260eac44ee5a784da470c43b78238
 
 const Inbox = () => {
+  const { user } = useAuth();
   const [sentEmails, setSentEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState([]);
@@ -228,13 +242,15 @@ const Inbox = () => {
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
+  const [isEmailConfigured, setIsEmailConfigured] = useState(false);
+  const [checkingConfig, setCheckingConfig] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchEmails = async () => {
-      setLoading(true);
-      setError(null);
+    checkEmailConfiguration();
+  }, []);
 
+<<<<<<< HEAD
       let url = "";
       if (activeTab === "inbox") {
         url = "http://localhost:5001/fetch-inbox-emails";
@@ -250,8 +266,20 @@ const Inbox = () => {
 
         if (!res.ok) {
           throw new Error(data.message || "Failed to fetch data");
+=======
+  const checkEmailConfiguration = async () => {
+    setCheckingConfig(true);
+    try {
+      const response = await fetch('http://localhost:5001/api/emails/check-config', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+>>>>>>> f352f76c519260eac44ee5a784da470c43b78238
         }
+      });
 
+<<<<<<< HEAD
         if (activeTab === "inbox") {
           setEmails(data.emails || []);
           setFilteredEmails(data.emails || []);
@@ -265,11 +293,39 @@ const Inbox = () => {
         setError(`Failed to fetch ${activeTab} emails`);
       } finally {
         setLoading(false);
+=======
+      const data = await response.json();
+      if (response.ok && data.configured) {
+        setIsEmailConfigured(true);
+>>>>>>> f352f76c519260eac44ee5a784da470c43b78238
       }
-    };
+    } catch (error) {
+      console.error('Error checking email configuration:', error);
+    } finally {
+      setCheckingConfig(false);
+    }
+  };
 
-    fetchEmails();
-  }, [activeTab]);
+  const handleEmailConfigured = () => {
+    setIsEmailConfigured(true);
+    // Refresh the email configuration check and reload emails
+    setTimeout(() => {
+      checkEmailConfiguration();
+      if (isEmailConfigured) {
+        fetchEmails();
+      }
+    }, 500);
+  };
+
+  const handleEditConfig = () => {
+    navigate('../email-config');
+  };
+
+  useEffect(() => {
+    if (isEmailConfigured) {
+      fetchEmails();
+    }
+  }, [activeTab, isEmailConfigured]);
 
   useEffect(() => {
     const filterEmails = () => {
@@ -309,6 +365,76 @@ const Inbox = () => {
 
     setFilteredEmails(filterEmails());
   }, [searchTerm, emails, sentEmails, drafts, activeTab]);
+
+  const fetchEmails = async () => {
+    setLoading(true);
+    setError(null);
+
+    const token = localStorage.getItem('token');
+    let url = '';
+    if (activeTab === 'inbox') {
+      url = 'http://localhost:5001/api/emails/inbox';
+    } else if (activeTab === 'sent') {
+      url = 'http://localhost:5001/api/emails/sent';
+    } else if (activeTab === 'drafts') {
+      url = 'http://localhost:5001/api/emails/drafts';
+    }
+
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch data');
+      }
+
+      if (activeTab === 'inbox') {
+        setEmails(data.emails || []);
+        setFilteredEmails(data.emails || []);
+      } else if (activeTab === 'sent') {
+        setSentEmails(data.emails || []);
+      } else if (activeTab === 'drafts') {
+        setDrafts(data.emails || data || []);
+      }
+    } catch (err) {
+      console.error(`Error fetching ${activeTab} emails:`, err);
+      // More specific error handling
+      if (err.message.includes('Email not configured')) {
+        setIsEmailConfigured(false);
+        setError('Please configure your email settings first');
+      } else if (err.message.includes('timeout') || err.message.includes('IMAP')) {
+        setError(`Connection timeout. Please check your internet connection and email server settings.`);
+      } else {
+        setError(`Failed to fetch ${activeTab} emails: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show email configuration if not configured
+  if (checkingConfig) {
+    return (
+      <div className="meetings-container">
+        <div className="loading-message">Checking email configuration...</div>
+      </div>
+    );
+  }
+
+  // Show full page config if email is not configured
+  if (!isEmailConfigured) {
+    return (
+      <div className="meetings-container">
+        <EmailConfig onConfigured={handleEmailConfigured} />
+      </div>
+    );
+  }
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -392,6 +518,11 @@ const Inbox = () => {
         <button className="compose-button" onClick={handleComposeClick}>
           <Pencil className="icon" />
           Compose
+        </button>
+
+        <button className="config-button" onClick={handleEditConfig}>
+          <Settings className="icon" />
+          Email Config
         </button>
       </div>
 
