@@ -48,6 +48,7 @@ const certificateRoutes = require("./routes/certificateRoutes");
 const completionRoutes = require("./routes/completionRoutes");
 const offerRoutes = require("./routes/offerRoutes");
 const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
+const meetingRoutes = require("./routes/meetingRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -197,6 +198,9 @@ app.use("/api/offers", require("./routes/offerRoutes"));
 
 // Charge Handover routes
 app.use("/api/charge-handovers", chargeHandoverRoutes);
+
+// Meeting routes (role-based video conferencing)
+app.use("/api/meetings", meetingRoutes);
 
 // mouse tracking
 // app.use("/api", trackingRoutes);

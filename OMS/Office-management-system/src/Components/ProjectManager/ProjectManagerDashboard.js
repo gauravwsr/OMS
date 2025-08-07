@@ -26,7 +26,7 @@ import {
   FaPhone,
   FaFlag,
   FaMapMarkerAlt,
-  FaLock,
+ 
   FaUser,
 } from "react-icons/fa";
 import "./ProjectManagerDashboard.css";
@@ -2167,7 +2167,7 @@ const ProjectManagerDashboard = () => {
                     <span>Updated: {formatDate(project.updatedAt)}</span>
                   </div>
                   <div className="meta-item">
-                    <FaLock />
+                    
                     <span>
                       Password: {project.projectPassword || "Not Set"}
                     </span>

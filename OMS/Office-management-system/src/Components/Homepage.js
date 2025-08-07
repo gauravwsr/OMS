@@ -256,41 +256,8 @@ const NewDashboard = () => {
       <div className="dashboard-wrapper">
         <div className="dashboard-container-new">
           <div className="dashboard-main">
-            {/* Enhanced Header */}
-            {/* <header className="dashboard-header-modern">
-              <div className="header-content">
-                <div className="greeting-section">
-                  <div className="greeting-text">
-                    <h1 className="main-greeting">
-                      {getGreeting()}
-                      {user ? `, ${user.name.split(" ")[0]}` : ""}!
-                    </h1>
-                    <p className="welcome-subtitle">
-                      Welcome back to your workspace
-                    </p>
-                  </div>
-                  <div className="header-stats">
-                    <div className="current-time">
-                      <div className="time-icon">🕐</div>
-                      <div className="time-info">
-                        <span className="time-label">Current Time</span>
-                        <span className="time-value">{formatTime()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="date-section">
-                  <div className="date-card">
-                    <div className="date-icon">📅</div>
-                    <div className="date-info">
-                      <span className="date-value">{formatDate()}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </header> */}
-
-{/* Enhanced User Profile Card */}
+            
+          {/* Enhanced User Profile Card */}
               <div className="profile-section">
                 <h2 className="section-title">
                   <span className="title-icon">👤</span>
@@ -354,7 +321,7 @@ const NewDashboard = () => {
                   </div>
                 </div>
               </div>
-
+              
             <div className="dashboard-content">
               {/* Enhanced Quick Stats */}
               <div className="stats-section">

@@ -15,7 +15,6 @@ import {
   FaEnvelope,
   FaChartLine,
   FaMapMarkerAlt,
-  FaLock,
   FaTimes,
   FaClock,
   FaUser,

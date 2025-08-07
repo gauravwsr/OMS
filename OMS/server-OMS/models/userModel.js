@@ -129,6 +129,12 @@ const UserSchema = new mongoose.Schema({
   organizationalSpecialization: {
     type: String, // Specialization (Hardware Support, etc.)
   },
+  // Team assignment for meeting access control
+  team: {
+    type: String,
+    trim: true,
+    default: null,
+  },
   lastLogin: {
     type: Date,
     default: Date.now,
