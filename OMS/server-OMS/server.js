@@ -42,6 +42,7 @@ const ScheduleEventData = require("./models/calenderModel"); // Add this for cle
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const attendanceTimeValidationRoutes = require("./routes/attendanceTimeValidationRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
@@ -180,6 +181,9 @@ app.use("/api/analytics", analyticsRoutes);
 
 // Attendance routes
 app.use("/api/attendance", attendanceRoutes);
+
+// Attendance time validation testing routes
+app.use("/api/attendance-validation", attendanceTimeValidationRoutes);
 
 // Direct route for registered users (for backward compatibility)
 const { getRegisteredUsersAPI } = require("./controllers/attendanceController");

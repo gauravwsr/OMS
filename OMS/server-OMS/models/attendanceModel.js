@@ -127,6 +127,41 @@ const attendanceSchema = new mongoose.Schema(
       default: "automatic",
     },
 
+    // Time validation and attendance rules
+    isHalfDay: {
+      type: Boolean,
+      default: false,
+    },
+    isLateAttendance: {
+      type: Boolean,
+      default: false,
+    },
+    isAbsent: {
+      type: Boolean,
+      default: false,
+    },
+    checkInTimeCategory: {
+      type: String,
+      enum: ["on_time", "late", "very_late", "absent"],
+      default: "on_time",
+    },
+    timeValidation: {
+      currentTime: String,
+      currentDateTime: String,
+      isAllowed: Boolean,
+      message: String,
+      type: String,
+      timezone: {
+        type: String,
+        default: "Asia/Kolkata",
+      },
+    },
+
+    // Extended metadata
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+
     // Admin fields
     approved_by: {
       type: mongoose.Schema.Types.ObjectId,

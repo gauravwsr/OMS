@@ -3,7 +3,7 @@
   padding: 1.5rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .analytics-header {
@@ -381,8 +381,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-container p {
@@ -904,43 +908,46 @@
   .analytics-table {
     font-size: 0.85rem;
   }
-  
-  .employee-details, .approval-details {
+
+  .employee-details,
+  .approval-details {
     min-width: 150px;
   }
-  
+
   .reason-content {
     max-width: 150px;
   }
 }
 
 @media (max-width: 768px) {
-  .analytics-table th, .analytics-table td {
+  .analytics-table th,
+  .analytics-table td {
     padding: 0.5rem 0.25rem;
     font-size: 0.8rem;
   }
-  
+
   .employee-name {
     font-size: 0.9rem;
   }
-  
-  .employee-id, .employee-dept {
+
+  .employee-id,
+  .employee-dept {
     font-size: 0.7rem;
     padding: 0.1rem 0.4rem;
   }
-  
+
   .leave-type-badge {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     min-width: 80px;
   }
-  
+
   .header-actions {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .quick-stats {
     justify-content: center;
   }
@@ -956,7 +963,7 @@
 }
 
 .quick-stat {
-  background: linear-gradient(135deg, #ffb347 0%,  100%);
+  background: linear-gradient(135deg, #ffb347 0%, 100%);
   color: #2d3748;
   font-weight: 700;
   font-size: 1.15rem;
@@ -1062,4 +1069,412 @@
   background: linear-gradient(135deg, #f953c6, #b91d73);
   color: #fff;
   border-color: #f953c6;
+}
+
+/* Enhanced Analytics Styles */
+.analytics-filters {
+  align-items: flex-end;
+}
+
+.filter-group {
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.date-input,
+.employee-select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.date-input:focus,
+.employee-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.employee-select {
+  min-width: 200px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.refresh-btn,
+.reset-btn,
+.retry-btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reset-btn,
+.retry-btn {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  color: white;
+}
+
+.reset-btn:hover,
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+}
+
+/* Enhanced Stat Cards */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-subtext {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.25rem;
+  display: block;
+  font-weight: 500;
+}
+
+/* Enhanced Table Badges */
+.days-badge,
+.checkin-badge,
+.checkout-badge,
+.complete-days-badge,
+.hours-badge,
+.total-hours-badge,
+.records-count-badge,
+.date-badge,
+.time-badge,
+.method-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 40px;
+}
+
+.days-badge {
+  background: linear-gradient(135deg, #e6fffa, #81e6d9);
+  color: #234e52;
+  border: 1px solid #81e6d9;
+}
+
+.checkin-badge {
+  background: linear-gradient(135deg, #e6fffa, #4fd1c7);
+  color: #065f46;
+  border: 1px solid #4fd1c7;
+}
+
+.checkout-badge {
+  background: linear-gradient(135deg, #fed7e2, #f687b3);
+  color: #97266d;
+  border: 1px solid #f687b3;
+}
+
+.complete-days-badge.good {
+  background: linear-gradient(135deg, #d4edda, #28a745);
+  color: white;
+  border: 1px solid #28a745;
+}
+
+.complete-days-badge.poor {
+  background: linear-gradient(135deg, #f8d7da, #dc3545);
+  color: white;
+  border: 1px solid #dc3545;
+}
+
+.hours-badge,
+.total-hours-badge {
+  background: linear-gradient(135deg, #fff3cd, #ffc107);
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.absent-badge.high {
+  background: linear-gradient(135deg, #f8d7da, #dc3545);
+  color: white;
+  border: 1px solid #dc3545;
+}
+
+.absent-badge.normal {
+  background: linear-gradient(135deg, #fff3cd, #ffc107);
+  color: #856404;
+  border: 1px solid #ffc107;
+}
+
+.date-badge {
+  background: linear-gradient(135deg, #e6f3ff, #3182ce);
+  color: white;
+  border: 1px solid #3182ce;
+}
+
+.time-badge {
+  background: linear-gradient(135deg, #f0fff4, #48bb78);
+  color: #22543d;
+  border: 1px solid #48bb78;
+  font-family: "Courier New", monospace;
+}
+
+.late-time .time-badge {
+  background: linear-gradient(135deg, #fed7e2, #e53e3e);
+  color: white;
+  border: 1px solid #e53e3e;
+}
+
+.method-badge {
+  background: linear-gradient(135deg, #edf2f7, #718096);
+  color: white;
+  border: 1px solid #718096;
+  font-size: 0.7rem;
+  margin: 0.1rem;
+}
+
+.records-count-badge {
+  background: linear-gradient(135deg, #f7fafc, #4a5568);
+  color: white;
+  border: 1px solid #4a5568;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+/* Status badges for check-in/out */
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.status-badge.full-day {
+  background: linear-gradient(135deg, #d4edda, #28a745);
+  color: white;
+}
+
+.status-badge.partial-day {
+  background: linear-gradient(135deg, #fff3cd, #ffc107);
+  color: #856404;
+}
+
+.status-badge.present-\(no-check-out\) {
+  background: linear-gradient(135deg, #cce5ff, #007bff);
+  color: white;
+}
+
+.status-badge.incomplete,
+.status-badge.invalid-\(no-check-in\) {
+  background: linear-gradient(135deg, #f8d7da, #dc3545);
+  color: white;
+}
+
+/* Punctuality badges */
+.punctuality-badge.on-time {
+  background: linear-gradient(135deg, #d4edda, #28a745);
+  color: white;
+}
+
+.punctuality-badge.slightly-late {
+  background: linear-gradient(135deg, #fff3cd, #ffc107);
+  color: #856404;
+}
+
+.punctuality-badge.late {
+  background: linear-gradient(135deg, #f8d7da, #dc3545);
+  color: white;
+}
+
+/* Hours badge variants */
+.hours-badge.full-day {
+  background: linear-gradient(135deg, #d4edda, #28a745);
+  color: white;
+}
+
+.hours-badge.partial-day {
+  background: linear-gradient(135deg, #fff3cd, #ffc107);
+  color: #856404;
+}
+
+/* Top Performers Section */
+.top-performers-section {
+  margin-top: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.top-performers-section h3 {
+  color: #2d3748;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.performers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.performer-card {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.performer-card:hover {
+  transform: translateY(-2px);
+}
+
+.performer-rank {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.performer-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+}
+
+.performer-info p {
+  margin: 0 0 0.5rem 0;
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+.performer-stats {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.performer-stats .attendance-percent {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.performer-stats .attendance-days {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+/* Error container improvements */
+.error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: rgba(248, 215, 218, 0.95);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+/* No data message improvements */
+.no-data-message {
+  text-align: center;
+  padding: 2rem;
+}
+
+.no-data-message span {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.no-data-message p {
+  font-size: 1.1rem;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.no-data-message small {
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Employee info in tables */
+.employee-info {
+  text-align: left;
+}
+
+.employee-info strong {
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.employee-info small {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+/* Method info styling */
+.method-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* Last attendance styling */
+.last-attendance {
+  background: linear-gradient(135deg, #edf2f7, #a0aec0);
+  color: #2d3748;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
