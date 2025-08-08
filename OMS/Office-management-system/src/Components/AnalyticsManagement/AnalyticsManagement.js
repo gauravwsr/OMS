@@ -26,6 +26,12 @@ const AnalyticsManagement = () => {
     totalLeaves: 0,
     averageAttendance: 0,
     topPerformers: [],
+    checkInOutStats: {
+      totalRecords: 0,
+      onTimeCount: 0,
+      lateCount: 0,
+      avgWorkingHours: 0,
+    },
   });
 
   useEffect(() => {
@@ -39,11 +45,14 @@ const AnalyticsManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5001/api/users/all-users', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setEmployees(response.data.filter(user => user.role === 'Employee'));
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:5001/api/users/all-users",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setEmployees(response.data.filter((user) => user.role === "Employee"));
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
@@ -93,8 +102,11 @@ const AnalyticsManagement = () => {
 
   const fetchLeaveData = async (config) => {
     try {
-      const response = await axios.get('http://localhost:5001/api/analytics/leave-analytics', config);
-      console.log('Fetched Leave Data:', response.data); // Debugging log
+      const response = await axios.get(
+        "http://localhost:5001/api/analytics/leave-analytics",
+        config
+      );
+      console.log("Fetched Leave Data:", response.data); // Debugging log
       setLeaveData(response.data || []);
     } catch (error) {
       console.error("Error fetching leave data:", error);
@@ -104,7 +116,10 @@ const AnalyticsManagement = () => {
 
   const fetchAttendanceData = async (config) => {
     try {
-      const response = await axios.get('http://localhost:5001/api/analytics/attendance-analytics', config);
+      const response = await axios.get(
+        "http://localhost:5001/api/analytics/attendance-analytics",
+        config
+      );
       setAttendanceData(response.data || []);
     } catch (error) {
       console.error("Error fetching attendance data:", error);
@@ -114,7 +129,10 @@ const AnalyticsManagement = () => {
 
   const fetchCheckInOutData = async (config) => {
     try {
-      const response = await axios.get('http://localhost:5001/api/analytics/checkinout-analytics', config);
+      const response = await axios.get(
+        "http://localhost:5001/api/analytics/checkinout-analytics",
+        config
+      );
       setCheckInOutData(response.data || []);
     } catch (error) {
       console.error("Error fetching check-in/out data:", error);
@@ -124,23 +142,84 @@ const AnalyticsManagement = () => {
 
   const fetchAnalytics = async (config) => {
     try {
-      const analyticsData = {
+      // Calculate analytics based on the current active tab and fetched data
+      let calculatedAnalytics = {
         totalEmployees: employees.length,
         totalLeaves: leaveData.length,
-        averageAttendance:
-          attendanceData.length > 0
-            ? Math.round(
-                attendanceData.reduce(
-                  (acc, emp) => acc + emp.attendancePercentage,
-                  0
-                ) / attendanceData.length
-              )
-            : 0,
-        topPerformers: attendanceData
-          .sort((a, b) => b.attendancePercentage - a.attendancePercentage)
-          .slice(0, 5),
+        averageAttendance: 0,
+        topPerformers: [],
+        checkInOutStats: {
+          totalRecords: 0,
+          onTimeCount: 0,
+          lateCount: 0,
+          avgWorkingHours: 0,
+        },
       };
-      setAnalytics(analyticsData);
+
+      // Calculate attendance analytics
+      if (attendanceData.length > 0) {
+        const totalAttendancePercentage = attendanceData.reduce(
+          (acc, emp) => acc + (emp.attendancePercentage || 0),
+          0
+        );
+        calculatedAnalytics.averageAttendance = Math.round(
+          totalAttendancePercentage / attendanceData.length
+        );
+
+        calculatedAnalytics.topPerformers = attendanceData
+          .filter((emp) => emp.attendancePercentage >= 85)
+          .sort((a, b) => b.attendancePercentage - a.attendancePercentage)
+          .slice(0, 5)
+          .map((emp) => ({
+            name: emp.employeeName,
+            percentage: emp.attendancePercentage,
+            department: emp.department,
+            totalDays: emp.totalDays,
+            presentDays: emp.presentDays,
+          }));
+      }
+
+      // Calculate check-in/out analytics
+      if (checkInOutData.length > 0) {
+        calculatedAnalytics.checkInOutStats.totalRecords =
+          checkInOutData.length;
+
+        calculatedAnalytics.checkInOutStats.onTimeCount = checkInOutData.filter(
+          (record) => record.punctuality === "On Time"
+        ).length;
+
+        calculatedAnalytics.checkInOutStats.lateCount = checkInOutData.filter(
+          (record) =>
+            record.punctuality === "Late" ||
+            record.punctuality === "Slightly Late"
+        ).length;
+
+        // Calculate average working hours
+        const recordsWithHours = checkInOutData.filter(
+          (record) =>
+            record.totalHours &&
+            record.totalHours !== "N/A" &&
+            record.status !== "Incomplete"
+        );
+
+        if (recordsWithHours.length > 0) {
+          const totalHours = recordsWithHours.reduce((acc, record) => {
+            // Parse hours from format like "8h 30m"
+            const match = record.totalHours.match(/(\d+)h\s*(\d+)?m?/);
+            if (match) {
+              const hours = parseInt(match[1]) || 0;
+              const minutes = parseInt(match[2]) || 0;
+              return acc + hours + minutes / 60;
+            }
+            return acc;
+          }, 0);
+
+          calculatedAnalytics.checkInOutStats.avgWorkingHours =
+            Math.round((totalHours / recordsWithHours.length) * 10) / 10;
+        }
+      }
+
+      setAnalytics(calculatedAnalytics);
     } catch (error) {
       console.error("Error calculating analytics:", error);
     }
@@ -151,23 +230,27 @@ const AnalyticsManagement = () => {
     let fileName = "";
 
     switch (activeTab) {
-      case 'leave':
-        dataToExport = leaveData.map(leave => ({
-          'Employee Name': leave.employeeName || leave.name || 'Unknown',
-          'Employee ID': leave.employeeId || 'N/A',
-          'Employee Email': leave.employeeEmail || leave.email || 'N/A',
-          'Department': leave.department || 'General',
-          'Leave Type': leave.leaveType,
-          'Start Date': new Date(leave.startDate).toLocaleDateString('en-IN'),
-          'End Date': new Date(leave.endDate).toLocaleDateString('en-IN'),
-          'Total Days': leave.totalDays,
-          'Reason': leave.reason,
-          'Status': leave.status,
-          'Applied Date': new Date(leave.appliedDate || leave.createdAt).toLocaleDateString('en-IN'),
-          'Approved By': leave.approvedBy || 'Pending',
-          'Approved Date': leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A',
-          'Comments': leave.comments || 'N/A',
-          'Emergency Contact': leave.emergencyContact || 'N/A',
+      case "leave":
+        dataToExport = leaveData.map((leave) => ({
+          "Employee Name": leave.employeeName || leave.name || "Unknown",
+          "Employee ID": leave.employeeId || "N/A",
+          "Employee Email": leave.employeeEmail || leave.email || "N/A",
+          Department: leave.department || "General",
+          "Leave Type": leave.leaveType,
+          "Start Date": new Date(leave.startDate).toLocaleDateString("en-IN"),
+          "End Date": new Date(leave.endDate).toLocaleDateString("en-IN"),
+          "Total Days": leave.totalDays,
+          Reason: leave.reason,
+          Status: leave.status,
+          "Applied Date": new Date(
+            leave.appliedDate || leave.createdAt
+          ).toLocaleDateString("en-IN"),
+          "Approved By": leave.approvedBy || "Pending",
+          "Approved Date": leave.approvedDate
+            ? new Date(leave.approvedDate).toLocaleDateString("en-IN")
+            : "N/A",
+          Comments: leave.comments || "N/A",
+          "Emergency Contact": leave.emergencyContact || "N/A",
         }));
         fileName = "Employee_Leave_Applications_Report";
         break;
@@ -177,13 +260,28 @@ const AnalyticsManagement = () => {
           "Employee Name": att.employeeName,
           Email: att.email,
           Department: att.department,
-          "Total Days": att.totalDays,
-          "Present Days": Math.min(att.presentDays, att.totalDays),
-          "Absent Days": Math.max(att.absentDays, 0),
+          "Working Days": att.totalDays,
+          "Present Days": att.presentDays,
+          "Absent Days": att.absentDays,
           "Attendance Percentage": `${Math.min(
             att.attendancePercentage,
             100
           )}%`,
+          "Check-in Days": att.checkInDays || 0,
+          "Check-out Days": att.checkOutDays || 0,
+          "Complete Work Days": att.completeWorkDays || 0,
+          "Average Hours/Day": `${att.avgWorkingHours || 0}h`,
+          "Total Working Hours": `${att.totalWorkingHours || 0}h`,
+          "Performance Rating":
+            att.attendancePercentage >= 90
+              ? "Excellent"
+              : att.attendancePercentage >= 70
+              ? "Good"
+              : "Needs Improvement",
+          "Last Attendance": att.lastAttendance
+            ? new Date(att.lastAttendance).toLocaleDateString("en-IN")
+            : "N/A",
+          "Records Count": att.attendanceRecordsCount || 0,
         }));
         fileName = "Employee_Attendance_Report";
         break;
@@ -192,11 +290,18 @@ const AnalyticsManagement = () => {
         dataToExport = checkInOutData.map((record) => ({
           "Employee Name": record.employeeName,
           Email: record.email,
+          Department: record.department,
           Date: record.date,
           "Check In": record.checkIn,
           "Check Out": record.checkOut,
           "Total Hours": record.totalHours,
           Status: record.status,
+          Punctuality: record.punctuality,
+          "Check-in Method": record.checkInMethod,
+          "Check-out Method": record.checkOutMethod,
+          "Has Check-in": record.hasCheckIn ? "Yes" : "No",
+          "Has Check-out": record.hasCheckOut ? "Yes" : "No",
+          "Records Count": record.recordsCount,
         }));
         fileName = "Employee_CheckInOut_Report";
         break;
@@ -449,31 +554,85 @@ const AnalyticsManagement = () => {
         <div className="stat-card">
           <h3>Total Employees</h3>
           <p className="stat-number">{attendanceData.length}</p>
+          <span className="stat-subtext">In selected period</span>
         </div>
         <div className="stat-card">
           <h3>Average Attendance</h3>
           <p className="stat-number">{analytics.averageAttendance}%</p>
+          <span className="stat-subtext">Overall performance</span>
         </div>
         <div className="stat-card">
           <h3>High Performers</h3>
           <p className="stat-number">
             {attendanceData.filter((a) => a.attendancePercentage >= 90).length}
           </p>
+          <span className="stat-subtext">≥90% attendance</span>
         </div>
         <div className="stat-card">
           <h3>Low Attendance</h3>
           <p className="stat-number">
             {attendanceData.filter((a) => a.attendancePercentage < 70).length}
           </p>
+          <span className="stat-subtext">&lt;70% attendance</span>
+        </div>
+        <div className="stat-card">
+          <h3>Complete Work Days</h3>
+          <p className="stat-number">
+            {attendanceData.reduce(
+              (acc, emp) => acc + (emp.completeWorkDays || 0),
+              0
+            )}
+          </p>
+          <span className="stat-subtext">Full 8+ hour days</span>
+        </div>
+        <div className="stat-card">
+          <h3>Total Working Hours</h3>
+          <p className="stat-number">
+            {Math.round(
+              attendanceData.reduce(
+                (acc, emp) => acc + (emp.totalWorkingHours || 0),
+                0
+              )
+            )}
+            h
+          </p>
+          <span className="stat-subtext">Across all employees</span>
         </div>
       </div>
 
       <div className="data-table-container">
         <div className="table-header">
-          <h3>Attendance Details</h3>
-          <button onClick={downloadExcel} className="download-btn">
-            📊 Download Excel
-          </button>
+          <h3>Detailed Attendance Analytics</h3>
+          <div className="header-actions">
+            <div className="quick-stats">
+              <span className="quick-stat">
+                Period:{" "}
+                <strong style={{ color: "#764ba2" }}>
+                  {new Date(dateRange.startDate).toLocaleDateString("en-IN")} -{" "}
+                  {new Date(dateRange.endDate).toLocaleDateString("en-IN")}
+                </strong>
+              </span>
+              <span className="quick-stat">
+                Avg Working Hours:{" "}
+                <strong style={{ color: "#48bb78" }}>
+                  {attendanceData.length > 0
+                    ? Math.round(
+                        (attendanceData.reduce(
+                          (acc, emp) => acc + (emp.avgWorkingHours || 0),
+                          0
+                        ) /
+                          attendanceData.length) *
+                          10
+                      ) / 10
+                    : 0}
+                  h/day
+                </strong>
+              </span>
+            </div>
+            <button onClick={downloadExcel} className="download-btn">
+              📊 Download Excel
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="analytics-table">
@@ -481,47 +640,60 @@ const AnalyticsManagement = () => {
               <tr>
                 <th>Employee</th>
                 <th>Department</th>
-                <th>Total Days</th>
+                <th>Working Days</th>
                 <th>Present Days</th>
                 <th>Absent Days</th>
                 <th>Attendance %</th>
+                <th>Check-ins</th>
+                <th>Check-outs</th>
+                <th>Complete Days</th>
+                <th>Avg Hours/Day</th>
+                <th>Total Hours</th>
                 <th>Performance</th>
+                <th>Last Attendance</th>
               </tr>
             </thead>
             <tbody>
-              {attendanceData.map((att, index) => (
-                <tr key={index}>
-                  <td>{att.employeeName}</td>
-                  <td>{att.department}</td>
-                  <td>{att.totalDays}</td>
-                  <td>
-                    <span
-                      className={
-                        att.attendancePercentage >= 100
-                          ? "present-badge excellent"
-                          : att.attendancePercentage >= 80
-                          ? "present-badge good"
-                          : "present-badge poor"
-                      }
-                    >
-                      {Math.min(att.presentDays, att.totalDays)}
-                    </span>
-                  </td>
-                  <td>{Math.max(att.absentDays, 0)}</td>
-                  <td
-                    className={`attendance-percent ${
-                      att.attendancePercentage >= 90
-                        ? "excellent"
-                        : att.attendancePercentage >= 70
-                        ? "good"
-                        : "poor"
-                    }`}
-                  >
-                    {Math.min(att.attendancePercentage, 100)}%
-                  </td>
-                  <td>
-                    <span
-                      className={`performance-badge ${
+              {attendanceData.length > 0 ? (
+                attendanceData.map((att, index) => (
+                  <tr key={index}>
+                    <td>
+                      <div className="employee-info">
+                        <strong>{att.employeeName}</strong>
+                        <br />
+                        <small style={{ color: "#666" }}>{att.email}</small>
+                      </div>
+                    </td>
+                    <td>{att.department}</td>
+                    <td>
+                      <span className="days-badge">{att.totalDays}</span>
+                    </td>
+                    <td>
+                      <span
+                        className={
+                          att.attendancePercentage >= 90
+                            ? "present-badge excellent"
+                            : att.attendancePercentage >= 80
+                            ? "present-badge good"
+                            : "present-badge poor"
+                        }
+                      >
+                        {att.presentDays}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={
+                          att.absentDays > 5
+                            ? "absent-badge high"
+                            : "absent-badge normal"
+                        }
+                      >
+                        {att.absentDays}
+                      </span>
+                    </td>
+                    <td
+                      className={`attendance-percent ${
                         att.attendancePercentage >= 90
                           ? "excellent"
                           : att.attendancePercentage >= 70
@@ -529,19 +701,110 @@ const AnalyticsManagement = () => {
                           : "poor"
                       }`}
                     >
-                      {att.attendancePercentage >= 90
-                        ? "Excellent"
-                        : att.attendancePercentage >= 70
-                        ? "Good"
-                        : "Needs Improvement"}
-                    </span>
+                      {Math.min(att.attendancePercentage, 100)}%
+                    </td>
+                    <td>
+                      <span className="checkin-badge">
+                        {att.checkInDays || 0}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="checkout-badge">
+                        {att.checkOutDays || 0}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`complete-days-badge ${
+                          (att.completeWorkDays || 0) >= att.presentDays * 0.8
+                            ? "good"
+                            : "poor"
+                        }`}
+                      >
+                        {att.completeWorkDays || 0}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="hours-badge">
+                        {att.avgWorkingHours || 0}h
+                      </span>
+                    </td>
+                    <td>
+                      <span className="total-hours-badge">
+                        {att.totalWorkingHours || 0}h
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`performance-badge ${
+                          att.attendancePercentage >= 90
+                            ? "excellent"
+                            : att.attendancePercentage >= 70
+                            ? "good"
+                            : "poor"
+                        }`}
+                      >
+                        {att.attendancePercentage >= 90
+                          ? "Excellent"
+                          : att.attendancePercentage >= 70
+                          ? "Good"
+                          : "Needs Improvement"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="last-attendance">
+                        {att.lastAttendance
+                          ? new Date(att.lastAttendance).toLocaleDateString(
+                              "en-IN"
+                            )
+                          : "N/A"}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="13" className="no-data">
+                    <div className="no-data-message">
+                      <span>📊</span>
+                      <p>No attendance data found for the selected criteria</p>
+                      <small>
+                        Try adjusting the date range or employee filter
+                      </small>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Top Performers Section */}
+      {analytics.topPerformers.length > 0 && (
+        <div className="top-performers-section">
+          <h3>🏆 Top Performers</h3>
+          <div className="performers-grid">
+            {analytics.topPerformers.map((performer, index) => (
+              <div key={index} className="performer-card">
+                <div className="performer-rank">#{index + 1}</div>
+                <div className="performer-info">
+                  <h4>{performer.name}</h4>
+                  <p>{performer.department}</p>
+                  <div className="performer-stats">
+                    <span className="attendance-percent">
+                      {performer.percentage}%
+                    </span>
+                    <span className="attendance-days">
+                      {performer.presentDays}/{performer.totalDays} days
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -550,91 +813,213 @@ const AnalyticsManagement = () => {
       <div className="analytics-stats">
         <div className="stat-card">
           <h3>Total Records</h3>
-          <p className="stat-number">{checkInOutData.length}</p>
+          <p className="stat-number">
+            {analytics.checkInOutStats.totalRecords}
+          </p>
+          <span className="stat-subtext">Daily attendance records</span>
         </div>
         <div className="stat-card">
           <h3>On Time</h3>
-          <p className="stat-number">
-            {
-              checkInOutData.filter(
-                (r) => r.checkIn.includes("8:") || r.checkIn.includes("9:")
-              ).length
-            }
-          </p>
+          <p className="stat-number">{analytics.checkInOutStats.onTimeCount}</p>
+          <span className="stat-subtext">
+            {analytics.checkInOutStats.totalRecords > 0
+              ? Math.round(
+                  (analytics.checkInOutStats.onTimeCount /
+                    analytics.checkInOutStats.totalRecords) *
+                    100
+                )
+              : 0}
+            % punctual
+          </span>
         </div>
         <div className="stat-card">
           <h3>Late Arrivals</h3>
-          <p className="stat-number">
-            {
-              checkInOutData.filter(
-                (r) => r.checkIn.includes("10:") || r.checkIn.includes("11:")
-              ).length
-            }
-          </p>
+          <p className="stat-number">{analytics.checkInOutStats.lateCount}</p>
+          <span className="stat-subtext">
+            {analytics.checkInOutStats.totalRecords > 0
+              ? Math.round(
+                  (analytics.checkInOutStats.lateCount /
+                    analytics.checkInOutStats.totalRecords) *
+                    100
+                )
+              : 0}
+            % late
+          </span>
         </div>
         <div className="stat-card">
           <h3>Avg Working Hours</h3>
-          <p className="stat-number">8.2 hrs</p>
+          <p className="stat-number">
+            {analytics.checkInOutStats.avgWorkingHours}h
+          </p>
+          <span className="stat-subtext">Per complete day</span>
+        </div>
+        <div className="stat-card">
+          <h3>Complete Days</h3>
+          <p className="stat-number">
+            {checkInOutData.filter((r) => r.status === "Full Day").length}
+          </p>
+          <span className="stat-subtext">8+ hours worked</span>
+        </div>
+        <div className="stat-card">
+          <h3>Incomplete Records</h3>
+          <p className="stat-number">
+            {
+              checkInOutData.filter(
+                (r) =>
+                  r.status.includes("Incomplete") ||
+                  r.status.includes("No Check")
+              ).length
+            }
+          </p>
+          <span className="stat-subtext">Missing check-in/out</span>
         </div>
       </div>
 
       <div className="data-table-container">
         <div className="table-header">
           <h3>Check-In/Check-Out Details</h3>
-          <button onClick={downloadExcel} className="download-btn">
-            📊 Download Excel
-          </button>
+          <div className="header-actions">
+            <div className="quick-stats">
+              <span className="quick-stat">
+                Period:{" "}
+                <strong style={{ color: "#764ba2" }}>
+                  {new Date(dateRange.startDate).toLocaleDateString("en-IN")} -{" "}
+                  {new Date(dateRange.endDate).toLocaleDateString("en-IN")}
+                </strong>
+              </span>
+              <span className="quick-stat">
+                Punctuality Rate:{" "}
+                <strong style={{ color: "#48bb78" }}>
+                  {analytics.checkInOutStats.totalRecords > 0
+                    ? Math.round(
+                        (analytics.checkInOutStats.onTimeCount /
+                          analytics.checkInOutStats.totalRecords) *
+                          100
+                      )
+                    : 0}
+                  %
+                </strong>
+              </span>
+            </div>
+            <button onClick={downloadExcel} className="download-btn">
+              📊 Download Excel
+            </button>
+          </div>
         </div>
         <div className="table-wrapper">
           <table className="analytics-table">
             <thead>
               <tr>
                 <th>Employee</th>
+                <th>Department</th>
                 <th>Date</th>
                 <th>Check In</th>
                 <th>Check Out</th>
                 <th>Total Hours</th>
                 <th>Status</th>
                 <th>Punctuality</th>
+                <th>Method</th>
+                <th>Records</th>
               </tr>
             </thead>
             <tbody>
-              {checkInOutData.map((record, index) => (
-                <tr key={index}>
-                  <td>{record.employeeName}</td>
-                  <td>{record.date}</td>
-                  <td
-                    className={
-                      record.checkIn.includes("10:") ||
-                      record.checkIn.includes("11:")
-                        ? "late"
-                        : "on-time"
-                    }
-                  >
-                    {record.checkIn}
-                  </td>
-                  <td>{record.checkOut}</td>
-                  <td>{record.totalHours}</td>
-                  <td className={`status ${record.status.toLowerCase()}`}>
-                    {record.status}
-                  </td>
-                  <td>
-                    <span
-                      className={`punctuality-badge ${
-                        record.checkIn.includes("8:") ||
-                        record.checkIn.includes("9:")
-                          ? "on-time"
-                          : "late"
-                      }`}
+              {checkInOutData.length > 0 ? (
+                checkInOutData.map((record, index) => (
+                  <tr key={index}>
+                    <td>
+                      <div className="employee-info">
+                        <strong>{record.employeeName}</strong>
+                        <br />
+                        <small style={{ color: "#666" }}>{record.email}</small>
+                      </div>
+                    </td>
+                    <td>{record.department}</td>
+                    <td>
+                      <span className="date-badge">{record.date}</span>
+                    </td>
+                    <td
+                      className={
+                        record.punctuality === "Late" ||
+                        record.punctuality === "Slightly Late"
+                          ? "late-time"
+                          : "on-time"
+                      }
                     >
-                      {record.checkIn.includes("8:") ||
-                      record.checkIn.includes("9:")
-                        ? "On Time"
-                        : "Late"}
-                    </span>
+                      <span className="time-badge">{record.checkIn}</span>
+                    </td>
+                    <td>
+                      <span className="time-badge">{record.checkOut}</span>
+                    </td>
+                    <td>
+                      <span
+                        className={`hours-badge ${
+                          record.totalHours !== "N/A" &&
+                          record.totalHours.includes("h") &&
+                          parseInt(record.totalHours) >= 8
+                            ? "full-day"
+                            : "partial-day"
+                        }`}
+                      >
+                        {record.totalHours}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${record.status
+                          .toLowerCase()
+                          .replace(/\s+/g, "-")}`}
+                      >
+                        {record.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`punctuality-badge ${
+                          record.punctuality === "On Time"
+                            ? "on-time"
+                            : record.punctuality === "Slightly Late"
+                            ? "slightly-late"
+                            : "late"
+                        }`}
+                      >
+                        {record.punctuality}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="method-info">
+                        <span className="method-badge">
+                          In: {record.checkInMethod}
+                        </span>
+                        {record.hasCheckOut && (
+                          <span className="method-badge">
+                            Out: {record.checkOutMethod}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="records-count-badge">
+                        {record.recordsCount}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="10" className="no-data">
+                    <div className="no-data-message">
+                      <span>🕐</span>
+                      <p>
+                        No check-in/check-out records found for the selected
+                        criteria
+                      </p>
+                      <small>
+                        Try adjusting the date range or employee filter
+                      </small>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -647,6 +1032,79 @@ const AnalyticsManagement = () => {
       <div className="analytics-header">
         <h1>📊 Analytics Management</h1>
         <p>Comprehensive employee analytics and reporting</p>
+      </div>
+
+      {/* Filters Section */}
+      <div className="analytics-filters">
+        <div className="filter-group">
+          <label htmlFor="startDate">Start Date:</label>
+          <input
+            type="date"
+            id="startDate"
+            value={dateRange.startDate}
+            onChange={(e) =>
+              setDateRange((prev) => ({ ...prev, startDate: e.target.value }))
+            }
+            className="date-input"
+          />
+        </div>
+        <div className="filter-group">
+          <label htmlFor="endDate">End Date:</label>
+          <input
+            type="date"
+            id="endDate"
+            value={dateRange.endDate}
+            onChange={(e) =>
+              setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
+            }
+            className="date-input"
+          />
+        </div>
+        <div className="filter-group">
+          <label htmlFor="employee">Employee:</label>
+          <select
+            id="employee"
+            value={selectedEmployee}
+            onChange={(e) => setSelectedEmployee(e.target.value)}
+            className="employee-select"
+          >
+            <option value="all">All Employees</option>
+            {employees.map((emp) => (
+              <option key={emp._id} value={emp._id}>
+                {emp.name} ({emp.department || "General"})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-actions">
+          <button
+            onClick={fetchAnalyticsData}
+            className="refresh-btn"
+            disabled={loading}
+          >
+            {loading ? "🔄 Loading..." : "🔍 Apply Filters"}
+          </button>
+          <button
+            onClick={() => {
+              setDateRange({
+                startDate: new Date(
+                  new Date().getFullYear(),
+                  new Date().getMonth(),
+                  1
+                )
+                  .toISOString()
+                  .split("T")[0],
+                endDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                  .toISOString()
+                  .split("T")[0],
+              });
+              setSelectedEmployee("all");
+            }}
+            className="reset-btn"
+          >
+            🔄 Reset Filters
+          </button>
+        </div>
       </div>
 
       <div className="analytics-tabs">
@@ -680,6 +1138,9 @@ const AnalyticsManagement = () => {
       {error && (
         <div className="error-container">
           <p>{error}</p>
+          <button onClick={fetchAnalyticsData} className="retry-btn">
+            🔄 Retry
+          </button>
         </div>
       )}
 

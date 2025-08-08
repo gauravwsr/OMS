@@ -3,6 +3,10 @@ const User = require("../models/userModel");
 const {
   markFaceRecognitionAttendance,
 } = require("../middlewares/faceRecognitionMiddleware");
+const {
+  getAttendanceValidation,
+  getCurrentISTTime,
+} = require("./attendanceTimeValidation");
 
 // Service class for attendance operations
 class AttendanceService {
@@ -722,8 +726,21 @@ class AttendanceService {
         },
         ip_address: attendanceData.systemInfo?.ipAddress || "",
 
+        // Time validation and attendance rules
+        isHalfDay: attendanceData.metadata?.isHalfDay || false,
+        isLateAttendance:
+          attendanceData.status === "Late" || attendanceData.status === "late",
+        isAbsent:
+          attendanceData.status === "Absent" ||
+          attendanceData.status === "absent",
+        checkInTimeCategory: attendanceData.metadata?.isHalfDay
+          ? "late"
+          : "on_time",
+        timeValidation: attendanceData.metadata?.timeValidation || null,
+
         // Additional metadata
         notes: attendanceData.notes,
+        metadata: attendanceData.metadata || {},
       };
 
       const attendance = new Attendance(mappedData);
@@ -788,12 +805,39 @@ class AttendanceService {
     attendanceType = "check_in"
   ) {
     try {
-      // Validate minimum working hours for check-out (6 hours minimum)
-      if (attendanceType === "check_out") {
-        const todayCheck = await this.getTodayAttendanceWithWorkingHours(
-          userId
-        );
+      // Get today's attendance for validation
+      const todayCheck = await this.getTodayAttendanceWithWorkingHours(userId);
 
+      if (!todayCheck.success) {
+        return {
+          success: false,
+          error: todayCheck.error,
+          message: "Failed to check today's attendance",
+        };
+      }
+
+      // ===== TIME VALIDATION USING NEW SYSTEM =====
+      const currentISTTime = getCurrentISTTime();
+      const attendanceValidation = getAttendanceValidation(
+        attendanceType,
+        todayCheck,
+        currentISTTime
+      );
+
+      if (!attendanceValidation.isValid) {
+        return {
+          success: false,
+          message: attendanceValidation.message,
+          error: attendanceValidation.type,
+          errorCode: attendanceValidation.type,
+          validation: attendanceValidation,
+          currentTime: attendanceValidation.currentDateTime,
+          timezone: "Asia/Kolkata (IST)",
+        };
+      }
+
+      // Legacy validation for minimum working hours (8 hours for check-out)
+      if (attendanceType === "check_out") {
         if (
           todayCheck.success &&
           todayCheck.hasCheckIn &&
@@ -804,7 +848,7 @@ class AttendanceService {
           const timeDifferenceInHours =
             (currentTime - checkInTime) / (1000 * 60 * 60); // Convert to hours
 
-          const MINIMUM_WORKING_HOURS = 6;
+          const MINIMUM_WORKING_HOURS = 8; // Changed from 6 to 8 hours
 
           if (timeDifferenceInHours < MINIMUM_WORKING_HOURS) {
             const remainingTime = MINIMUM_WORKING_HOURS - timeDifferenceInHours;
@@ -815,7 +859,7 @@ class AttendanceService {
 
             return {
               success: false,
-              message: `You must work for at least ${MINIMUM_WORKING_HOURS} hours before checking out`,
+              message: `You can only check-out after completing 8 hours from your check-in time.`,
               error: "MINIMUM_WORKING_HOURS_NOT_COMPLETED",
               errorCode: "MIN_HOURS_NOT_COMPLETED",
               details: {
@@ -851,11 +895,25 @@ class AttendanceService {
         };
       }
 
+      // Determine status based on time validation for check-in
+      let attendanceStatus = "present";
+      let isHalfDay = false;
+
+      if (attendanceType === "check_in") {
+        if (attendanceValidation.isLate) {
+          attendanceStatus = "late";
+          isHalfDay = true;
+        } else {
+          attendanceStatus = "present";
+          isHalfDay = false;
+        }
+      }
+
       // Create attendance record with face recognition data
       const attendanceData = {
         userId,
         method: "face_recognition",
-        status: "present",
+        status: attendanceStatus,
         attendance_type: attendanceType,
         confidence: result.confidence,
         recognizedName: result.recognized_name,
@@ -865,9 +923,19 @@ class AttendanceService {
           confidence_value: parseFloat(result.confidence) || 0,
           recognition_time: new Date(),
           system_version: "1.0",
+          timeValidation: attendanceValidation,
         },
         location: "Office",
-        notes: `Face recognition ${attendanceType} with ${result.confidence}% confidence`,
+        notes: `Face recognition ${attendanceType} at ${
+          attendanceValidation.currentDateTime
+        } IST with ${result.confidence}% confidence ${
+          isHalfDay ? "(Half Day - Late)" : "(Full Day)"
+        }`,
+        metadata: {
+          timeValidation: attendanceValidation,
+          isHalfDay: isHalfDay,
+          timezone: "Asia/Kolkata",
+        },
       };
 
       return await this.createAttendanceRecordWithWorkingHours(attendanceData);
