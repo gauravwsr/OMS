@@ -81,14 +81,14 @@ const DraftSection = ({ drafts: propDrafts }) => {
         <p className="error-message">{error}</p>
       ) : drafts.length > 0 ? (
         drafts.map((draft, index) => (
-          <div key={draft._id || index} className="email-row draft-row">
+          <div key={draft._id || draft.id || `draft-${index}`} className="email-row draft-row">
             <div className="email-name">
               <input
                 type="checkbox"
-                id={`draft-${draft._id || index}`}
+                id={`draft-${draft._id || draft.id || index}`}
                 className="email-checkbox"
               />
-              <label htmlFor={`draft-${draft._id || index}`} className="email-label draft-label">
+              <label htmlFor={`draft-${draft._id || draft.id || index}`} className="email-label draft-label">
                 {draft.to || "No recipient"}
               </label>
             </div>

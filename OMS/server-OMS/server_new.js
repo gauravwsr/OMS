@@ -186,24 +186,10 @@ process.on("unhandledRejection", (reason, promise) => {
 
 const port = process.env.PORT || 5000;
 
-server.listen(port, '0.0.0.0', (err) => {
-  if (err) {
-    console.error('❌ Failed to start server:', err);
-    process.exit(1);
-  }
+server.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://localhost:3000", "http://localhost:3001"])}`);
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
-  
-  // Verify server is actually listening
-  setTimeout(() => {
-    const http = require('http');
-    http.get(`http://localhost:${port}/api/health`, (res) => {
-      console.log('✅ Server health check passed');
-    }).on('error', (err) => {
-      console.error('❌ Server health check failed:', err.message);
-    });
-  }, 1000);
 });
 
 // Automatic cleanup function for finished events
