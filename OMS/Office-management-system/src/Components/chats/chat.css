@@ -14,6 +14,8 @@
 .chat-area {
   height: 100%;
   background-color: #fff;
+  display: block;
+  width: 100%;
 }
 
 .avatar {
@@ -516,6 +518,8 @@
 
   .chat-area {
     height: calc(100vh - 180px); /* Adjusted for larger sidebar */
+    display: block;
+    width: 100%;
   }
 
   .message {
@@ -552,29 +556,26 @@
   .chat-container.mobile-chat-open .chat-area {
     display: block !important;
     width: 100% !important;
-    height: calc(100vh - 40px) !important;
+    height: calc(100vh - 60px) !important;
     position: relative !important;
   }
   
-  /* Default mobile view - show sidebar, hide chat area */
-  /* .chat-area {
-    display: none !important;
-  } */
+  /* Default mobile view - show both sidebar and chat area side by side if needed */
+  .chat-area {
+    display: block;
+    height: calc(100vh - 180px);
+  }
   
   .sidebar {
     display: block !important;
     width: 100% !important;
+    height: auto;
   }
   
-  /* When no mobile-chat-open class, ensure chat area is hidden */
-  .chat-container:not(.mobile-chat-open) .chat-area {
-    display: none !important;
-  }
-  
-  /* When no mobile-chat-open class, ensure sidebar is visible */
-  .chat-container:not(.mobile-chat-open) .sidebar {
-    display: block !important;
-    width: 100% !important;
+  /* When chat is selected but not mobile-chat-open, show chat area */
+  .chat-container .chat-area {
+    display: block;
+    width: 100%;
   }
   
   /* Mobile buttons styling */
@@ -1111,5 +1112,51 @@
   
   .notification-body {
     font-size: 12px;
+  }
+}
+
+/* Extra small mobile screens */
+@media (max-width: 360px) {
+  .chat-container {
+    height: calc(100vh - 30px);
+  }
+  
+  .chat-area {
+    height: calc(100vh - 160px);
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  .mobile-buttons-container .sidebar-button {
+    font-size: 0.7rem;
+    padding: 5px 10px;
+    min-width: 70px;
+  }
+  
+  .mobile-chat-header {
+    padding: 8px 10px;
+  }
+  
+  .mobile-chat-title {
+    font-size: 0.9rem;
+  }
+  
+  .message {
+    max-width: 98%;
+  }
+  
+  .message-content {
+    padding: 5px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .contact-item {
+    padding: 8px;
+  }
+  
+  .avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
   }
 }

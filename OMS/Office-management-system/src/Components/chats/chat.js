@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
@@ -18,6 +19,35 @@ import { io } from "socket.io-client";
 import "./chat.css";
 import "./chat-header.css";
 import { useAuth } from "../AuthProvider/AuthContext"; // Assuming you have an auth context
+
+// Helper to format date as WhatsApp style (Today, Yesterday, or date)
+function getDateLabel(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  if (isToday) return "Today";
+  if (isYesterday) return "Yesterday";
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Helper to group messages by date
+function groupMessagesByDate(messages) {
+  const groups = [];
+  let lastDate = null;
+  messages.forEach((msg) => {
+    if (!msg.createdAt) return;
+    const msgDate = new Date(msg.createdAt).toDateString();
+    if (msgDate !== lastDate) {
+      groups.push({ type: 'date', date: msg.createdAt });
+      lastDate = msgDate;
+    }
+    groups.push({ type: 'message', message: msg });
+  });
+  return groups;
+}
 
 const Chat = () => {
   const { user } = useAuth();
@@ -109,7 +139,7 @@ const Chat = () => {
         setTimeout(() => {
           notification.close();
         }, 5000);
-
+        
         // Handle notification click to focus on chat
         notification.onclick = () => {
           window.focus();
@@ -1380,11 +1410,9 @@ return (
                               : "Chat"}
                           </strong>
                           <small className="text-muted">
-                            {chat.latestMessage?.createdAt
-                              ? new Date(
-                                  chat.latestMessage.createdAt
-                                ).toLocaleTimeString()
-                              : ""}
+                            {chat.latestMessage && chat.latestMessage.createdAt
+                              ? new Date(chat.latestMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : "--:--"}
                           </small>
                         </div>
                         <small className="text-muted">
@@ -1570,24 +1598,44 @@ return (
                   </p>
                 </div>
               ) : (
-                messages.map((message) => {
-                  // Add safety checks to prevent accessing properties of undefined objects
-                  if (!message || !message._id) {
-                    return null; // Skip rendering invalid messages
+                groupMessagesByDate(messages).map((item, idx) => {
+                  if (item.type === 'date') {
+                    return (
+                      <div
+                        key={"date-" + item.date + idx}
+                        className="chat-date-separator d-flex justify-content-center align-items-center my-3"
+                        style={{ position: 'relative', zIndex: 1 }}
+                      >
+                        <span
+                          style={{
+                            background: '#e0e7ff',
+                            color: '#374151',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            borderRadius: '16px',
+                            padding: '4px 18px',
+                            boxShadow: '0 2px 8px rgba(60,72,120,0.07)',
+                            letterSpacing: '0.01em',
+                            border: '1px solid #c7d2fe',
+                          }}
+                        >
+                          {getDateLabel(item.date)}
+                        </span>
+                      </div>
+                    );
                   }
-
+                  const message = item.message;
+                  if (!message || !message._id) return null;
                   const isSender =
                     message.sender &&
                     message.sender._id &&
                     user &&
                     user._id &&
                     message.sender._id === user._id;
-
                   const isTemp = message.isTemp;
                   const sendFailed = message.sendFailed;
                   const isSending = message.sending && !sendFailed;
                   const slowNetwork = message.slowNetwork;
-
                   return (
                     <div
                       key={message._id}

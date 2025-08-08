@@ -1,6 +1,6 @@
 /* NewDashboard.css - Modern Dashboard Design with Enhanced Responsiveness */
 
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+/* @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"); */
 
 * {
   margin: 0;
@@ -10,8 +10,8 @@
 
 body {
   font-family: "Poppins", sans-serif;
-  background-color: #f5f7fa;
-  color: #333;
+  /* background-color: #f5f7fa;
+  color: #333; */
   line-height: 1.6;
 }
 
