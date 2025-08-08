@@ -65,9 +65,7 @@ const Completion = () => {
     issueDateInput: "",
   };
 
-  const [completionData, setCompletionData] = useState(
-    initialCompletionData
-  );
+  const [completionData, setCompletionData] = useState(initialCompletionData);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -112,28 +110,31 @@ const Completion = () => {
       }
 
       // Save to database via API (you can create a separate completion API endpoint)
-      const response = await fetch("http://localhost:5000/api/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          participantName: completionData.participantName,
-          instituteName: completionData.instituteName,
-          courseType: completionData.courseType,
-          organizationName: completionData.organizationName,
-          startDate: completionData.startDate,
-          endDate: completionData.endDate,
-          certID: completionData.certID,
-          issueDate: completionData.issueDate,
-          instructorName: completionData.instructorName,
-          instructorTitle: completionData.instructorTitle,
-          organizationTitle: completionData.organizationTitle,
-          duration: completionData.duration,
-          grade: completionData.grade,
-        }),
-      });
+      const response = await fetch(
+        "http://146.190.165.62:5000/api/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            participantName: completionData.participantName,
+            instituteName: completionData.instituteName,
+            courseType: completionData.courseType,
+            organizationName: completionData.organizationName,
+            startDate: completionData.startDate,
+            endDate: completionData.endDate,
+            certID: completionData.certID,
+            issueDate: completionData.issueDate,
+            instructorName: completionData.instructorName,
+            instructorTitle: completionData.instructorTitle,
+            organizationTitle: completionData.organizationTitle,
+            duration: completionData.duration,
+            grade: completionData.grade,
+          }),
+        }
+      );
 
       let result = {};
       if (response.ok) {
@@ -177,7 +178,7 @@ const Completion = () => {
         setError("Please enter Participant Name before downloading");
         return;
       }
-      
+
       if (!completionData.certID) {
         setError("Please enter Certificate ID before downloading");
         return;
@@ -185,7 +186,7 @@ const Completion = () => {
 
       setIsLoading(true);
       setError(null);
-      
+
       console.log("Starting completion certificate generation...");
 
       // Create completion certificate element in memory
@@ -240,19 +241,25 @@ const Completion = () => {
               max-width: 800px;
               margin-left: auto;
               margin-right: auto;
-            ">has successfully completed the ${completionData.duration} ${completionData.courseType}</p>
+            ">has successfully completed the ${completionData.duration} ${
+        completionData.courseType
+      }</p>
             <p style="
               font-size: 18px;
               color: #333;
               margin: 15px 0;
               line-height: 1.6;
-            ">conducted by <strong>${completionData.organizationName}</strong></p>
+            ">conducted by <strong>${
+              completionData.organizationName
+            }</strong></p>
             <p style="
               font-size: 16px;
               color: #333;
               margin: 15px 0;
               line-height: 1.6;
-            ">with grade: <strong style="color: #10b981;">${completionData.grade}</strong></p>
+            ">with grade: <strong style="color: #10b981;">${
+              completionData.grade
+            }</strong></p>
 
             <!-- Footer Section -->
             <div style="
@@ -266,9 +273,15 @@ const Completion = () => {
               <div style="text-align: left; flex: 1;">
                 <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #333;">${completionData.organizationName.toUpperCase()} COURSE</p>
                 <p style="margin: 4px 0; font-size: 12px; color: #333;">Professional Training Program</p>
-                <p style="margin: 4px 0; font-size: 12px; color: #333;">Cert. I.D.: ${completionData.certID}</p>
-                <p style="margin: 4px 0; font-size: 12px; color: #333;">Completed: ${completionData.issueDate || new Date().toLocaleDateString()}</p>
-                <p style="margin: 4px 0; font-size: 12px; color: #333;">Duration: ${completionData.startDate} to ${completionData.endDate}</p>
+                <p style="margin: 4px 0; font-size: 12px; color: #333;">Cert. I.D.: ${
+                  completionData.certID
+                }</p>
+                <p style="margin: 4px 0; font-size: 12px; color: #333;">Completed: ${
+                  completionData.issueDate || new Date().toLocaleDateString()
+                }</p>
+                <p style="margin: 4px 0; font-size: 12px; color: #333;">Duration: ${
+                  completionData.startDate
+                } to ${completionData.endDate}</p>
               </div>
 
               <!-- Center - Certified Stamp -->
@@ -286,7 +299,9 @@ const Completion = () => {
                 ">
                   <div style="text-align: center;">
                     <div style="font-size: 10px; color: #10b981; font-weight: bold;">COMPLETED</div>
-                    <div style="font-size: 8px; color: #10b981; margin-top: 2px;">GRADE: ${completionData.grade}</div>
+                    <div style="font-size: 8px; color: #10b981; margin-top: 2px;">GRADE: ${
+                      completionData.grade
+                    }</div>
                   </div>
                 </div>
               </div>
@@ -299,9 +314,15 @@ const Completion = () => {
                   margin: 0 auto 15px auto;
                   height: 30px;
                 "></div>
-                <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #333;">${completionData.instructorName || "Sumedh Boudh"}</p>
-                <p style="margin: 4px 0; font-size: 12px; font-style: italic; color: #333;">${completionData.instructorTitle || "Lead Instructor"}</p>
-                <p style="margin: 4px 0; font-size: 12px; color: #333;">${completionData.organizationName}</p>
+                <p style="margin: 4px 0; font-weight: bold; font-size: 14px; color: #333;">${
+                  completionData.instructorName || "Sumedh Boudh"
+                }</p>
+                <p style="margin: 4px 0; font-size: 12px; font-style: italic; color: #333;">${
+                  completionData.instructorTitle || "Lead Instructor"
+                }</p>
+                <p style="margin: 4px 0; font-size: 12px; color: #333;">${
+                  completionData.organizationName
+                }</p>
               </div>
             </div>
           </div>
@@ -311,17 +332,19 @@ const Completion = () => {
       console.log("Creating temporary DOM element...");
 
       // Create temporary element
-      const tempDiv = document.createElement('div');
+      const tempDiv = document.createElement("div");
       tempDiv.innerHTML = completionHTML;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.top = '-9999px';
-      tempDiv.style.width = '1200px';
-      tempDiv.style.height = '850px';
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px";
+      tempDiv.style.top = "-9999px";
+      tempDiv.style.width = "1200px";
+      tempDiv.style.height = "850px";
       document.body.appendChild(tempDiv);
 
-      const completionElement = tempDiv.querySelector('#completion-for-download');
-      
+      const completionElement = tempDiv.querySelector(
+        "#completion-for-download"
+      );
+
       if (!completionElement) {
         throw new Error("Could not create completion certificate element");
       }
@@ -342,7 +365,7 @@ const Completion = () => {
       console.log("Canvas generated, creating PDF...");
 
       const imgData = canvas.toDataURL("image/png");
-      
+
       // Create PDF
       const pdf = new jsPDF({
         orientation: "landscape",
@@ -356,10 +379,13 @@ const Completion = () => {
       const y = (210 - imgHeight) / 2;
 
       pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-      
+
       // Download PDF
-      const fileName = `${completionData.participantName.replace(/[^a-z0-9]/gi, '_')}-completion-${completionData.certID.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-      
+      const fileName = `${completionData.participantName.replace(
+        /[^a-z0-9]/gi,
+        "_"
+      )}-completion-${completionData.certID.replace(/[^a-z0-9]/gi, "_")}.pdf`;
+
       console.log("Saving PDF as:", fileName);
       pdf.save(fileName);
 
@@ -368,49 +394,62 @@ const Completion = () => {
         const token = localStorage.getItem("token");
         if (token) {
           console.log("Attempting to save completion to database...");
-          const response = await fetch("http://localhost:5000/api/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              participantName: completionData.participantName,
-              instituteName: completionData.instituteName || "Institute Name",
-              courseType: completionData.courseType,
-              organizationName: completionData.organizationName,
-              startDate: completionData.startDate || "Start Date",
-              endDate: completionData.endDate || "End Date",
-              certID: completionData.certID,
-              issueDate: completionData.issueDate || new Date().toLocaleDateString(),
-              instructorName: completionData.instructorName,
-              instructorTitle: completionData.instructorTitle,
-              organizationTitle: completionData.organizationTitle,
-              duration: completionData.duration,
-              grade: completionData.grade,
-              certificateImageData: imgData,
-            }),
-          });
+          const response = await fetch(
+            "http://146.190.165.62:5000/api/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                participantName: completionData.participantName,
+                instituteName: completionData.instituteName || "Institute Name",
+                courseType: completionData.courseType,
+                organizationName: completionData.organizationName,
+                startDate: completionData.startDate || "Start Date",
+                endDate: completionData.endDate || "End Date",
+                certID: completionData.certID,
+                issueDate:
+                  completionData.issueDate || new Date().toLocaleDateString(),
+                instructorName: completionData.instructorName,
+                instructorTitle: completionData.instructorTitle,
+                organizationTitle: completionData.organizationTitle,
+                duration: completionData.duration,
+                grade: completionData.grade,
+                certificateImageData: imgData,
+              }),
+            }
+          );
 
           if (response.ok) {
-            console.log("Completion certificate saved to database successfully");
+            console.log(
+              "Completion certificate saved to database successfully"
+            );
           } else {
             const result = await response.json();
-            console.warn("Could not save completion to database:", result.message);
+            console.warn(
+              "Could not save completion to database:",
+              result.message
+            );
           }
         }
       } catch (dbError) {
-        console.warn("Database save failed (continuing anyway):", dbError.message);
+        console.warn(
+          "Database save failed (continuing anyway):",
+          dbError.message
+        );
       }
 
       // Remove temporary element
       document.body.removeChild(tempDiv);
-      
-      console.log("Completion certificate download completed successfully!");
 
+      console.log("Completion certificate download completed successfully!");
     } catch (error) {
       console.error("Error generating completion certificate:", error);
-      setError(`Error generating completion certificate: ${error.message}. Please try again.`);
+      setError(
+        `Error generating completion certificate: ${error.message}. Please try again.`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -490,7 +529,7 @@ const Completion = () => {
                 ))}
               </select>
             </div>
-            
+
             <div className="form-group">
               <label>Duration:</label>
               <select
@@ -504,7 +543,7 @@ const Completion = () => {
               >
                 {[
                   "1 Month",
-                  "2 Months", 
+                  "2 Months",
                   "3 Months",
                   "4 Months",
                   "5 Months",
@@ -571,11 +610,13 @@ const Completion = () => {
                   }
                 }}
               >
-                {["TARS Technologies", "BANE", "Tech Academy", "OTHER"].map((org) => (
-                  <option key={org} value={org}>
-                    {org}
-                  </option>
-                ))}
+                {["TARS Technologies", "BANE", "Tech Academy", "OTHER"].map(
+                  (org) => (
+                    <option key={org} value={org}>
+                      {org}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -681,12 +722,13 @@ const Completion = () => {
             <button
               onClick={downloadCompletion}
               className="download-button"
-              disabled={!completionData.participantName || !completionData.certID}
+              disabled={
+                !completionData.participantName || !completionData.certID
+              }
             >
               {isLoading ? "Generating..." : "Download Certificate"}
             </button>
           </div>
-
         </div>
       </div>
     </div>

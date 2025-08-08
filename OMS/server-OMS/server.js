@@ -77,8 +77,8 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
-      "http://localhost:3001",
+      "http://146.190.165.62:3000",
+      "http://146.190.165.62:3001",
       "http://146.190.165.62:5002",
     ],
     credentials: true,
@@ -331,7 +331,7 @@ imap.on("end", () => {
 process.on("uncaughtException", (err) => {
   console.error("Uncaught exception:", err);
   // Don't exit the process for IMAP-related errors
-  if (!err.message?.includes('IMAP') && !err.message?.includes('timeout')) {
+  if (!err.message?.includes("IMAP") && !err.message?.includes("timeout")) {
     process.exit(1);
   }
 });
@@ -339,7 +339,10 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled rejection:", reason);
   // Don't exit the process for IMAP-related errors
-  if (!reason?.message?.includes('IMAP') && !reason?.message?.includes('timeout')) {
+  if (
+    !reason?.message?.includes("IMAP") &&
+    !reason?.message?.includes("timeout")
+  ) {
     process.exit(1);
   }
 });
@@ -436,10 +439,14 @@ app.get("/fetch-sent-emails", async (req, res) => {
 // Fetch Inbox Emails API
 app.get("/fetch-inbox-emails", async (req, res) => {
   // Check if IMAP is configured
-  if (!process.env.IMAP_USER || !process.env.IMAP_PASS || !process.env.IMAP_HOST) {
-    return res.status(200).send({ 
-      emails: [], 
-      message: "IMAP not configured. No inbox emails available." 
+  if (
+    !process.env.IMAP_USER ||
+    !process.env.IMAP_PASS ||
+    !process.env.IMAP_HOST
+  ) {
+    return res.status(200).send({
+      emails: [],
+      message: "IMAP not configured. No inbox emails available.",
     });
   }
 
@@ -459,7 +466,9 @@ app.get("/fetch-inbox-emails", async (req, res) => {
         imap.openBox(folderToOpen, true, (err, box) => {
           if (err)
             return reject(
-              new Error(`Error opening folder '${folderToOpen}': ${err.message}`)
+              new Error(
+                `Error opening folder '${folderToOpen}': ${err.message}`
+              )
             );
 
           imap.search(["ALL"], (err, results) => {
@@ -507,14 +516,14 @@ app.get("/fetch-inbox-emails", async (req, res) => {
         clearTimeout(operationTimeout);
         reject(new Error(`IMAP connection error: ${err.message}`));
       });
-      
+
       imap.once("end", () => {
         clearTimeout(operationTimeout);
         console.log("IMAP connection closed.");
       });
-      
+
       // Only try to connect if not already connected
-      if (imap.state !== 'authenticated') {
+      if (imap.state !== "authenticated") {
         connectImap();
       }
     });
@@ -524,10 +533,10 @@ app.get("/fetch-inbox-emails", async (req, res) => {
   } catch (err) {
     console.error("Error fetching inbox emails:", err);
     // Return empty array instead of error for better UX
-    res.status(200).send({ 
-      emails: [], 
+    res.status(200).send({
+      emails: [],
       message: "Could not fetch inbox emails. IMAP service may be unavailable.",
-      error: err.message 
+      error: err.message,
     });
   }
 });
@@ -543,15 +552,15 @@ app.use(errorHandler);
 const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.log(`🚀 Server running on http://146.190.165.62:${port}`);
   console.log(
     `✅ CORS enabled for origins: ${JSON.stringify([
-      "http://localhost:3000",
-      "http://localhost:3001",
+      "http://146.190.165.62:3000",
+      "http://146.190.165.62:3001",
       "http://146.190.165.62:5002",
     ])}`
   );
-  console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
+  console.log(`📝 API endpoints ready at http://146.190.165.62:${port}/api/`);
 });
 
 // Automatic cleanup function for finished events
