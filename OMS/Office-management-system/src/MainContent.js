@@ -47,7 +47,7 @@ import OfferHistory from "./Components/Certificates/OfferHistory.js";
 import ViewDetails from "./Components/ViewDetails.js";
 import EditEmployee from "./Components/EditEmployee.js";
 // import HrAttendance from "./Components/HrAttendance";
-import HRRegistration from "./Components/HRRegistration/HRRegistration";
+// import HRRegistration from "./Components/HRRegistration/HRRegistration";
 import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
 import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
@@ -175,11 +175,6 @@ const MainContent = ({ nav }) => {
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
-        {
           path: "/analytics-management",
           label: "Analytics Management",
           icon: <FiBarChart />,
@@ -189,11 +184,6 @@ const MainContent = ({ nav }) => {
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
-        {
-          path: "/hrAttendance",
-          label: "HR Attendance",
-          icon: <FiClipboard />,
-        },
         {
           path: "/hr-leave-management",
           label: "Leave Management",
