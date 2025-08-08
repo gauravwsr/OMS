@@ -39,6 +39,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const attendanceTimeValidationRoutes = require("./routes/attendanceTimeValidationRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
@@ -70,7 +71,11 @@ app.use((req, res, next) => {
 // Apply CORS middleware BEFORE routes
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://146.190.165.62:5002",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -132,6 +137,15 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/hr-leave", hrLeaveRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/attendance", attendanceRoutes);
+
+// Attendance time validation testing routes
+app.use("/api/attendance-validation", attendanceTimeValidationRoutes);
+
+// Direct route for registered users (for backward compatibility)
+const { getRegisteredUsersAPI } = require("./controllers/attendanceController");
+app.get("/api/registered-users", getRegisteredUsersAPI);
+
+// Notification routes
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/team-lead", teamLeadTaskRoutes);
 app.use("/api/employee", employeeTaskRoutes);
@@ -192,7 +206,13 @@ server.listen(port, '0.0.0.0', (err) => {
     process.exit(1);
   }
   console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://localhost:3000", "http://localhost:3001"])}`);
+  console.log(
+    `✅ CORS enabled for origins: ${JSON.stringify([
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://146.190.165.62:5002",
+    ])}`
+  );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
   
   // Verify server is actually listening
