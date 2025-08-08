@@ -5,8 +5,10 @@
 
 .sidebar {
   background-color: #f8f9fa;
-  height: 100%;
-  overflow-y: auto;
+  height: auto;
+  max-height: 130px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .chat-area {
@@ -96,8 +98,12 @@
   align-items: center;
   padding: 12px 15px;
   background-color: #128c7e;
-  color: black;
+  color: white;
   border-bottom: 1px solid #075e54;
+}
+
+.mobile-chat-open .mobile-chat-header {
+  display: flex !important;
 }
 
 .mobile-back-button {
@@ -113,6 +119,7 @@
 .mobile-chat-title {
   font-size: 1.1rem;
   font-weight: 500;
+  color: white;
 }
 
 .office-chat-header {
@@ -550,11 +557,22 @@
   }
   
   /* Default mobile view - show sidebar, hide chat area */
-  .chat-area {
-    display: none;
-  }
+  /* .chat-area {
+    display: none !important;
+  } */
   
   .sidebar {
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  /* When no mobile-chat-open class, ensure chat area is hidden */
+  .chat-container:not(.mobile-chat-open) .chat-area {
+    display: none !important;
+  }
+  
+  /* When no mobile-chat-open class, ensure sidebar is visible */
+  .chat-container:not(.mobile-chat-open) .sidebar {
     display: block !important;
     width: 100% !important;
   }
@@ -680,7 +698,7 @@
 
   /* Default mobile view - show sidebar, hide chat area */
   .chat-area {
-    display: none;
+    display: none !important;
   }
   
   .sidebar {
@@ -697,10 +715,6 @@
     display: block !important;
     width: 100% !important;
     height: calc(100vh - 35px) !important;
-  }
-
-  .chat-container.mobile-chat-open .chat-area {
-    height: calc(100vh - 35px);
   }
 
   .mobile-chat-header {

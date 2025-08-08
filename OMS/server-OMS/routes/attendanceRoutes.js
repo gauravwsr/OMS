@@ -13,6 +13,7 @@ const {
   deleteAttendance,
   healthCheck,
   getRegisteredUsersAPI,
+  getTimeValidationStatus,
 } = require("../controllers/attendanceController");
 
 const {
@@ -61,6 +62,9 @@ router.get("/analytics", protect, getAttendanceAnalytics);
 
 // Get registered users from face recognition server
 router.get("/registered-users", getRegisteredUsersAPI);
+
+// Get current time validation status
+router.get("/validate-time", protect, getTimeValidationStatus);
 
 // Delete attendance record (Super Admin only)
 router.delete("/:attendanceId", protect, deleteAttendance);
