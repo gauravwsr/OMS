@@ -1,5 +1,10 @@
 require("dotenv").config(); // Load environment variables
 const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const http = require("http");
+const path = require("path");
 
 // Set default JWT secret if not in environment
 if (!process.env.JWT_SECRET) {
@@ -7,38 +12,35 @@ if (!process.env.JWT_SECRET) {
 }
 
 console.log("JWT_SECRET configured:", process.env.JWT_SECRET ? "Yes" : "No");
-const Imap = require("node-imap");
-const { simpleParser } = require("mailparser");
-const multer = require("multer");
-const fs = require("fs");
-const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
-const nodemailer = require("nodemailer");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
+
+// Import configurations and middlewares
+const connectDB = require("./config/db");
+const errorHandler = require("./middlewares/errorMiddleware");
+
+// Import socket configuration
 const chatSocket = require("./socket/chatSocket");
+
+// Import route handlers
 const candidateRoutes = require("./routes/candidateRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const chatRoutes = require("./routes/chatRoutes");
-const connectDB = require("./config/db");
 const trackingRoutes = require("./routes/trackingRoutes");
 const emailRoutes = require("./routes/emailRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+<<<<<<< HEAD
+=======
 const noteRoutes = require("./routes/noteRoutes");
 const path = require("path");
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 const calenderRoutes = require("./routes/calenderRoutes");
-const errorHandler = require("./middlewares/errorMiddleware");
 const scheduleRoutes = require("./routes/scheduleRoutes");
-// const candidateRoutes = require('./routes/candidateRoutes');
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const clientProjectRoutes = require("./routes/clientProjectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
-const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
@@ -50,8 +52,12 @@ const offerRoutes = require("./routes/offerRoutes");
 const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 
+// Import models for cleanup
+const ScheduleEventData = require("./models/calenderModel");
+
 const app = express();
 const server = http.createServer(app);
+
 // Initialize Socket.io
 chatSocket.init(server);
 
@@ -131,10 +137,13 @@ app.use((req, res, next) => {
   next();
 });
 
+<<<<<<< HEAD
+=======
 // Chat and message routes (after CORS middleware)
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 // Static folder for uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -146,54 +155,51 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-// Authentication routes
+// Route handlers
+app.use("/api/chat", chatRoutes);
+app.use("/api/message", messageRoutes);
 app.use("/api/auth", authRoutes);
-
-// Email routes (user-specific)
 app.use("/api/emails", emailRoutes);
-
-// User routes
 app.use("/users", userRoutes);
+<<<<<<< HEAD
+app.use(userRoutes);
+=======
 app.use("/api", userRoutes);
 
 // Note routes
 app.use("/api", noteRoutes);
 
 // Other routes
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 app.use("/tasks", taskRoutes);
 app.use("/", calenderRoutes);
 app.use("/api/schedule", scheduleRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api", projectRoutes);
-
-// Client Project management routes
 app.use("/api/client-projects", clientProjectRoutes);
-
-// Leave management routes
 app.use("/api/leave", leaveRoutes);
-
-// HR Leave management routes
 app.use("/api/hr-leave", hrLeaveRoutes);
-
-// Analytics routes
 app.use("/api/analytics", analyticsRoutes);
-
-// Attendance routes
 app.use("/api/attendance", attendanceRoutes);
+<<<<<<< HEAD
+=======
 
 // Direct route for registered users (for backward compatibility)
 const { getRegisteredUsersAPI } = require("./controllers/attendanceController");
 app.get("/api/registered-users", getRegisteredUsersAPI);
 
 // Notification routes
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 app.use("/api/notifications", notificationRoutes);
-
-// Team Lead Task management routes
 app.use("/api/team-lead", teamLeadTaskRoutes);
-
-// Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
+app.use("/api/certificates", certificateRoutes);
+app.use("/api/completions", completionRoutes);
+app.use("/api/offers", offerRoutes);
 
+<<<<<<< HEAD
+// Uncomment these routes if needed
+=======
 // Email management routes
 app.use("/api/emails", emailRoutes);
 
@@ -209,6 +215,7 @@ app.use("/api/charge-handovers", chargeHandoverRoutes);
 app.use("/api/meetings", meetingRoutes);
 
 // mouse tracking
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 // app.use("/api", trackingRoutes);
 // app.use("/api", activityRoutes);
 
@@ -242,104 +249,26 @@ app.get("/api/health", async (req, res) => {
 // Error Handling Middleware
 app.use(errorHandler);
 
-// Temporary in-memory storage for chat messages
-const messages = [];
-
-// Email Schema
-const emailSchema = new mongoose.Schema({
-  from: String,
-  to: String,
-  subject: String,
-  body: String,
-  attachments: [String],
-  date: { type: Date, default: Date.now },
-  status: { type: String, enum: ["sent", "inbox", "draft"], default: "sent" },
-});
-
-const Email = mongoose.model("Email", emailSchema);
-
-// Draft Schema
-const DraftSchema = new mongoose.Schema({
-  to: { type: String, required: false },
-  subject: { type: String, required: false },
-  body: { type: String, required: false },
-  date: { type: Date, default: Date.now },
-});
-
-const Draft = mongoose.model("Draft", DraftSchema);
-
-// Configure Multer for file uploads
-const upload = multer({ dest: "uploads/" });
-
-// In-memory storage for sent emails
-const sentEmails = [];
-
-// Configure Nodemailer
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-// IMAP Configuration (commented out to prevent connection errors)
-// Only enable if IMAP credentials are properly configured
-const imap = new Imap({
-  user: process.env.IMAP_USER,
-  password: process.env.IMAP_PASS,
-  host: process.env.IMAP_HOST,
-  port: process.env.IMAP_PORT,
-  tls: true,
-  timeout: 30000,
-  authTimeout: 30000, // Authentication timeout
-});
-
-// Function to connect IMAP (only call when needed)
-function connectImap() {
-  // Only connect if IMAP credentials are available
-  if (process.env.IMAP_USER && process.env.IMAP_PASS && process.env.IMAP_HOST) {
-    console.log("Attempting IMAP connection...");
-    imap.connect();
-  } else {
-    console.log("IMAP credentials not configured, skipping IMAP connection");
-  }
-}
-
-imap.on("error", (err) => {
-  console.error("IMAP error:", err);
-  // Don't automatically reconnect to prevent infinite timeout loops
-  // setTimeout(connectImap, 5000);
-});
-
-imap.on("end", () => {
-  console.log("IMAP connection ended.");
-  // Don't automatically reconnect to prevent infinite timeout loops
-  // setTimeout(connectImap, 5000);
-});
-
-// Don't automatically connect IMAP on server start
-// connectImap();
-
 // Error handling for uncaught exceptions and unhandled rejections
 process.on("uncaughtException", (err) => {
   console.error("Uncaught exception:", err);
-  // Don't exit the process for IMAP-related errors
-  if (!err.message?.includes('IMAP') && !err.message?.includes('timeout')) {
-    process.exit(1);
-  }
+  process.exit(1);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled rejection:", reason);
-  // Don't exit the process for IMAP-related errors
-  if (!reason?.message?.includes('IMAP') && !reason?.message?.includes('timeout')) {
-    process.exit(1);
-  }
+  process.exit(1);
 });
 
+<<<<<<< HEAD
+const port = process.env.PORT || 5000;
+
+server.listen(port, '0.0.0.0', (err) => {
+  if (err) {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
+  }
+=======
 // Send Email Route
 app.post("/api/send-email", upload.single("attachment"), async (req, res) => {
   const { email, subject, body } = req.body;
@@ -539,6 +468,7 @@ app.use(errorHandler);
 const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(
     `✅ CORS enabled for origins: ${JSON.stringify([
@@ -548,6 +478,16 @@ server.listen(port, () => {
     ])}`
   );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
+  
+  // Verify server is actually listening
+  setTimeout(() => {
+    const http = require('http');
+    http.get(`http://localhost:${port}/api/health`, (res) => {
+      console.log('✅ Server health check passed');
+    }).on('error', (err) => {
+      console.error('❌ Server health check failed:', err.message);
+    });
+  }, 1000);
 });
 
 // Automatic cleanup function for finished events

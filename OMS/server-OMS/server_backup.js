@@ -1,5 +1,13 @@
 require("dotenv").config(); // Load environment variables
 const express = require("express");
+<<<<<<< HEAD
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const http = require("http");
+const path = require("path");
+=======
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 
 // Set default JWT secret if not in environment
 if (!process.env.JWT_SECRET) {
@@ -7,6 +15,19 @@ if (!process.env.JWT_SECRET) {
 }
 
 console.log("JWT_SECRET configured:", process.env.JWT_SECRET ? "Yes" : "No");
+<<<<<<< HEAD
+// Import configurations and middlewares
+const connectDB = require("./config/db");
+const errorHandler = require("./middlewares/errorMiddleware");
+
+// Import socket configuration
+const chatSocket = require("./socket/chatSocket");
+
+// Import route handlers
+const candidateRoutes = require("./routes/candidateRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+=======
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
@@ -18,23 +39,32 @@ const candidateRoutes = require("./routes/candidateRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const connectDB = require("./config/db");
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 const trackingRoutes = require("./routes/trackingRoutes");
 const emailRoutes = require("./routes/emailRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+<<<<<<< HEAD
+const calenderRoutes = require("./routes/calenderRoutes");
+const scheduleRoutes = require("./routes/scheduleRoutes");
+=======
 const noteRoutes = require("./routes/noteRoutes");
 const path = require("path");
 const calenderRoutes = require("./routes/calenderRoutes");
 const errorHandler = require("./middlewares/errorMiddleware");
 const scheduleRoutes = require("./routes/scheduleRoutes");
 // const candidateRoutes = require('./routes/candidateRoutes');
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 const activityRoutes = require("./routes/activityRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const clientProjectRoutes = require("./routes/clientProjectRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+<<<<<<< HEAD
+=======
 const ScheduleEventData = require("./models/calenderModel"); // Add this for cleanup
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
@@ -43,8 +73,14 @@ const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const completionRoutes = require("./routes/completionRoutes");
 const offerRoutes = require("./routes/offerRoutes");
+<<<<<<< HEAD
+
+// Import models for cleanup
+const ScheduleEventData = require("./models/calenderModel");
+=======
 const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 
 const app = express();
 const server = http.createServer(app);
@@ -56,6 +92,12 @@ app.set("io", chatSocket.getIO());
 
 // CORS request logging middleware for debugging
 app.use((req, res, next) => {
+<<<<<<< HEAD
+  console.log(`${new Date().toISOString()} - ${req.method} request for ${req.url} from origin ${req.headers.origin}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Request body:', req.body);
+    console.log('Content-Type:', req.headers['content-type']);
+=======
   console.log(
     `${new Date().toISOString()} - ${req.method} request for ${
       req.url
@@ -64,6 +106,7 @@ app.use((req, res, next) => {
   if (req.method === "POST" || req.method === "PUT") {
     console.log("Request body:", req.body);
     console.log("Content-Type:", req.headers["content-type"]);
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
   }
   next();
 });
@@ -71,6 +114,15 @@ app.use((req, res, next) => {
 // Apply CORS middleware BEFORE routes
 app.use(
   cors({
+<<<<<<< HEAD
+    origin: ["http://localhost:3000", "http://localhost:3001"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Length", "X-Requested-With", "Access-Control-Allow-Origin"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+=======
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
@@ -94,6 +146,7 @@ app.use(
     ],
     preflightContinue: false,
     optionsSuccessStatus: 204,
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
   })
 );
 
@@ -101,6 +154,10 @@ app.use(
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", req.headers.origin);
   res.header("Access-Control-Allow-Credentials", "true");
+<<<<<<< HEAD
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+=======
   res.header(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
@@ -109,6 +166,7 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
   next();
 });
 
@@ -116,6 +174,15 @@ app.use((req, res, next) => {
 app.options("*", cors());
 
 // Apply body parsing middleware BEFORE routes
+<<<<<<< HEAD
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Additional middleware to log parsed body for debugging
+app.use((req, res, next) => {
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Parsed request body:', req.body);
+=======
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -123,11 +190,16 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use((req, res, next) => {
   if (req.method === "POST" || req.method === "PUT") {
     console.log("Parsed request body:", req.body);
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
   }
   next();
 });
 
+<<<<<<< HEAD
+// Then your routes
+=======
 // Chat and message routes (after CORS middleware)
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
@@ -145,12 +217,21 @@ app.get("/", (req, res) => {
 // Authentication routes
 app.use("/api/auth", authRoutes);
 
+<<<<<<< HEAD
+// Email routes (user-specific)
+app.use("/api/emails", emailRoutes);
+
+// User routes
+app.use("/users", userRoutes);
+app.use(userRoutes);
+=======
 // User routes
 app.use("/users", userRoutes);
 app.use("/api", userRoutes);
 
 // Note routes
 app.use("/api", noteRoutes);
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 
 // Other routes
 app.use("/tasks", taskRoutes);
@@ -174,10 +255,13 @@ app.use("/api/analytics", analyticsRoutes);
 // Attendance routes
 app.use("/api/attendance", attendanceRoutes);
 
+<<<<<<< HEAD
+=======
 // Direct route for registered users (for backward compatibility)
 const { getRegisteredUsersAPI } = require("./controllers/attendanceController");
 app.get("/api/registered-users", getRegisteredUsersAPI);
 
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 // Notification routes
 app.use("/api/notifications", notificationRoutes);
 
@@ -187,7 +271,11 @@ app.use("/api/team-lead", teamLeadTaskRoutes);
 // Employee Task management routes
 app.use("/api/employee", employeeTaskRoutes);
 
+<<<<<<< HEAD
+// Email management routes
+=======
 // Email routes (user-specific)
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 app.use("/api/emails", emailRoutes);
 
 // Certificate management routes
@@ -195,12 +283,15 @@ app.use("/api/certificates", require("./routes/certificateRoutes"));
 app.use("/api/completions", require("./routes/completionRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
 
+<<<<<<< HEAD
+=======
 // Charge Handover routes
 app.use("/api/charge-handovers", chargeHandoverRoutes);
 
 // Meeting routes (role-based video conferencing)
 app.use("/api/meetings", meetingRoutes);
 
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 // mouse tracking
 // app.use("/api", trackingRoutes);
 // app.use("/api", activityRoutes);
@@ -333,6 +424,90 @@ process.on("unhandledRejection", (reason, promise) => {
   }
 });
 
+<<<<<<< HEAD
+// Send Email Route
+app.post("/api/send-email", upload.single("attachment"), async (req, res) => {
+  const { email, subject, body } = req.body;
+  const file = req.file;
+
+  if (!email || !subject || !body) {
+    return res
+      .status(400)
+      .send({ message: "Recipient email, subject, and body are required" });
+  }
+
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: subject,
+    text: body,
+    attachments: file ? [{ filename: file.originalname, path: file.path }] : [],
+  };
+
+  let newEmail;
+
+  try {
+    // Save email details to the database with status 'draft'
+    console.log("Saving email details to the database...");
+    newEmail = new Email({
+      from: process.env.SMTP_USER,
+      to: email,
+      subject: subject,
+      body: body,
+      attachments: file ? [file.path] : [],
+      status: "draft",
+    });
+    await newEmail.save();
+    console.log("Email details saved to the database.");
+
+    // Send the email
+    console.log("Sending email...");
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully:", info);
+
+    // Update email status to 'sent' after successful sending
+    newEmail.status = "sent";
+    await newEmail.save();
+
+    if (file) {
+      fs.unlink(file.path, (err) => {
+        if (err) console.error("Error deleting uploaded file:", err);
+      });
+    }
+
+    res.status(200).send({ message: "Email sent successfully!", info });
+  } catch (error) {
+    console.error("Error sending email:", error);
+
+    // Update email status to 'draft' if sending fails
+    if (newEmail) {
+      await Email.findByIdAndUpdate(newEmail._id, { status: "draft" });
+    }
+
+    res
+      .status(500)
+      .send({ message: "Error sending email", error: error.message });
+  }
+});
+
+// Fetch Drafts Route
+app.get("/fetch-drafts", async (req, res) => {
+  try {
+    const drafts = await Draft.find();
+    res.status(200).json(drafts);
+  } catch (err) {
+    console.error("Error fetching drafts:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Fetch Sent Emails API
+app.get("/fetch-sent-emails", async (req, res) => {
+  try {
+    const sentEmails = await Email.find({ status: "sent" }).sort({ date: -1 });
+    res.status(200).send({ emails: sentEmails });
+  } catch (err) {
+=======
 // Graceful shutdown
 process.on("SIGINT", () => {
   console.log("Received SIGINT. Graceful shutdown...");
@@ -346,6 +521,7 @@ process.on("SIGINT", () => {
 });
 
 // Start the server
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
     console.error("Error fetching sent emails:", err);
     res
       .status(500)
@@ -452,14 +628,39 @@ app.get("/fetch-inbox-emails", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
+// Socket.io Integration
+// require('./socket/socketHandler')(io);
+
+// Make Socket Available in Routes
+// app.use((req, res, next) => {
+//   req.io = io;
+//   next();
+// });
+
+// app.use('/api/messages', messageRoutes);
+
 // Error Handling
 app.use(errorHandler);
 
+const port = process.env.PORT || 5000;
+
+=======
+// Error Handling
+app.use(errorHandler);
+
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
 // Connect to MongoDB
 // mongoose.connect('mongodb://localhost27017/projectdb', {
 //   useNewUrlParser: true,
 //   useUnifiedTopology: true,
 // });
+<<<<<<< HEAD
+
+server.listen(port, () => {
+  console.log(`🚀 Server running on http://localhost:${port}`);
+  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://localhost:3000", "http://localhost:3001"])}`);
+=======
 const port = process.env.PORT || 5001;
 
 server.listen(port, () => {
@@ -471,6 +672,7 @@ server.listen(port, () => {
       "http://localhost:5002",
     ])}`
   );
+>>>>>>> 8ee10ddd9a1f290ca2c40b979ec760259d1a3a05
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
 });
 

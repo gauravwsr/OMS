@@ -33,21 +33,25 @@ const upload = multer({
 // Configure user email credentials
 const configureUserEmailCredentials = async (req, res) => {
   try {
-    const { smtpEmail, smtpPassword, testOnly } = req.body;
-    const userId = req.user.id;
+    const { smtpEmail, smtpPassword, email, password, testOnly } = req.body;
+    const userId = req.user.id || req.user._id;
+
+    // Support both parameter formats
+    const emailAddress = smtpEmail || email;
+    const emailPassword = smtpPassword || password;
 
     console.log('Request body:', req.body);
     console.log('User authenticated:', {
-      id: req.user.id,
+      id: req.user.id || req.user._id,
       name: req.user.name,
       email: req.user.email,
       userType: req.user.userType
     });
 
-    if (!smtpEmail || !smtpPassword) {
+    if (!emailAddress || !emailPassword) {
       return res.status(400).json({
         success: false,
-        message: 'SMTP email and password are required'
+        message: 'Email and password are required'
       });
     }
 
@@ -56,7 +60,7 @@ const configureUserEmailCredentials = async (req, res) => {
     
     let testResult;
     try {
-      testResult = await EmailCredentialService.testEmailCredentials(smtpEmail, smtpPassword);
+      testResult = await EmailCredentialService.testEmailCredentials(emailAddress, emailPassword);
       console.log('📊 Test result:', testResult);
     } catch (testError) {
       console.error('❌ Test credentials error:', testError);
@@ -84,7 +88,7 @@ const configureUserEmailCredentials = async (req, res) => {
     }
 
     // Save credentials
-    const result = await EmailCredentialService.saveEmailCredentials(userId, smtpEmail, smtpPassword);
+    const result = await EmailCredentialService.saveEmailCredentials(userId, emailAddress, emailPassword);
     
     res.json(result);
   } catch (error) {
@@ -99,7 +103,7 @@ const configureUserEmailCredentials = async (req, res) => {
 // Get user email configuration status
 const getUserEmailConfig = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const credentials = await EmailCredentialService.getEmailCredentials(userId);
     
     res.json({
@@ -119,7 +123,7 @@ const getUserEmailConfig = async (req, res) => {
 // Remove user email credentials
 const removeUserEmailCredentials = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const result = await EmailCredentialService.removeEmailCredentials(userId);
     res.json(result);
   } catch (error) {
@@ -162,7 +166,7 @@ const sendEmail = async (req, res) => {
     }
 
     try {
-      const userId = req.user.id;
+      const userId = req.user.id || req.user._id;
       
       // Get user's email credentials
       const credentials = await EmailCredentialService.getEmailCredentials(userId);
@@ -257,7 +261,7 @@ const sendEmail = async (req, res) => {
 // Fetch emails using user's credentials
 const fetchEmails = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const { folder = 'INBOX', limit = 10, sortBy = 'date', sortOrder = 'desc' } = req.body;
 
     // Get user's email credentials
@@ -332,7 +336,7 @@ const fetchEmails = async (req, res) => {
 // Get email content by UID
 const getEmailContent = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const { uid } = req.params;
     const { folder = 'INBOX' } = req.body;
 
@@ -372,7 +376,7 @@ const getEmailContent = async (req, res) => {
 // Save draft email
 const saveDraft = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const { to, cc, bcc, subject, text, html } = req.body;
 
     // Get user's email credentials to use sender email
@@ -418,7 +422,7 @@ const saveDraft = async (req, res) => {
 // Update draft email
 const updateDraft = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const { id } = req.params;
     const { to, cc, bcc, subject, text, html } = req.body;
 
@@ -461,7 +465,7 @@ const updateDraft = async (req, res) => {
 // Get user's drafts
 const getDrafts = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     
     const drafts = await DraftEmail.find({ userId: userId })
       .sort({ updatedAt: -1 });
@@ -483,7 +487,7 @@ const getDrafts = async (req, res) => {
 // Delete draft
 const deleteDraft = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     const { id } = req.params;
 
     const draft = await DraftEmail.findOneAndDelete({
@@ -515,7 +519,7 @@ const deleteDraft = async (req, res) => {
 // Get user's sent emails
 const getSentEmails = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     
     const sentEmails = await Email.find({ 
       userId: userId,
@@ -539,7 +543,7 @@ const getSentEmails = async (req, res) => {
 // Get user's received emails
 const getReceivedEmails = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user._id;
     
     const receivedEmails = await Email.find({ 
       userId: userId,
