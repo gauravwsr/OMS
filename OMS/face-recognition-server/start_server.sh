@@ -27,7 +27,7 @@ python3 -c "from server import init_db; init_db()"
 
 # Start the server with Gunicorn
 echo "Starting Face Recognition Server with Gunicorn..."
-echo "Server will be available at: http://0.0.0.0:5002"
+echo "Server will be available at: http://146.190.165.62:5002"
 echo "Press Ctrl+C to stop the server"
 
 # Run with Gunicorn using the wsgi module

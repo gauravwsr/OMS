@@ -68,7 +68,7 @@ const Attendance = () => {
 
     try {
       const response = await axios.get(
-        `http://localhost:5002/api/registered-users?t=${Date.now()}`,
+        `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -282,7 +282,7 @@ const Attendance = () => {
   const fetchRegisteredUsers = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5002/api/registered-users?t=${Date.now()}`,
+        `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -520,7 +520,7 @@ const Attendance = () => {
     try {
       // First verify user is registered in face recognition system
       const registeredResponse = await axios.get(
-        "http://localhost:5002/api/registered-users"
+        "http://146.190.165.62:5002/api/registered-users"
       );
       const userRegistered = registeredResponse.data.registered_users?.find(
         (regUser) => regUser.name.toLowerCase() === user.name.toLowerCase()
@@ -551,7 +551,7 @@ const Attendance = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:5002/api/mark-attendance",
+        "http://146.190.165.62:5002/api/mark-attendance",
         {
           image: imageData,
         },

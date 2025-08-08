@@ -79,7 +79,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "http://localhost:5002",
+      "http://146.190.165.62:5002",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -548,7 +548,7 @@ server.listen(port, () => {
     `✅ CORS enabled for origins: ${JSON.stringify([
       "http://localhost:3000",
       "http://localhost:3001",
-      "http://localhost:5002",
+      "http://146.190.165.62:5002",
     ])}`
   );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);

@@ -22,7 +22,7 @@ if not exist "images" mkdir images
 
 :: Start the server with Flask development server
 echo Starting Face Recognition Server in development mode...
-echo Server will be available at: http://0.0.0.0:5002
+echo Server will be available at: http://146.190.165.62:5002
 echo Press Ctrl+C to stop the server
 
 :: Run directly with Python
