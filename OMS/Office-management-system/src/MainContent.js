@@ -195,6 +195,11 @@ const MainContent = ({ nav }) => {
           icon: <FiClipboard />,
         },
         {
+          path: "/hr-leave-management",
+          label: "Leave Management",
+          icon: <FiClipboard />,
+        },
+        {
           path: "/analytics-management",
           label: "Analytics Management",
           icon: <FiBarChart />,

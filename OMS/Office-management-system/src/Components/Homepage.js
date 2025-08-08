@@ -506,7 +506,7 @@ const NewDashboard = () => {
                             <h4>No Upcoming Events</h4>
                             <span className="activity-badge success">Clear</span>
                           </div>
-                          <p>Your calendar is clear for today</p>
+                          <p>No event for today</p>
                           <span className="activity-time">
                             <span className="time-icon">🕐</span>
                             {new Date().toLocaleDateString("en-US", {
