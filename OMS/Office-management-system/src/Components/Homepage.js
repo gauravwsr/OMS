@@ -77,7 +77,7 @@ const NewDashboard = () => {
             return eventEnd >= now; // Include events that haven't ended yet
           })
           .sort((a, b) => new Date(a.StartTime) - new Date(b.StartTime)) // Sort by start time
-          .slice(0, 3); // Show only next 3 events for homepage
+          .slice(0, 10); // Show next 10 events for homepage
 
         setUpcomingEvents(upcoming);
         setEventsError(null);
@@ -477,7 +477,7 @@ const NewDashboard = () => {
                         </div>
                       </div>
                     ) : upcomingEvents.length > 0 ? (
-                      upcomingEvents.slice(0, 2).map((event, index) => (
+                      upcomingEvents.map((event, index) => (
                         <div key={event._id} className="timeline-item-modern notification">
                           <div className="timeline-marker">
                             <div className="marker-icon">📅</div>
@@ -486,13 +486,6 @@ const NewDashboard = () => {
                           <div className="timeline-content-modern">
                             <div className="activity-header">
                               <h4>{event.Subject}</h4>
-                              {/* <span className={`activity-badge ${
-                                new Date(event.StartTime) <= new Date(Date.now() + 24 * 60 * 60 * 1000) 
-                                  ? 'warning' : 'info'
-                              }`}>
-                                {new Date(event.StartTime) <= new Date(Date.now() + 24 * 60 * 60 * 1000) 
-                                  ? 'Urgent' : 'Upcoming'}
-                              </span> */}
                             </div>
                             <p>{event.Description || "Scheduled calendar event"}</p>
                             <span className="activity-time">
