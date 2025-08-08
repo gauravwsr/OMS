@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   Container,
@@ -19,6 +20,35 @@ import "./chat.css";
 import "./chat-header.css";
 import { useAuth } from "../AuthProvider/AuthContext"; // Assuming you have an auth context
 
+// Helper to format date as WhatsApp style (Today, Yesterday, or date)
+function getDateLabel(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  if (isToday) return "Today";
+  if (isYesterday) return "Yesterday";
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Helper to group messages by date
+function groupMessagesByDate(messages) {
+  const groups = [];
+  let lastDate = null;
+  messages.forEach((msg) => {
+    if (!msg.createdAt) return;
+    const msgDate = new Date(msg.createdAt).toDateString();
+    if (msgDate !== lastDate) {
+      groups.push({ type: 'date', date: msg.createdAt });
+      lastDate = msgDate;
+    }
+    groups.push({ type: 'message', message: msg });
+  });
+  return groups;
+}
+
 const Chat = () => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
@@ -39,42 +69,96 @@ const Chat = () => {
   const [candidates, setCandidates] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [inAppNotifications, setInAppNotifications] = useState([]);
   const typingTimeout = useRef(null);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
   // Request notification permission on component mount
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    if ("Notification" in window) {
+      console.log("Current notification permission:", Notification.permission);
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((permission) => {
+          console.log("Notification permission granted:", permission);
+        });
+      }
+    } else {
+      console.log("Browser doesn't support notifications");
     }
   }, []);
 
   // Function to show browser notification
   const showNotification = (message) => {
-    if ("Notification" in window && Notification.permission === "granted") {
+    console.log("Attempting to show notification for message:", message);
+    
+    // Always show in-app notification as fallback
+    const inAppNotification = {
+      id: Date.now(),
+      senderName: message.sender?.name || "Someone",
+      content: message.content,
+      chatId: message.chat._id || message.chat,
+      timestamp: new Date(),
+    };
+    
+    setInAppNotifications(prev => [...prev, inAppNotification]);
+    
+    // Auto remove in-app notification after 5 seconds
+    setTimeout(() => {
+      setInAppNotifications(prev => prev.filter(notif => notif.id !== inAppNotification.id));
+    }, 5000);
+    
+    // Check if notifications are supported
+    if (!("Notification" in window)) {
+      console.log("Browser doesn't support notifications, using in-app notification only");
+      return;
+    }
+
+    // Check permission status
+    console.log("Notification permission status:", Notification.permission);
+    
+    if (Notification.permission === "granted") {
       const senderName = message.sender?.name || "Someone";
       const chatName = message.chat?.chatName || (
         message.chat?.isGroupChat ? "Group Chat" : senderName
       );
       
-      const notification = new Notification(`New message from ${senderName}`, {
-        body: message.content,
-        icon: "/favicon.ico", // You can change this to your app icon
-        tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
-        badge: "/favicon.ico"
+      console.log("Creating notification for:", senderName);
+      
+      try {
+        const notification = new Notification(`New message from ${senderName}`, {
+          body: message.content,
+          icon: "/favicon.ico", // You can change this to your app icon
+          tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
+          badge: "/favicon.ico"
+        });
+
+        console.log("Notification created successfully");
+
+        // Auto close notification after 5 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
+        
+        // Handle notification click to focus on chat
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+      } catch (error) {
+        console.error("Error creating notification:", error);
+      }
+    } else if (Notification.permission === "denied") {
+      console.log("Notifications are denied by user, using in-app notification");
+    } else if (Notification.permission === "default") {
+      console.log("Requesting notification permission...");
+      Notification.requestPermission().then((permission) => {
+        console.log("Permission result:", permission);
+        if (permission === "granted") {
+          // Retry showing notification
+          showNotification(message);
+        }
       });
-
-      // Auto close notification after 5 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
-
-      // Handle notification click to focus on chat
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
     }
   };
 
@@ -413,6 +497,12 @@ useEffect(() => {
   const handleMessageReceived = (newMessageReceived) => {
     console.log("New message received via socket:", newMessageReceived);
     
+    // Skip if this message is from the current user (to avoid duplicates when sender sends)
+    if (newMessageReceived.sender._id === user._id) {
+      console.log("Skipping own message to avoid duplicate");
+      return;
+    }
+    
     // Determine the chat ID from the message
     const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
     
@@ -423,8 +513,8 @@ useEffect(() => {
     setChats((prev) =>
       prev.map((chat) => {
         if (chat._id === chatId) {
-          // If it's not the current chat and message is not from current user, increment unread count
-          const shouldIncrementUnread = !isCurrentChat && newMessageReceived.sender._id !== user._id;
+          // Since we've already filtered out own messages, increment unread count for others
+          const shouldIncrementUnread = !isCurrentChat;
           
           return {
             ...chat,
@@ -439,16 +529,20 @@ useEffect(() => {
     
     // Only add message if it's for the current selected chat
     if (isCurrentChat) {
+      console.log("Message is for current chat, adding to messages");
       setMessages((prev) => {
         // Check if message already exists to avoid duplicates
         const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
         if (messageExists) {
+          console.log("Message already exists, skipping");
           return prev;
         }
+        console.log("Adding new message to current chat");
         return [...prev, newMessageReceived];
       });
-    } else if (newMessageReceived.sender._id !== user._id) {
-      // Show browser notification if not on current chat and message is not from current user
+    } else {
+      console.log("Message is for different chat, showing notification");
+      // Show browser notification since message is not from current user and not on current chat
       showNotification(newMessageReceived);
     }
   };
@@ -1153,6 +1247,26 @@ if (!user) {
 
 return (
   <Container fluid className="chat-container">
+    {/* In-App Notifications */}
+    <div className="in-app-notifications">
+      {inAppNotifications.map((notification) => (
+        <div key={notification.id} className="in-app-notification">
+          <div className="notification-header">
+            <strong>New message from {notification.senderName}</strong>
+            <button 
+              className="notification-close" 
+              onClick={() => setInAppNotifications(prev => prev.filter(n => n.id !== notification.id))}
+            >
+              ×
+            </button>
+          </div>
+          <div className="notification-body">
+            {notification.content}
+          </div>
+        </div>
+      ))}
+    </div>
+
     <Row className="h-100 g-0">
       {/* Left sidebar - Chats list */}
       <Col xs={12} md={4} className="p-0 border-end sidebar">
@@ -1296,11 +1410,9 @@ return (
                               : "Chat"}
                           </strong>
                           <small className="text-muted">
-                            {chat.latestMessage?.createdAt
-                              ? new Date(
-                                  chat.latestMessage.createdAt
-                                ).toLocaleTimeString()
-                              : ""}
+                            {chat.latestMessage && chat.latestMessage.createdAt
+                              ? new Date(chat.latestMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : "--:--"}
                           </small>
                         </div>
                         <small className="text-muted">
@@ -1486,24 +1598,44 @@ return (
                   </p>
                 </div>
               ) : (
-                messages.map((message) => {
-                  // Add safety checks to prevent accessing properties of undefined objects
-                  if (!message || !message._id) {
-                    return null; // Skip rendering invalid messages
+                groupMessagesByDate(messages).map((item, idx) => {
+                  if (item.type === 'date') {
+                    return (
+                      <div
+                        key={"date-" + item.date + idx}
+                        className="chat-date-separator d-flex justify-content-center align-items-center my-3"
+                        style={{ position: 'relative', zIndex: 1 }}
+                      >
+                        <span
+                          style={{
+                            background: '#e0e7ff',
+                            color: '#374151',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            borderRadius: '16px',
+                            padding: '4px 18px',
+                            boxShadow: '0 2px 8px rgba(60,72,120,0.07)',
+                            letterSpacing: '0.01em',
+                            border: '1px solid #c7d2fe',
+                          }}
+                        >
+                          {getDateLabel(item.date)}
+                        </span>
+                      </div>
+                    );
                   }
-
+                  const message = item.message;
+                  if (!message || !message._id) return null;
                   const isSender =
                     message.sender &&
                     message.sender._id &&
                     user &&
                     user._id &&
                     message.sender._id === user._id;
-
                   const isTemp = message.isTemp;
                   const sendFailed = message.sendFailed;
                   const isSending = message.sending && !sendFailed;
                   const slowNetwork = message.slowNetwork;
-
                   return (
                     <div
                       key={message._id}

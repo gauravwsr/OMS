@@ -175,8 +175,8 @@ const MainContent = ({ nav }) => {
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
-          path: "/hrAttendance",
-          label: "HR Attendance",
+          path: "/hr-leave-management",
+          label: "Leave Management",
           icon: <FiClipboard />,
         },
         {
@@ -190,8 +190,8 @@ const MainContent = ({ nav }) => {
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
-          path: "/hrAttendance",
-          label: "HR Attendance",
+          path: "/hr-leave-management",
+          label: "Leave Management",
           icon: <FiClipboard />,
         },
         {
