@@ -57,6 +57,7 @@ exports.init = (server) => {
         socket.currentRoom = userData._id;
         
         console.log(`User ${userData.name || 'unknown'} (${userData._id}) connected with socket ${socket.id}`);
+        console.log(`Socket rooms: ${Array.from(socket.rooms)}`);
         socket.emit('connected', { userId: userData._id, socketId: socket.id });
       } catch (error) {
         console.error('Error in setup handler:', error);
@@ -64,36 +65,44 @@ exports.init = (server) => {
       }
     });
 
-    // Handle new messages
-    socket.on('newMessage', (message) => {
+    // Handle user joining their personal room
+    socket.on('join', (userId) => {
+      if (!userId) {
+        console.error('Invalid userId for join event');
+        return;
+      }
+      
       try {
-        if (!message || !message.chat || !message.chat._id) {
-          console.error('Invalid message format:', message);
+        socket.join(userId);
+        console.log(`User ${socket.userId || 'unknown'} joined personal room: ${userId}`);
+      } catch (error) {
+        console.error(`Error joining personal room ${userId}:`, error);
+      }
+    });
+
+    // Handle new messages
+    socket.on('new message', async (messageData) => {
+      try {
+        if (!messageData || !messageData.chat) {
+          console.error('Invalid message format:', messageData);
           socket.emit('error', { message: 'Invalid message format' });
           return;
         }
 
-        const chatId = message.chat._id;
+        const chatId = messageData.chat;
         console.log(`New message in chat ${chatId} from user ${socket.userId || 'unknown'}`);
         
-        // Broadcast to all users in the chat room
-        socket.to(chatId).emit('messageReceived', message);
+        // Populate the message with chat details for better client handling
+        const fullMessage = {
+          ...messageData,
+          chat: { _id: chatId }
+        };
         
-        // If the message is a direct message, also notify the recipient
-        if (message.chat.isGroupChat === false && message.chat.users && message.chat.users.length === 2) {
-          // Find the recipient (not the sender)
-          const recipient = message.chat.users.find(user => 
-            user._id !== (socket.userId || message.sender._id)
-          );
-          
-          if (recipient && recipient._id) {
-            console.log(`Sending notification to user ${recipient._id}`);
-            socket.to(recipient._id).emit('newMessageNotification', {
-              message: message,
-              chatId: chatId
-            });
-          }
-        }
+        // Broadcast to all users in the chat room except the sender
+        socket.to(chatId).emit('message received', fullMessage);
+        
+        console.log(`Message broadcasted to chat room: ${chatId}`);
+        
       } catch (error) {
         console.error('Error handling new message:', error);
         socket.emit('error', { message: 'Error processing message' });
@@ -107,10 +116,10 @@ exports.init = (server) => {
         socket.emit('error', { message: 'Invalid chat ID' });
         return;
       }
-      
       try {
         socket.join(chatId);
         console.log(`User ${socket.userId || 'unknown'} joined chat: ${chatId}`);
+        console.log(`Socket rooms after joining chat: ${Array.from(socket.rooms)}`);
         socket.emit('joined chat', chatId);
       } catch (error) {
         console.error(`Error joining chat ${chatId}:`, error);
@@ -126,31 +135,20 @@ exports.init = (server) => {
       }
     });
 
-    socket.on("newMessage", async (messageData) => {
-      try {
-        // Emit to all users in the chat except sender
-        socket.to(messageData.chat).emit("message received", messageData);
-      } catch (error) {
-        console.error("Error handling new message:", error);
-      }
-    });
-
     // Handle typing events
-    socket.on('typing', (chatId) => {
-      if (!chatId) return;
-      
-      socket.to(chatId).emit('typing', { 
-        chatId, 
-        userId: socket.userId 
+    socket.on('typing', (data) => {
+      if (!data || !data.chatId) return;
+      socket.to(data.chatId).emit('typing', {
+        chatId: data.chatId,
+        userId: data.userId || socket.userId
       });
     });
 
-    socket.on('stop typing', (chatId) => {
-      if (!chatId) return;
-      
-      socket.to(chatId).emit('stop typing', { 
-        chatId, 
-        userId: socket.userId 
+    socket.on('stop typing', (data) => {
+      if (!data || !data.chatId) return;
+      socket.to(data.chatId).emit('stop typing', {
+        chatId: data.chatId,
+        userId: data.userId || socket.userId
       });
     });
 
@@ -166,6 +164,7 @@ exports.init = (server) => {
       } catch (err) {
         console.error('Error updating lastLogin on disconnect:', err);
       }
+
       // Perform any cleanup needed
     });
   });

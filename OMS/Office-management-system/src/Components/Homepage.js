@@ -439,64 +439,83 @@ const NewDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="timeline-item-modern notification">
-                      <div className="timeline-marker">
-                        <div className="marker-icon">🔔</div>
-                        <div className="marker-line"></div>
-                      </div>
-                      <div className="timeline-content-modern">
-                        <div className="activity-header">
-                          <h4>New Notification</h4>
-                          <span className="activity-badge warning">New</span>
+                    {/* Calendar Notifications */}
+                    {eventsLoading ? (
+                      <div className="timeline-item-modern notification">
+                        <div className="timeline-marker">
+                          <div className="marker-icon">⏳</div>
+                          <div className="marker-line"></div>
                         </div>
-                        <p>You have a new task assignment waiting for review</p>
-                        <span className="activity-time">
-                          <span className="time-icon">🕐</span>
-                          Apr 4, 10:15 AM
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upcoming Events Section */}
-              <div className="activity-section">
-                <div className="section-header">
-                  <h3>Upcoming Events</h3>
-                </div>
-
-                <div className="upcoming-events-scrollable">
-                  {eventsLoading ? (
-                    <div className="activity-timeline">
-                      <div className="timeline-item">
-                        <div className="timeline-icon notification">⏳</div>
-                        <div className="timeline-content">
-                          <h4>Loading Events</h4>
-                          <p>Please wait while we fetch your events...</p>
-                          <span className="timeline-time">Just now</span>
+                        <div className="timeline-content-modern">
+                          <div className="activity-header">
+                            <h4>Loading Calendar Events</h4>
+                            <span className="activity-badge info">Loading</span>
+                          </div>
+                          <p>Fetching your upcoming calendar events...</p>
+                          <span className="activity-time">
+                            <span className="time-icon">🕐</span>
+                            Just now
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  ) : eventsError ? (
-                    <div className="activity-timeline">
-                      <div className="timeline-item">
-                        <div className="timeline-icon notification">❌</div>
-                        <div className="timeline-content">
-                          <h4>Error Loading Events</h4>
-                          <p>Unable to fetch upcoming events</p>
-                          <span className="timeline-time">Just now</span>
+                    ) : eventsError ? (
+                      <div className="timeline-item-modern notification">
+                        <div className="timeline-marker">
+                          <div className="marker-icon">❌</div>
+                          <div className="marker-line"></div>
+                        </div>
+                        <div className="timeline-content-modern">
+                          <div className="activity-header">
+                            <h4>Calendar Error</h4>
+                            <span className="activity-badge error">Error</span>
+                          </div>
+                          <p>Unable to load calendar events</p>
+                          <span className="activity-time">
+                            <span className="time-icon">🕐</span>
+                            Just now
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  ) : upcomingEvents.length === 0 ? (
-                    <div className="activity-timeline">
-                      <div className="timeline-item">
-                        <div className="timeline-icon notification">📅</div>
-                        <div className="timeline-content">
-                          <h4>No Upcoming Events</h4>
-                          <p>No events scheduled for today</p>
-                          <span className="timeline-time">
+                    ) : upcomingEvents.length > 0 ? (
+                      upcomingEvents.slice(0, 2).map((event, index) => (
+                        <div key={event._id} className="timeline-item-modern notification">
+                          <div className="timeline-marker">
+                            <div className="marker-icon">📅</div>
+                            <div className="marker-line"></div>
+                          </div>
+                          <div className="timeline-content-modern">
+                            <div className="activity-header">
+                              <h4>{event.Subject}</h4>
+                              {/* <span className={`activity-badge ${
+                                new Date(event.StartTime) <= new Date(Date.now() + 24 * 60 * 60 * 1000) 
+                                  ? 'warning' : 'info'
+                              }`}>
+                                {new Date(event.StartTime) <= new Date(Date.now() + 24 * 60 * 60 * 1000) 
+                                  ? 'Urgent' : 'Upcoming'}
+                              </span> */}
+                            </div>
+                            <p>{event.Description || "Scheduled calendar event"}</p>
+                            <span className="activity-time">
+                              <span className="time-icon">🕐</span>
+                              {formatEventDate(event.StartTime, event.EndTime)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="timeline-item-modern notification">
+                        <div className="timeline-marker">
+                          <div className="marker-icon">📅</div>
+                          <div className="marker-line"></div>
+                        </div>
+                        <div className="timeline-content-modern">
+                          <div className="activity-header">
+                            <h4>No Upcoming Events</h4>
+                            <span className="activity-badge success">Clear</span>
+                          </div>
+                          <p>Your calendar is clear for today</p>
+                          <span className="activity-time">
+                            <span className="time-icon">🕐</span>
                             {new Date().toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -507,23 +526,8 @@ const NewDashboard = () => {
                           </span>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="activity-timeline">
-                      {upcomingEvents.map((event) => (
-                        <div key={event._id} className="timeline-item">
-                          <div className="timeline-icon notification">📅</div>
-                          <div className="timeline-content">
-                            <h4>{event.Subject}</h4>
-                            <p>{event.Description || "Event scheduled"}</p>
-                            <span className="timeline-time">
-                              {formatEventDate(event.StartTime, event.EndTime)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
