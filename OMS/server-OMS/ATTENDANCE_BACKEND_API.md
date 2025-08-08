@@ -7,7 +7,7 @@ This document describes the comprehensive attendance management backend system t
 ## Base URL
 
 ```
-http://localhost:5000/api/attendance
+http://localhost:5001/api/attendance
 ```
 
 ## Authentication
@@ -353,7 +353,7 @@ Update your frontend API calls to point to the new backend:
 const oldUrl = "http://localhost:5001/api/mark-attendance";
 
 // New backend URL
-const newUrl = "http://localhost:5000/api/attendance/mark";
+const newUrl = "http://localhost:5001/api/attendance/mark";
 
 // Example usage
 const response = await axios.post(

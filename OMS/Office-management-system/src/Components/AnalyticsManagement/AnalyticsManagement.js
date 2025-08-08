@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import './AnalyticsManagement.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import "./AnalyticsManagement.css";
 
 const AnalyticsManagement = () => {
-  const [activeTab, setActiveTab] = useState('leave');
+  const [activeTab, setActiveTab] = useState("leave");
   const [leaveData, setLeaveData] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [checkInOutData, setCheckInOutData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Tomorrow's date to include today's applications
+    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .split("T")[0],
+    endDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0], // Tomorrow's date to include today's applications
   });
-  const [selectedEmployee, setSelectedEmployee] = useState('all');
+  const [selectedEmployee, setSelectedEmployee] = useState("all");
   const [employees, setEmployees] = useState([]);
   const [analytics, setAnalytics] = useState({
     totalEmployees: 0,
     totalLeaves: 0,
     averageAttendance: 0,
-    topPerformers: []
+    topPerformers: [],
   });
 
   useEffect(() => {
@@ -36,42 +40,42 @@ const AnalyticsManagement = () => {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/users/all-users', {
+      const response = await axios.get('http://localhost:5001/api/users/all-users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setEmployees(response.data.filter(user => user.role === 'Employee'));
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error("Error fetching employees:", error);
     }
   };
 
   const fetchAnalyticsData = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const config = {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
-          employeeId: selectedEmployee !== 'all' ? selectedEmployee : undefined
-        }
+          employeeId: selectedEmployee !== "all" ? selectedEmployee : undefined,
+        },
       };
 
-      console.log('Fetching analytics with config:', config); // Debug log
-      console.log('Date Range:', dateRange); // Debug log
-      console.log('Selected Employee:', selectedEmployee); // Debug log
+      console.log("Fetching analytics with config:", config); // Debug log
+      console.log("Date Range:", dateRange); // Debug log
+      console.log("Selected Employee:", selectedEmployee); // Debug log
 
       // Fetch different data based on active tab
       switch (activeTab) {
-        case 'leave':
+        case "leave":
           await fetchLeaveData(config);
           break;
-        case 'attendance':
+        case "attendance":
           await fetchAttendanceData(config);
           break;
-        case 'checkinout':
+        case "checkinout":
           await fetchCheckInOutData(config);
           break;
         default:
@@ -80,8 +84,8 @@ const AnalyticsManagement = () => {
 
       await fetchAnalytics(config);
     } catch (error) {
-      setError('Error fetching analytics data');
-      console.error('Error:', error);
+      setError("Error fetching analytics data");
+      console.error("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -89,31 +93,31 @@ const AnalyticsManagement = () => {
 
   const fetchLeaveData = async (config) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/analytics/leave-analytics', config);
+      const response = await axios.get('http://localhost:5001/api/analytics/leave-analytics', config);
       console.log('Fetched Leave Data:', response.data); // Debugging log
       setLeaveData(response.data || []);
     } catch (error) {
-      console.error('Error fetching leave data:', error);
+      console.error("Error fetching leave data:", error);
       setLeaveData([]);
     }
   };
 
   const fetchAttendanceData = async (config) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/analytics/attendance-analytics', config);
+      const response = await axios.get('http://localhost:5001/api/analytics/attendance-analytics', config);
       setAttendanceData(response.data || []);
     } catch (error) {
-      console.error('Error fetching attendance data:', error);
+      console.error("Error fetching attendance data:", error);
       setAttendanceData([]);
     }
   };
 
   const fetchCheckInOutData = async (config) => {
     try {
-      const response = await axios.get('http://localhost:5000/api/analytics/checkinout-analytics', config);
+      const response = await axios.get('http://localhost:5001/api/analytics/checkinout-analytics', config);
       setCheckInOutData(response.data || []);
     } catch (error) {
-      console.error('Error fetching check-in/out data:', error);
+      console.error("Error fetching check-in/out data:", error);
       setCheckInOutData([]);
     }
   };
@@ -123,22 +127,28 @@ const AnalyticsManagement = () => {
       const analyticsData = {
         totalEmployees: employees.length,
         totalLeaves: leaveData.length,
-        averageAttendance: attendanceData.length > 0 
-          ? Math.round(attendanceData.reduce((acc, emp) => acc + emp.attendancePercentage, 0) / attendanceData.length)
-          : 0,
+        averageAttendance:
+          attendanceData.length > 0
+            ? Math.round(
+                attendanceData.reduce(
+                  (acc, emp) => acc + emp.attendancePercentage,
+                  0
+                ) / attendanceData.length
+              )
+            : 0,
         topPerformers: attendanceData
           .sort((a, b) => b.attendancePercentage - a.attendancePercentage)
-          .slice(0, 5)
+          .slice(0, 5),
       };
       setAnalytics(analyticsData);
     } catch (error) {
-      console.error('Error calculating analytics:', error);
+      console.error("Error calculating analytics:", error);
     }
   };
 
   const downloadExcel = () => {
     let dataToExport = [];
-    let fileName = '';
+    let fileName = "";
 
     switch (activeTab) {
       case 'leave':
@@ -158,35 +168,37 @@ const AnalyticsManagement = () => {
           'Approved Date': leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A',
           'Comments': leave.comments || 'N/A',
           'Emergency Contact': leave.emergencyContact || 'N/A',
-          'Leave Balance': leave.leaveBalance + ' days' || 'N/A'
         }));
-        fileName = 'Employee_Leave_Applications_Report';
+        fileName = "Employee_Leave_Applications_Report";
         break;
 
-      case 'attendance':
-        dataToExport = attendanceData.map(att => ({
-          'Employee Name': att.employeeName,
-          'Email': att.email,
-          'Department': att.department,
-          'Total Days': att.totalDays,
-          'Present Days': Math.min(att.presentDays, att.totalDays),
-          'Absent Days': Math.max(att.absentDays, 0),
-          'Attendance Percentage': `${Math.min(att.attendancePercentage, 100)}%`
+      case "attendance":
+        dataToExport = attendanceData.map((att) => ({
+          "Employee Name": att.employeeName,
+          Email: att.email,
+          Department: att.department,
+          "Total Days": att.totalDays,
+          "Present Days": Math.min(att.presentDays, att.totalDays),
+          "Absent Days": Math.max(att.absentDays, 0),
+          "Attendance Percentage": `${Math.min(
+            att.attendancePercentage,
+            100
+          )}%`,
         }));
-        fileName = 'Employee_Attendance_Report';
+        fileName = "Employee_Attendance_Report";
         break;
 
-      case 'checkinout':
-        dataToExport = checkInOutData.map(record => ({
-          'Employee Name': record.employeeName,
-          'Email': record.email,
-          'Date': record.date,
-          'Check In': record.checkIn,
-          'Check Out': record.checkOut,
-          'Total Hours': record.totalHours,
-          'Status': record.status
+      case "checkinout":
+        dataToExport = checkInOutData.map((record) => ({
+          "Employee Name": record.employeeName,
+          Email: record.email,
+          Date: record.date,
+          "Check In": record.checkIn,
+          "Check Out": record.checkOut,
+          "Total Hours": record.totalHours,
+          Status: record.status,
         }));
-        fileName = 'Employee_CheckInOut_Report';
+        fileName = "Employee_CheckInOut_Report";
         break;
 
       default:
@@ -195,12 +207,17 @@ const AnalyticsManagement = () => {
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
-    
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    const currentDate = new Date().toISOString().split('T')[0];
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Report");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const data = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const currentDate = new Date().toISOString().split("T")[0];
     saveAs(data, `${fileName}_${currentDate}.xlsx`);
   };
 
@@ -212,27 +229,39 @@ const AnalyticsManagement = () => {
           <div className="header-actions">
             <div className="quick-stats">
               <span className="quick-stat">
-                Most Common: <strong style={{ color: '#764ba2', fontWeight: 700 }}>
+                Most Common:{" "}
+                <strong style={{ color: "#764ba2", fontWeight: 700 }}>
                   {(() => {
-                    if (leaveData.length === 0) return 'N/A';
+                    if (leaveData.length === 0) return "N/A";
                     const counts = leaveData.reduce((acc, leave) => {
                       acc[leave.leaveType] = (acc[leave.leaveType] || 0) + 1;
                       return acc;
                     }, {});
-                    const sorted = Object.entries(counts).sort(([, a], [, b]) => b - a);
-                    return sorted[0]?.[0] || 'N/A';
+                    const sorted = Object.entries(counts).sort(
+                      ([, a], [, b]) => b - a
+                    );
+                    return sorted[0]?.[0] || "N/A";
                   })()}
                 </strong>
               </span>
               <span className="quick-stat">
-                Avg Days: <strong style={{ color: '#48bb78', fontWeight: 700 }}>
-                  {leaveData.length > 0 ?
-                    (Math.round(leaveData.reduce((acc, leave) => acc + leave.totalDays, 0) / leaveData.length * 10) / 10) : 0
-                  } days
+                Avg Days:{" "}
+                <strong style={{ color: "#48bb78", fontWeight: 700 }}>
+                  {leaveData.length > 0
+                    ? Math.round(
+                        (leaveData.reduce(
+                          (acc, leave) => acc + leave.totalDays,
+                          0
+                        ) /
+                          leaveData.length) *
+                          10
+                      ) / 10
+                    : 0}{" "}
+                  days
                 </strong>
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={downloadExcel} className="download-btn">
                 📊 Download Excel
               </button>
@@ -251,7 +280,6 @@ const AnalyticsManagement = () => {
                 <th>Status</th>
                 <th>Applied</th>
                 <th>Approval</th>
-                <th>Balance</th>
               </tr>
             </thead>
             <tbody>
@@ -259,73 +287,140 @@ const AnalyticsManagement = () => {
                 leaveData.map((leave, index) => (
                   <tr key={leave._id || index}>
                     <td className="employee-details-cell">
-                      <div className="emp-avatar" title={leave.employeeName || leave.name || 'Unknown'}>
-                        <span>{(leave.employeeName || leave.name || 'U').charAt(0)}</span>
+                      <div
+                        className="emp-avatar"
+                        title={leave.employeeName || leave.name || "Unknown"}
+                      >
+                        <span>
+                          {(leave.employeeName || leave.name || "U").charAt(0)}
+                        </span>
                       </div>
                       <div className="emp-info">
-                        <div className="emp-name">{leave.employeeName || leave.name || 'Unknown'}</div>
+                        <div className="emp-name">
+                          {leave.employeeName || leave.name || "Unknown"}
+                        </div>
                         <div className="emp-meta">
-                          <span className="emp-id">ID: {leave.employeeId || 'N/A'}</span>
-                          <span className="emp-email">{leave.employeeEmail || leave.email || 'N/A'}</span>
-                          <span className="emp-dept">{leave.department || 'General'}</span>
+                          <span className="emp-id">
+                            ID: {leave.employeeId || "N/A"}
+                          </span>
+                          <span className="emp-email">
+                            {leave.employeeEmail || leave.email || "N/A"}
+                          </span>
+                          <span className="emp-dept">
+                            {leave.department || "General"}
+                          </span>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className={`badge badge-leave-type ${leave.leaveType ? leave.leaveType.toLowerCase().replace(/\s+/g, '-') : ''}`}>
-                        {leave.leaveType || 'N/A'}
+                      <span
+                        className={`badge badge-leave-type ${
+                          leave.leaveType
+                            ? leave.leaveType.toLowerCase().replace(/\s+/g, "-")
+                            : ""
+                        }`}
+                      >
+                        {leave.leaveType || "N/A"}
                       </span>
                     </td>
                     <td>
                       <div className="date-range">
-                        <span>{new Date(leave.startDate).toLocaleDateString('en-IN')}</span>
+                        <span>
+                          {new Date(leave.startDate).toLocaleDateString(
+                            "en-IN"
+                          )}
+                        </span>
                         <span className="date-arrow">→</span>
-                        <span>{new Date(leave.endDate).toLocaleDateString('en-IN')}</span>
+                        <span>
+                          {new Date(leave.endDate).toLocaleDateString("en-IN")}
+                        </span>
                       </div>
                     </td>
                     <td>
                       <span className="days-count">
-                        <strong>{leave.totalDays}</strong> <small>{leave.totalDays === 1 ? 'day' : 'days'}</small>
+                        <strong>{leave.totalDays}</strong>{" "}
+                        <small>{leave.totalDays === 1 ? "day" : "days"}</small>
                       </span>
                     </td>
                     <td className="reason-cell">
-                      <span title={leave.reason}>{leave.reason?.length > 40 ? `${leave.reason.substring(0, 40)}...` : leave.reason}</span>
+                      <span title={leave.reason}>
+                        {leave.reason?.length > 40
+                          ? `${leave.reason.substring(0, 40)}...`
+                          : leave.reason}
+                      </span>
                     </td>
                     <td>
-                      <span className={`badge badge-status ${leave.status?.toLowerCase()}`}>{leave.status}</span>
+                      <span
+                        className={`badge badge-status ${leave.status?.toLowerCase()}`}
+                      >
+                        {leave.status}
+                      </span>
                     </td>
                     <td>
-                      <span>{new Date(leave.appliedDate || leave.createdAt).toLocaleDateString('en-IN')}</span>
+                      <span>
+                        {new Date(
+                          leave.appliedDate || leave.createdAt
+                        ).toLocaleDateString("en-IN")}
+                      </span>
                     </td>
                     <td>
-                      {leave.status === 'Approved' && (
+                      {leave.status === "Approved" && (
                         <div className="approval-info">
-                          <span className="approved-by">By: {leave.approvedBy || 'N/A'}</span><br/>
-                          <span className="approved-date">{leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A'}</span><br/>
+                          <span className="approved-by">
+                            By: {leave.approvedBy || "N/A"}
+                          </span>
+                          <br />
+                          <span className="approved-date">
+                            {leave.approvedDate
+                              ? new Date(leave.approvedDate).toLocaleDateString(
+                                  "en-IN"
+                                )
+                              : "N/A"}
+                          </span>
+                          <br />
                           {leave.comments && (
-                            <span className="approval-comment" title={leave.comments}>
-                              💬 {leave.comments.length > 25 ? `${leave.comments.substring(0, 25)}...` : leave.comments}
+                            <span
+                              className="approval-comment"
+                              title={leave.comments}
+                            >
+                              💬{" "}
+                              {leave.comments.length > 25
+                                ? `${leave.comments.substring(0, 25)}...`
+                                : leave.comments}
                             </span>
                           )}
                         </div>
                       )}
-                      {leave.status === 'Pending' && (
+                      {leave.status === "Pending" && (
                         <span className="pending-text">⏳ Under Review</span>
                       )}
-                      {leave.status === 'Rejected' && (
+                      {leave.status === "Rejected" && (
                         <div className="rejection-info">
-                          <span className="rejected-by">By: {leave.approvedBy || 'N/A'}</span><br/>
-                          <span className="rejected-date">{leave.approvedDate ? new Date(leave.approvedDate).toLocaleDateString('en-IN') : 'N/A'}</span><br/>
+                          <span className="rejected-by">
+                            By: {leave.approvedBy || "N/A"}
+                          </span>
+                          <br />
+                          <span className="rejected-date">
+                            {leave.approvedDate
+                              ? new Date(leave.approvedDate).toLocaleDateString(
+                                  "en-IN"
+                                )
+                              : "N/A"}
+                          </span>
+                          <br />
                           {leave.comments && (
-                            <span className="rejection-comment" title={leave.comments}>
-                              ❌ {leave.comments.length > 25 ? `${leave.comments.substring(0, 25)}...` : leave.comments}
+                            <span
+                              className="rejection-comment"
+                              title={leave.comments}
+                            >
+                              ❌{" "}
+                              {leave.comments.length > 25
+                                ? `${leave.comments.substring(0, 25)}...`
+                                : leave.comments}
                             </span>
                           )}
                         </div>
                       )}
-                    </td>
-                    <td>
-                      <span className={`badge badge-balance ${leave.leaveBalance <= 5 ? 'low' : 'normal'}`}>{leave.leaveBalance} days</span>
                     </td>
                   </tr>
                 ))
@@ -334,7 +429,9 @@ const AnalyticsManagement = () => {
                   <td colSpan="9" className="no-data">
                     <div className="no-data-message">
                       <span>📋</span>
-                      <p>No leave applications found for the selected criteria</p>
+                      <p>
+                        No leave applications found for the selected criteria
+                      </p>
                     </div>
                   </td>
                 </tr>
@@ -359,11 +456,15 @@ const AnalyticsManagement = () => {
         </div>
         <div className="stat-card">
           <h3>High Performers</h3>
-          <p className="stat-number">{attendanceData.filter(a => a.attendancePercentage >= 90).length}</p>
+          <p className="stat-number">
+            {attendanceData.filter((a) => a.attendancePercentage >= 90).length}
+          </p>
         </div>
         <div className="stat-card">
           <h3>Low Attendance</h3>
-          <p className="stat-number">{attendanceData.filter(a => a.attendancePercentage < 70).length}</p>
+          <p className="stat-number">
+            {attendanceData.filter((a) => a.attendancePercentage < 70).length}
+          </p>
         </div>
       </div>
 
@@ -394,21 +495,45 @@ const AnalyticsManagement = () => {
                   <td>{att.department}</td>
                   <td>{att.totalDays}</td>
                   <td>
-                    <span className={
-                      att.attendancePercentage >= 100 ? 'present-badge excellent' :
-                      att.attendancePercentage >= 80 ? 'present-badge good' :
-                      'present-badge poor'
-                    }>
+                    <span
+                      className={
+                        att.attendancePercentage >= 100
+                          ? "present-badge excellent"
+                          : att.attendancePercentage >= 80
+                          ? "present-badge good"
+                          : "present-badge poor"
+                      }
+                    >
                       {Math.min(att.presentDays, att.totalDays)}
                     </span>
                   </td>
                   <td>{Math.max(att.absentDays, 0)}</td>
-                  <td className={`attendance-percent ${att.attendancePercentage >= 90 ? 'excellent' : att.attendancePercentage >= 70 ? 'good' : 'poor'}`}>
+                  <td
+                    className={`attendance-percent ${
+                      att.attendancePercentage >= 90
+                        ? "excellent"
+                        : att.attendancePercentage >= 70
+                        ? "good"
+                        : "poor"
+                    }`}
+                  >
                     {Math.min(att.attendancePercentage, 100)}%
                   </td>
                   <td>
-                    <span className={`performance-badge ${att.attendancePercentage >= 90 ? 'excellent' : att.attendancePercentage >= 70 ? 'good' : 'poor'}`}>
-                      {att.attendancePercentage >= 90 ? 'Excellent' : att.attendancePercentage >= 70 ? 'Good' : 'Needs Improvement'}
+                    <span
+                      className={`performance-badge ${
+                        att.attendancePercentage >= 90
+                          ? "excellent"
+                          : att.attendancePercentage >= 70
+                          ? "good"
+                          : "poor"
+                      }`}
+                    >
+                      {att.attendancePercentage >= 90
+                        ? "Excellent"
+                        : att.attendancePercentage >= 70
+                        ? "Good"
+                        : "Needs Improvement"}
                     </span>
                   </td>
                 </tr>
@@ -429,11 +554,23 @@ const AnalyticsManagement = () => {
         </div>
         <div className="stat-card">
           <h3>On Time</h3>
-          <p className="stat-number">{checkInOutData.filter(r => r.checkIn.includes('8:') || r.checkIn.includes('9:')).length}</p>
+          <p className="stat-number">
+            {
+              checkInOutData.filter(
+                (r) => r.checkIn.includes("8:") || r.checkIn.includes("9:")
+              ).length
+            }
+          </p>
         </div>
         <div className="stat-card">
           <h3>Late Arrivals</h3>
-          <p className="stat-number">{checkInOutData.filter(r => r.checkIn.includes('10:') || r.checkIn.includes('11:')).length}</p>
+          <p className="stat-number">
+            {
+              checkInOutData.filter(
+                (r) => r.checkIn.includes("10:") || r.checkIn.includes("11:")
+              ).length
+            }
+          </p>
         </div>
         <div className="stat-card">
           <h3>Avg Working Hours</h3>
@@ -466,7 +603,14 @@ const AnalyticsManagement = () => {
                 <tr key={index}>
                   <td>{record.employeeName}</td>
                   <td>{record.date}</td>
-                  <td className={record.checkIn.includes('10:') || record.checkIn.includes('11:') ? 'late' : 'on-time'}>
+                  <td
+                    className={
+                      record.checkIn.includes("10:") ||
+                      record.checkIn.includes("11:")
+                        ? "late"
+                        : "on-time"
+                    }
+                  >
                     {record.checkIn}
                   </td>
                   <td>{record.checkOut}</td>
@@ -475,8 +619,18 @@ const AnalyticsManagement = () => {
                     {record.status}
                   </td>
                   <td>
-                    <span className={`punctuality-badge ${record.checkIn.includes('8:') || record.checkIn.includes('9:') ? 'on-time' : 'late'}`}>
-                      {record.checkIn.includes('8:') || record.checkIn.includes('9:') ? 'On Time' : 'Late'}
+                    <span
+                      className={`punctuality-badge ${
+                        record.checkIn.includes("8:") ||
+                        record.checkIn.includes("9:")
+                          ? "on-time"
+                          : "late"
+                      }`}
+                    >
+                      {record.checkIn.includes("8:") ||
+                      record.checkIn.includes("9:")
+                        ? "On Time"
+                        : "Late"}
                     </span>
                   </td>
                 </tr>
@@ -497,20 +651,20 @@ const AnalyticsManagement = () => {
 
       <div className="analytics-tabs">
         <button
-          className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`}
-          onClick={() => setActiveTab('leave')}
+          className={`tab-btn ${activeTab === "leave" ? "active" : ""}`}
+          onClick={() => setActiveTab("leave")}
         >
           🏖️ Leave Analytics
         </button>
         <button
-          className={`tab-btn ${activeTab === 'attendance' ? 'active' : ''}`}
-          onClick={() => setActiveTab('attendance')}
+          className={`tab-btn ${activeTab === "attendance" ? "active" : ""}`}
+          onClick={() => setActiveTab("attendance")}
         >
           📅 Attendance Analytics
         </button>
         <button
-          className={`tab-btn ${activeTab === 'checkinout' ? 'active' : ''}`}
-          onClick={() => setActiveTab('checkinout')}
+          className={`tab-btn ${activeTab === "checkinout" ? "active" : ""}`}
+          onClick={() => setActiveTab("checkinout")}
         >
           ⏰ Check-In/Out Analytics
         </button>
@@ -531,9 +685,9 @@ const AnalyticsManagement = () => {
 
       {!loading && !error && (
         <>
-          {activeTab === 'leave' && renderLeaveAnalytics()}
-          {activeTab === 'attendance' && renderAttendanceAnalytics()}
-          {activeTab === 'checkinout' && renderCheckInOutAnalytics()}
+          {activeTab === "leave" && renderLeaveAnalytics()}
+          {activeTab === "attendance" && renderAttendanceAnalytics()}
+          {activeTab === "checkinout" && renderCheckInOutAnalytics()}
         </>
       )}
     </div>

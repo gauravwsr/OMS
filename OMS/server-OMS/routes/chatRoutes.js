@@ -25,27 +25,20 @@ const { protect } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
 const { body, param } = require('express-validator');
 
-// router.use(authMiddleware.protect);
+// Apply authentication middleware to all chat routes
+console.log('Setting up authentication for chat routes');
+router.use((req, res, next) => {
+  console.log('Chat route middleware triggered for:', req.method, req.path);
+  console.log('Request headers:', req.headers);
+  console.log('Request body before auth:', req.body);
+  next();
+});
+
+// Use the protect middleware
 router.use(protect);
 
 // Chat routes
-router.route('/')
-  .get(async (req, res) => {
-    try {
-      // Your chat fetching logic
-      res.json({ success: true, data: [] });
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  })
-  .post(async (req, res) => {
-    try {
-      // Your chat creation logic
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  });
+
 // Access or create chat
 router.post(
   '/',

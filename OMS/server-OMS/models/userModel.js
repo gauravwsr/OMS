@@ -129,9 +129,34 @@ const UserSchema = new mongoose.Schema({
   organizationalSpecialization: {
     type: String, // Specialization (Hardware Support, etc.)
   },
+  // Team assignment for meeting access control
+  team: {
+    type: String,
+    trim: true,
+    default: null,
+  },
   lastLogin: {
     type: Date,
     default: Date.now,
+  },
+  // Email Configuration for Hostinger
+  emailConfig: {
+    smtpEmail: {
+      type: String,
+      default: null, // e.g., user@tars.co.in
+    },
+    smtpPassword: {
+      type: String,
+      default: null, // Encrypted password
+    },
+    isEmailConfigured: {
+      type: Boolean,
+      default: false,
+    },
+    lastEmailSync: {
+      type: Date,
+      default: null,
+    },
   },
 });
 

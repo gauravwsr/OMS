@@ -78,12 +78,12 @@
 const express = require('express');
 const router = express.Router();
 const messageController = require('../controllers/messageController');
-// const authMiddleware = require('../middlewares/authMiddleware');
+const authMiddleware = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
 const { body, param } = require('express-validator');
 const upload = require('../config/multerConfig');
 
-// router.use(authMiddleware.protect);
+router.use(authMiddleware.protect);
 
 router.post(
   '/',

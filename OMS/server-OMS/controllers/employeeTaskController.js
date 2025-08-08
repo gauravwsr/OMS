@@ -91,6 +91,27 @@ const updateTaskStatus = async (req, res) => {
         status === "Completed" ? 100 : status === "In Progress" ? 50 : 0;
     }
 
+    const oldStatus = task.status;
+    
+    // Only record history if status is actually changing
+    if (oldStatus !== status) {
+      // Add to status history
+      const historyEntry = {
+        previousStatus: oldStatus,
+        newStatus: status,
+        changedBy: {
+          userId: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+          role: req.user.role
+        },
+        timestamp: new Date(),
+        reason: req.body.reason || `Status changed from ${oldStatus} to ${status} by employee`
+      };
+      
+      task.statusHistory.push(historyEntry);
+    }
+
     task.status = status;
     task.progressPercentage = progressPercentage;
 

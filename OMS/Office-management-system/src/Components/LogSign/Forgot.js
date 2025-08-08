@@ -12,7 +12,7 @@
 //   e.preventDefault();
 
 //   try {
-//     const response = await fetch("http://localhost:5000/api/auth/forgot-password", {
+//     const response = await fetch("http://localhost:5001/api/auth/forgot-password", {
 //       method: "POST",
 //       headers: { "Content-Type": "application/json" },
 //       body: JSON.stringify({ email }),
@@ -82,7 +82,6 @@
 
 // export default Forgot;
 
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword } from "./authApi.js"; // Import API function
@@ -111,7 +110,10 @@ const Forgot = () => {
   };
 
   return (
-    <div className="forgot-container" style={{ display: "flex", flexDirection: "column" }}>
+    <div
+      className="forgot-container"
+      style={{ display: "flex", flexDirection: "column" }}
+    >
       <h1>Forgot Password?</h1>
       <p>Enter your email to receive a verification code.</p>
       {error && <p className="error">{error}</p>}

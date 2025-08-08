@@ -108,7 +108,7 @@ const HRLeaveManagement = () => {
   const fetchLeaveApplications = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5001/api/leave-applications');
+      const response = await axios.get('http://localhost5001/api/leave-applications');
       setLeaveApplications(response.data);
       setError('');
     } catch (err) {
@@ -123,7 +123,7 @@ const HRLeaveManagement = () => {
   const updateLeaveStatus = async (id, newStatus) => {
     try {
       setLoading(true);
-      const response = await axios.patch(`http://localhost:5001/api/leave-applications/${id}`, {
+      const response = await axios.patch(`http://localhost5001/api/leave-applications/${id}`, {
         status: newStatus
       });
 

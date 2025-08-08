@@ -16,6 +16,7 @@ import "./Todo.css";
 
 const Todo = () => {
   const { user } = useAuth(); // Get current user context
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [assignedEmail, setAssignedEmail] = useState("");
@@ -38,9 +39,7 @@ const Todo = () => {
     setIsLoading(true);
     axios
       .get(
-        `http://localhost:5000/tasks?userEmail=${encodeURIComponent(
-          user.email
-        )}`
+        `${API_BASE_URL}/api/notes?userEmail=${encodeURIComponent(user.email)}`
       )
       .then((res) => {
         if (res.data) {
@@ -64,7 +63,7 @@ const Todo = () => {
       try {
         // Fetch from candidates (employees) first
         const candidatesResponse = await axios.get(
-          "http://localhost:5000/api/candidates"
+          `${API_BASE_URL}/api/candidates`
         );
         const candidateEmails =
           candidatesResponse.data.data?.map(
@@ -72,9 +71,7 @@ const Todo = () => {
           ) || [];
 
         // Fetch from users as backup
-        const usersResponse = await axios.get(
-          "http://localhost:5000/api/users"
-        );
+        const usersResponse = await axios.get(`${API_BASE_URL}/api/users`);
         const userEmails = usersResponse.data?.map((user) => user.email) || [];
 
         // Combine and remove duplicates
@@ -109,7 +106,7 @@ const Todo = () => {
     };
 
     axios
-      .post("http://localhost:5000/tasks", task)
+      .post(`${API_BASE_URL}/api/notes`, task)
       .then((res) => {
         if (res.data && res.data.title) {
           // Only add to local state if the task is assigned to current user
@@ -138,7 +135,9 @@ const Todo = () => {
     if (!task) return;
 
     axios
-      .put(`http://localhost:5000/tasks/${id}`, { completed: !task.completed })
+      .put(`${API_BASE_URL}/api/notes/${id}`, {
+        completed: !task.completed,
+      })
       .then(() => {
         setTasks(
           tasks.map((t) =>
@@ -155,7 +154,7 @@ const Todo = () => {
 
   const deleteTask = (id) => {
     axios
-      .delete(`http://localhost:5000/tasks/${id}`)
+      .delete(`${API_BASE_URL}/api/notes/${id}`)
       .then(() => {
         setTasks(tasks.filter((t) => t._id !== id));
       })

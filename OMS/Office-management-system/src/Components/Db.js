@@ -27,8 +27,14 @@ const EmployeeList = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
+        const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:5000/api/candidates"
+          "http://localhost:5001/api/candidates",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         console.log("API Response:", response.data.data);
         setEmployees(
@@ -163,8 +169,14 @@ const EmployeeList = () => {
       )
     ) {
       try {
+        const token = localStorage.getItem("token");
         const response = await axios.delete(
-          `http://localhost:5000/api/candidates/${id}`
+          `http://localhost:5001/api/candidates/${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
 
         if (response.data.success) {
@@ -183,7 +195,12 @@ Details:
 
           // Refresh the employee list
           const refreshResponse = await axios.get(
-            "http://localhost:5000/api/candidates"
+            "http://localhost:5001/api/candidates",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
           );
           setEmployees(
             Array.isArray(refreshResponse.data.data)
@@ -305,7 +322,7 @@ Details:
                       <img
                         src={
                           employee.photoPath
-                            ? `http://localhost:5000/uploads/photos/${employee.photoPath}`
+                            ? `http://localhost:5001/uploads/photos/${employee.photoPath}`
                             : `https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
                         }
                         alt={employee.fullName}
@@ -476,7 +493,7 @@ Details:
                   <img
                     src={
                       employee.photoPath
-                        ? `http://localhost:5000/uploads/photos/${employee.photoPath}`
+                        ? `http://localhost:5001/uploads/photos/${employee.photoPath}`
                         : ` https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
                     }
                     alt={employee.fullName}

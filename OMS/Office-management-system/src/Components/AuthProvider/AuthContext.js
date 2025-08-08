@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("http://localhost:5000/users/login", {
+      const response = await axios.post("http://localhost:5001/users/login", {
         email,
         password,
       });
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
     additionalData = {}
   ) => {
     try {
-      const response = await axios.post("http://localhost:5000/users/signup", {
+      const response = await axios.post("http://localhost:5001/users/signup", {
         name,
         email,
         password,
@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem("token");
+    sessionStorage.removeItem("welcomeAnimationShown"); // Clear welcome animation flag
     message.success("Logout successful!");
   };
 
@@ -142,7 +143,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await axios.put(
-        "http://localhost:5000/users/updateRole",
+        "http://localhost:5001/users/updateRole",
         {
           userId: user.email,
           newRole,
@@ -162,7 +163,7 @@ export const AuthProvider = ({ children }) => {
   const checkSuperAdminExists = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/users/check-super-admin"
+        "http://localhost:5001/users/check-super-admin"
       );
       return response.data.exists;
     } catch (error) {
@@ -174,7 +175,7 @@ export const AuthProvider = ({ children }) => {
   const getAvailableSuperAdminSubRoles = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/users/available-super-admin-subroles"
+        "http://localhost:5001/users/available-super-admin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -186,7 +187,7 @@ export const AuthProvider = ({ children }) => {
   const getSuperAdminSubRoles = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/users/superadmin-subroles"
+        "http://localhost:5001/users/superadmin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -205,7 +206,7 @@ export const AuthProvider = ({ children }) => {
   const addSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/users/add-superadmin-subrole",
+        "http://localhost:5001/users/add-superadmin-subrole",
         {
           subRole,
         },
@@ -225,7 +226,7 @@ export const AuthProvider = ({ children }) => {
   const deleteSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5000/users/delete-superadmin-subrole/${subRole}`,
+        `http://localhost:5001/users/delete-superadmin-subrole/${subRole}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -243,29 +244,33 @@ export const AuthProvider = ({ children }) => {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         return { notifications: [], unreadCount: 0 };
       }
-      
+
       const response = await axios.get(
-        "http://localhost:5000/api/notifications",
+        "http://localhost:5001/api/notifications",
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      
+
       const notificationsData = response.data.notifications || [];
       const unreadCount = response.data.unreadCount || 0;
-      
+
       setNotifications(notificationsData);
       setUnreadNotifications(unreadCount);
-      
+
       return response.data;
     } catch (error) {
-      console.error("Error fetching notifications:", error.response?.status, error.response?.data?.message);
+      console.error(
+        "Error fetching notifications:",
+        error.response?.status,
+        error.response?.data?.message
+      );
       return { notifications: [], unreadCount: 0 };
     }
   };
@@ -273,7 +278,7 @@ export const AuthProvider = ({ children }) => {
   const markNotificationAsRead = async (notificationId) => {
     try {
       await axios.patch(
-        `http://localhost:5000/api/notifications/${notificationId}/read`,
+        `http://localhost:5001/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -282,14 +287,12 @@ export const AuthProvider = ({ children }) => {
         }
       );
       // Update local state
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif._id === notificationId 
-            ? { ...notif, isRead: true }
-            : notif
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif._id === notificationId ? { ...notif, isRead: true } : notif
         )
       );
-      setUnreadNotifications(prev => Math.max(0, prev - 1));
+      setUnreadNotifications((prev) => Math.max(0, prev - 1));
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -298,7 +301,7 @@ export const AuthProvider = ({ children }) => {
   const createNotification = async (notificationData) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/notifications",
+        "http://localhost:5001/api/notifications",
         notificationData,
         {
           headers: {
@@ -315,14 +318,11 @@ export const AuthProvider = ({ children }) => {
 
   const clearAllNotifications = async () => {
     try {
-      await axios.delete(
-        "http://localhost:5000/api/notifications/clear",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await axios.delete("http://localhost:5001/api/notifications/clear", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setNotifications([]);
       setUnreadNotifications(0);
     } catch (error) {

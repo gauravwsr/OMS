@@ -1,1689 +1,2087 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, ListGroup, Form, Button, Badge, Modal, Tab, Nav, Spinner, Alert } from 'react-bootstrap';
-import axios from 'axios';
-import { io } from 'socket.io-client';
-import './chat.css';
-import { useAuth } from '../AuthProvider/AuthContext'; // Assuming you have an auth context
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  ListGroup,
+  Form,
+  Button,
+  Badge,
+  Modal,
+  Tab,
+  Nav,
+  Spinner,
+  Alert,
+} from "react-bootstrap";
+import axios from "axios";
+import { io } from "socket.io-client";
+import "./chat.css";
+import "./chat-header.css";
+import { useAuth } from "../AuthProvider/AuthContext"; // Assuming you have an auth context
 
 const Chat = () => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [chats, setChats] = useState([]);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState("personal");
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [selectedChat, setSelectedChat] = useState(null);
   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
-  const [groupName, setGroupName] = useState('');
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
+  const [groupName, setGroupName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [candidates, setCandidates] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
+  const typingTimeout = useRef(null);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+
+  // Request notification permission on component mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Function to show browser notification
+  const showNotification = (message) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      const senderName = message.sender?.name || "Someone";
+      const chatName = message.chat?.chatName || (
+        message.chat?.isGroupChat ? "Group Chat" : senderName
+      );
+      
+      const notification = new Notification(`New message from ${senderName}`, {
+        body: message.content,
+        icon: "/favicon.ico", // You can change this to your app icon
+        tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
+        badge: "/favicon.ico"
+      });
+
+      // Auto close notification after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      // Handle notification click to focus on chat
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+  };
+
+  // Debug user authentication
+  useEffect(() => {
+    console.log("Current user:", user);
+    console.log("Token:", localStorage.getItem("token"));
+    if (!user) {
+      setError("User not authenticated. Please log in again.");
+    }
+  }, [user]);
 
   // Initialize socket connection
   useEffect(() => {
+    if (!user) {
+      console.log("No user found, skipping socket connection");
+      return;
+    }
+
+    console.log("Initializing socket connection for user:", user);
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("No token found in localStorage");
+      setError("Authentication token missing. Please log in again.");
+      return;
+    }
+
+    // Validate token structure
+    try {
+      const tokenParts = token.split(".");
+      if (tokenParts.length !== 3) {
+        throw new Error("Invalid token structure");
+      }
+
+      // Check if token payload is valid JSON
+      const payload = JSON.parse(atob(tokenParts[1]));
+      console.log("Token payload:", { ...payload, userId: payload.userId });
+
+      if (!payload.userId) {
+        console.warn("Token missing userId in payload");
+      }
+    } catch (err) {
+      console.error("Invalid token format:", err);
+      setError("Invalid authentication token. Please log in again.");
+      return;
+    }
+
     const newSocket = io(API_BASE_URL, {
-      transports: ['websocket'],
+      transports: ["websocket", "polling"],
       auth: {
-        token: localStorage.getItem('token')
+        token: token,
+      },
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      forceNew: true, // Force a new connection to avoid sharing
+      autoConnect: true, // Automatically connect
+      upgrade: true, // Allow transport upgrades
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Socket connected successfully with ID:", newSocket.id);
+      console.log("Sending setup data for user:", user._id);
+      
+      // Setup user in socket
+      newSocket.emit("setup", user);
+      
+      // Join user to their personal room for receiving messages
+      newSocket.emit("join", user._id);
+
+      // Emit a test event to verify connection
+      newSocket.emit("ping", { userId: user._id, timestamp: new Date() });
+    });
+
+    newSocket.on("pong", (data) => {
+      console.log("Received pong from server:", data);
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+      console.error("Connection details:", {
+        url: API_BASE_URL,
+        transportOptions: newSocket.io.opts,
+        auth: { token: token ? "Token exists" : "No token" },
+      });
+      // Don't set error for the UI immediately - try to reconnect silently first
+    });
+
+    newSocket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+
+      if (reason === "io server disconnect") {
+        // Server disconnected us, try to reconnect manually
+        console.log("Server disconnected socket, attempting reconnection...");
+        newSocket.connect();
+      }
+
+      // If disconnect reason is related to network issues, socket.io will try to reconnect automatically
+    });
+
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log(`Socket reconnected after ${attemptNumber} attempts`);
+      // Re-setup user and re-join chat when reconnected
+      if (user) {
+        newSocket.emit("setup", user);
+        newSocket.emit("join", user._id);
+        if (selectedChat) {
+          newSocket.emit("join chat", selectedChat._id);
+        }
       }
     });
-    
-    // Manually connect after setup
-    newSocket.connect();
-    
+
+    newSocket.on("reconnect_error", (error) => {
+      console.error("Socket reconnection error:", error);
+    });
+
+    newSocket.on("reconnect_failed", () => {
+      console.error("Socket reconnection failed");
+      setError("Lost connection to chat server. Please refresh the page.");
+    });
+
     setSocket(newSocket);
-  
+
     return () => {
+      console.log("Cleaning up socket connection");
       newSocket.disconnect();
     };
-  }, []);
+  }, [user, API_BASE_URL]);
+
+  // Handle window resize for mobile responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      const chatContainer = document.querySelector('.chat-container');
+      if (chatContainer && selectedChat) {
+        if (window.innerWidth <= 768 || window.matchMedia('(max-width: 768px)').matches) {
+          chatContainer.classList.add('mobile-chat-open');
+        } else {
+          chatContainer.classList.remove('mobile-chat-open');
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [selectedChat]);
 
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        console.log(API_BASE_URL)
-        // Fetch users
-        const usersRes = await axios.get(`${API_BASE_URL}/users`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        console.log(usersRes.data.filter(u => u.role == 'Super_Admin'))
-        
-        if (!usersRes.data) throw new Error('No data received for users');
-        setUsers(usersRes.data.filter(u => u.role !== 'Super_Admin'));
-    
-        // Fetch candidates
-        const candidatesRes = await axios.get(`${API_BASE_URL}/api/candidates`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        
-        if (!candidatesRes.data?.data) throw new Error('No data received for candidates');
-        setCandidates(candidatesRes.data.data || []);
-        
-        // Fetch chats
-        const chatsRes = await axios.get(`${API_BASE_URL}/api/chat`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        console.log("Corresct",chatsRes)
-        
-        if (!chatsRes.data) throw new Error('No data received for chats');
-        setChats(chatsRes.data);
-    
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError(err.response?.data?.message || err.message || 'Failed to load initial data');
-      } finally {
-        setLoading(false);
+        setError(null);
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+
+        console.log("Fetching data from:", API_BASE_URL);
+
+        // Fetch users with proper error handling
+        try {
+          const usersRes = await axios.get(`${API_BASE_URL}/users`, {
+            headers,
+          });
+          console.log("Users response:", usersRes.data);
+
+          if (usersRes.data && Array.isArray(usersRes.data)) {
+            setUsers(usersRes.data.filter((u) => u.role !== "Super_Admin"));
+          } else {
+            console.warn("Unexpected users data format:", usersRes.data);
+            setUsers([]);
+          }
+        } catch (userError) {
+          console.error("Error fetching users:", userError);
+          setUsers([]);
+        }
+
+        // Fetch candidates with proper error handling
+        try {
+          const candidatesRes = await axios.get(
+            `${API_BASE_URL}/api/candidates`,
+            { headers }
+          );
+          console.log("Candidates response:", candidatesRes.data);
+
+          if (
+            candidatesRes.data?.data &&
+            Array.isArray(candidatesRes.data.data)
+          ) {
+            setCandidates(candidatesRes.data.data);
+          } else if (Array.isArray(candidatesRes.data)) {
+            setCandidates(candidatesRes.data);
+          } else {
+            console.warn(
+              "Unexpected candidates data format:",
+              candidatesRes.data
+            );
+            setCandidates([]);
+          }
+        } catch (candidateError) {
+          console.error("Error fetching candidates:", candidateError);
+          setCandidates([]);
+        }
+      } catch (candidateError) {
+        console.error("Error fetching candidates:", candidateError);
+        setCandidates([]);
       }
+      setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [API_BASE_URL]);
 
-  // Setup socket listeners
-  useEffect(() => {
-    if (!socket || !user) return;
-
-    socket.on('connect', () => {
-      socket.emit('setup', user);
-    });
-
-    socket.on('messageReceived', (newMessage) => {
-      if (selectedChat && selectedChat._id === newMessage.chat._id) {
-        setMessages(prev => [...prev, newMessage]);
-      }
-    });
-
-    socket.on('chatCreated', (newChat) => {
-      setChats(prev => [...prev, newChat]);
-    });
-
-    return () => {
-      socket.off('messageReceived');
-      socket.off('chatCreated');
-    };
-  }, [socket, user, selectedChat]);
-
-  // Fetch messages for selected chat
-  useEffect(() => {
-    const fetchMessages = async () => {
-      if (!selectedChat) return;
-
+  // Poll for chats, users, candidates every 2 seconds
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      // Fetch users
       try {
-        setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/message/${selectedChat._id}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        const usersRes = await axios.get(`${API_BASE_URL}/users`, {
+          headers,
         });
-        setMessages(res.data);
-      } catch (err) {
-        setError('Failed to load messages');
-      } finally {
-        setLoading(false);
+        if (usersRes.data && Array.isArray(usersRes.data)) {
+          setUsers(usersRes.data.filter((u) => u.role !== "Super_Admin"));
+        } else {
+          setUsers([]);
+        }
+      } catch {
+        setUsers([]);
       }
+      // Fetch candidates
+      try {
+        const candidatesRes = await axios.get(
+          `${API_BASE_URL}/api/candidates`,
+          { headers }
+        );
+        if (
+          candidatesRes.data?.data &&
+          Array.isArray(candidatesRes.data.data)
+        ) {
+          setCandidates(candidatesRes.data.data);
+        } else if (Array.isArray(candidatesRes.data)) {
+          setCandidates(candidatesRes.data);
+        } else {
+          setCandidates([]);
+        }
+      } catch {
+        setCandidates([]);
+      }
+      // Fetch chats
+      try {
+        const axiosInstance = axios.create({
+          baseURL: API_BASE_URL,
+          withCredentials: true,
+          timeout: 15000,
+          headers,
+        });
+        const chatsRes = await axiosInstance.get("/api/chat");
+        if (Array.isArray(chatsRes.data)) {
+          setChats(chatsRes.data);
+        } else if (
+          chatsRes.data?.data?.chats &&
+          Array.isArray(chatsRes.data.data.chats)
+        ) {
+          setChats(chatsRes.data.data.chats);
+        } else if (
+          chatsRes.data?.chats &&
+          Array.isArray(chatsRes.data.chats)
+        ) {
+          setChats(chatsRes.data.chats);
+        } else {
+          setChats([]);
+        }
+      } catch {
+        setChats([]);
+      }
+    } catch {}
+  };
+  fetchData();
+}, [API_BASE_URL]);
+
+// Fetch messages for selected chat
+useEffect(() => {
+  const fetchMessages = async () => {
+    if (!selectedChat) return;
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${API_BASE_URL}/api/message/${selectedChat._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+          timeout: 10000,
+        }
+      );
+      if (Array.isArray(response.data)) {
+        setMessages(response.data);
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        setMessages(response.data.data);
+      } else {
+        setMessages([]);
+      }
+    } catch (err) {
+      setError("Failed to load messages");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchMessages();
+}, [selectedChat, API_BASE_URL]);
+
+// Setup socket listeners for real-time updates
+useEffect(() => {
+  if (!socket) return;
+
+  // Listen for new messages
+  const handleMessageReceived = (newMessageReceived) => {
+    console.log("New message received via socket:", newMessageReceived);
+    
+    // Determine the chat ID from the message
+    const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
+    
+    // Check if this message is for the currently selected chat
+    const isCurrentChat = selectedChat && selectedChat._id === chatId;
+    
+    // Update the chat list with latest message and notification status
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat._id === chatId) {
+          // If it's not the current chat and message is not from current user, increment unread count
+          const shouldIncrementUnread = !isCurrentChat && newMessageReceived.sender._id !== user._id;
+          
+          return {
+            ...chat,
+            latestMessage: newMessageReceived,
+            unreadCount: shouldIncrementUnread ? (chat.unreadCount || 0) + 1 : (chat.unreadCount || 0),
+            notification: shouldIncrementUnread ? true : chat.notification
+          };
+        }
+        return chat;
+      })
+    );
+    
+    // Only add message if it's for the current selected chat
+    if (isCurrentChat) {
+      setMessages((prev) => {
+        // Check if message already exists to avoid duplicates
+        const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
+        if (messageExists) {
+          return prev;
+        }
+        return [...prev, newMessageReceived];
+      });
+    } else if (newMessageReceived.sender._id !== user._id) {
+      // Show browser notification if not on current chat and message is not from current user
+      showNotification(newMessageReceived);
+    }
+  };
+
+  // Listen for typing indicators
+  const handleTyping = (data) => {
+    console.log("Typing event received:", data);
+    if (selectedChat && selectedChat._id === data.chatId && data.userId !== user._id) {
+      setIsTyping(true);
+      setTypingUsers((prev) => {
+        if (!prev.includes(data.userId)) {
+          return [...prev, data.userId];
+        }
+        return prev;
+      });
+    }
+  };
+
+  const handleStopTyping = (data) => {
+    console.log("Stop typing event received:", data);
+    if (selectedChat && selectedChat._id === data.chatId) {
+      setTypingUsers((prev) => {
+        const newTypingUsers = prev.filter((userId) => userId !== data.userId);
+        if (newTypingUsers.length === 0) {
+          setIsTyping(false);
+        }
+        return newTypingUsers;
+      });
+    }
+  };
+
+  // Join chat room when chat is selected
+  const handleJoinChat = () => {
+    if (selectedChat && socket.connected) {
+      console.log("Joining chat room:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+    }
+  };
+
+  // Add event listeners
+  socket.on("message received", handleMessageReceived);
+  socket.on("typing", handleTyping);
+  socket.on("stop typing", handleStopTyping);
+  
+  // Join the chat room for real-time updates
+  handleJoinChat();
+
+  // Cleanup function
+  return () => {
+    socket.off("message received", handleMessageReceived);
+    socket.off("typing", handleTyping);
+    socket.off("stop typing", handleStopTyping);
+    
+    // Leave chat room when cleanup
+    if (selectedChat && socket.connected) {
+      console.log("Leaving chat room:", selectedChat._id);
+      socket.emit("leave chat", selectedChat._id);
+    }
+  };
+}, [socket, selectedChat, user._id]);
+
+// Debug socket connection status
+useEffect(() => {
+  if (socket) {
+    const handleConnect = () => console.log("Socket connected:", socket.id);
+    const handleDisconnect = () => console.log("Socket disconnected");
+    const handleConnectError = (error) => console.error("Socket connection error:", error);
+    
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+    
+    // Log current status
+    console.log("Socket status:", {
+      connected: socket.connected,
+      id: socket.id,
+      transport: socket.io?.engine?.transport?.name
+    });
+    
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+    };
+  }
+}, [socket]);
+
+const handleSendMessage = async () => {
+  if (!newMessage.trim() || !selectedChat) {
+    console.log("Cannot send message: missing message or chat");
+    return;
+  }
+
+  // Create a unique ID for this message attempt
+  const tempId = `temp-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
+
+  // Clear the input field immediately for better UX
+  const messageContent = newMessage.trim();
+  setNewMessage("");
+
+  // Track if we've had a network error
+  let networkError = false;
+
+  // Create a temporary message to show immediately in the UI
+  const tempMessage = {
+    _id: tempId,
+    sender: user,
+    content: messageContent,
+    chat: selectedChat,
+    createdAt: new Date(),
+    isTemp: true, // Flag to identify this as a temporary message
+    sending: true, // Indicates the message is in the process of sending
+  };
+
+  // Add temp message to UI immediately
+  setMessages((prev) => [...prev, tempMessage]);
+
+  // Start typing indicator cleanup
+  if (socket && socket.connected) {
+    socket.emit("stop typing", {
+      chatId: selectedChat._id,
+      userId: user._id
+    });
+  }
+
+  try {
+    console.log(
+      "Sending message:",
+      messageContent,
+      "to chat:",
+      selectedChat._id
+    );
+
+    // Send the actual message to the server
+    const token = localStorage.getItem("token");
+
+    // Set a timeout to detect slow network conditions
+    const slowNetworkTimeout = setTimeout(() => {
+      // Mark message as "sending..." if it takes more than 2 seconds
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === tempId ? { ...msg, slowNetwork: true } : msg
+        )
+      );
+    }, 2000);
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/message`,
+      {
+        content: messageContent,
+        chatId: selectedChat._id,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 15000, // 15 second timeout for slow connections
+      }
+    );
+
+    // Clear the slow network timeout
+    clearTimeout(slowNetworkTimeout);
+
+    console.log("Message sent successfully:", response.data);
+
+    // The server returns data in a different format: { status: 'success', data: { message: {...} } }
+    // Extract the actual message object from the response
+    const messageData = response.data.data?.message || response.data.message || response.data;
+
+    if (!messageData || !messageData._id) {
+      console.error("Unexpected response structure:", response.data);
+      throw new Error("Invalid response from server");
+    }
+
+    // Replace temporary message with real one
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === tempId ? { ...messageData, wasTemp: true } : msg
+      )
+    );
+
+    // Update the chat with the latest message
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat._id === selectedChat._id
+          ? { ...chat, latestMessage: messageData }
+          : chat
+      )
+    );
+
+    // Emit to socket for other users to receive the message
+    if (socket && socket.connected) {
+      console.log("Emitting new message via socket:", messageData._id);
+      // Emit with proper structure
+      socket.emit("new message", {
+        ...messageData,
+        chat: selectedChat._id // Ensure chat ID is properly set
+      });
+    } else {
+      console.warn(
+        "Socket disconnected, message sent but real-time updates unavailable"
+      );
+    }
+  } catch (err) {
+    networkError = true;
+    console.error("Error sending message:", err);
+
+    const errorMsg =
+      err.response?.data?.message || err.message || "Failed to send message";
+    console.log("Error details:", errorMsg);
+
+    // Only show error UI for a moment
+    setError(errorMsg);
+    setTimeout(() => setError(null), 3000);
+
+    // Update the temporary message to show error state
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === tempId
+          ? { ...msg, sendFailed: true, sending: false, error: errorMsg }
+          : msg
+      )
+    );
+
+    // Provide retry functionality
+    const retryMsg = messageContent;
+
+    // Add a retry button to the message
+    // This implementation depends on your UI, but you can add a retry button next to failed messages
+  }
+};
+
+const handleAddFriend = async (userId) => {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+
+    console.log("Adding friend:", userId);
+
+    // Debug token before sending request
+    const tokenPayload = token ? JSON.parse(atob(token.split(".")[1])) : null;
+    console.log("Token payload:", tokenPayload);
+
+    // Log what we're about to send
+    console.log("Sending chat request with data:", { userId });
+
+    // Create request data object explicitly to ensure correct format
+    const requestData = {
+      userId: userId, // Make sure userId is a string
     };
 
-    fetchMessages();
-  }, [selectedChat]);
+    console.log("Request payload:", JSON.stringify(requestData));
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat) return;
-  
-    try {
-      if (!socket || !socket.connected) {
-        throw new Error('Not connected to chat server');
-      }
-  
-      const res = await axios.post(`${API_BASE_URL}/api/message`, {
-        content: newMessage,
-        chatId: selectedChat._id
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-  
-      socket.emit('newMessage', res.data);
-      setMessages(prev => [...prev, res.data]);
-      setNewMessage('');
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to send message');
+    const response = await axios({
+      method: "POST",
+      url: `${API_BASE_URL}/api/chat`,
+      data: requestData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+      timeout: 15000,
+    });
+
+    console.log("Friend added successfully:", response.data);
+
+    // Extract chat data from response based on API structure
+    let chatData;
+    if (response.data.data && response.data.data.chat) {
+      chatData = response.data.data.chat;
+    } else if (response.data.chat) {
+      chatData = response.data.chat;
+    } else {
+      chatData = response.data;
     }
-  };
 
-  const handleAddFriend = async (userId) => {
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/chat`, { 
-        userId 
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      setSelectedChat(res.data);
-      
-      // If this is a new chat, add it to the list
-      if (!chats.some(chat => chat._id === res.data._id)) {
-        setChats(prev => [...prev, res.data]);
-      }
-      setShowAddFriendModal(false);
-    } catch (err) {
-      setError('Failed to create chat');
+    console.log("Extracted chat data:", chatData);
+    setSelectedChat(chatData);
+
+    // Check if chat already exists in list
+    if (!chats.some((chat) => chat._id === chatData._id)) {
+      setChats((prev) => [...prev, chatData]);
     }
-  };
 
-  const handleCreateGroup = async () => {
-    if (!groupName.trim() || selectedUsers.length === 0) return;
+    setShowAddFriendModal(false);
+    setError(null);
+  } catch (err) {
+    console.error("Error adding friend:", err);
+    const errorMessage =
+      err.response?.data?.message || err.message || "Failed to create chat";
+    setError(`Chat Error: ${errorMessage}`);
 
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/chat/group`, {
+    // Log detailed error information
+    if (err.response) {
+      console.error("Error response:", err.response.data);
+      console.error("Status code:", err.response.status);
+      console.error("Request data sent:", { userId });
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleCreateGroup = async () => {
+  if (!groupName.trim() || selectedUsers.length === 0) return;
+
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+
+    console.log(
+      "Creating group with name:",
+      groupName,
+      "and users:",
+      selectedUsers
+    );
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/chat/group`,
+      {
         chatName: groupName,
-        users: selectedUsers
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      setSelectedChat(res.data);
-      setChats(prev => [...prev, res.data]);
-      setShowNewGroupModal(false);
-      setGroupName('');
-      setSelectedUsers([]);
-    } catch (err) {
-      setError('Failed to create group');
+        users: selectedUsers,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+        timeout: 15000,
+      }
+    );
+
+    console.log("Group created successfully:", response.data);
+
+    // Extract chat data from response based on API structure
+    let chatData;
+    if (response.data.data && response.data.data.chat) {
+      chatData = response.data.data.chat;
+    } else if (response.data.chat) {
+      chatData = response.data.chat;
+    } else {
+      chatData = response.data;
     }
-  };
 
-  const handleRenameGroup = async (newName) => {
-    if (!selectedChat || !newName.trim()) return;
+    console.log("Extracted group chat data:", chatData);
+    setSelectedChat(chatData);
 
-    try {
-      const res = await axios.put(`${API_BASE_URL}/api/group/rename`, {
+    // Check if chat already exists in list
+    if (!chats.some((chat) => chat._id === chatData._id)) {
+      setChats((prev) => [...prev, chatData]);
+    }
+
+    setShowNewGroupModal(false);
+    setGroupName("");
+    setSelectedUsers([]);
+    setError(null);
+  } catch (err) {
+    console.error("Error creating group:", err);
+
+    // Detailed error logging
+    if (err.response) {
+      console.error("Error status:", err.response.status);
+      console.error("Error response:", err.response.data);
+      console.error("Request data sent:", {
+        chatName: groupName,
+        users: selectedUsers,
+      });
+    } else if (err.request) {
+      console.error("No response received:", err.request);
+    } else {
+      console.error("Request error:", err.message);
+    }
+
+    setError(
+      err.response?.data?.message || err.message || "Failed to create group"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleRenameGroup = async (newName) => {
+  if (!selectedChat || !newName.trim()) return;
+
+  try {
+    const res = await axios.put(
+      `${API_BASE_URL}/api/chat/group/rename`,
+      {
         chatId: selectedChat._id,
-        chatName: newName
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+        chatName: newName,
+      },
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
 
-      setChats(prev => prev.map(chat => 
-        chat._id === selectedChat._id ? res.data : chat
-      ));
-      setSelectedChat(res.data);
-    } catch (err) {
-      setError('Failed to rename group');
-    }
-  };
+    const chatData = res.data?.data?.chat || res.data?.chat || res.data;
+    setChats((prev) =>
+      prev.map((chat) => (chat._id === selectedChat._id ? chatData : chat))
+    );
+    setSelectedChat(chatData);
+  } catch (err) {
+    setError("Failed to rename group");
+  }
+};
 
-  const handleAddToGroup = async (userId) => {
-    if (!selectedChat || !userId) return;
+const handleAddToGroup = async (userId) => {
+  if (!selectedChat || !userId) return;
 
-    try {
-      const res = await axios.put(`${API_BASE_URL}/api/group/add`, {
+  try {
+    const res = await axios.put(
+      `${API_BASE_URL}/api/chat/group/add`,
+      {
         chatId: selectedChat._id,
-        userId
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+        userId,
+      },
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
 
-      setChats(prev => prev.map(chat => 
-        chat._id === selectedChat._id ? res.data : chat
-      ));
-      setSelectedChat(res.data);
-    } catch (err) {
-      setError('Failed to add user to group');
-    }
-  };
+    const chatData = res.data?.data?.chat || res.data?.chat || res.data;
+    setChats((prev) =>
+      prev.map((chat) => (chat._id === selectedChat._id ? chatData : chat))
+    );
+    setSelectedChat(chatData);
+  } catch (err) {
+    setError("Failed to add user to group");
+  }
+};
 
-  const handleRemoveFromGroup = async (userId) => {
-    if (!selectedChat || !userId) return;
+const handleRemoveFromGroup = async (userId) => {
+  if (!selectedChat || !userId) return;
 
-    try {
-      const res = await axios.put(`${API_BASE_URL}/api/group/remove`, {
+  try {
+    const res = await axios.put(
+      `${API_BASE_URL}/api/chat/group/remove`,
+      {
         chatId: selectedChat._id,
-        userId
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+        userId,
+      },
+      {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }
+    );
 
-      setChats(prev => prev.map(chat => 
-        chat._id === selectedChat._id ? res.data : chat
-      ));
-      setSelectedChat(res.data);
-    } catch (err) {
-      setError('Failed to remove user from group');
-    }
-  };
+    // Extract chat object from response
+    const chatData = res.data?.data?.chat || res.data?.chat || res.data;
 
-  const handleDeleteChat = async () => {
-    if (!selectedChat) return;
+    setChats((prev) =>
+      prev.map((chat) => (chat._id === selectedChat._id ? chatData : chat))
+    );
 
-    try {
-      await axios.delete(`${API_BASE_URL}/api/chat/${selectedChat._id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+    // Check if current user is still a participant
+    const isStillParticipant = Array.isArray(chatData?.participants)
+      ? chatData.participants.some((p) => p && p._id === user._id)
+      : false;
 
-      setChats(prev => prev.filter(chat => chat._id !== selectedChat._id));
+    if (isStillParticipant) {
+      setSelectedChat(chatData);
+    } else {
       setSelectedChat(null);
-    } catch (err) {
-      setError('Failed to delete chat');
+      setShowGroupInfoModal(false);
     }
-  };
+  } catch (err) {
+    setError("Failed to remove user from group");
+  }
+};
 
-  const toggleUserSelection = (userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId) 
-        : [...prev, userId]
-    );
-  };
+const handleDeleteChat = async () => {
+  if (!selectedChat) return;
 
-  const getAvatarText = (name) => {
-    if (!name) return '??';
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
-    return initials.substring(0, 2);
-  };
+  try {
+    await axios.delete(`${API_BASE_URL}/api/chat/${selectedChat._id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
 
-  const getStatusText = (person) => {
-    if (!person || typeof person !== 'object') return 'offline';
-    if (!person.lastLogin) return 'offline';
+    setChats((prev) => prev.filter((chat) => chat._id !== selectedChat._id));
+    setSelectedChat(null);
+  } catch (err) {
+    setError("Failed to delete chat");
+  }
+};
+
+const toggleUserSelection = (userId) => {
+  if (!userId) {
+    console.warn("Attempted to toggle selection for undefined userId");
+    return;
+  }
+
+  console.log("Toggling user selection for:", userId);
+  setSelectedUsers((prev) => {
+    // Ensure prev is always an array
+    const currentUsers = Array.isArray(prev) ? prev : [];
+
+    return currentUsers.includes(userId)
+      ? currentUsers.filter((id) => id !== userId)
+      : [...currentUsers, userId];
+  });
+};
+
+// Function to clear notifications for a specific chat
+const clearChatNotifications = (chatId) => {
+  setChats((prev) =>
+    prev.map((chat) =>
+      chat._id === chatId
+        ? { ...chat, unreadCount: 0, notification: false }
+        : chat
+    )
+  );
+};
+
+// Enhanced chat selection handler
+const handleChatSelect = (chat) => {
+  setSelectedChat(chat);
+  clearChatNotifications(chat._id);
+  
+  // Add mobile chat open class for mobile view with better detection
+  const chatContainer = document.querySelector('.chat-container');
+  if (chatContainer && (window.innerWidth <= 768 || window.matchMedia('(max-width: 768px)').matches)) {
+    chatContainer.classList.add('mobile-chat-open');
+    console.log('Mobile chat opened for:', chat.chatName || 'Chat');
+  }
+};
+
+// Function to handle mobile back button
+const handleMobileBack = () => {
+  const chatContainer = document.querySelector('.chat-container');
+  if (chatContainer) {
+    chatContainer.classList.remove('mobile-chat-open');
+    setSelectedChat(null); // Clear selected chat to show the chat list
+    console.log('Mobile chat closed, returning to chat list');
+  }
+};
+
+// Function to detect and render clickable links in messages
+const renderMessageWithLinks = (text) => {
+  if (!text || typeof text !== 'string') return text;
+
+  // Enhanced regular expression to detect URLs (including email addresses)
+  const urlRegex = /(https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?|www\.(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?|(?:[-\w.])+\.(?:[a-zA-Z]{2,})(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?)/gi;
+  
+  // Split text by URLs while keeping the URLs
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    // Reset regex for testing (regex has global flag)
+    urlRegex.lastIndex = 0;
     
-    try {
-      const lastLogin = new Date(person.lastLogin);
-      const diff = (new Date() - lastLogin) / (1000 * 60 * 60); // hours
+    // Check if this part is a URL
+    if (urlRegex.test(part)) {
+      // Ensure the URL has a protocol
+      let fullUrl = part;
+      if (!part.startsWith('http://') && !part.startsWith('https://')) {
+        fullUrl = part.startsWith('www.') ? `https://${part}` : `https://${part}`;
+      }
       
-      if (diff < 0.5) return 'online';
-      if (diff < 24) return `last seen ${Math.floor(diff)}h ago`;
-      return 'offline';
-    } catch {
-      return 'offline';
+      // Truncate long URLs for display
+      const displayUrl = part.length > 50 ? `${part.substring(0, 47)}...` : part;
+      
+      return (
+        <a
+          key={index}
+          href={fullUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="message-link"
+          title={fullUrl} // Show full URL on hover
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent any parent click handlers
+            // Additional confirmation for external links
+            if (!fullUrl.includes(window.location.hostname)) {
+              const confirmed = window.confirm(`This link will open in a new tab:\n${fullUrl}\n\nDo you want to continue?`);
+              if (!confirmed) {
+                e.preventDefault();
+              }
+            }
+          }}
+        >
+          {displayUrl}
+        </a>
+      );
+    }
+    
+    // Return regular text
+    return part;
+  });
+};
+
+const getAvatarText = (name) => {
+  if (!name || typeof name !== "string") return "??";
+  try {
+    const initials = name
+      .split(" ")
+      .map((n) => n[0] || "")
+      .join("")
+      .toUpperCase();
+    return initials.substring(0, 2) || "??";
+  } catch (error) {
+    console.error("Error generating avatar text:", error);
+    return "??";
+  }
+};
+
+const getStatusText = (person) => {
+  if (!person || typeof person !== "object") return "offline";
+  if (!person.lastLogin) return "offline";
+
+  try {
+    const lastLogin = new Date(person.lastLogin);
+    const diff = (new Date() - lastLogin) / (1000 * 60 * 60); // hours
+
+    if (diff < 0.5) return "online";
+    if (diff < 24) return `last seen ${Math.floor(diff)}h ago`;
+    return "offline";
+  } catch {
+    return "offline";
+  }
+};
+
+// Final cleanup effect for the component
+useEffect(() => {
+  return () => {
+    // Clear any typing timeouts
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+      typingTimeout.current = null;
+    }
+
+    // Stop any active typing indicators
+    if (socket && socket.connected && selectedChat) {
+      socket.emit("stop typing", selectedChat._id);
     }
   };
+}, [socket, selectedChat]);
 
-  const getAvailableUsers = () => {
-    return [...users, ...candidates].filter(u => u._id !== user._id);
-  };
-
-  if (loading) {
-    return (
-      <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Spinner animation="border" variant="primary" />
-      </Container>
-    );
+const getAvailableUsers = () => {
+  if (!user || !user._id) {
+    console.warn("User not available for filtering");
+    return [...(users || []), ...(candidates || [])].filter((u) => u && u._id);
   }
+  return [...(users || []), ...(candidates || [])].filter(
+    (u) => u && u._id && u._id !== user._id
+  );
+};
 
-  if (error) {
-    return (
-      <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <Alert variant="danger" onClose={() => setError(null)} dismissible>
-          {error}
-        </Alert>
-      </Container>
-    );
-  }
-
+if (loading) {
   return (
-    <Container fluid className="chat-container">
-      <Row className="h-100">
-        {/* Left sidebar - Chats list */}
-        <Col md={4} className="p-0 border-end">
-          <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
-            <h5>Office Chat</h5>
-            <div className="btn-cont">
-  <Button
-    variant="primary"
-    size="sm"
-    onClick={() => setShowAddFriendModal(true)}
-    className="me-2"
-  >
-    Add Friend
-  </Button>
-  <Button
-    variant="secondary"
-    size="sm"
-    onClick={() => setShowNewGroupModal(true)}
-  >
-    New Group
-  </Button>
-</div>
+    <Container
+      className="d-flex justify-content-center align-items-center"
+      style={{ height: "100vh" }}
+    >
+      <div className="text-center">
+        <Spinner animation="border" variant="primary" />
+        <div className="mt-3">Loading chat...</div>
+      </div>
+    </Container>
+  );
+}
+
+if (error) {
+  return (
+    <Container
+      className="d-flex justify-content-center align-items-center"
+      style={{ height: "100vh" }}
+    >
+      <Alert variant="danger" onClose={() => setError(null)} dismissible>
+        <Alert.Heading>Chat Error</Alert.Heading>
+        <p>{error}</p>
+        <hr />
+        <div className="d-flex justify-content-end">
+          <Button
+            variant="outline-danger"
+            onClick={() => window.location.reload()}
+          >
+            Refresh Page
+          </Button>
+        </div>
+      </Alert>
+    </Container>
+  );
+}
+
+if (!user) {
+  return (
+    <Container
+      className="d-flex justify-content-center align-items-center"
+      style={{ height: "100vh" }}
+    >
+      <Alert variant="warning">
+        <Alert.Heading>Authentication Required</Alert.Heading>
+        <p>Please log in to access the chat feature.</p>
+      </Alert>
+    </Container>
+  );
+}
+
+return (
+  <Container fluid className="chat-container">
+    <Row className="h-100 g-0">
+      {/* Left sidebar - Chats list */}
+      <Col xs={12} md={4} className="p-0 border-end sidebar">
+        {/* Mobile Office Chat Header */}
+        <div className="office-chat-header">
+          Office Chat
+        </div>
+        
+        {/* Mobile Buttons Container */}
+        <div className="mobile-buttons-container">
+          <div className="sidebar-buttons">
+            <button 
+              className="sidebar-button"
+              onClick={() => setShowAddFriendModal(true)}
+            >
+              Add Friend
+            </button>
+            <button 
+              className="sidebar-button"
+              onClick={() => setShowNewGroupModal(true)}
+            >
+              New Group
+            </button>
           </div>
+        </div>
+        
+        {/* Desktop Header */}
+        <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Office Chat</h5>
+          <div className="btn-cont">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowAddFriendModal(true)}
+              className="me-2"
+            >
+              Add Friend
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowNewGroupModal(true)}
+            >
+              New Group
+            </Button>
+          </div>
+        </div>
 
-          <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-            <Nav variant="tabs" className="px-3 pt-2">
-              <Nav.Item>
-                <Nav.Link eventKey="personal">Chats</Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="groups">Groups</Nav.Link>
-              </Nav.Item>
-            </Nav>
+        <Tab.Container activeKey={activeTab} onSelect={setActiveTab} className="tab-container">
+          <Nav variant="tabs" className="px-3 pt-2 flex-shrink-0">
+            <Nav.Item>
+              <Nav.Link eventKey="personal">Chats</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link eventKey="groups">Groups</Nav.Link>
+            </Nav.Item>
+          </Nav>
 
-            <Tab.Content className="p-2">
-              <Tab.Pane eventKey="personal">
-                <Form.Control
-                  type="text"
-                  placeholder="Search chats..."
-                  className="mb-3"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <ListGroup variant="flush">
-                  {chats
-                    .filter(chat => !chat.isGroupChat)
-                    .filter(chat => 
-                      chat.chatName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      chat.participants?.some(p => 
+          <Tab.Content className="tab-content p-2">
+            <Tab.Pane eventKey="personal">
+              <Form.Control
+                type="text"
+                placeholder="Search chats..."
+                className="mb-3"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <ListGroup variant="flush">
+                {chats
+                  .filter((chat) => !chat.isGroupChat)
+                  .filter(
+                    (chat) =>
+                      chat.chatName
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      chat.participants?.some((p) =>
                         p.name?.toLowerCase().includes(searchTerm.toLowerCase())
                       )
-                    )
-                    .map(chat => (
-                      <ListGroup.Item
-                        key={chat._id}
-                        action
-                        active={selectedChat?._id === chat._id}
-                        onClick={() => setSelectedChat(chat)}
-                        className="d-flex align-items-center"
-                      >
-                        <div className="avatar me-3">
-                          {getAvatarText(
-                            chat.participants?.find(p => p._id !== user._id)?.name || '?'
-                          )}
-                        </div>
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between">
-                            <strong>
-                              {chat.participants?.find(p => p._id !== user._id)?.name || 'Chat'}
-                            </strong>
-                            <small className="text-muted">
-                              {chat.latestMessage?.createdAt 
-                                ? new Date(chat.latestMessage.createdAt).toLocaleTimeString() 
-                                : ''}
-                            </small>
-                          </div>
-                          <small className="text-muted">
-                            {chat.latestMessage?.content || 'No messages yet'}
-                          </small>
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                </ListGroup>
-              </Tab.Pane>
-
-              <Tab.Pane eventKey="groups">
-                <ListGroup variant="flush">
-                  {chats
-                    .filter(chat => chat.isGroupChat)
-                    .filter(chat => 
-                      chat.chatName?.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
-                    .map(chat => (
-                      <ListGroup.Item
-                        key={chat._id}
-                        action
-                        active={selectedChat?._id === chat._id}
-                        onClick={() => setSelectedChat(chat)}
-                        className="d-flex align-items-center"
-                      >
-                        <div className="avatar me-3 group-avatar">
-                          {getAvatarText(chat.chatName)}
-                        </div>
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between">
-                            <strong>{chat.chatName}</strong>
-                            <small className="text-muted">
-                              {chat.participants?.length || 0} members
-                            </small>
-                          </div>
-                          <small className="text-muted">
-                            {chat.latestMessage?.content || 'No messages yet'}
-                          </small>
-                        </div>
-                      </ListGroup.Item>
-                    ))}
-                </ListGroup>
-              </Tab.Pane>
-            </Tab.Content>
-          </Tab.Container>
-        </Col>
-
-        {/* Right side - Chat area */}
-        <Col md={8} className="chat-area p-0 d-flex flex-column">
-          {selectedChat ? (
-            <>
-              <div className="chat-header p-3 border-bottom d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center">
-                  <div className={`avatar me-3 ${selectedChat.isGroupChat ? 'group-avatar' : ''}`}>
-                    {getAvatarText(
-                      selectedChat.isGroupChat 
-                        ? selectedChat.chatName 
-                        : selectedChat.participants?.find(p => p._id !== user._id)?.name
-                    )}
-                  </div>
-                  <div>
-                    <h5 className="mb-0">
-                      {selectedChat.isGroupChat 
-                        ? selectedChat.chatName 
-                        : selectedChat.participants?.find(p => p._id !== user._id)?.name}
-                    </h5>
-                    <small className="text-muted">
-                      {selectedChat.isGroupChat 
-                        ? `${selectedChat.participants?.length || 0} members`
-                        : getStatusText(selectedChat.participants?.find(p => p._id !== user._id))}
-                    </small>
-                  </div>
-                </div>
-                {selectedChat.isGroupChat && (
-                  <div>
-                    <Button variant="outline-secondary" size="sm" className="me-2">
-                      Group Info
-                    </Button>
-                    <Button 
-                      variant="outline-danger" 
-                      size="sm"
-                      onClick={handleDeleteChat}
+                  )
+                  .map((chat) => (
+                    <ListGroup.Item
+                      key={chat._id}
+                      action
+                      active={selectedChat?._id === chat._id}
+                      onClick={() => handleChatSelect(chat)}
+                      className="d-flex align-items-center"
                     >
-                      Leave Group
-                    </Button>
-                  </div>
+                      <div
+                        className="avatar me-3"
+                        style={{ position: "relative" }}
+                      >
+                        {getAvatarText(
+                          chat.participants && Array.isArray(chat.participants)
+                            ? chat.participants.find(
+                                (p) =>
+                                  p &&
+                                  p._id &&
+                                  user &&
+                                  user._id &&
+                                  p._id !== user._id
+                              )?.name || "?"
+                            : "?"
+                        )}
+                        {(chat.unreadCount > 0 || chat.notification) && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              background: "#dc3545",
+                              color: "white",
+                              borderRadius: "50%",
+                              fontSize: "0.7rem",
+                              minWidth: chat.unreadCount > 0 ? "18px" : "10px",
+                              height: chat.unreadCount > 0 ? "18px" : "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: chat.unreadCount > 0 ? "0 4px" : 0,
+                              zIndex: 2,
+                            }}
+                          >
+                            {chat.unreadCount > 0
+                              ? chat.unreadCount > 9
+                                ? "9+"
+                                : chat.unreadCount
+                              : ""}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between">
+                          <strong>
+                            {chat.participants &&
+                            Array.isArray(chat.participants) &&
+                            user &&
+                            user._id
+                              ? chat.participants.find(
+                                  (p) => p && p._id && p._id !== user._id
+                                )?.name || "Chat"
+                              : "Chat"}
+                          </strong>
+                          <small className="text-muted">
+                            {chat.latestMessage?.createdAt
+                              ? new Date(
+                                  chat.latestMessage.createdAt
+                                ).toLocaleTimeString()
+                              : ""}
+                          </small>
+                        </div>
+                        <small className="text-muted">
+                          {chat.latestMessage?.content || "No messages yet"}
+                        </small>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+              </ListGroup>
+            </Tab.Pane>
+
+            <Tab.Pane eventKey="groups">
+              <ListGroup variant="flush">
+                {chats
+                  .filter((chat) => chat.isGroupChat)
+                  .filter((chat) =>
+                    chat.chatName
+                      ?.toLowerCase()
+                      .includes(searchTerm.toLowerCase())
+                  )
+                  .map((chat) => (
+                    <ListGroup.Item
+                      key={chat._id}
+                      action
+                      active={selectedChat?._id === chat._id}
+                      onClick={() => handleChatSelect(chat)}
+                      className="d-flex align-items-center"
+                    >
+                      <div
+                        className="avatar me-3 group-avatar"
+                        style={{ position: "relative" }}
+                      >
+                        {getAvatarText(chat.chatName)}
+                        {(chat.unreadCount > 0 || chat.notification) && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              background: "#dc3545",
+                              color: "white",
+                              borderRadius: "50%",
+                              fontSize: "0.7rem",
+                              minWidth: chat.unreadCount > 0 ? "18px" : "10px",
+                              height: chat.unreadCount > 0 ? "18px" : "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: chat.unreadCount > 0 ? "0 4px" : 0,
+                              zIndex: 2,
+                            }}
+                          >
+                            {chat.unreadCount > 0
+                              ? chat.unreadCount > 9
+                                ? "9+"
+                                : chat.unreadCount
+                              : ""}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between">
+                          <strong>{chat.chatName}</strong>
+                          <small className="text-muted">
+                            {chat.participants?.length || 0} members
+                          </small>
+                        </div>
+                        <small className="text-muted">
+                          {chat.latestMessage?.content || "No messages yet"}
+                        </small>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+              </ListGroup>
+            </Tab.Pane>
+          </Tab.Content>
+        </Tab.Container>
+      </Col>
+
+      {/* Right side - Chat area */}
+      <Col xs={12} md={8} className="chat-area p-0">
+        {selectedChat ? (
+          <>
+            {/* Mobile Chat Header */}
+            <div className="mobile-chat-header">
+              <button 
+                className="mobile-back-button" 
+                onClick={handleMobileBack}
+                aria-label="Back to chat list"
+              >
+                ←
+              </button>
+              <div className="mobile-chat-title">
+                {selectedChat.isGroupChat
+                  ? selectedChat.chatName
+                  : selectedChat.participants &&
+                    Array.isArray(selectedChat.participants) &&
+                    user &&
+                    user._id
+                  ? selectedChat.participants.find(
+                      (p) => p && p._id && p._id !== user._id
+                    )?.name || "Chat"
+                  : "Chat"}
+              </div>
+            </div>
+            
+            {/* Desktop Chat Header */}
+            <div className="chat-header">
+              <div className="chat-header-avatar">
+                {getAvatarText(
+                  selectedChat.isGroupChat
+                    ? selectedChat.chatName
+                    : selectedChat.participants &&
+                      Array.isArray(selectedChat.participants) &&
+                      user &&
+                      user._id
+                    ? selectedChat.participants.find(
+                        (p) => p && p._id && p._id !== user._id
+                      )?.name
+                    : "?"
                 )}
               </div>
+              <div className="chat-header-info">
+                <div className="chat-header-name">
+                  {selectedChat.isGroupChat
+                    ? selectedChat.chatName
+                    : selectedChat.participants &&
+                      Array.isArray(selectedChat.participants) &&
+                      user &&
+                      user._id
+                    ? selectedChat.participants.find(
+                        (p) => p && p._id && p._id !== user._id
+                      )?.name || "Chat"
+                    : "Chat"}
+                </div>
+                <div className="chat-header-status">
+                  {selectedChat.isGroupChat
+                    ? `${
+                        selectedChat.participants &&
+                        Array.isArray(selectedChat.participants)
+                          ? selectedChat.participants.length
+                          : 0
+                      } members`
+                    : getStatusText(
+                        selectedChat.participants &&
+                          Array.isArray(selectedChat.participants) &&
+                          user &&
+                          user._id
+                          ? selectedChat.participants.find(
+                              (p) => p && p._id && p._id !== user._id
+                            )
+                          : null
+                      )}
+                </div>
+              </div>
+              <div className="chat-header-actions">
+                {selectedChat.isGroupChat && (
+                  <>
+                    <button
+                      className="chat-header-button"
+                      title="Group Info"
+                      onClick={() => setShowGroupInfoModal(true)}
+                    >
+                      <i className="fas fa-info-circle"></i>
+                    </button>
+                    <button
+                      className="chat-header-button"
+                      title="Leave Group"
+                      onClick={() => handleRemoveFromGroup(user._id)}
+                    >
+                      <i className="fas fa-sign-out-alt"></i>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
 
-              <div className="messages-container flex-grow-1 p-3">
-                {messages.length === 0 ? (
-                  <div className="d-flex justify-content-center align-items-center h-100">
-                    <p className="text-muted">No messages yet. Start the conversation!</p>
-                  </div>
-                ) : (
-                  messages.map(message => (
-                    <div 
-                      key={message._id} 
-                      className={`message mb-3 ${message.sender._id === user._id ? 'sent' : 'received'}`}
+            <div className="messages-container">
+              {messages.length === 0 ? (
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  <p className="text-muted">
+                    No messages yet. Start the conversation!
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => {
+                  // Add safety checks to prevent accessing properties of undefined objects
+                  if (!message || !message._id) {
+                    return null; // Skip rendering invalid messages
+                  }
+
+                  const isSender =
+                    message.sender &&
+                    message.sender._id &&
+                    user &&
+                    user._id &&
+                    message.sender._id === user._id;
+
+                  const isTemp = message.isTemp;
+                  const sendFailed = message.sendFailed;
+                  const isSending = message.sending && !sendFailed;
+                  const slowNetwork = message.slowNetwork;
+
+                  return (
+                    <div
+                      key={message._id}
+                      className={`message mb-3 ${
+                        isSender ? "sent" : "received"
+                      } ${isTemp ? "temp" : ""} ${
+                        sendFailed ? "send-failed" : ""
+                      }`}
                     >
                       <div className="message-content">
-                        <div className="message-text">{message.content}</div>
-                        <div className="message-time">
-                          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {/* Show sender name in group chats for received messages */}
+                        {selectedChat.isGroupChat &&
+                          !isSender &&
+                          message.sender && (
+                            <div className="message-sender-name text-muted small mb-1">
+                              {message.sender.name || "Unknown User"}
+                            </div>
+                          )}
+                        <div className="message-text">
+                          {renderMessageWithLinks(message.content || "")}
                         </div>
+                        <div className="message-time">
+                          {message.createdAt
+                            ? new Date(message.createdAt).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" }
+                              )
+                            : ""}
+                        </div>
+                        {isSender && (
+                          <div
+                            className={`message-status ${
+                              isSending ? "sending" : ""
+                            } ${sendFailed ? "error" : ""} ${
+                              !isTemp && !sendFailed ? "delivered" : ""
+                            }`}
+                          >
+                            {sendFailed && (
+                              <span>
+                                Failed to send
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-0 ms-1"
+                                  onClick={() => {
+                                    // Set the message back to input field to retry
+                                    setNewMessage(message.content);
+                                    // Remove the failed message
+                                    setMessages((prev) =>
+                                      prev.filter((m) => m._id !== message._id)
+                                    );
+                                  }}
+                                >
+                                  Retry
+                                </Button>
+                              </span>
+                            )}
+                            {isSending && (
+                              <span>{slowNetwork ? "Sending..." : "●"}</span>
+                            )}
+                            {!isTemp && !sendFailed && !message.wasTemp && (
+                              <span>✓</span>
+                            )}
+                            {message.wasTemp && <span>✓✓</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  );
+                })
+              )}
+            </div>
 
-              <div className="message-input p-3 border-top">
-                <Form.Group className="d-flex">
-                  <Form.Control
-                    as="textarea"
-                    rows={1}
-                    placeholder={`Message ${selectedChat.isGroupChat ? selectedChat.chatName : selectedChat.participants?.find(p => p._id !== user._id)?.name}`}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  />
-                  <Button 
-                    variant="primary" 
-                    className="ms-2"
-                    onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || loading}
-                  >
-                    {loading ? <Spinner size="sm" /> : 'Send'}
-                  </Button>
-                </Form.Group>
+            {isTyping && (
+              <div className="typing-indicator px-3 py-2">
+                <div className="typing-animation">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <span className="typing-text">
+                  {selectedChat.isGroupChat && typingUsers.length > 0
+                    ? `${typingUsers.length} ${
+                        typingUsers.length === 1 ? "person" : "people"
+                      } typing...`
+                    : "Typing..."}
+                </span>
               </div>
-            </>
-          ) : (
-            <div className="d-flex flex-column align-items-center justify-content-center h-100">
-              <div className="text-center p-5 ">
-                <h4>Welcome to Office Chat</h4>
-                <p className="text-muted">
-                  {chats.length === 0 
-                    ? "Start by adding a friend or creating a group" 
-                    : "Select a conversation to start chatting"}
-                </p>
-                <div className='flex gap-6'>
-                <Button 
-                  variant="primary" 
+            )}
+
+            <div className="message-input">
+              <Form.Group className="d-flex position-relative">
+                <Form.Control
+                  as="textarea"
+                  rows={1}
+                  placeholder={`Message : ${
+                    selectedChat.isGroupChat
+                      ? selectedChat.chatName || "Group"
+                      : selectedChat.participants &&
+                        Array.isArray(selectedChat.participants) &&
+                        user &&
+                        user._id
+                      ? selectedChat.participants.find(
+                          (p) => p && p._id && p._id !== user._id
+                        )?.name || "Chat"
+                      : "Chat"
+                  }`}
+                  value={newMessage}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    // Handle typing indicators
+                    if (socket && socket.connected && selectedChat) {
+                      // Emit 'typing' event only if not already typing
+                      if (!typingTimeout.current) {
+                        socket.emit("typing", {
+                          chatId: selectedChat._id,
+                          userId: user._id,
+                        });
+                      } else {
+                        clearTimeout(typingTimeout.current);
+                      }
+                      // Always reset the timeout
+                      typingTimeout.current = setTimeout(() => {
+                        socket.emit("stop typing", {
+                          chatId: selectedChat._id,
+                          userId: user._id,
+                        });
+                        typingTimeout.current = null;
+                      }, 1500); // 1.5s after last keypress
+                    }
+                  }}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                  }
+                />
+                <Button
+                  variant="link"
+                  className="send-button"
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || loading}
+                >
+                  {loading ? (
+                    <Spinner size="sm" animation="border" />
+                  ) : (
+                    <i className="fas fa-paper-plane"></i>
+                  )}
+                </Button>
+              </Form.Group>
+            </div>
+          </>
+        ) : (
+          <div className="d-flex flex-column align-items-center justify-content-center h-100">
+            <div className="text-center p-5 ">
+              <h4>Welcome to Office Chat</h4>
+              <p className="text-muted">
+                {chats.length === 0
+                  ? "Start by adding a friend or creating a group"
+                  : "Select a conversation to start chatting"}
+              </p>
+              <div className="flex gap-6">
+                <Button
+                  variant="primary"
                   onClick={() => setShowAddFriendModal(true)}
                   className="me-2"
                 >
                   Add Friend
                 </Button>
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   onClick={() => setShowNewGroupModal(true)}
                   className="me-2"
                 >
                   Create Group
                 </Button>
-                </div>
               </div>
             </div>
-          )}
-        </Col>
-      </Row>
+          </div>
+        )}
+      </Col>
+    </Row>
 
-      {/* Add Friend Modal */}
-      <Modal show={showAddFriendModal} onHide={() => setShowAddFriendModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Connection</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+    {/* Add Friend Modal */}
+    <Modal
+      show={showAddFriendModal}
+      onHide={() => setShowAddFriendModal(false)}
+    >
+      <Modal.Header
+        closeButton
+        className="bg-light border-bottom border-2 sticky-top"
+      >
+        <Modal.Title className="fw-bold text-primary">
+          Add New Connection
+        </Modal.Title>
+      </Modal.Header>
+      <div className="sticky-top bg-white px-3 pt-3 border-bottom pb-3">
+        <Form.Control
+          type="text"
+          placeholder="Search people..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      <Modal.Body
+        className="pt-2"
+        style={{ maxHeight: "60vh", overflowY: "auto" }}
+      >
+        <ListGroup variant="flush">
+          {getAvailableUsers()
+            .filter(
+              (person) =>
+                person.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                person.email?.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((person) => (
+              <ListGroup.Item
+                key={person._id}
+                className="d-flex justify-content-between align-items-center"
+              >
+                <div className="d-flex align-items-center">
+                  <div
+                    className={`avatar me-3 ${
+                      getStatusText(person) === "online" ? "online" : ""
+                    }`}
+                  >
+                    {getAvatarText(person.name)}
+                  </div>
+                  <div>
+                    <strong>{person.name}</strong>
+                    <div className="text-muted small">
+                      {person.email || person.personalMail}
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => handleAddFriend(person._id)}
+                  disabled={chats.some(
+                    (chat) =>
+                      !chat.isGroupChat &&
+                      chat.participants?.some((p) => p._id === person._id)
+                  )}
+                >
+                  {chats.some(
+                    (chat) =>
+                      !chat.isGroupChat &&
+                      chat.participants?.some((p) => p._id === person._id)
+                  )
+                    ? "Already connected"
+                    : "Add"}
+                </Button>
+              </ListGroup.Item>
+            ))}
+        </ListGroup>
+      </Modal.Body>
+    </Modal>
+
+    {/* New Group Modal */}
+    <Modal show={showNewGroupModal} onHide={() => setShowNewGroupModal(false)}>
+      <Modal.Header closeButton className="bg-light border-bottom border-2">
+        <Modal.Title className="fw-bold text-primary">
+          Create New Group
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        {error && (
+          <Alert variant="danger" className="mb-3">
+            {error}
+          </Alert>
+        )}
+        <Form.Group className="mb-3">
+          <Form.Label>Group Name*</Form.Label>
           <Form.Control
             type="text"
-            placeholder="Search people..."
+            placeholder="Enter group name"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            className={!groupName.trim() ? "is-invalid" : ""}
+          />
+          {!groupName.trim() && (
+            <Form.Text className="text-danger">
+              Group name is required
+            </Form.Text>
+          )}
+        </Form.Group>
+        <Form.Group>
+          <Form.Label>Add Members*</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Search users..."
             className="mb-3"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <ListGroup variant="flush">
-            {getAvailableUsers()
-              .filter(person => 
-                person.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                person.email?.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map(person => (
-                <ListGroup.Item
-                  key={person._id}
-                  className="d-flex justify-content-between align-items-center"
-                >
-                  <div className="d-flex align-items-center">
-                    <div className={`avatar me-3 ${getStatusText(person).includes('online') ? 'online' : ''}`}>
-                      {getAvatarText(person.name)}
-                    </div>
-                    <div>
-                      <strong>{person.name}</strong>
-                      <div className="text-muted small">
-                        {person.email || person.personalMail}
-                      </div>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline-primary" 
-                    size="sm"
-                    onClick={() => handleAddFriend(person._id)}
-                    disabled={chats.some(chat => 
-                      !chat.isGroupChat && 
-                      chat.participants?.some(p => p._id === person._id)
-                    )}
-                  >
-                    {chats.some(chat => 
-                      !chat.isGroupChat && 
-                      chat.participants?.some(p => p._id === person._id)
-                    ) ? 'Already connected' : 'Add'}
-                  </Button>
-                </ListGroup.Item>
-              ))}
-          </ListGroup>
-        </Modal.Body>
-      </Modal>
+          {selectedUsers.length === 0 && (
+            <div className="text-danger mb-2">
+              Please select at least one member
+            </div>
+          )}
 
-      {/* New Group Modal */}
-      <Modal show={showNewGroupModal} onHide={() => setShowNewGroupModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Create New Group</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>Group Name</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter group name"
-              value={groupName}
-              onChange={(e) => setGroupName(e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Add Members</Form.Label>
+          {selectedUsers.length > 0 && (
+            <div className="mb-3">
+              <strong>Selected ({selectedUsers.length}):</strong>
+              <div className="d-flex flex-wrap gap-1 mt-1">
+                {selectedUsers
+                  .filter((userId) => userId)
+                  .map((userId) => {
+                    const availableUsers = getAvailableUsers() || [];
+                    const person = availableUsers.find(
+                      (u) => u && u._id === userId
+                    );
+                    return person ? (
+                      <span
+                        key={userId}
+                        className="badge bg-primary d-flex align-items-center"
+                      >
+                        {person.name || "Unknown"}
+                        <button
+                          type="button"
+                          className="btn-close btn-close-white ms-2"
+                          style={{ fontSize: "0.5rem" }}
+                          onClick={() => toggleUserSelection(userId)}
+                          aria-label="Remove"
+                        ></button>
+                      </span>
+                    ) : null;
+                  })}
+              </div>
+            </div>
+          )}
+
+          <div
+            style={{ maxHeight: "200px", overflowY: "auto" }}
+            className="border rounded p-2"
+          >
             {getAvailableUsers()
-              .filter(person => 
-                person.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                person.email?.toLowerCase().includes(searchTerm.toLowerCase())
+              .filter(
+                (person) =>
+                  person.name
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                  person.email?.toLowerCase().includes(searchTerm.toLowerCase())
               )
-              .map(person => (
+              .map((person) => (
                 <Form.Check
                   key={person._id}
                   type="checkbox"
                   id={`group-member-${person._id}`}
-                  label={`${person.name} (${person.email || person.personalMail})`}
+                  label={
+                    <span>
+                      <strong>{person.name}</strong>
+                      <span className="text-muted">
+                        {" "}
+                        ({person.email || person.personalMail})
+                      </span>
+                    </span>
+                  }
                   checked={selectedUsers.includes(person._id)}
                   onChange={() => toggleUserSelection(person._id)}
+                  className="mb-1"
                 />
               ))}
-          </Form.Group>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowNewGroupModal(false)}>
-            Cancel
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleCreateGroup}
-            disabled={!groupName.trim() || selectedUsers.length === 0}
-          >
-            Create Group
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </Container>
-  );
+
+            {getAvailableUsers().filter(
+              (person) =>
+                person.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                person.email?.toLowerCase().includes(searchTerm.toLowerCase())
+            ).length === 0 && (
+              <p className="text-muted text-center my-2">
+                No users found matching your search
+              </p>
+            )}
+          </div>
+        </Form.Group>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={() => setShowNewGroupModal(false)}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleCreateGroup}
+          disabled={!groupName.trim() || selectedUsers.length === 0 || loading}
+        >
+          {loading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-1"
+                role="status"
+                aria-hidden="true"
+              ></span>{" "}
+              Creating...
+            </>
+          ) : (
+            "Create Group"
+          )}
+        </Button>
+      </Modal.Footer>
+    </Modal>
+
+    {/* Group Info Modal */}
+    <Modal
+      show={showGroupInfoModal && selectedChat?.isGroupChat}
+      onHide={() => setShowGroupInfoModal(false)}
+      size="lg"
+      dialogClassName="modal-dialog-scrollable"
+    >
+      <Modal.Header
+        closeButton
+        className="bg-light border-bottom border-2 sticky-top"
+      >
+        <Modal.Title className="fw-bold text-primary">
+          Group Information
+        </Modal.Title>
+      </Modal.Header>
+
+      {selectedChat && (
+        <>
+          <div className="sticky-top bg-white px-3 pt-3">
+            <div className="d-flex align-items-center mb-3">
+              <div
+                className="avatar group-avatar me-3"
+                style={{ width: "60px", height: "60px", fontSize: "1.5rem" }}
+              >
+                {getAvatarText(selectedChat.chatName)}
+              </div>
+              <div>
+                <h4>{selectedChat.chatName}</h4>
+                <p className="text-muted mb-0">
+                  {selectedChat.participants &&
+                  Array.isArray(selectedChat.participants)
+                    ? `${selectedChat.participants.length} members`
+                    : "0 members"}
+                </p>
+              </div>
+            </div>
+            <hr />
+            <h5 className="mb-3">Members</h5>
+          </div>
+
+          <Modal.Body className="p-0">
+            <div
+              className="px-3 mb-3"
+              style={{ maxHeight: "350px", overflowY: "auto" }}
+            >
+              <ListGroup variant="flush">
+                {selectedChat.participants &&
+                  Array.isArray(selectedChat.participants) &&
+                  selectedChat.participants.map((member) => (
+                    <ListGroup.Item
+                      key={member._id}
+                      className="d-flex align-items-center"
+                    >
+                      <div className="avatar me-3">
+                        {getAvatarText(member.name)}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="fw-bold">
+                          {member.name}
+                          {member._id === user?._id && " (You)"}
+                        </div>
+                        <div className="text-muted small">
+                          {member.email || member.personalMail || "No email"}
+                        </div>
+                      </div>
+                      {member._id !== user?._id && (
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleRemoveFromGroup(member._id)}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </ListGroup.Item>
+                  ))}
+              </ListGroup>
+            </div>
+
+            <hr className="mx-3" />
+
+            <div className="px-3 pb-3">
+              <Form className="mt-2">
+                <Form.Group className="mb-3">
+                  <Form.Label>Group Name</Form.Label>
+                  <div className="d-flex">
+                    <Form.Control
+                      type="text"
+                      defaultValue={selectedChat.chatName}
+                      id="groupNameInput"
+                    />
+                    <Button
+                      variant="primary"
+                      className="ms-2"
+                      onClick={() => {
+                        const newName =
+                          document.getElementById("groupNameInput").value;
+                        if (newName && newName !== selectedChat.chatName) {
+                          handleRenameGroup(newName);
+                        }
+                      }}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                </Form.Group>
+
+                <Form.Group className="mb-3">
+                  <Form.Label>Add Members</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Search users to add..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                    {getAvailableUsers()
+                      .filter(
+                        (u) =>
+                          (u.name
+                            ?.toLowerCase()
+                            .includes(searchTerm.toLowerCase()) ||
+                            u.email
+                              ?.toLowerCase()
+                              .includes(searchTerm.toLowerCase())) &&
+                          !(
+                            Array.isArray(selectedChat.participants) &&
+                            selectedChat.participants.some(
+                              (p) => p._id === u._id
+                            )
+                          )
+                      )
+                      .map((user) => (
+                        <div
+                          key={user._id}
+                          className="d-flex align-items-center justify-content-between p-2 border-bottom"
+                        >
+                          <div className="d-flex align-items-center">
+                            <div className="avatar me-2">
+                              {getAvatarText(user.name)}
+                            </div>
+                            <span>{user.name}</span>
+                          </div>
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => handleAddToGroup(user._id)}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </Form.Group>
+              </Form>
+            </div>
+          </Modal.Body>
+        </>
+      )}
+
+      <Modal.Footer>
+        <Button
+          variant="secondary"
+          onClick={() => setShowGroupInfoModal(false)}
+        >
+          Close
+        </Button>
+        <Button
+          variant="danger"
+          onClick={() => handleRemoveFromGroup(user._id)}
+        >
+          Leave Group
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  </Container>
+);
 };
 
 export default Chat;
-
-
-
-
-// import Navbar from '../Navbar';
-// import React, { useState, useEffect } from 'react';
-// import './chat.css';
-// import axios from 'axios';
-// import { io } from 'socket.io-client';
-
-// const socket = io('http://localhost:5000'); // Connect to backend
-
-// const ChatPopup = ({ selectedEmployee, closeChat }) => {
-//   const [messages, setMessages] = useState([]);
-//   const [newMessage, setNewMessage] = useState('');
-//   const [loggedInUser, setLoggedInUser] = useState(null);
-//   const isGroupChat = selectedEmployee?.name === 'Community Group';
-
-//   // Fetch user data when the component loads
-//   useEffect(() => {
-//     const fetchUserData = async () => {
-//       const token = localStorage.getItem("token");
-//       try {
-//         const response = await fetch("http://localhost:5000/users/me", {
-//           method: "GET",
-//           credentials: "include",
-//           headers: {
-//             "Content-Type": "application/json",
-//             "Authorization": `Bearer ${token}`
-//           },
-//         });
-//         if (!response.ok) {
-//           throw new Error(`Failed to fetch user data. Status: ${response.status}`);
-//         }
-//         const data = await response.json();
-//         setLoggedInUser(data.name || 'Unknown User');
-//       } catch (error) {
-//         console.error("Error fetching user data:", error);
-//       }
-//     };
-//     fetchUserData();
-//   }, []);
-
-//   // Fetch messages when the component loads
-//   useEffect(() => {
-//     if (!selectedEmployee || !loggedInUser) return;
-
-//     const fetchMessages = async () => {
-//       try {
-//         const response = await axios.get('http://localhost:5000/api/messages', {
-//           params: { recipient: isGroupChat ? 'group' : selectedEmployee.name }
-//         });
-//         if (response.status === 200 && Array.isArray(response.data)) {
-//           setMessages(response.data);
-//         } else {
-//           console.error('Unexpected response format:', response);
-//         }
-//       } catch (error) {
-//         console.error('Error fetching messages:', error.response ? error.response.data : error.message);
-//       }
-//     };
-//     fetchMessages();
-
-//     socket.on('newMessage', (message) => {
-//       setMessages((prev) => [...prev, message]);
-//     });
-
-//     return () => {
-//       socket.off('newMessage');
-//     };
-//   }, [selectedEmployee, loggedInUser]);
-
-//   // Handle sending a new message
-//   const sendMessage = async () => {
-//     if (!newMessage.trim()) return; // Avoid sending empty messages
-
-//     try {
-//       const response = await axios.post('http://localhost:5000/api/messages', {
-//         sender: loggedInUser,
-//         recipient: selectedEmployee.name,
-//         text: newMessage,
-//         isGroup: isGroupChat,
-//       });
-//       setMessages([...messages, response.data]);
-//       setNewMessage('');
-//     } catch (error) {
-//       console.error('Error sending message:', error.response ? error.response.data : error.message);
-//     }
-//   };
-
-//   // Handle deleting a message
-//   const deleteMessage = async (messageId) => {
-//     try {
-//       const response = await axios.delete(`http://localhost:5000/api/messages/${messageId}`);
-//       setMessages(messages.filter((msg) => msg._id !== messageId));
-//       console.log('Message deleted:', response.data);
-//     } catch (error) {
-//       console.error('Error deleting message:', error);
-//     }
-//   };
-
-//   // Format timestamp to 12-hour format
-//   const formatTimestamp = (timestamp) => {
-//     const date = new Date(timestamp);
-
-//     let hours = date.getHours();
-//     let minutes = date.getMinutes();
-//     const ampm = hours >= 12 ? 'PM' : 'AM';
-
-//     // Convert hours from 24-hour format to 12-hour format
-//     hours = hours % 12;
-//     hours = hours ? hours : 12; // The hour '0' should be '12'
-//     minutes = minutes < 10 ? '0' + minutes : minutes; // Add leading zero to minutes if < 10
-
-//     return {
-//       formattedTime: `${hours}:${minutes} ${ampm}`,
-//       formattedDate: `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`,
-//     };
-//   };
-
-//   // Track the previous date to compare for new day
-//   let prevDate = null;
-
-//   return (
-//     <div className="chat-popup-overlay">
-//       <div className="chat-popup">
-//         <div className="chat-section">
-//           <div className="chat-header">
-//             <img src={selectedEmployee.avatar} alt={selectedEmployee.name} className="chat-avatar" />
-//             <span>{selectedEmployee.name}</span>
-//             <button className="close-chat" onClick={closeChat}>×</button>
-//           </div>
-
-//           <div className="chat-body">
-//             {messages.map((msg, index) => {
-//               const { formattedTime, formattedDate } = formatTimestamp(msg.createdAt);
-//               const isNewDay = prevDate !== formattedDate;
-//               if (isNewDay) {
-//                 prevDate = formattedDate;
-//               }
-
-//               return (
-//                 <div key={index} className={`chat-container ${msg.sender === selectedEmployee.name ? 'outgoing-container' : 'incoming-container'}`}>
-//                   {isNewDay && (
-//                     <div className="date-divider">
-//                       <span>{formattedDate}</span>
-//                     </div>
-//                   )}
-//                   <div className={`chat-message ${msg.sender === selectedEmployee.name ? 'incoming' : 'outgoing'}`}>
-//                     <span className="sender-name">{msg.sender}</span>
-//                     <p>{msg.text}</p>
-//                     <span className="timestamp">{formattedTime}</span>
-//                     <button className="delete-btn" onClick={() => deleteMessage(msg._id)}>🗑️</button>
-//                   </div>
-//                 </div>
-//               );
-//             })}
-//           </div>
-
-//           <div className="chat-footer">
-//             <input
-//               type="text"
-//               placeholder="Message..."
-//               value={newMessage}
-//               onChange={(e) => setNewMessage(e.target.value)}
-//               className="chat-input"
-//             />
-//             <button className="send-btn" onClick={sendMessage}>➤</button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const Chat = () => {
-//   const [selectedEmployee, setSelectedEmployee] = useState(null);
-//   const [showChat, setShowChat] = useState(false);
-
-//   const employees = [
-//     { id: '12345', name: 'Ajiri Immonvede', department: 'Sales', position: 'Sales Manager', avatar: '/api/placeholder/32/32' },
-//     { id: '67890', name: 'Ali Almoallim', department: 'Finance', position: 'Financial Analyst', avatar: '/api/placeholder/32/32' },
-//     { id: '54321', name: 'Maria Skgaftar', department: 'Operations', position: 'Operations Manager', avatar: '/api/placeholder/32/32' },
-//     { id: '67891', name: 'Hopeland Adel', department: 'Sales', position: 'Sales Analyst', avatar: '/api/placeholder/32/32' },
-//     { id: '67892', name: 'Shon Nilsson', department: 'Finance', position: 'Financial Analyst', avatar: '/api/placeholder/32/32' },
-//     { id: '67893', name: 'Jack Nevada', department: 'IT', position: 'IT Coordinator', avatar: '/api/placeholder/32/32' },
-//   ];
-
-//   const openChat = (employee) => {
-//     setSelectedEmployee(employee);
-//     setShowChat(true);
-//   };
-
-//   const closeChat = () => {
-//     setSelectedEmployee(null);
-//     setShowChat(false);
-//   };
-
-//   return (
-//     <div className="main-cont">
-//       {/* <Navbar /> */}
-//       <div className="employee-list-container">
-//         <div className="search-bar">
-//           <h2 className="title">Employee List</h2>
-//           <div className="search-input-container">
-//             <input type="search" placeholder="Quick Search..." className="search-input" />
-//             <span className="search-icon">🔍</span>
-//           </div>
-//           <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600">
-//             Community Group
-//           </button>
-//         </div>
-
-//         <div className="employee-table-container">
-//           <table className="employee-table">
-//             <thead>
-//               <tr>
-//                 <th className="employee-head">Employee</th>
-//                 <th>Employee ID</th>
-//                 <th>Department</th>
-//                 <th>Position</th>
-//                 <th className="action-head">Action</th>
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {employees.map((employee) => (
-//                 <tr key={employee.id}>
-//                   <td className="employee-cell">
-//                     <div className="employee-info">
-//                       <img src={employee.avatar} alt={employee.name} className="employee-avatar" />
-//                       <span>{employee.name}</span>
-//                     </div>
-//                   </td>
-//                   <td>{employee.id}</td>
-//                   <td>{employee.department}</td>
-//                   <td>{employee.position}</td>
-//                   <td className="action-cell">
-//                     <button className="chat-btn" onClick={() => openChat(employee)}>Chat</button>
-//                   </td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </div>
-
-//         {selectedEmployee && (
-//           <ChatPopup
-//             selectedEmployee={selectedEmployee}
-//             closeChat={closeChat}
-//           />
-//         )}
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Chat;
-
-
-// import React, { useState, useEffect } from 'react';
-// import { Container, Row, Col, ListGroup, Form, Button, Badge, Modal, Tab, Nav } from 'react-bootstrap';
-// import './chat.css'; // Custom CSS for additional styling
-
-// const Chat = () => {
-//   // State management
-//   const [activeTab, setActiveTab] = useState('personal');
-//   const [messages, setMessages] = useState([]);
-//   const [newMessage, setNewMessage] = useState('');
-//   const [selectedChat, setSelectedChat] = useState(null);
-//   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
-//   const [groupName, setGroupName] = useState('');
-//   const [selectedUsers, setSelectedUsers] = useState([]);
-//   const [searchTerm, setSearchTerm] = useState('');
-
-//   // Sample data
-//   const users = [
-//     { id: 1, name: 'John Doe', avatar: 'JD', status: 'online', lastSeen: '' },
-//     { id: 2, name: 'Jane Smith', avatar: 'JS', status: 'offline', lastSeen: '2h ago' },
-//     { id: 3, name: 'Mike Johnson', avatar: 'MJ', status: 'online', lastSeen: '' },
-//     { id: 4, name: 'Sarah Williams', avatar: 'SW', status: 'away', lastSeen: '30m ago' },
-//     { id: 5, name: 'David Brown', avatar: 'DB', status: 'online', lastSeen: '' },
-//   ];
-
-//   const groups = [
-//     { id: 1, name: 'Development Team', avatar: 'DT', members: [1, 3, 5], unread: 3 },
-//     { id: 2, name: 'Marketing Team', avatar: 'MT', members: [2, 4], unread: 0 },
-//     { id: 3, name: 'Management', avatar: 'MG', members: [1, 2, 3, 4, 5], unread: 1 },
-//   ];
-
-//   // Load sample messages when a chat is selected
-//   useEffect(() => {
-//     if (selectedChat) {
-//       const sampleMessages = [
-//         { id: 1, sender: selectedChat.id === 'personal' ? 2 : 1, text: 'Hi there!', timestamp: '10:30 AM' },
-//         { id: 2, sender: 1, text: 'Hello! How are you?', timestamp: '10:31 AM' },
-//         { id: 3, sender: selectedChat.id === 'personal' ? 2 : 3, text: 'I\'m good, thanks for asking. How about you?', timestamp: '10:33 AM' },
-//         { id: 4, sender: 1, text: 'Doing well! Just working on the new project.', timestamp: '10:35 AM' },
-//         { id: 5, sender: selectedChat.id === 'personal' ? 2 : 4, text: 'That sounds interesting. Can we discuss it in our next meeting?', timestamp: '10:37 AM' },
-//       ];
-//       setMessages(sampleMessages);
-//     }
-//   }, [selectedChat]);
-
-//   const handleSendMessage = () => {
-//     if (newMessage.trim() && selectedChat) {
-//       const newMsg = {
-//         id: messages.length + 1,
-//         sender: 1, // Assuming current user is sender
-//         text: newMessage,
-//         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-//       };
-//       setMessages([...messages, newMsg]);
-//       setNewMessage('');
-//     }
-//   };
-
-//   const handleCreateGroup = () => {
-//     if (groupName.trim() && selectedUsers.length > 0) {
-//       // In a real app, you would send this to your backend
-//       const newGroup = {
-//         id: groups.length + 1,
-//         name: groupName,
-//         avatar: groupName.substring(0, 2).toUpperCase(),
-//         members: selectedUsers,
-//         unread: 0
-//       };
-//       // Add to groups list (in real app, this would be handled by backend)
-//       groups.push(newGroup);
-//       setShowNewGroupModal(false);
-//       setGroupName('');
-//       setSelectedUsers([]);
-//     }
-//   };
-
-//   const toggleUserSelection = (userId) => {
-//     if (selectedUsers.includes(userId)) {
-//       setSelectedUsers(selectedUsers.filter(id => id !== userId));
-//     } else {
-//       setSelectedUsers([...selectedUsers, userId]);
-//     }
-//   };
-
-//   return (
-//     <Container fluid className="chat-container">
-//       <Row className="h-100">
-//         {/* Left sidebar - Chat list */}
-//         <Col md={4} className="sidebar p-0 border-end">
-//           <div className="sidebar-header p-3 border-bottom">
-//             <h5>Office Chat</h5>
-//             <Button 
-//               variant="primary" 
-//               size="sm" 
-//               onClick={() => setShowNewGroupModal(true)}
-//             >
-//               New Group
-//             </Button>
-//           </div>
-
-//           <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-//             <Nav variant="tabs" className="px-3 pt-2">
-//               <Nav.Item>
-//                 <Nav.Link eventKey="personal">Personal</Nav.Link>
-//               </Nav.Item>
-//               <Nav.Item>
-//                 <Nav.Link eventKey="groups">Groups</Nav.Link>
-//               </Nav.Item>
-//             </Nav>
-
-//             <Tab.Content className="p-2">
-//               <Tab.Pane eventKey="personal">
-//                 <Form.Control
-//                   type="text"
-//                   placeholder="Search colleagues..."
-//                   className="mb-3"
-//                   value={searchTerm}
-//                   onChange={(e) => setSearchTerm(e.target.value)}
-//                 />
-//                 <ListGroup variant="flush">
-//                   {users
-//                     .filter(user => 
-//                       user.name.toLowerCase().includes(searchTerm.toLowerCase())
-//                     )
-//                     .map(user => (
-//                       <ListGroup.Item
-//                         key={user.id}
-//                         action
-//                         active={selectedChat?.id === user.id && selectedChat?.type === 'personal'}
-//                         onClick={() => setSelectedChat({ id: user.id, type: 'personal', name: user.name })}
-//                         className="d-flex align-items-center"
-//                       >
-//                         <div className={`avatar me-3 ${user.status}`}>
-//                           {user.avatar}
-//                         </div>
-//                         <div className="flex-grow-1">
-//                           <div className="d-flex justify-content-between">
-//                             <strong>{user.name}</strong>
-//                             <small className="text-muted">{user.lastSeen}</small>
-//                           </div>
-//                           <small className="text-muted">Last message preview...</small>
-//                         </div>
-//                         {user.unread > 0 && (
-//                           <Badge pill bg="danger" className="ms-2">
-//                             {user.unread}
-//                           </Badge>
-//                         )}
-//                       </ListGroup.Item>
-//                     ))}
-//                 </ListGroup>
-//               </Tab.Pane>
-
-//               <Tab.Pane eventKey="groups">
-//                 <ListGroup variant="flush">
-//                   {groups.map(group => (
-//                     <ListGroup.Item
-//                       key={group.id}
-//                       action
-//                       active={selectedChat?.id === group.id && selectedChat?.type === 'group'}
-//                       onClick={() => setSelectedChat({ id: group.id, type: 'group', name: group.name })}
-//                       className="d-flex align-items-center"
-//                     >
-//                       <div className="avatar me-3 group-avatar">
-//                         {group.avatar}
-//                       </div>
-//                       <div className="flex-grow-1">
-//                         <div className="d-flex justify-content-between">
-//                           <strong>{group.name}</strong>
-//                           <small className="text-muted">{group.members.length} members</small>
-//                         </div>
-//                         <small className="text-muted">Last group message...</small>
-//                       </div>
-//                       {group.unread > 0 && (
-//                         <Badge pill bg="danger" className="ms-2">
-//                           {group.unread}
-//                         </Badge>
-//                       )}
-//                     </ListGroup.Item>
-//                   ))}
-//                 </ListGroup>
-//               </Tab.Pane>
-//             </Tab.Content>
-//           </Tab.Container>
-//         </Col>
-
-//         {/* Right side - Chat area */}
-//         <Col md={8} className="chat-area p-0 d-flex flex-column">
-//           {selectedChat ? (
-//             <>
-//               <div className="chat-header p-3 border-bottom d-flex align-items-center">
-//                 <div className={`avatar me-3 ${selectedChat.type === 'group' ? 'group-avatar' : ''}`}>
-//                   {selectedChat.type === 'group' 
-//                     ? selectedChat.name.substring(0, 2).toUpperCase()
-//                     : selectedChat.name.substring(0, 2).toUpperCase()}
-//                 </div>
-//                 <div>
-//                   <h5 className="mb-0">{selectedChat.name}</h5>
-//                   <small className="text-muted">
-//                     {selectedChat.type === 'group' 
-//                       ? `${groups.find(g => g.id === selectedChat.id)?.members.length || 0} members`
-//                       : users.find(u => u.id === selectedChat.id)?.status || 'offline'}
-//                   </small>
-//                 </div>
-//               </div>
-
-//               <div className="messages-container flex-grow-1 p-3">
-//                 {messages.map(message => (
-//                   <div 
-//                     key={message.id} 
-//                     className={`message mb-3 ${message.sender === 1 ? 'sent' : 'received'}`}
-//                   >
-//                     <div className="message-content">
-//                       <div className="message-text">{message.text}</div>
-//                       <div className="message-time">{message.timestamp}</div>
-//                     </div>
-//                   </div>
-//                 ))}
-//               </div>
-
-//               <div className="message-input p-3 border-top">
-//                 <Form.Group className="d-flex">
-//                   <Form.Control
-//                     as="textarea"
-//                     rows={1}
-//                     placeholder={`Message ${selectedChat.name}`}
-//                     value={newMessage}
-//                     onChange={(e) => setNewMessage(e.target.value)}
-//                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-//                   />
-//                   <Button 
-//                     variant="primary" 
-//                     className="ms-2"
-//                     onClick={handleSendMessage}
-//                     disabled={!newMessage.trim()}
-//                   >
-//                     Send
-//                   </Button>
-//                 </Form.Group>
-//               </div>
-//             </>
-//           ) : (
-//             <div className="d-flex flex-column align-items-center justify-content-center h-100">
-//               <div className="text-center p-5">
-//                 <h4>Welcome to Office Chat</h4>
-//                 <p className="text-muted">
-//                   Select a conversation or create a new group to start chatting
-//                 </p>
-//                 <Button 
-//                   variant="primary" 
-//                   onClick={() => setShowNewGroupModal(true)}
-//                 >
-//                   Create New Group
-//                 </Button>
-//               </div>
-//             </div>
-//           )}
-//         </Col>
-//       </Row>
-
-//       {/* New Group Modal */}
-//       <Modal show={showNewGroupModal} onHide={() => setShowNewGroupModal(false)}>
-//         <Modal.Header closeButton>
-//           <Modal.Title>Create New Group</Modal.Title>
-//         </Modal.Header>
-//         <Modal.Body>
-//           <Form.Group className="mb-3">
-//             <Form.Label>Group Name</Form.Label>
-//             <Form.Control
-//               type="text"
-//               placeholder="Enter group name"
-//               value={groupName}
-//               onChange={(e) => setGroupName(e.target.value)}
-//             />
-//           </Form.Group>
-//           <Form.Group>
-//             <Form.Label>Add Members</Form.Label>
-//             {users.map(user => (
-//               <Form.Check
-//                 key={user.id}
-//                 type="checkbox"
-//                 id={`user-${user.id}`}
-//                 label={user.name}
-//                 checked={selectedUsers.includes(user.id)}
-//                 onChange={() => toggleUserSelection(user.id)}
-//               />
-//             ))}
-//           </Form.Group>
-//         </Modal.Body>
-//         <Modal.Footer>
-//           <Button variant="secondary" onClick={() => setShowNewGroupModal(false)}>
-//             Cancel
-//           </Button>
-//           <Button 
-//             variant="primary" 
-//             onClick={handleCreateGroup}
-//             disabled={!groupName.trim() || selectedUsers.length === 0}
-//           >
-//             Create Group
-//           </Button>
-//         </Modal.Footer>
-//       </Modal>
-//     </Container>
-//   );
-// };
-
-// export default Chat;
-
-// import React, { useState, useEffect } from 'react';
-// import { Container, Row, Col, ListGroup, Form, Button, Badge, Modal, Tab, Nav, Spinner, Alert } from 'react-bootstrap';
-// import axios from 'axios';
-// import './chat.css';
-// import { useAuth } from '../AuthProvider/AuthContext'; // Assuming you have an auth context
-
-
-// const Chat = () => {
-//   const { user } = useAuth();
-//   const [activeTab, setActiveTab] = useState('personal');
-//   const [messages, setMessages] = useState([]);
-//   const [newMessage, setNewMessage] = useState('');
-//   const [selectedChat, setSelectedChat] = useState(null);
-//   const [showNewGroupModal, setShowNewGroupModal] = useState(false);
-//   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
-//   const [groupName, setGroupName] = useState('');
-//   const [groups, setGroups] = useState([]);
-//   const [selectedUsers, setSelectedUsers] = useState([]);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState(null);
-//   const [users, setUsers] = useState([]);
-//   const [candidates, setCandidates] = useState([]);
-//   const [connections, setConnections] = useState([]); // Track user connections
-
-//   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-//   // Fetch initial data (users and candidates)
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         setLoading(true);
-        
-//         // Fetch users (excluding super admins)
-//         const usersRes = await axios.get(`${API_BASE_URL}/users`, {
-//           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//         });
-//         const regularUsers = usersRes.data.filter(u => u.role !== 'Super_Admin');
-//         setUsers(regularUsers);
-
-//         // Fetch candidates
-//         const candidatesRes = await axios.get(`${API_BASE_URL}/api/candidates`, {
-//           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-//         });
-//         setCandidates(candidatesRes.data.data);
-
-//         // For demo purposes - initialize with empty connections
-//         setConnections([]);
-        
-//       } catch (err) {
-//         console.error('Error fetching data:', err);
-//         setError('Failed to load users and candidates');
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchData();
-//   }, []);
-
-//   // Handle sending a message (simulated for demo)
-//   const handleSendMessage = () => {
-//     if (newMessage.trim() && selectedChat) {
-//       const newMsg = {
-//         id: messages.length + 1,
-//         sender: user._id,
-//         text: newMessage,
-//         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-//       };
-//       setMessages([...messages, newMsg]);
-//       setNewMessage('');
-//     }
-//   };
-
-//   // Handle adding a friend/connection
-//   const handleAddFriend = async (userId) => {
-//     try {
-//       setLoading(true);
-//       // In a real app, you would make an API call here to establish connection
-//       // For demo, we'll just add to local state
-//       if (!connections.includes(userId)) {
-//         setConnections([...connections, userId]);
-//       }
-//       setShowAddFriendModal(false);
-//     } catch (err) {
-//       setError('Failed to add connection');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // Get avatar text from name
-//   const getAvatarText = (name) => {
-//     if (!name) return '';
-//     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-//   };
-
-//   // Get status text
-//   const getStatusText = (person) => {
-//     if (!person.lastLogin) return 'offline';
-//     const lastLogin = new Date(person.lastLogin);
-//     const diff = (new Date() - lastLogin) / (1000 * 60 * 60); // hours
-    
-//     if (diff < 0.5) return 'online';
-//     if (diff < 24) return `last seen ${Math.floor(diff)}h ago`;
-//     return 'offline';
-//   };
-
-// // Moved toggleUserSelection function before its usage
-// const toggleUserSelection = (userId) => {
-//   if (selectedUsers.includes(userId)) {
-//     setSelectedUsers(selectedUsers.filter(id => id !== userId));
-//   } else {
-//     setSelectedUsers([...selectedUsers, userId]);
-//   }
-// };
-
-
-//   // Combine users and candidates for display
-//   const getAvailableConnections = () => {
-//     return [
-//       ...users.filter(u => u._id !== user._id),
-//       ...candidates
-//     ].filter(person => !connections.includes(person._id));
-//   };
-
-//   if (loading) {
-//     return (
-//       <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-//         <Spinner animation="border" variant="primary" />
-//       </Container>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <Container className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-//         <Alert variant="danger" onClose={() => setError(null)} dismissible>
-//           {error}
-//         </Alert>
-//       </Container>
-//     );
-//   }
-
-//   return (
-//     <Container fluid className="chat-container">
-//       <Row className="h-100">
-//         {/* Left sidebar - Connections list */}
-//         <Col md={4} className=" p-0 border-end">
-//           <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
-//             <h5>Office Chat</h5>
-//             <div>
-//               <Button 
-//                 variant="primary" 
-//                 size="sm" 
-//                 onClick={() => setShowAddFriendModal(true)}
-//                 className="me-2"
-//               >
-//                 Add Friend
-//               </Button>
-//               <Button 
-//                 variant="secondary" 
-//                 size="sm" 
-//                 onClick={() => setShowNewGroupModal(true)}
-//               >
-//                 New Group
-//               </Button>
-//             </div>
-//           </div>
-
-//           <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
-//             <Nav variant="tabs" className="px-3 pt-2">
-//               <Nav.Item>
-//                 <Nav.Link eventKey="personal">Connections</Nav.Link>
-//               </Nav.Item>
-//               <Nav.Item>
-//                 <Nav.Link eventKey="groups">Groups</Nav.Link>
-//               </Nav.Item>
-//             </Nav>
-
-//             <Tab.Content className="p-2">
-//               <Tab.Pane eventKey="personal">
-//                 <Form.Control
-//                   type="text"
-//                   placeholder="Search connections..."
-//                   className="mb-3"
-//                   value={searchTerm}
-//                   onChange={(e) => setSearchTerm(e.target.value)}
-//                 />
-//                 <ListGroup variant="flush">
-//                   {connections.length === 0 ? (
-//                     <ListGroup.Item className="text-muted">
-//                       No connections yet. Click "Add Friend" to start chatting.
-//                     </ListGroup.Item>
-//                   ) : (
-//                     [...users, ...candidates]
-//                       .filter(person => 
-//                         connections.includes(person._id) &&
-//                         person.name?.toLowerCase().includes(searchTerm.toLowerCase())
-//                       )
-//                       .map(person => (
-//                         <ListGroup.Item
-//                           key={person._id}
-//                           action
-//                           active={selectedChat?._id === person._id}
-//                           onClick={() => setSelectedChat({
-//                             _id: person._id,
-//                             name: person.name,
-//                             type: 'personal'
-//                           })}
-//                           className="d-flex align-items-center"
-//                         >
-//                           <div className={`avatar me-3 ${getStatusText(person).includes('online') ? 'online' : ''}`}>
-//                             {getAvatarText(person.name)}
-//                           </div>
-//                           <div className="flex-grow-1">
-//                             <div className="d-flex justify-content-between">
-//                               <strong>{person.name}</strong>
-//                               <small className="text-muted">{getStatusText(person)}</small>
-//                             </div>
-//                             <small className="text-muted">{person.email || person.personalMail}</small>
-//                           </div>
-//                         </ListGroup.Item>
-//                       ))
-//                   )}
-//                 </ListGroup>
-//               </Tab.Pane>
-
-//               <Tab.Pane eventKey="groups">
-//                 <ListGroup variant="flush">
-//                   {groups.length === 0 ? (
-//                     <ListGroup.Item className="text-muted">
-//                       No groups yet. Create one to start group chatting.
-//                     </ListGroup.Item>
-//                   ) : (
-//                     groups.map(group => (
-//                       <ListGroup.Item
-//                         key={group._id}
-//                         action
-//                         active={selectedChat?._id === group._id}
-//                         onClick={() => setSelectedChat(group)}
-//                         className="d-flex align-items-center"
-//                       >
-//                         <div className="avatar me-3 group-avatar">
-//                           {getAvatarText(group.name)}
-//                         </div>
-//                         <div className="flex-grow-1">
-//                           <div className="d-flex justify-content-between">
-//                             <strong>{group.name}</strong>
-//                             <small className="text-muted">{group.members?.length || 0} members</small>
-//                           </div>
-//                         </div>
-//                       </ListGroup.Item>
-//                     ))
-//                   )}
-//                 </ListGroup>
-//               </Tab.Pane>
-//             </Tab.Content>
-//           </Tab.Container>
-//         </Col>
-
-//         {/* Right side - Chat area */}
-//         <Col md={8} className="chat-area p-0 d-flex flex-column">
-//           {selectedChat ? (
-//             <>
-//               <div className="chat-header p-3 border-bottom d-flex align-items-center">
-//                 <div className={`avatar me-3 ${selectedChat.type === 'group' ? 'group-avatar' : ''}`}>
-//                   {getAvatarText(selectedChat.name)}
-//                 </div>
-//                 <div>
-//                   <h5 className="mb-0">{selectedChat.name}</h5>
-//                   <small className="text-muted">
-//                     {selectedChat.type === 'group' 
-//                       ? `${selectedChat.members?.length || 0} members`
-//                       : getStatusText([...users, ...candidates].find(p => p._id === selectedChat._id))}
-//                   </small>
-//                 </div>
-//               </div>
-
-//               <div className="messages-container flex-grow-1 p-3">
-//                 {messages.length === 0 ? (
-//                   <div className="d-flex justify-content-center align-items-center h-100">
-//                     <p className="text-muted">No messages yet. Start the conversation!</p>
-//                   </div>
-//                 ) : (
-//                   messages.map(message => (
-//                     <div 
-//                       key={message.id} 
-//                       className={`message mb-3 ${message.sender === user._id ? 'sent' : 'received'}`}
-//                     >
-//                       <div className="message-content">
-//                         <div className="message-text">{message.text}</div>
-//                         <div className="message-time">{message.timestamp}</div>
-//                       </div>
-//                     </div>
-//                   ))
-//                 )}
-//               </div>
-
-//               <div className="message-input p-3 border-top">
-//                 <Form.Group className="d-flex">
-//                   <Form.Control
-//                     as="textarea"
-//                     rows={1}
-//                     placeholder={`Message ${selectedChat.name}`}
-//                     value={newMessage}
-//                     onChange={(e) => setNewMessage(e.target.value)}
-//                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-//                   />
-//                   <Button 
-//                     variant="primary" 
-//                     className="ms-2"
-//                     onClick={handleSendMessage}
-//                     disabled={!newMessage.trim()}
-//                   >
-//                     Send
-//                   </Button>
-//                 </Form.Group>
-//               </div>
-//             </>
-//           ) : (
-//             <div className="d-flex flex-column align-items-center justify-content-center h-100">
-//               <div className="text-center p-5">
-//                 <h4>Welcome to Office Chat</h4>
-//                 <p className="text-muted">
-//                   {connections.length === 0 
-//                     ? "Add connections to start chatting" 
-//                     : "Select a conversation to start chatting"}
-//                 </p>
-//                 <Button 
-//                   variant="primary" 
-//                   onClick={() => setShowAddFriendModal(true)}
-//                 >
-//                   Add Friend
-//                 </Button>
-//               </div>
-//             </div>
-//           )}
-//         </Col>
-//       </Row>
-
-//       {/* Add Friend Modal */}
-//       <Modal show={showAddFriendModal} onHide={() => setShowAddFriendModal(false)}>
-//         <Modal.Header closeButton>
-//           <Modal.Title>Add New Connection</Modal.Title>
-//         </Modal.Header>
-//         <Modal.Body>
-//           <Form.Control
-//             type="text"
-//             placeholder="Search people..."
-//             className="mb-3"
-//             value={searchTerm}
-//             onChange={(e) => setSearchTerm(e.target.value)}
-//           />
-//           <ListGroup variant="flush">
-//             {getAvailableConnections()
-//               .filter(person => 
-//                 person.name?.toLowerCase().includes(searchTerm.toLowerCase())
-//               )
-//               .map(person => (
-//                 <ListGroup.Item
-//                   key={person._id}
-//                   className="d-flex justify-content-between align-items-center"
-//                 >
-//                   <div className="d-flex align-items-center">
-//                     <div className={`avatar me-3 ${getStatusText(person).includes('online') ? 'online' : ''}`}>
-//                       {getAvatarText(person.name)}
-//                     </div>
-//                     <div>
-//                       <strong>{person.name}</strong>
-//                       <div className="text-muted small">
-//                         {person.email || person.personalMail}
-//                       </div>
-//                     </div>
-//                   </div>
-//                   <Button 
-//                     variant="outline-primary" 
-//                     size="sm"
-//                     onClick={() => handleAddFriend(person._id)}
-//                   >
-//                     Add
-//                   </Button>
-//                 </ListGroup.Item>
-//               ))}
-//           </ListGroup>
-//         </Modal.Body>
-//       </Modal>
-
-//       {/* New Group Modal */}
-//       <Modal show={showNewGroupModal} onHide={() => setShowNewGroupModal(false)}>
-//         <Modal.Header closeButton>
-//           <Modal.Title>Create New Group</Modal.Title>
-//         </Modal.Header>
-//         <Modal.Body>
-//           <Form.Group className="mb-3">
-//             <Form.Label>Group Name</Form.Label>
-//             <Form.Control
-//               type="text"
-//               placeholder="Enter group name"
-//               value={groupName}
-//               onChange={(e) => setGroupName(e.target.value)}
-//             />
-//           </Form.Group>
-//           <Form.Group>
-//             <Form.Label>Add Members</Form.Label>
-//             {connections.map(connectionId => {
-//               const person = [...users, ...candidates].find(p => p._id === connectionId);
-//               return person ? (
-//                 <Form.Check
-//                   key={person._id}
-//                   type="checkbox"
-//                   id={`group-member-${person._id}`}
-//                   label={`${person.name} (${person.type || 'User'})`}
-//                   checked={selectedUsers.includes(person._id)}
-//                   onChange={() => toggleUserSelection(person._id)}
-//                 />
-//               ) : null;
-//             })}
-//           </Form.Group>
-//         </Modal.Body>
-//         <Modal.Footer>
-//           <Button variant="secondary" onClick={() => setShowNewGroupModal(false)}>
-//             Cancel
-//           </Button>
-//           <Button 
-//             variant="primary" 
-//             onClick={() => {
-//               // For demo, just create a local group
-//               const newGroup = {
-//                 _id: `group-${Date.now()}`,
-//                 name: groupName,
-//                 members: selectedUsers,
-//                 type: 'group'
-//               };
-//               setGroups([...groups, newGroup]);
-//               setShowNewGroupModal(false);
-//               setSelectedChat(newGroup);
-//               setGroupName('');
-//               setSelectedUsers([]);
-//             }}
-//             disabled={!groupName.trim() || selectedUsers.length === 0}
-//           >
-//             Create Group
-//           </Button>
-//         </Modal.Footer>
-//       </Modal>
-//     </Container>
-//   );
-// };
-
-// export default Chat;

@@ -38,9 +38,13 @@ import Chat from "./Components/chats/chat";
 import Inbox from "./Components/mail/Inbox";
 import SendEmail from "./Components/mail/SendEmail";
 import EmailDetails from "./Components/mail/EmailDetails";
+import EmailConfig from "./Components/mail/EmailConfig";
 import Calender from "./Components/calender/calender";
-import Certificate from "./Components/Certificates/Certificate";
-import ViewDetails from "./Components/ViewDetails";
+import Certificate from "./Components/Certificates/Certificate.js";
+import CertificateHistory from "./Components/Certificates/CertificateHistory.js";
+import CompletionHistory from "./Components/Certificates/CompletionHistory.js";
+import OfferHistory from "./Components/Certificates/OfferHistory.js";
+import ViewDetails from "./Components/ViewDetails.js";
 import EditEmployee from "./Components/EditEmployee.js";
 // import HrAttendance from "./Components/HrAttendance";
 import HRRegistration from "./Components/HRRegistration/HRRegistration";
@@ -48,12 +52,14 @@ import Invoice from "./Components/invoice/Invoice";
 import AdminDashboard from "./AdminDashboard.js";
 import ProjectManagerDashboard from "./Components/ProjectManager/ProjectManagerDashboard";
 import TeamLeadDashboard from "./Components/TeamLead/TeamLeadDashboard.js";
+import SuperAdminProjectView from "./Components/SuperAdminLeaveManagement/SuperAdminProjectView.js";
 import EmployeeDashboard from "./Components/Employee/EmployeeDashboard.js";
 import EmployeeProjects from "./Components/Employee/EmployeeProjects.js";
 import SuperAdminLeaveManagement from "./Components/SuperAdminLeaveManagement/SuperAdminLeaveManagement";
 import HRLeaveApplication from "./Components/HRLeaveApplication/HRLeaveApplication.js";
 import HRLeaveManagement from "./Components/HRLeaveManagement/HRLeaveManagement.js";
 import AnalyticsManagement from "./Components/AnalyticsManagement/AnalyticsManagement.js";
+import ChargeHandover from "./Components/ChargeHandover/ChargeHandover.js";
 
 const MainContent = ({ nav }) => {
   const { user, logout } = useAuth();
@@ -173,6 +179,31 @@ const MainContent = ({ nav }) => {
           label: "HR Attendance",
           icon: <FiClipboard />,
         },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        },
+      ],
+      Admin_HR_Manager: [
+        { path: "/Db", label: "Employees", icon: <FiUsers /> },
+        { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
+        { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        {
+          path: "/hrAttendance",
+          label: "HR Attendance",
+          icon: <FiClipboard />,
+        },
+        {
+          path: "/analytics-management",
+          label: "Analytics Management",
+          icon: <FiBarChart />,
+        },
+        {
+          path: "/charge-handover",
+          label: "Charge Handover",
+          icon: <FiFileText />,
+        },
       ],
       // "Admin_HR Manager": [
       //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
@@ -208,11 +239,6 @@ const MainContent = ({ nav }) => {
         },
       ],
       Employee_Team_Lead: [
-        {
-          path: "/team-lead-dashboard",
-          label: "My Projects",
-          icon: <FiFileText />,
-        },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
           path: "/hr-leave-application",
@@ -733,7 +759,7 @@ const MainContent = ({ nav }) => {
           </div>
 
           {/* Support section */}
-          <div className="support-section">
+          {/* <div className="support-section">
             <h2 className="section-title">Support</h2>
             <nav aria-label="Support navigation">
               <ul className="support-links">
@@ -751,7 +777,7 @@ const MainContent = ({ nav }) => {
                 </li>
               </ul>
             </nav>
-          </div>
+          </div> */}
 
           {/* User section */}
           <div className="user-section">
@@ -814,7 +840,9 @@ const MainContent = ({ nav }) => {
           <Route
             path="/ProjectList"
             element={
-              user?.role === "Employee" &&
+              user?.role === "Super_Admin" ? (
+                <SuperAdminProjectView nav={nav} />
+              ) : user?.role === "Employee" &&
               user?.subRole === "Project Manager" ? (
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
@@ -840,8 +868,12 @@ const MainContent = ({ nav }) => {
           <Route path="/Inbox" element={<Inbox />} />
           <Route path="/Inbox/send-email" element={<SendEmail />} />
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
+          <Route path="/email-config" element={<EmailConfig />} />
           <Route path="/Calender" element={<Calender />} />
           <Route path="/Certificate" element={<Certificate />} />
+          <Route path="/CertificateHistory" element={<CertificateHistory />} />
+          <Route path="/CompletionHistory" element={<CompletionHistory />} />
+          <Route path="/OfferHistory" element={<OfferHistory />} />
           {/* <Route path="/hrAttendance" element={<HrAttendance />} /> */}
           <Route path="/Invoice" element={<Invoice />} />
           <Route
@@ -857,6 +889,7 @@ const MainContent = ({ nav }) => {
             element={<HRLeaveApplication />}
           />
           <Route path="/hr-leave-management" element={<HRLeaveManagement />} />
+          <Route path="/charge-handover" element={<ChargeHandover />} />
         </Routes>
       </div>
     </>

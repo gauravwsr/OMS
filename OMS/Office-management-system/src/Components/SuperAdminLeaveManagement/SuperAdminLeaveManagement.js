@@ -1,167 +1,221 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './SuperAdminLeaveManagement.css';
-import { useAuth } from '../AuthProvider/AuthContext';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./SuperAdminLeaveManagement.css";
+import { useAuth } from "../AuthProvider/AuthContext";
 
 const SuperAdminLeaveManagement = () => {
   const { user } = useAuth();
   const [leaveApplications, setLeaveApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [filterStatus, setFilterStatus] = useState('All');
+  const [message, setMessage] = useState({ type: "", text: "" });
+  const [filterStatus, setFilterStatus] = useState("All");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedLeaveId, setSelectedLeaveId] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
+  const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
-    console.log('User object in SuperAdminLeaveManagement:', user);
+    console.log("User object in SuperAdminLeaveManagement:", user);
     fetchLeaveApplications();
   }, []);
 
+  // ...existing code...
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("token");
+      const headers = {};
+      
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
       console.log('Fetching admin/HR leave applications...');
-      const response = await axios.get('http://localhost:5000/api/leave/admin-hr');
+      const response = await axios.get('http://localhost:5001/api/leave/admin-hr', {
+        headers
+      });
       console.log('Admin/HR leave applications response:', response.data);
       
       if (response.data.success) {
         setLeaveApplications(response.data.data);
-        console.log('Admin/HR leave applications set:', response.data.data);
+        console.log("Admin/HR leave applications set:", response.data.data);
       } else {
-        console.log('Failed to fetch admin/HR leave applications:', response.data);
+        console.log(
+          "Failed to fetch admin/HR leave applications:",
+          response.data
+        );
+        setMessage({
+          type: "error",
+          text: response.data.message || "Failed to fetch admin/HR leave applications",
+        });
       }
     } catch (error) {
-      console.error('Error fetching admin/HR leave applications:', error);
-      console.error('Error response:', error.response?.data);
+      console.error("Error fetching admin/HR leave applications:", error);
+      console.error("Error response:", error.response?.data);
+      
+      let errorMessage = "Failed to fetch admin/HR leave applications";
+      if (error.response?.status === 401) {
+        errorMessage = "Authentication failed. Please login again.";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       setMessage({
-        type: 'error',
-        text: 'Failed to fetch admin/HR leave applications'
+        type: "error",
+        text: errorMessage,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLeaveAction = async (leaveId, action, comments = '') => {
+  const handleLeaveAction = async (leaveId, action, comments = "") => {
     try {
-      console.log('handleLeaveAction called with:', { leaveId, action, comments });
-      console.log('User object:', user);
-      console.log('User _id:', user?._id);
-      
+      console.log("handleLeaveAction called with:", {
+        leaveId,
+        action,
+        comments,
+      });
+      console.log("User object:", user);
+      console.log("User _id:", user?._id);
+
       if (!user || !user._id) {
         setMessage({
-          type: 'error',
-          text: 'User information not available. Please login again.'
+          type: "error",
+          text: "User information not available. Please login again.",
         });
         return;
       }
 
-      const token = localStorage.getItem('token');
-      console.log('Token available:', !!token);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setMessage({
+          type: "error",
+          text: "Authentication token not found. Please login again.",
+        });
+        return;
+      }
       
+      console.log("Token available:", !!token);
+
       const requestData = {
         status: action,
         reviewComments: comments,
-        reviewedBy: user._id
+        reviewedBy: user._id,
       };
       
       console.log('Request data:', requestData);
-      console.log('Making API call to:', `http://localhost:5000/api/leave/status/${leaveId}`);
+      console.log('Making API call to:', `http://localhost:5001/api/leave/status/${leaveId}`);
       
-      const response = await axios.patch(`http://localhost:5000/api/leave/status/${leaveId}`, requestData, {
+      const response = await axios.patch(`http://localhost:5001/api/leave/status/${leaveId}`, requestData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('API Response:', response.data);
+      console.log("API Response:", response.data);
 
       if (response.data.success) {
         setMessage({
-          type: 'success',
-          text: `Leave application ${action.toLowerCase()} successfully`
+          type: "success",
+          text: `Leave application ${action.toLowerCase()} successfully`,
         });
         fetchLeaveApplications(); // Refresh the list
+        
+        // Clear message after 3 seconds
+        setTimeout(() => {
+          setMessage({ type: "", text: "" });
+        }, 3000);
       } else {
-        console.log('API returned success: false');
+        console.log("API returned success: false");
         setMessage({
-          type: 'error',
-          text: response.data.message || `Failed to ${action.toLowerCase()} leave application`
+          type: "error",
+          text:
+            response.data.message ||
+            `Failed to ${action.toLowerCase()} leave application`,
         });
       }
     } catch (error) {
       console.error(`Error ${action.toLowerCase()}ing leave:`, error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
-      
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
       let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
-      if (error.response?.data?.message) {
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Authentication failed. Please login again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to perform this action.";
+      } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = `${errorMessage}: ${error.message}`;
       }
-      
+
       setMessage({
-        type: 'error',
-        text: errorMessage
+        type: "error",
+        text: errorMessage,
       });
     }
   };
+// ...existing code...
 
   const approveLeave = (leaveId) => {
-    handleLeaveAction(leaveId, 'Approved');
+    handleLeaveAction(leaveId, "Approved");
   };
 
   const openRejectModal = (leaveId) => {
     setSelectedLeaveId(leaveId);
     setShowRejectModal(true);
-    setRejectReason('');
+    setRejectReason("");
   };
 
   const handleRejectSubmit = () => {
     if (selectedLeaveId) {
-      handleLeaveAction(selectedLeaveId, 'Rejected', rejectReason);
+      handleLeaveAction(selectedLeaveId, "Rejected", rejectReason);
       setShowRejectModal(false);
       setSelectedLeaveId(null);
-      setRejectReason('');
+      setRejectReason("");
     }
   };
 
   const cancelReject = () => {
     setShowRejectModal(false);
     setSelectedLeaveId(null);
-    setRejectReason('');
+    setRejectReason("");
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
   };
 
   const getStatusBadgeClass = (status) => {
     switch (status.toLowerCase()) {
-      case 'approved': return 'badge-success';
-      case 'rejected': return 'badge-danger';
-      case 'pending': return 'badge-warning';
-      default: return 'badge-secondary';
+      case "approved":
+        return "badge-success";
+      case "rejected":
+        return "badge-danger";
+      case "pending":
+        return "badge-warning";
+      default:
+        return "badge-secondary";
     }
   };
 
-  const filteredApplications = leaveApplications.filter(leave => {
-    if (filterStatus === 'All') return true;
+  const filteredApplications = leaveApplications.filter((leave) => {
+    if (filterStatus === "All") return true;
     return leave.status === filterStatus;
   });
 
   const statusCounts = {
     All: leaveApplications.length,
-    Pending: leaveApplications.filter(l => l.status === 'Pending').length,
-    Approved: leaveApplications.filter(l => l.status === 'Approved').length,
-    Rejected: leaveApplications.filter(l => l.status === 'Rejected').length
+    Pending: leaveApplications.filter((l) => l.status === "Pending").length,
+    Approved: leaveApplications.filter((l) => l.status === "Approved").length,
+    Rejected: leaveApplications.filter((l) => l.status === "Rejected").length,
   };
 
   return (
@@ -172,9 +226,7 @@ const SuperAdminLeaveManagement = () => {
       </div>
 
       {message.text && (
-        <div className={`alert alert-${message.type}`}>
-          {message.text}
-        </div>
+        <div className={`alert alert-${message.type}`}>{message.text}</div>
       )}
 
       {/* Statistics Cards */}
@@ -201,10 +253,10 @@ const SuperAdminLeaveManagement = () => {
 
       {/* Filter Tabs */}
       <div className="filter-tabs">
-        {['All', 'Pending', 'Approved', 'Rejected'].map(status => (
+        {["All", "Pending", "Approved", "Rejected"].map((status) => (
           <button
             key={status}
-            className={`filter-tab ${filterStatus === status ? 'active' : ''}`}
+            className={`filter-tab ${filterStatus === status ? "active" : ""}`}
             onClick={() => setFilterStatus(status)}
           >
             {status} ({statusCounts[status]})
@@ -218,7 +270,8 @@ const SuperAdminLeaveManagement = () => {
           <div className="loading">Loading leave applications...</div>
         ) : filteredApplications.length === 0 ? (
           <div className="no-data">
-            No {filterStatus === 'All' ? '' : filterStatus.toLowerCase()} HR/Admin leave applications found.
+            No {filterStatus === "All" ? "" : filterStatus.toLowerCase()}{" "}
+            HR/Admin leave applications found.
           </div>
         ) : (
           <div className="applications-list">
@@ -228,22 +281,30 @@ const SuperAdminLeaveManagement = () => {
                   <div className="employee-details">
                     <h3 className="employee-name">{leave.employeeName}</h3>
                     <div className="employee-meta">
-                      <span>{leave.employeeRole}</span> • <span>{leave.employeeEmail}</span>
+                      <span>{leave.employeeRole}</span> •{" "}
+                      <span>{leave.employeeEmail}</span>
                     </div>
                   </div>
-                  <span className={`status-badge ${getStatusBadgeClass(leave.status)}`}>
+                  <span
+                    className={`status-badge ${getStatusBadgeClass(
+                      leave.status
+                    )}`}
+                  >
                     {leave.status}
                   </span>
                 </div>
 
                 <div className="leave-content">
                   <h4 className="leave-reason">{leave.leaveReason}</h4>
-                  
+
                   <div className="leave-info-grid">
                     <div className="info-item">
                       <span className="info-label">Leave Type:</span>
                       <span className="info-value">
-                        {leave.leaveType} {leave.leaveType === 'Other' && leave.customLeaveType ? `- ${leave.customLeaveType}` : ''}
+                        {leave.leaveType}{" "}
+                        {leave.leaveType === "Other" && leave.customLeaveType
+                          ? `- ${leave.customLeaveType}`
+                          : ""}
                       </span>
                     </div>
                     <div className="info-item">
@@ -252,20 +313,28 @@ const SuperAdminLeaveManagement = () => {
                     </div>
                     <div className="info-item">
                       <span className="info-label">Start Date:</span>
-                      <span className="info-value">{formatDate(leave.leaveDates.start)}</span>
+                      <span className="info-value">
+                        {formatDate(leave.leaveDates.start)}
+                      </span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">End Date:</span>
-                      <span className="info-value">{formatDate(leave.leaveDates.end)}</span>
+                      <span className="info-value">
+                        {formatDate(leave.leaveDates.end)}
+                      </span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Applied on:</span>
-                      <span className="info-value">{formatDate(leave.appliedDate)}</span>
+                      <span className="info-value">
+                        {formatDate(leave.appliedDate)}
+                      </span>
                     </div>
                     {leave.reviewedDate && (
                       <div className="info-item">
                         <span className="info-label">Reviewed on:</span>
-                        <span className="info-value">{formatDate(leave.reviewedDate)}</span>
+                        <span className="info-value">
+                          {formatDate(leave.reviewedDate)}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -276,7 +345,7 @@ const SuperAdminLeaveManagement = () => {
                     </div>
                   )}
 
-                  {leave.status === 'Pending' && (
+                  {leave.status === "Pending" && (
                     <div className="action-buttons">
                       <button
                         className="btn-approve"

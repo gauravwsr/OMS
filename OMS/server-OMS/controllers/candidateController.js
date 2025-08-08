@@ -4,8 +4,29 @@ const Candidate = require("../models/Candidate");
 // Create a new candidate
 exports.createCandidate = async (req, res) => {
   try {
+    console.log("=== CREATE CANDIDATE DEBUG ===");
+    console.log("Request headers:", req.headers);
+    console.log("Request method:", req.method);
+    console.log("Content-Type:", req.headers["content-type"]);
     console.log("Received request body:", req.body);
     console.log("Received files:", req.files);
+    console.log("Request body keys:", Object.keys(req.body || {}));
+    console.log("=== END DEBUG ===");
+
+    // Check if body is empty
+    if (!req.body || Object.keys(req.body).length === 0) {
+      console.error("ERROR: Request body is empty or undefined");
+      return res.status(400).json({
+        success: false,
+        message: "Request body is empty. Check multipart form data processing.",
+        debug: {
+          bodyType: typeof req.body,
+          bodyKeys: Object.keys(req.body || {}),
+          hasFiles: !!req.files,
+          contentType: req.headers["content-type"],
+        },
+      });
+    }
 
     const {
       candidateId,
@@ -263,7 +284,7 @@ exports.deleteCandidate = async (req, res) => {
 
         // Call face recognition server to delete user images
         const faceDeleteResponse = await axios.delete(
-          `http://localhost:5001/api/delete-user/${encodeURIComponent(
+          `http://localhost:5002/api/delete-user/${encodeURIComponent(
             candidate.fullName
           )}`,
           { timeout: 5000 }
