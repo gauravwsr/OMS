@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Pencil, Settings } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../AuthProvider/AuthContext';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthProvider/AuthContext";
 import SearchBar from "../Search-bar/SearchBar";
-import InboxSection from './InboxSection';
-import SentSection from './SentSection';
-import DraftSection from './DraftSection';
-import EmailConfig from './EmailConfig';
-import './Inbox.css';
+import InboxSection from "./InboxSection";
+import SentSection from "./SentSection";
+import DraftSection from "./DraftSection";
+import EmailConfig from "./EmailConfig";
+import "./Inbox.css";
 
 const Inbox = () => {
   const { user } = useAuth();
@@ -32,20 +32,23 @@ const Inbox = () => {
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
     try {
-      const response = await fetch('http://localhost:5001/api/emails/check-config', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/check-config",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
+      );
 
       const data = await response.json();
       if (response.ok && data.configured) {
         setIsEmailConfigured(true);
       }
     } catch (error) {
-      console.error('Error checking email configuration:', error);
+      console.error("Error checking email configuration:", error);
     } finally {
       setCheckingConfig(false);
     }
@@ -63,7 +66,7 @@ const Inbox = () => {
   };
 
   const handleEditConfig = () => {
-    navigate('../email-config');
+    navigate("../email-config");
   };
 
   useEffect(() => {
@@ -75,22 +78,36 @@ const Inbox = () => {
   useEffect(() => {
     const filterEmails = () => {
       if (typeof searchTerm !== "string" || searchTerm === "") {
-        return activeTab === "inbox" ? emails : activeTab === "sent" ? sentEmails : drafts;
+        return activeTab === "inbox"
+          ? emails
+          : activeTab === "sent"
+          ? sentEmails
+          : drafts;
       }
 
-      const sourceEmails = activeTab === "inbox"
-        ? emails
-        : activeTab === "sent"
+      const sourceEmails =
+        activeTab === "inbox"
+          ? emails
+          : activeTab === "sent"
           ? sentEmails
           : drafts;
 
-      return (sourceEmails || []).filter((email) =>
-        (email.sender?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.recipient?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.to?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.subject?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.content?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (email.body?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      return (sourceEmails || []).filter(
+        (email) =>
+          (email.sender?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.recipient?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.to?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+          (email.subject?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.content?.toLowerCase() || "").includes(
+            searchTerm.toLowerCase()
+          ) ||
+          (email.body?.toLowerCase() || "").includes(searchTerm.toLowerCase())
       );
     };
 
@@ -101,46 +118,51 @@ const Inbox = () => {
     setLoading(true);
     setError(null);
 
-    const token = localStorage.getItem('token');
-    let url = '';
-    if (activeTab === 'inbox') {
-      url = 'http://localhost:5001/api/emails/inbox';
-    } else if (activeTab === 'sent') {
-      url = 'http://localhost:5001/api/emails/sent';
-    } else if (activeTab === 'drafts') {
-      url = 'http://localhost:5001/api/emails/drafts';
+    const token = localStorage.getItem("token");
+    let url = "";
+    if (activeTab === "inbox") {
+      url = "http://146.190.165.62:5001/api/emails/inbox";
+    } else if (activeTab === "sent") {
+      url = "http://146.190.165.62:5001/api/emails/sent";
+    } else if (activeTab === "drafts") {
+      url = "http://146.190.165.62:5001/api/emails/drafts";
     }
 
     try {
       const res = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Failed to fetch data');
+        throw new Error(data.message || "Failed to fetch data");
       }
 
-      if (activeTab === 'inbox') {
+      if (activeTab === "inbox") {
         setEmails(data.emails || []);
         setFilteredEmails(data.emails || []);
-      } else if (activeTab === 'sent') {
+      } else if (activeTab === "sent") {
         setSentEmails(data.emails || []);
-      } else if (activeTab === 'drafts') {
+      } else if (activeTab === "drafts") {
         setDrafts(data.emails || data || []);
       }
     } catch (err) {
       console.error(`Error fetching ${activeTab} emails:`, err);
       // More specific error handling
-      if (err.message.includes('Email not configured')) {
+      if (err.message.includes("Email not configured")) {
         setIsEmailConfigured(false);
-        setError('Please configure your email settings first');
-      } else if (err.message.includes('timeout') || err.message.includes('IMAP')) {
-        setError(`Connection timeout. Please check your internet connection and email server settings.`);
+        setError("Please configure your email settings first");
+      } else if (
+        err.message.includes("timeout") ||
+        err.message.includes("IMAP")
+      ) {
+        setError(
+          `Connection timeout. Please check your internet connection and email server settings.`
+        );
       } else {
         setError(`Failed to fetch ${activeTab} emails: ${err.message}`);
       }
@@ -172,7 +194,7 @@ const Inbox = () => {
   };
 
   const handleComposeClick = () => {
-    navigate('send-email');
+    navigate("send-email");
   };
 
   const handleSortByDate = () => {
@@ -215,8 +237,8 @@ const Inbox = () => {
   };
 
   const formatDate = (date) => {
-    const options = { day: 'numeric', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('en-US', options);
+    const options = { day: "numeric", month: "short", year: "numeric" };
+    return date.toLocaleDateString("en-US", options);
   };
 
   return (
@@ -228,19 +250,19 @@ const Inbox = () => {
         <div className="tabs">
           <button
             className={`tab-button ${activeTab === "inbox" ? "active" : ""}`}
-            onClick={() => handleTabClick('inbox')}
+            onClick={() => handleTabClick("inbox")}
           >
             Inbox
           </button>
           <button
             className={`tab-button ${activeTab === "sent" ? "active" : ""}`}
-            onClick={() => handleTabClick('sent')}
+            onClick={() => handleTabClick("sent")}
           >
             Sent
           </button>
           <button
             className={`tab-button ${activeTab === "drafts" ? "active" : ""}`}
-            onClick={() => handleTabClick('drafts')}
+            onClick={() => handleTabClick("drafts")}
           >
             Drafts
           </button>
@@ -260,7 +282,10 @@ const Inbox = () => {
       <div className="date-nav">
         <h2>E-MAILS</h2>
         <div className="date-controls">
-          <button className="date-nav-content-button" onClick={handlePreviousDay}>
+          <button
+            className="date-nav-content-button"
+            onClick={handlePreviousDay}
+          >
             <ChevronLeft />
           </button>
           <span onClick={handleSortByDate}>{formatDate(currentDate)}</span>
@@ -275,9 +300,9 @@ const Inbox = () => {
           <p className="loading-message">Loading...</p>
         ) : error ? (
           <p className="error-message">{error}</p>
-        ) : activeTab === 'inbox' ? (
+        ) : activeTab === "inbox" ? (
           <InboxSection emails={filteredEmails} />
-        ) : activeTab === 'sent' ? (
+        ) : activeTab === "sent" ? (
           <SentSection emails={sentEmails} />
         ) : (
           <DraftSection drafts={drafts} />

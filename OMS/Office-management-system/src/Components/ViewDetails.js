@@ -15,7 +15,7 @@ const ViewDetails = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://localhost:5001/api/candidates/${id}`,
+          `http://146.190.165.62:5001/api/candidates/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -39,7 +39,7 @@ const ViewDetails = () => {
 
   const handleDownload = () => {
     const cvUrl = candidate.cvPath
-      ? `http://localhost:5001/uploads/cvs/${candidate.cvPath}`
+      ? `http://146.190.165.62:5001/uploads/cvs/${candidate.cvPath}`
       : "/default_cv.pdf";
     const link = document.createElement("a");
     link.href = cvUrl;

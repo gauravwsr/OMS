@@ -5,7 +5,7 @@ const MouseTracker = () => {
   useEffect(() => {
     const handleMouseMove = async (event) => {
       try {
-        await fetch("http://localhost:5001/api/mouse-movement", {
+        await fetch("http://146.190.165.62:5001/api/mouse-movement", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ x: event.clientX, y: event.clientY }),
@@ -18,7 +18,7 @@ const MouseTracker = () => {
     useEffect(() => {
         const handleMouseMove = async (event) => {
             try {
-                await fetch("http://localhost:5001/api/mouse-movement", {
+                await fetch("http://146.190.165.62:5001/api/mouse-movement", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ x: event.clientX, y: event.clientY }),

@@ -24,18 +24,21 @@ const DraftSection = ({ drafts: propDrafts }) => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5001/api/emails/send", {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          to: draft.to,
-          subject: draft.subject,
-          body: draft.body
-        })
-      });
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/send",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            to: draft.to,
+            subject: draft.subject,
+            body: draft.body,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
@@ -44,18 +47,21 @@ const DraftSection = ({ drafts: propDrafts }) => {
         setDrafts(drafts.filter((d) => d.id !== draft.id));
         // Delete the draft after successful send
         try {
-          await fetch(`http://localhost:5001/api/emails/delete-draft/${draft._id}`, {
-            method: "DELETE",
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+          await fetch(
+            `http://146.190.165.62:5001/api/emails/delete-draft/${draft._id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
             }
-          });
+          );
           // Remove the draft from the list
-          setDrafts(drafts.filter(d => d._id !== draft._id));
+          setDrafts(drafts.filter((d) => d._id !== draft._id));
         } catch (deleteError) {
           console.error("Error deleting draft:", deleteError);
           // Still remove from UI even if delete fails
-          setDrafts(drafts.filter(d => d._id !== draft._id));
+          setDrafts(drafts.filter((d) => d._id !== draft._id));
         }
       } else {
         alert(`Failed to send email: ${data.message}`);
@@ -89,9 +95,11 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 id={`draft-${draft._id || index}`}
                 className="email-checkbox"
               />
-            
-              <label htmlFor={`draft-${draft._id || index}`} className="email-label draft-label">
 
+              <label
+                htmlFor={`draft-${draft._id || index}`}
+                className="email-label draft-label"
+              >
                 {draft.to || "No recipient"}
               </label>
             </div>

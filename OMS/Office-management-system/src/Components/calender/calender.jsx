@@ -39,7 +39,7 @@ const Calender = () => {
   });
 
   // HR Manager uses regular GetData route (backend will handle showing all events)
-  const baseUrl = "http://localhost:5001/GetData";
+  const baseUrl = "http://146.190.165.62:5001/GetData";
 
   class CustomAuthAdaptor extends UrlAdaptor {
     processQuery(dm, query, hierarchyFilters) {
@@ -50,7 +50,7 @@ const Calender = () => {
         request.headers = {
           ...request.headers,
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         };
         console.log("✅ CustomAdaptor - Injected Authorization header");
       } else {
@@ -64,13 +64,16 @@ const Calender = () => {
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {
     const token = localStorage.getItem("token");
-    console.log('Calendar DataManager - Token available:', !!token);
-    console.log('Calendar DataManager - Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-    console.log('Calendar DataManager - Is Super Admin:', isSuperAdmin);
-    console.log('Calendar DataManager - Is Admin:', isAdmin);
-    console.log('Calendar DataManager - Is HR Manager:', isHRManager);
-    console.log('Calendar DataManager - User object:', user);
-    console.log('Calendar DataManager - Using URL:', baseUrl);
+    console.log("Calendar DataManager - Token available:", !!token);
+    console.log(
+      "Calendar DataManager - Token preview:",
+      token ? token.substring(0, 20) + "..." : "null"
+    );
+    console.log("Calendar DataManager - Is Super Admin:", isSuperAdmin);
+    console.log("Calendar DataManager - Is Admin:", isAdmin);
+    console.log("Calendar DataManager - Is HR Manager:", isHRManager);
+    console.log("Calendar DataManager - User object:", user);
+    console.log("Calendar DataManager - Using URL:", baseUrl);
 
     if (!token) {
       console.error(
@@ -81,27 +84,41 @@ const Calender = () => {
 
     return new DataManager({
       url: baseUrl,
-      crudUrl: "http://localhost:5001/BatchData",
+      crudUrl: "http://146.190.165.62:5001/BatchData",
       adaptor: new CustomAuthAdaptor(),
 
       crossDomain: true,
-      requestType: 'POST',
+      requestType: "POST",
 
       beforeSend: (dm, request) => {
-        console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
-        console.log('Calendar beforeSend - User Role:', user?.role, 'SubRole:', user?.subRole);
-        console.log('Calendar beforeSend - URL:', request.url);
+        console.log(
+          "Calendar beforeSend - Operation:",
+          request.httpRequest.requestType
+        );
+        console.log(
+          "Calendar beforeSend - User Role:",
+          user?.role,
+          "SubRole:",
+          user?.subRole
+        );
+        console.log("Calendar beforeSend - URL:", request.url);
 
         const currentToken = localStorage.getItem("token");
-        console.log('Calendar beforeSend - Token available:', !!currentToken);
+        console.log("Calendar beforeSend - Token available:", !!currentToken);
 
         if (currentToken) {
-          request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
-          request.httpRequest.setRequestHeader("Content-Type", "application/json");
+          request.httpRequest.setRequestHeader(
+            "Authorization",
+            `Bearer ${currentToken}`
+          );
+          request.httpRequest.setRequestHeader(
+            "Content-Type",
+            "application/json"
+          );
 
-          console.log('✅ Authorization header set for DataManager request.');
+          console.log("✅ Authorization header set for DataManager request.");
         } else {
-          console.error('❌ No token found in localStorage during beforeSend!');
+          console.error("❌ No token found in localStorage during beforeSend!");
         }
 
         // Log all headers being sent
@@ -116,9 +133,12 @@ const Calender = () => {
   // Event handlers for Super Admin restrictions
   const onActionBegin = (args) => {
     // Prevent all editing actions for Super Admin
-    if (isSuperAdmin && (args.requestType === 'eventCreate' ||
-      args.requestType === 'eventChange' ||
-      args.requestType === 'eventRemove')) {
+    if (
+      isSuperAdmin &&
+      (args.requestType === "eventCreate" ||
+        args.requestType === "eventChange" ||
+        args.requestType === "eventRemove")
+    ) {
       args.cancel = true;
       console.log(
         "Action prevented: Super Admin has read-only access to calendar"
@@ -152,8 +172,7 @@ const Calender = () => {
       try {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
-        const response = await fetch("http://localhost:5001/users/me", {
-
+        const response = await fetch("http://146.190.165.62:5001/users/me", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -202,7 +221,7 @@ const Calender = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        const response = await axios.get("http://localhost:5001/users");
+        const response = await axios.get("http://146.190.165.62:5001/users");
         setUsers(response.data); // Set the room data to state
       } catch (error) {
         console.error("Error fetching room data:", error);
@@ -215,14 +234,16 @@ const Calender = () => {
   return (
     <div style={{ width: "100%", height: "100%" }}>
       {!dataManager ? (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          fontSize: '18px',
-          color: '#666'
-        }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%",
+            fontSize: "18px",
+            color: "#666",
+          }}
+        >
           Please login to access the calendar
         </div>
       ) : (

@@ -1,17 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../AuthProvider/AuthContext';
-import { Settings, Mail, Lock, Server, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import './EmailConfig.css';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../AuthProvider/AuthContext";
+import {
+  Settings,
+  Mail,
+  Lock,
+  Server,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import "./EmailConfig.css";
 
 const EmailConfig = ({ onConfigured, isModal = false }) => {
   const { user } = useAuth();
   const [emailConfig, setEmailConfig] = useState({
-    email: '',
-    password: '',
-    imapHost: 'mail.hostinger.com',
-    imapPort: '993',
-    smtpHost: 'smtp.hostinger.com',
-    smtpPort: '465'
+    email: "",
+    password: "",
+    imapHost: "mail.hostinger.com",
+    imapPort: "993",
+    smtpHost: "smtp.hostinger.com",
+    smtpPort: "465",
   });
   const [loading, setLoading] = useState(false);
   const [testStatus, setTestStatus] = useState(null);
@@ -22,29 +31,29 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
   // Email provider presets
   const emailPresets = {
     gmail: {
-      imapHost: 'imap.gmail.com',
-      imapPort: '993',
-      smtpHost: 'smtp.gmail.com',
-      smtpPort: '587'
+      imapHost: "imap.gmail.com",
+      imapPort: "993",
+      smtpHost: "smtp.gmail.com",
+      smtpPort: "587",
     },
     outlook: {
-      imapHost: 'outlook.office365.com',
-      imapPort: '993',
-      smtpHost: 'smtp-mail.outlook.com',
-      smtpPort: '587'
+      imapHost: "outlook.office365.com",
+      imapPort: "993",
+      smtpHost: "smtp-mail.outlook.com",
+      smtpPort: "587",
     },
     yahoo: {
-      imapHost: 'imap.mail.yahoo.com',
-      imapPort: '993',
-      smtpHost: 'smtp.mail.yahoo.com',
-      smtpPort: '587'
+      imapHost: "imap.mail.yahoo.com",
+      imapPort: "993",
+      smtpHost: "smtp.mail.yahoo.com",
+      smtpPort: "587",
     },
     hostinger: {
-      imapHost: 'mail.hostinger.com',
-      imapPort: '993',
-      smtpHost: 'smtp.hostinger.com',
-      smtpPort: '465'
-    }
+      imapHost: "mail.hostinger.com",
+      imapPort: "993",
+      smtpHost: "smtp.hostinger.com",
+      smtpPort: "465",
+    },
   };
 
   useEffect(() => {
@@ -54,31 +63,40 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
     try {
-      const token = localStorage.getItem('token');
-      console.log('Checking email config with token:', token ? 'Present' : 'Missing');
-      
-      const response = await fetch('http://localhost:5001/api/emails/check-config', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const token = localStorage.getItem("token");
+      console.log(
+        "Checking email config with token:",
+        token ? "Present" : "Missing"
+      );
 
-      console.log('Response status:', response.status);
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/check-config",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Response status:", response.status);
       const data = await response.json();
-      console.log('Response data:', data);
-      
+      console.log("Response data:", data);
+
       if (response.ok && data.configured) {
         setIsConfigured(true);
-        setEmailConfig(prev => ({ ...prev, email: data.email }));
+        setEmailConfig((prev) => ({ ...prev, email: data.email }));
         if (onConfigured && !isModal) {
           onConfigured();
         }
       }
     } catch (error) {
-      console.error('Error checking email configuration:', error);
-      setTestStatus({ type: 'error', message: 'Failed to check email configuration' });
+      console.error("Error checking email configuration:", error);
+      setTestStatus({
+        type: "error",
+        message: "Failed to check email configuration",
+      });
     } finally {
       setCheckingConfig(false);
     }
@@ -86,9 +104,9 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEmailConfig(prev => ({
+    setEmailConfig((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Clear any previous status messages
     if (testStatus) {
@@ -99,42 +117,57 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
   const handleEmailProviderChange = (e) => {
     const provider = e.target.value;
     if (provider && emailPresets[provider]) {
-      setEmailConfig(prev => ({
+      setEmailConfig((prev) => ({
         ...prev,
-        ...emailPresets[provider]
+        ...emailPresets[provider],
       }));
-      setTestStatus({ type: 'info', message: `Settings updated for ${provider}` });
+      setTestStatus({
+        type: "info",
+        message: `Settings updated for ${provider}`,
+      });
     }
   };
 
   const testEmailConnection = async () => {
     setLoading(true);
-    setTestStatus({ type: 'info', message: 'Testing connection...' });
+    setTestStatus({ type: "info", message: "Testing connection..." });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/emails/configure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...emailConfig,
-          testOnly: true
-        })
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/configure",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...emailConfig,
+            testOnly: true,
+          }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
-        setTestStatus({ type: 'success', message: 'Connection test successful!' });
+        setTestStatus({
+          type: "success",
+          message: "Connection test successful!",
+        });
       } else {
-        setTestStatus({ type: 'error', message: data.message || 'Connection test failed' });
+        setTestStatus({
+          type: "error",
+          message: data.message || "Connection test failed",
+        });
       }
     } catch (error) {
-      console.error('Test connection error:', error);
-      setTestStatus({ type: 'error', message: 'Network error occurred during test' });
+      console.error("Test connection error:", error);
+      setTestStatus({
+        type: "error",
+        message: "Network error occurred during test",
+      });
     } finally {
       setLoading(false);
     }
@@ -142,23 +175,29 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
   const saveEmailConfiguration = async () => {
     setLoading(true);
-    setTestStatus({ type: 'info', message: 'Saving configuration...' });
+    setTestStatus({ type: "info", message: "Saving configuration..." });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/emails/configure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(emailConfig)
-      });
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/configure",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(emailConfig),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
-        setTestStatus({ type: 'success', message: 'Email configured successfully!' });
+        setTestStatus({
+          type: "success",
+          message: "Email configured successfully!",
+        });
         setIsConfigured(true);
         setTimeout(() => {
           if (onConfigured) {
@@ -166,59 +205,81 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
           }
         }, 1500);
       } else {
-        setTestStatus({ type: 'error', message: data.message || 'Configuration failed' });
+        setTestStatus({
+          type: "error",
+          message: data.message || "Configuration failed",
+        });
       }
     } catch (error) {
-      console.error('Save configuration error:', error);
-      setTestStatus({ type: 'error', message: 'Network error occurred while saving' });
+      console.error("Save configuration error:", error);
+      setTestStatus({
+        type: "error",
+        message: "Network error occurred while saving",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const removeEmailConfiguration = async () => {
-    if (!window.confirm('Are you sure you want to remove your email configuration? This will delete all your saved email credentials.')) {
+    if (
+      !window.confirm(
+        "Are you sure you want to remove your email configuration? This will delete all your saved email credentials."
+      )
+    ) {
       return;
     }
 
     setLoading(true);
-    setTestStatus({ type: 'info', message: 'Removing configuration...' });
+    setTestStatus({ type: "info", message: "Removing configuration..." });
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/emails/remove-config', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/remove-config",
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
-        setTestStatus({ type: 'success', message: 'Email configuration removed successfully!' });
+        setTestStatus({
+          type: "success",
+          message: "Email configuration removed successfully!",
+        });
         setIsConfigured(false);
         setEmailConfig({
-          email: '',
-          password: '',
-          imapHost: 'mail.hostinger.com',
-          imapPort: '993',
-          smtpHost: 'smtp.hostinger.com',
-          smtpPort: '465'
+          email: "",
+          password: "",
+          imapHost: "mail.hostinger.com",
+          imapPort: "993",
+          smtpHost: "smtp.hostinger.com",
+          smtpPort: "465",
         });
-        
+
         setTimeout(() => {
           if (onConfigured) {
             onConfigured();
           }
         }, 1000);
       } else {
-        setTestStatus({ type: 'error', message: data.message || 'Failed to remove configuration' });
+        setTestStatus({
+          type: "error",
+          message: data.message || "Failed to remove configuration",
+        });
       }
     } catch (error) {
-      console.error('Remove configuration error:', error);
-      setTestStatus({ type: 'error', message: 'Network error occurred while removing configuration' });
+      console.error("Remove configuration error:", error);
+      setTestStatus({
+        type: "error",
+        message: "Network error occurred while removing configuration",
+      });
     } finally {
       setLoading(false);
     }
@@ -242,27 +303,28 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
         <h3>Email Configured Successfully!</h3>
         <p>Your email ({emailConfig.email}) is ready to use.</p>
         <div className="config-actions">
-          <button 
+          <button
             className="reconfigure-button"
             onClick={() => setIsConfigured(false)}
           >
             <Settings size={16} />
             Edit Configuration
           </button>
-          <button 
+          <button
             className="remove-config-button"
             onClick={removeEmailConfiguration}
             disabled={loading}
           >
-            {loading ? 'Removing...' : 'Remove Configuration'}
+            {loading ? "Removing..." : "Remove Configuration"}
           </button>
         </div>
         {testStatus && (
           <div className={`status-message ${testStatus.type}`}>
-            {testStatus.type === 'success' ? 
-              <CheckCircle size={16} /> : 
+            {testStatus.type === "success" ? (
+              <CheckCircle size={16} />
+            ) : (
               <AlertCircle size={16} />
-            }
+            )}
             <span>{testStatus.message}</span>
           </div>
         )}
@@ -347,7 +409,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
             <Server size={16} />
             Server Settings
           </h4>
-          
+
           <div className="server-group">
             <div className="form-group">
               <label htmlFor="imapHost">IMAP Host</label>
@@ -401,12 +463,13 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
         {testStatus && (
           <div className={`status-message ${testStatus.type}`}>
-            {testStatus.type === 'success' ? 
-              <CheckCircle size={16} /> : 
-              testStatus.type === 'error' ? 
-              <AlertCircle size={16} /> :
+            {testStatus.type === "success" ? (
+              <CheckCircle size={16} />
+            ) : testStatus.type === "error" ? (
+              <AlertCircle size={16} />
+            ) : (
               <Settings size={16} />
-            }
+            )}
             <span>{testStatus.message}</span>
           </div>
         )}
@@ -418,16 +481,16 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
             onClick={testEmailConnection}
             disabled={loading || !emailConfig.email || !emailConfig.password}
           >
-            {loading ? 'Testing...' : 'Test Connection'}
+            {loading ? "Testing..." : "Test Connection"}
           </button>
-          
+
           <button
             type="button"
             className="save-button"
             onClick={saveEmailConfiguration}
             disabled={loading || !emailConfig.email || !emailConfig.password}
           >
-            {loading ? 'Saving...' : 'Save & Configure'}
+            {loading ? "Saving..." : "Save & Configure"}
           </button>
         </div>
       </form>
