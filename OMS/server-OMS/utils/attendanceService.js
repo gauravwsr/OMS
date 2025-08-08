@@ -408,7 +408,7 @@ class AttendanceService {
         metadata: {
           source: "face_recognition_api",
           apiVersion: "1.0",
-          processingServer: "localhost5001",
+          processingServer: "localhost:5002",
         },
       };
 

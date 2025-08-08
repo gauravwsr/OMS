@@ -12,6 +12,7 @@ const {
   getTodayAttendanceSummary,
   deleteAttendance,
   healthCheck,
+  getRegisteredUsersAPI,
 } = require("../controllers/attendanceController");
 
 const {
@@ -57,6 +58,9 @@ router.get("/today-summary", protect, getTodayAttendanceSummary);
 
 // Get attendance analytics (Admin only)
 router.get("/analytics", protect, getAttendanceAnalytics);
+
+// Get registered users from face recognition server
+router.get("/registered-users", getRegisteredUsersAPI);
 
 // Delete attendance record (Super Admin only)
 router.delete("/:attendanceId", protect, deleteAttendance);

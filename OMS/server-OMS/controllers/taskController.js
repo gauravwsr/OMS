@@ -12,7 +12,10 @@ exports.getTasks = async (req, res) => {
     const tasks = await Task.find({ assignedTo: userEmail });
     res.json(tasks);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching tasks" });
+    console.error("Error fetching tasks:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
   }
 };
 

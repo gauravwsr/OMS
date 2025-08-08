@@ -40,7 +40,8 @@ const DraftSection = ({ drafts: propDrafts }) => {
       const data = await response.json();
       if (response.ok) {
         alert("Email sent successfully!");
-        
+        // Remove the draft from the list
+        setDrafts(drafts.filter((d) => d.id !== draft.id));
         // Delete the draft after successful send
         try {
           await fetch(`http://localhost:5001/api/emails/delete-draft/${draft._id}`, {
@@ -92,13 +93,14 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 {draft.to || "No recipient"}
               </label>
             </div>
-            <div className="email-content">
-              {draft.subject || "No subject"}
-            </div>
+            <div className="email-content">{draft.subject || "No subject"}</div>
             <div className="email-time-actions">
               <span className="email-time">
                 {draft.date && !isNaN(new Date(draft.date))
-                  ? new Date(draft.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  ? new Date(draft.date).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "No date"}
               </span>
               <button className="send-button" onClick={() => sendMail(draft)}>

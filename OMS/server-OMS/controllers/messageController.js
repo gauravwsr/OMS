@@ -1,113 +1,9 @@
-// const Message = require('../models/Message');
-
-// // Fetch Messages
-// const getMessages = async (req, res) => {
-//   try {
-//     const { recipient } = req.query;
-//     const filter = recipient === 'group' ? { isGroup: true } : { recipient };
-//     const messages = await Message.find(filter).sort({ createdAt: 1 });
-//     res.json(messages);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Error fetching messages' });
-//   }
-// };
-
-// // Send Message
-// const sendMessage = async (req, res) => {
-//   try {
-//     const { sender, recipient, text, isGroup } = req.body;
-//     if (!sender || !recipient || !text) {
-//       return res.status(400).json({ error: 'Sender, recipient, and text are required' });
-//     }
-//     const newMessage = new Message({ sender, recipient, text, isGroup });
-//     await newMessage.save();
-    
-//     // Emit real-time event to specific recipient
-//     req.io.to(recipient).emit('newMessage', newMessage);
-
-//     res.status(201).json(newMessage);
-//   } catch (error) {
-//     console.error('Error sending message:', error);
-//     res.status(500).json({ error: 'Error sending message' });
-//   }
-// };
-
-// module.exports = { getMessages, sendMessage };
-
-
 const { Message, Chat } = require('../models/chatModel');
 const User = require('../models/userModel');
 const Candidate = require('../models/Candidate');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
-// @desc    Send a message
-// @route   POST /api/message
-// @access  Protected
-// exports.sendMessage = async (req, res) => {
-//   const { content, chatId } = req.body;
-
-//   if (!content || !chatId) {
-//     return res.status(400).json({ 
-//       success: false,
-//       message: 'Please provide message content and chat ID' 
-//     });
-//   }
-
-//   try {
-//     // Check if chat exists
-//     const chat = await Chat.findById(chatId);
-//     if (!chat) {
-//       return res.status(404).json({ 
-//         success: false,
-//         message: 'Chat not found' 
-//       });
-//     }
-
-//     // Check if user is a participant in the chat
-//     const isParticipant = chat.participants.some(
-//       participant => participant.toString() === req.user._id.toString()
-//     );
-
-//     if (!isParticipant) {
-//       return res.status(403).json({ 
-//         success: false,
-//         message: 'Not authorized to send message in this chat' 
-//       });
-//     }
-
-//     // Create new message
-//     const newMessage = {
-//       sender: req.user._id,
-//       senderModel: 'User', // Assuming the sender is always a User in this case
-//       content,
-//       chat: chatId
-//     };
-
-//     let message = await Message.create(newMessage);
-
-//     message = await message.populate('sender', '-password');
-//     message = await message.populate('chat');
-//     message = await User.populate(message, {
-//       path: 'chat.participants',
-//       select: '-password'
-//     });
-
-//     // Update latest message in chat
-//     await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
-
-//     res.status(201).json({ 
-//       success: true,
-//       message 
-//     });
-//   } catch (error) {
-//     res.status(500).json({ 
-//       success: false,
-//       message: 'Error sending message',
-//       error: error.message 
-//     });
-//   }
-// };
 
 exports.sendMessage = catchAsync(async (req, res, next) => {
   const { content, chatId } = req.body;
@@ -139,8 +35,9 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   
   await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 
-  // Emit socket event
-  req.app.get('io').to(chatId).emit('message received', message);
+  // Emit socket event to all users in the chat
+  const io = req.app.get('io');
+  io.to(chatId).emit('message received', message);
 
   res.status(201).json({
     status: 'success',

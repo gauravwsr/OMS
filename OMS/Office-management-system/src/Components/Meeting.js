@@ -1,14 +1,37 @@
 import { useState, useEffect, useRef } from "react";
 import DailyIframe from "@daily-co/daily-js";
-import { FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaCopy, FaSignOutAlt, FaLink, FaUserPlus } from "react-icons/fa";
-import "./Meeting.css";
+import {
+  FaVideo,
+  FaVideoSlash,
+  FaMicrophone,
+  FaMicrophoneSlash,
+  FaCopy,
+  FaSignOutAlt,
+  FaLink,
+  FaUserPlus,
+  FaPlus,
+  FaUsers,
+  FaGlobe,
+  FaUserCheck,
+  FaLock,
+  FaClock,
+  FaEye,
+} from "react-icons/fa";
+import { useAuth } from "./AuthProvider/AuthContext";
+import axios from "axios";
+import "./MeetingSystem.css";
 
 const Meeting = () => {
+  // Authentication context
+  const { user, isAuthenticated } = useAuth();
+
+  // Meeting state
   const callFrameRef = useRef(null);
   const containerRef = useRef(null);
   const [roomName, setRoomName] = useState("");
   const [roomUrl, setRoomUrl] = useState("");
   const [joinLink, setJoinLink] = useState("");
+  const [currentRoomId, setCurrentRoomId] = useState("");
   const [isMeetingStarted, setIsMeetingStarted] = useState(false);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isAudioOn, setIsAudioOn] = useState(true);
@@ -16,73 +39,295 @@ const Meeting = () => {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [participants, setParticipants] = useState(0);
 
-  // API key should be stored securely in environment variables in a real application
-  const API_KEY = "4e0988f781f1d0eda3c64fbdda8465d5282923b87db26911019bfe637b57c1aa";
+  // UI state
+  const [activeTab, setActiveTab] = useState("meetings");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const createRoom = async () => {
-    if (!userName) {
-      alert("Please enter your name before creating a meeting");
-      return;
+  // Meeting data
+  const [availableMeetings, setAvailableMeetings] = useState([]);
+  const [meetingStats, setMeetingStats] = useState(null);
+
+  // Create meeting form state
+  const [createForm, setCreateForm] = useState({
+    roomName: "",
+    roomType: "",
+    teamName: "",
+    inviteUserIds: [],
+    enableChat: true,
+    enableKnocking: true,
+    startVideoOff: false,
+    startAudioOff: false,
+    maxParticipants: 50,
+  });
+
+  // Initialize user name from auth context
+  useEffect(() => {
+    if (user && user.name) {
+      setUserName(user.name);
     }
+  }, [user]);
 
-    let generatedRoomName = roomName || `meeting-${Date.now()}`;
+  // Load available meetings on component mount
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadAvailableMeetings();
+      if (
+        user.role === "Super_Admin" ||
+        (user.role === "Admin" && user.subRole === "HR Manager")
+      ) {
+        loadMeetingStats();
+      }
+    }
+  }, [isAuthenticated, user]);
 
+  // API functions
+  const apiCall = async (endpoint, method = "GET", data = null) => {
     try {
-      const response = await fetch("https://api.daily.co/v1/rooms", {
-        method: "POST",
+      const token = localStorage.getItem("token");
+      const config = {
+        method,
+        url: `http://localhost:5001/api/meetings${endpoint}`,
         headers: {
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          Authorization: `Bearer ${API_KEY}`,
         },
-        body: JSON.stringify({
-          name: generatedRoomName,
-          privacy: "public",
-          properties: {
-            enable_chat: true,
-            enable_knocking: true,
-            start_video_off: !isVideoOn,
-            start_audio_off: !isAudioOn,
-          },
-        }),
+      };
+
+      if (data) {
+        config.data = data;
+      }
+
+      const response = await axios(config);
+      return response.data;
+    } catch (error) {
+      console.error(`API call failed: ${endpoint}`, error);
+      throw error.response?.data || error;
+    }
+  };
+
+  const loadAvailableMeetings = async () => {
+    try {
+      setLoading(true);
+      const response = await apiCall("/list");
+      setAvailableMeetings(response.data || []);
+    } catch (error) {
+      setError(
+        "Failed to load meetings: " + (error.message || "Unknown error")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadMeetingStats = async () => {
+    try {
+      const response = await apiCall("/analytics/overview");
+      setMeetingStats(response.data);
+    } catch (error) {
+      console.error("Failed to load meeting stats:", error);
+    }
+  };
+
+  // Meeting functions
+  // Check media permissions before starting meeting
+  const checkMediaPermissions = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Media devices not supported in this browser");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
       });
 
-      const data = await response.json();
-      if (data?.url) {
-        setRoomUrl(data.url);
-        setIsMeetingStarted(true);
-        joinMeetingRoom(data.url);
-      } else {
-        alert(data?.error || "Failed to create room");
-      }
+      // Stop the test stream
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
     } catch (error) {
-      console.error("Error creating room:", error);
-      alert("Failed to create room");
+      console.error("Media permission check failed:", error);
+
+      if (error.name === "NotAllowedError") {
+        setError(
+          "Camera and microphone access is required for video meetings. Please allow permissions and try again."
+        );
+      } else if (error.name === "NotFoundError") {
+        setError(
+          "No camera or microphone found. Please connect media devices and try again."
+        );
+      } else {
+        setError(`Media access error: ${error.message}`);
+      }
+
+      return false;
     }
   };
 
-  const joinMeeting = () => {
-    if (!userName) {
-      alert("Please enter your name before joining a meeting");
+  const createRoom = async () => {
+    if (!userName.trim()) {
+      setError("Please enter your name before creating a meeting");
       return;
     }
 
-    if (joinLink) {
-      // Check if the link is valid
-      if (joinLink.includes("daily.co")) {
-        setRoomUrl(joinLink);
-        setIsMeetingStarted(true);
-        joinMeetingRoom(joinLink);
-      } else {
-        alert("Please enter a valid Daily.co meeting link");
+    // Check media permissions before creating the meeting
+    const hasPermissions = await checkMediaPermissions();
+    if (!hasPermissions) {
+      return; // Error already set by checkMediaPermissions
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      // Set default room type based on user role
+      let finalRoomType = createForm.roomType;
+      if (!finalRoomType) {
+        if (user.role === "Employee") {
+          finalRoomType = "team";
+        } else if (
+          user.role === "Super_Admin" ||
+          (user.role === "Admin" && user.subRole === "HR Manager")
+        ) {
+          finalRoomType = "global";
+        }
       }
-    } else {
-      alert("Please enter a meeting link");
+
+      const meetingData = {
+        roomName: createForm.roomName || `Meeting by ${userName}`,
+        roomType: finalRoomType,
+        teamName:
+          finalRoomType === "team"
+            ? createForm.teamName || user.team
+            : undefined,
+        inviteUserIds: createForm.inviteUserIds,
+        meetingSettings: {
+          enableChat: createForm.enableChat,
+          enableKnocking: createForm.enableKnocking,
+          startVideoOff: !isVideoOn,
+          startAudioOff: !isAudioOn,
+          maxParticipants: createForm.maxParticipants,
+        },
+      };
+
+      const response = await apiCall("/create", "POST", meetingData);
+
+      if (response.success) {
+        setRoomUrl(response.data.roomUrl);
+        setCurrentRoomId(response.data.roomId);
+        setRoomName(response.data.roomName);
+        setIsMeetingStarted(true);
+        setShowCreateModal(false);
+        setSuccess("Meeting created successfully!");
+
+        // Join the meeting
+        joinMeetingRoom(response.data.roomUrl);
+
+        // Refresh meetings list
+        loadAvailableMeetings();
+      }
+    } catch (error) {
+      setError(
+        "Failed to create meeting: " + (error.message || "Unknown error")
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  const joinMeetingRoom = (url) => {
-    if (containerRef.current) {
+  const joinMeeting = async (roomId = null, inviteToken = null) => {
+    if (!userName.trim()) {
+      setError("Please enter your name before joining a meeting");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      let joinData = {};
+
+      if (inviteToken) {
+        joinData.inviteToken = inviteToken;
+      } else if (roomId) {
+        joinData.roomId = roomId;
+      } else if (joinLink) {
+        // Try to extract roomId from join link
+        const linkParts = joinLink.split("/");
+        const extractedRoomId = linkParts[linkParts.length - 1];
+        joinData.roomId = extractedRoomId;
+      } else {
+        setError("Please provide a meeting link or room ID");
+        return;
+      }
+
+      const response = await apiCall("/join", "POST", joinData);
+
+      if (response.success) {
+        setRoomUrl(response.data.roomUrl);
+        setCurrentRoomId(response.data.roomId);
+        setRoomName(response.data.roomName);
+        setIsMeetingStarted(true);
+        setShowJoinModal(false);
+        setSuccess("Joined meeting successfully!");
+
+        // Join the meeting
+        joinMeetingRoom(response.data.roomUrl);
+
+        // Refresh meetings list
+        loadAvailableMeetings();
+      }
+    } catch (error) {
+      setError("Failed to join meeting: " + (error.message || "Unknown error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const joinMeetingRoom = async (url) => {
+    console.log("🚀 Attempting to join meeting room:", url);
+
+    if (!containerRef.current) {
+      console.error("❌ Container ref not available");
+      setError("Meeting container not ready. Please try again.");
+      return;
+    }
+
+    if (!url) {
+      console.error("❌ No meeting URL provided");
+      setError("Invalid meeting URL");
+      return;
+    }
+
+    try {
+      // Check browser permissions first
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          console.log("🔒 Checking media permissions...");
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+          });
+          console.log("✅ Media permissions granted");
+          // Stop the test stream
+          stream.getTracks().forEach((track) => track.stop());
+        } catch (permError) {
+          console.warn("⚠️ Media permission issue:", permError.message);
+          if (permError.name === "NotAllowedError") {
+            setError(
+              "Please allow camera and microphone access to join the meeting"
+            );
+            return;
+          }
+        }
+      }
+
       if (!callFrameRef.current) {
+        console.log("📦 Creating Daily.co frame...");
+
         callFrameRef.current = DailyIframe.createFrame(containerRef.current, {
           url: url,
           iframeStyle: {
@@ -95,17 +340,56 @@ const Meeting = () => {
           showFullscreenButton: true,
         });
 
+        // Enhanced event listeners with debugging
+        callFrameRef.current.on("loaded", () => {
+          console.log("✅ Daily.co frame loaded");
+        });
+
+        callFrameRef.current.on("error", (error) => {
+          console.error("❌ Daily.co error:", error);
+          setError(`Meeting error: ${error.message || "Unknown error"}`);
+        });
+
+        callFrameRef.current.on("camera-error", (error) => {
+          console.error("📹 Camera error:", error);
+          setError(
+            "Camera access issue. Please check your camera permissions."
+          );
+        });
+
+        callFrameRef.current.on("microphone-error", (error) => {
+          console.error("🎤 Microphone error:", error);
+          setError(
+            "Microphone access issue. Please check your microphone permissions."
+          );
+        });
+
         callFrameRef.current.on("joined-meeting", (event) => {
-          console.log("Joined meeting!", event);
+          console.log("🎉 Successfully joined meeting!", event);
+          setError(""); // Clear any previous errors
           updateParticipantCount();
         });
 
-        callFrameRef.current.on("participant-joined", () => {
+        callFrameRef.current.on("participant-joined", (event) => {
+          console.log("👋 Participant joined:", event.participant.user_name);
           updateParticipantCount();
         });
 
-        callFrameRef.current.on("participant-left", () => {
+        callFrameRef.current.on("participant-left", (event) => {
+          console.log("👋 Participant left:", event.participant.user_name);
           updateParticipantCount();
+        });
+
+        callFrameRef.current.on("left-meeting", () => {
+          console.log("🚪 Left meeting");
+          handleLeaveMeeting();
+        });
+
+        console.log("🚀 Joining meeting with settings:", {
+          url: url,
+          userName: userName,
+          startVideoOff: !isVideoOn,
+          startAudioOff: !isAudioOn,
         });
 
         callFrameRef.current.join({
@@ -115,6 +399,9 @@ const Meeting = () => {
           startAudioOff: !isAudioOn,
         });
       }
+    } catch (error) {
+      console.error("❌ Error joining meeting room:", error);
+      setError(`Failed to join meeting: ${error.message}`);
     }
   };
 
@@ -125,24 +412,58 @@ const Meeting = () => {
     }
   };
 
-  const toggleVideo = () => {
+  const toggleVideo = async () => {
+    console.log("📹 Toggling video, current state:", isVideoOn);
+
     if (callFrameRef.current) {
-      const newState = !isVideoOn;
-      callFrameRef.current.setLocalVideo(newState);
-      setIsVideoOn(newState);
+      try {
+        const newState = !isVideoOn;
+        await callFrameRef.current.setLocalVideo(newState);
+        setIsVideoOn(newState);
+        console.log(`📹 Video ${newState ? "enabled" : "disabled"}`);
+      } catch (error) {
+        console.error("❌ Error toggling video:", error);
+        setError(
+          "Failed to toggle video. Please check your camera permissions."
+        );
+      }
     } else {
+      console.log("📹 No active call frame, updating state only");
       setIsVideoOn(!isVideoOn);
     }
   };
 
-  const toggleAudio = () => {
+  const toggleAudio = async () => {
+    console.log("🎤 Toggling audio, current state:", isAudioOn);
+
     if (callFrameRef.current) {
-      const newState = !isAudioOn;
-      callFrameRef.current.setLocalAudio(newState);
-      setIsAudioOn(newState);
+      try {
+        const newState = !isAudioOn;
+        await callFrameRef.current.setLocalAudio(newState);
+        setIsAudioOn(newState);
+        console.log(`🎤 Audio ${newState ? "enabled" : "disabled"}`);
+      } catch (error) {
+        console.error("❌ Error toggling audio:", error);
+        setError(
+          "Failed to toggle audio. Please check your microphone permissions."
+        );
+      }
     } else {
+      console.log("🎤 No active call frame, updating state only");
       setIsAudioOn(!isAudioOn);
     }
+  };
+
+  const handleLeaveMeeting = async () => {
+    try {
+      if (currentRoomId) {
+        await apiCall(`/${currentRoomId}/leave`, "PUT");
+      }
+    } catch (error) {
+      console.error("Error leaving meeting:", error);
+    }
+
+    endMeeting();
   };
 
   const endMeeting = () => {
@@ -152,8 +473,12 @@ const Meeting = () => {
     }
     setIsMeetingStarted(false);
     setRoomUrl("");
+    setCurrentRoomId("");
     setJoinLink("");
     setParticipants(0);
+
+    // Refresh meetings list
+    loadAvailableMeetings();
   };
 
   const copyToClipboard = () => {
@@ -162,6 +487,55 @@ const Meeting = () => {
     setTimeout(() => setIsLinkCopied(false), 3000);
   };
 
+  // Helper functions for role-based UI
+  const canCreateMeeting = () => {
+    return user?.role !== "Intern";
+  };
+
+  const canCreateGlobalMeeting = () => {
+    return (
+      user?.role === "Super_Admin" ||
+      (user?.role === "Admin" && user?.subRole === "HR Manager")
+    );
+  };
+
+  const canCreateTeamMeeting = () => {
+    return (
+      user?.role === "Employee" ||
+      user?.role === "Admin" ||
+      user?.role === "Super_Admin"
+    );
+  };
+
+  const getMeetingTypeIcon = (roomType) => {
+    return roomType === "global" ? <FaGlobe /> : <FaUsers />;
+  };
+
+  const getMeetingStatusColor = (meetingStatus) => {
+    switch (meetingStatus) {
+      case "active":
+        return "text-green-600";
+      case "ended":
+        return "text-red-600";
+      case "scheduled":
+        return "text-blue-600";
+      default:
+        return "text-gray-600";
+    }
+  };
+
+  // Clear messages after 5 seconds
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError("");
+        setSuccess("");
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (callFrameRef.current) {
@@ -171,115 +545,552 @@ const Meeting = () => {
     };
   }, []);
 
+  // Show loading if not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="meeting-container">
+        <div className="meeting-header">
+          <h1>Video Conference</h1>
+        </div>
+        <div className="meeting-content">
+          <div className="text-center">
+            <p>Please log in to access the meeting system.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="meeting-container">
       <div className="meeting-header">
-        <h1>Video Conference</h1>
+        <h1>Video Conference System</h1>
+        <div className="user-info">
+          <span className="user-role">{user.role}</span>
+          {user.subRole && (
+            <span className="user-subrole">({user.subRole})</span>
+          )}
+          {user.team && <span className="user-team">Team: {user.team}</span>}
+        </div>
         {isMeetingStarted && (
           <div className="meeting-info">
             <span className="participant-count">
-              <FaUserPlus /> {participants} participant{participants !== 1 ? 's' : ''}
+              <FaUserPlus /> {participants} participant
+              {participants !== 1 ? "s" : ""}
             </span>
           </div>
         )}
       </div>
 
+      {/* Error and Success Messages */}
+      {error && (
+        <div className="alert alert-error">
+          <span>{error}</span>
+          <button onClick={() => setError("")} className="alert-close">
+            ×
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success">
+          <span>{success}</span>
+          <button onClick={() => setSuccess("")} className="alert-close">
+            ×
+          </button>
+        </div>
+      )}
+
       <div className="meeting-content">
         {!isMeetingStarted ? (
-          <div className="meeting-setup">
-            <div className="setup-card">
-              <h2>Start or Join a Meeting</h2>
-              
-              <div className="input-group">
-                <label htmlFor="userName">Your Name</label>
-                <input
-                  id="userName"
-                  type="text"
-                  placeholder="Enter your name"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                />
-              </div>
-              
-              <div className="media-toggles">
-                <button 
-                  className={`media-toggle ${isVideoOn ? 'active' : ''}`} 
-                  onClick={toggleVideo}
+          <div className="meeting-dashboard">
+            {/* Tab Navigation */}
+            <div className="tab-navigation">
+              <button
+                className={`tab-button ${
+                  activeTab === "meetings" ? "active" : ""
+                }`}
+                onClick={() => setActiveTab("meetings")}
+              >
+                <FaUsers /> Available Meetings
+              </button>
+              {canCreateMeeting() && (
+                <button
+                  className={`tab-button ${
+                    activeTab === "create" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("create")}
                 >
-                  {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
-                  {isVideoOn ? 'Video On' : 'Video Off'}
+                  <FaPlus /> Create Meeting
                 </button>
-                
-                <button 
-                  className={`media-toggle ${isAudioOn ? 'active' : ''}`} 
-                  onClick={toggleAudio}
+              )}
+              <button
+                className={`tab-button ${activeTab === "join" ? "active" : ""}`}
+                onClick={() => setActiveTab("join")}
+              >
+                <FaLink /> Join Meeting
+              </button>
+              {(user.role === "Super_Admin" ||
+                (user.role === "Admin" && user.subRole === "HR Manager")) && (
+                <button
+                  className={`tab-button ${
+                    activeTab === "analytics" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("analytics")}
                 >
-                  {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
-                  {isAudioOn ? 'Audio On' : 'Audio Off'}
+                  <FaEye /> Analytics
                 </button>
-              </div>
-              
-              <div className="meeting-actions">
-                <div className="action-card">
-                  <h3>Create a Meeting</h3>
-                  <div className="input-with-button">
-                    <input
-                      type="text"
-                      placeholder="Enter room name (optional)"
-                      value={roomName}
-                      onChange={(e) => setRoomName(e.target.value)}
-                    />
-                    <button onClick={createRoom} className="create-button">
-                      <FaVideo /> Create
+              )}
+            </div>
+
+            {/* Tab Content */}
+            <div className="tab-content">
+              {/* Available Meetings Tab */}
+              {activeTab === "meetings" && (
+                <div className="meetings-list">
+                  <div className="section-header">
+                    <h2>Available Meetings</h2>
+                    <button
+                      onClick={loadAvailableMeetings}
+                      className="refresh-button"
+                      disabled={loading}
+                    >
+                      {loading ? "Loading..." : "Refresh"}
                     </button>
                   </div>
+
+                  {loading ? (
+                    <div className="loading-spinner">Loading meetings...</div>
+                  ) : availableMeetings.length === 0 ? (
+                    <div className="no-meetings">
+                      <p>No active meetings available.</p>
+                      {canCreateMeeting() && (
+                        <button
+                          className="create-button"
+                          onClick={() => setActiveTab("create")}
+                        >
+                          Create Your First Meeting
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="meetings-grid">
+                      {availableMeetings.map((meeting) => (
+                        <div key={meeting.roomId} className="meeting-card">
+                          <div className="meeting-card-header">
+                            <div className="meeting-type">
+                              {getMeetingTypeIcon(meeting.roomType)}
+                              <span className="room-type">
+                                {meeting.roomType}
+                              </span>
+                            </div>
+                            <span
+                              className={`meeting-status ${getMeetingStatusColor(
+                                meeting.meetingStatus
+                              )}`}
+                            >
+                              {meeting.meetingStatus}
+                            </span>
+                          </div>
+
+                          <h3 className="meeting-title">{meeting.roomName}</h3>
+
+                          {meeting.teamName && (
+                            <p className="team-name">
+                              Team: {meeting.teamName}
+                            </p>
+                          )}
+
+                          <div className="meeting-details">
+                            <p className="created-by">
+                              Created by: {meeting.createdBy.name} (
+                              {meeting.createdBy.role})
+                            </p>
+                            <p className="participants">
+                              <FaUsers /> {meeting.activeParticipants} active
+                              participants
+                            </p>
+                            <p className="created-time">
+                              <FaClock />{" "}
+                              {new Date(meeting.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+
+                          <div className="meeting-actions">
+                            {meeting.canJoin ? (
+                              <button
+                                className="join-button"
+                                onClick={() => joinMeeting(meeting.roomId)}
+                                disabled={loading}
+                              >
+                                <FaUserCheck /> Join Meeting
+                              </button>
+                            ) : (
+                              <button className="join-button disabled" disabled>
+                                <FaLock /> Access Denied
+                              </button>
+                            )}
+
+                            <button
+                              className="copy-button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  meeting.meetingUrls.standardUrl
+                                );
+                                setSuccess("Meeting link copied!");
+                              }}
+                            >
+                              <FaCopy /> Copy Link
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                
-                <div className="action-divider">OR</div>
-                
-                <div className="action-card">
-                  <h3>Join a Meeting</h3>
-                  <div className="input-with-button">
-                    <input
-                      type="text"
-                      placeholder="Enter meeting link"
-                      value={joinLink}
-                      onChange={(e) => setJoinLink(e.target.value)}
-                    />
-                    <button onClick={joinMeeting} className="join-button">
-                      <FaLink /> Join
-                    </button>
+              )}
+
+              {/* Create Meeting Tab */}
+              {activeTab === "create" && canCreateMeeting() && (
+                <div className="create-meeting">
+                  <div className="section-header">
+                    <h2>Create New Meeting</h2>
+                  </div>
+
+                  <div className="create-form">
+                    <div className="form-section">
+                      <h3>Meeting Details</h3>
+
+                      <div className="input-group">
+                        <label htmlFor="userName">Your Name *</label>
+                        <input
+                          id="userName"
+                          type="text"
+                          placeholder="Enter your name"
+                          value={userName}
+                          onChange={(e) => setUserName(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="roomName">Meeting Name</label>
+                        <input
+                          id="roomName"
+                          type="text"
+                          placeholder="Enter meeting name (optional)"
+                          value={createForm.roomName}
+                          onChange={(e) =>
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              roomName: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="roomType">Meeting Type</label>
+                        <select
+                          id="roomType"
+                          value={createForm.roomType}
+                          onChange={(e) =>
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              roomType: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Auto (based on your role)</option>
+                          {canCreateGlobalMeeting() && (
+                            <option value="global">Global Meeting</option>
+                          )}
+                          {canCreateTeamMeeting() && (
+                            <option value="team">Team Meeting</option>
+                          )}
+                        </select>
+                      </div>
+
+                      {(createForm.roomType === "team" ||
+                        (!createForm.roomType && user.role === "Employee")) && (
+                        <div className="input-group">
+                          <label htmlFor="teamName">Team Name</label>
+                          <input
+                            id="teamName"
+                            type="text"
+                            placeholder={user.team || "Enter team name"}
+                            value={createForm.teamName}
+                            onChange={(e) =>
+                              setCreateForm((prev) => ({
+                                ...prev,
+                                teamName: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-section">
+                      <h3>Media Settings</h3>
+
+                      <div className="media-toggles">
+                        <button
+                          type="button"
+                          className={`media-toggle ${
+                            isVideoOn ? "active" : ""
+                          }`}
+                          onClick={toggleVideo}
+                        >
+                          {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
+                          {isVideoOn ? "Video On" : "Video Off"}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`media-toggle ${
+                            isAudioOn ? "active" : ""
+                          }`}
+                          onClick={toggleAudio}
+                        >
+                          {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+                          {isAudioOn ? "Audio On" : "Audio Off"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="form-section">
+                      <h3>Advanced Settings</h3>
+
+                      <div className="checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={createForm.enableChat}
+                            onChange={(e) =>
+                              setCreateForm((prev) => ({
+                                ...prev,
+                                enableChat: e.target.checked,
+                              }))
+                            }
+                          />
+                          Enable Chat
+                        </label>
+                      </div>
+
+                      <div className="checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={createForm.enableKnocking}
+                            onChange={(e) =>
+                              setCreateForm((prev) => ({
+                                ...prev,
+                                enableKnocking: e.target.checked,
+                              }))
+                            }
+                          />
+                          Enable Knocking
+                        </label>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="maxParticipants">
+                          Max Participants
+                        </label>
+                        <input
+                          id="maxParticipants"
+                          type="number"
+                          min="2"
+                          max="100"
+                          value={createForm.maxParticipants}
+                          onChange={(e) =>
+                            setCreateForm((prev) => ({
+                              ...prev,
+                              maxParticipants: parseInt(e.target.value),
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="create-button"
+                        onClick={createRoom}
+                        disabled={loading || !userName.trim()}
+                      >
+                        <FaVideo /> {loading ? "Creating..." : "Create Meeting"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Join Meeting Tab */}
+              {activeTab === "join" && (
+                <div className="join-meeting">
+                  <div className="section-header">
+                    <h2>Join Meeting</h2>
+                  </div>
+
+                  <div className="join-form">
+                    <div className="input-group">
+                      <label htmlFor="userName2">Your Name *</label>
+                      <input
+                        id="userName2"
+                        type="text"
+                        placeholder="Enter your name"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="input-group">
+                      <label htmlFor="joinLink">Meeting Link or Room ID</label>
+                      <input
+                        id="joinLink"
+                        type="text"
+                        placeholder="Paste meeting link or enter room ID"
+                        value={joinLink}
+                        onChange={(e) => setJoinLink(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="media-toggles">
+                      <button
+                        type="button"
+                        className={`media-toggle ${isVideoOn ? "active" : ""}`}
+                        onClick={toggleVideo}
+                      >
+                        {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
+                        {isVideoOn ? "Video On" : "Video Off"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`media-toggle ${isAudioOn ? "active" : ""}`}
+                        onClick={toggleAudio}
+                      >
+                        {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+                        {isAudioOn ? "Audio On" : "Audio Off"}
+                      </button>
+                    </div>
+
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="join-button"
+                        onClick={() => joinMeeting()}
+                        disabled={
+                          loading || !userName.trim() || !joinLink.trim()
+                        }
+                      >
+                        <FaLink /> {loading ? "Joining..." : "Join Meeting"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Analytics Tab */}
+              {activeTab === "analytics" &&
+                (user.role === "Super_Admin" ||
+                  (user.role === "Admin" && user.subRole === "HR Manager")) && (
+                  <div className="analytics-dashboard">
+                    <div className="section-header">
+                      <h2>Meeting Analytics</h2>
+                      <button
+                        onClick={loadMeetingStats}
+                        className="refresh-button"
+                      >
+                        Refresh Data
+                      </button>
+                    </div>
+
+                    {meetingStats ? (
+                      <div className="stats-grid">
+                        <div className="stat-card">
+                          <h3>Total Meetings</h3>
+                          <p className="stat-number">
+                            {meetingStats.overview.totalMeetings}
+                          </p>
+                        </div>
+                        <div className="stat-card">
+                          <h3>Active Meetings</h3>
+                          <p className="stat-number">
+                            {meetingStats.overview.activeMeetings}
+                          </p>
+                        </div>
+                        <div className="stat-card">
+                          <h3>Today's Meetings</h3>
+                          <p className="stat-number">
+                            {meetingStats.overview.todaysMeetings}
+                          </p>
+                        </div>
+                        <div className="stat-card">
+                          <h3>Avg Duration</h3>
+                          <p className="stat-number">
+                            {meetingStats.overview.avgDurationMinutes} min
+                          </p>
+                        </div>
+                        <div className="stat-card">
+                          <h3>Global Meetings</h3>
+                          <p className="stat-number">
+                            {meetingStats.distribution.globalMeetings}
+                          </p>
+                        </div>
+                        <div className="stat-card">
+                          <h3>Team Meetings</h3>
+                          <p className="stat-number">
+                            {meetingStats.distribution.teamMeetings}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="loading-spinner">
+                        Loading analytics...
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
           </div>
         ) : (
           <div className="meeting-active">
             <div className="video-container" ref={containerRef}></div>
-            
+
             <div className="meeting-controls">
               <div className="control-group">
                 <button
-                  className={`control-button ${isVideoOn ? 'active' : ''}`}
+                  className={`control-button ${isVideoOn ? "active" : ""}`}
                   onClick={toggleVideo}
                 >
                   {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
                 </button>
                 <button
-                  className={`control-button ${isAudioOn ? 'active' : ''}`}
+                  className={`control-button ${isAudioOn ? "active" : ""}`}
                   onClick={toggleAudio}
                 >
                   {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
                 </button>
               </div>
-              
+
+              <div className="meeting-info-bar">
+                <span className="room-name">{roomName}</span>
+                <span className="participant-count">
+                  <FaUserPlus /> {participants} participant
+                  {participants !== 1 ? "s" : ""}
+                </span>
+              </div>
+
               <div className="control-group">
                 <button className="share-button" onClick={copyToClipboard}>
-                  <FaCopy /> {isLinkCopied ? 'Copied!' : 'Copy Link'}
+                  <FaCopy /> {isLinkCopied ? "Copied!" : "Copy Link"}
                 </button>
-                <button className="end-button" onClick={endMeeting}>
-                  <FaSignOutAlt /> End Meeting
+                <button className="end-button" onClick={handleLeaveMeeting}>
+                  <FaSignOutAlt /> Leave Meeting
                 </button>
               </div>
             </div>
@@ -291,430 +1102,3 @@ const Meeting = () => {
 };
 
 export default Meeting;
-
-
-// import React, { useState } from "react";
-// import "./Meeting.css";
-// import { Clock, CheckSquare } from "lucide-react";
-// import Events from "./Events";
-// import Navbar from "./Navbar";
-// import SearchBar from "./Search-bar/SearchBar";
-
-// // const meetings = [
-// //   { title: "Strategy Review", time: "10:30 AM", location: "Room 201", participants: "Team A, B" },
-// //   { title: "Product Launch Prep", time: "12:00 PM", location: "Room 301", participants: "Marketing Team" },
-// //   { title: "Strategy Review", time: "02:30 PM", location: "Room 201", participants: "Team A, B" },
-// //   { title: "Product Launch Prep", time: "03:30 PM", location: "Room 301", participants: "Marketing Team" },
-// // ];
-
-// // const tasks = [
-// //   { task: "Strategy Review prep", time: "10:00 AM" },
-// //   { task: "Product Launch Plan", time: "02:30 PM" },
-// //   { task: "Budget Analysis", time: "04:00 PM" },
-// // ];
-
-// const Meeting = () => {
-//   const [isFormVisible, setFormVisible] = useState(false);
-//   const [view, setView] = useState("today");
-//   const [meetings, setMeetings] = useState([
-//     { title: "Strategy Review", dateTime: new Date(), location: "Room 201", participants: "Team A, B" },
-//     { title: "Product Launch Prep", dateTime: new Date(new Date().setDate(new Date().getDate() + 1)), location: "Room 301", participants: "Marketing Team" },
-//   ]);
-  
-//   const [formData, setFormData] = useState({
-//     title: '',
-//     dateTime: '',
-//     location: '',
-//     participants: '',
-//     description: '',
-//     reminder: '',
-//   });
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prevData) => ({
-//       ...prevData,
-//       [name]: value,
-//     }));
-//   };
-
-//   const handleSave = async (e) => {
-//     e.preventDefault();
-//     const newMeeting = {
-//       title: formData.title,
-//       dateTime: formData.dateTime,
-//       location: formData.location,
-//       participants: formData.participants,
-//       description: formData.description,
-//       reminder: formData.reminder,
-//     };
-
-//     try {
-//       const response = await fetch("http://localhost:5001/api/schedule", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(newMeeting),
-//       });
-  
-//       if (response.ok) {
-//         const savedMeeting = await response.json();
-//         setMeetings([...meetings, savedMeeting]);
-//         setFormVisible(false);
-//         setFormData({ title: "", dateTime: "", location: "", participants: "", description: "", reminder: "" });
-//       } else {
-//         console.error("Failed to save meeting");
-//       }
-//     } catch (error) {
-//       console.error("Error:", error);
-//     }
-//   };
-
-//   const handleCancel = () => {
-//     setFormVisible(false);
-//   };
-
-  
-//   const today = new Date().setHours(0, 0, 0, 0);
-//   const todayMeetings = meetings.filter(meeting => new Date(meeting.dateTime).setHours(0, 0, 0, 0) === today);
-//   const upcomingMeetings = meetings.filter(meeting => new Date(meeting.dateTime).setHours(0, 0, 0, 0) > today);
-
-//   return (
-//     <div className="main-cont">
-//     <Navbar />
-//     <div className="container flex flex-col items-center min-h-screen" style={{width:"80%"}}>
-//         <SearchBar/>
-//       <div className="header-bar-container w-full max-w-3xl p-4 mb-6 mt-2">
-//         <div className="header-bar flex justify-between w-full bg-gray-200 rounded-lg">
-//           <span className="font-semibold cursor-pointer" onClick={() => setView("today")}>Today's Meetings</span>
-//           <span className="font-semibold cursor-pointer" onClick={() => setView("upcoming")}>Upcoming Meetings</span>
-//           {/* <span className="font-semibold cursor-pointer" onClick={() => setView("todo")}>To-Do List</span> */}
-//           <button className="add-button" onClick={() => setFormVisible(true)}>
-//             <span className="plus">+</span> Add New Meeting
-//           </button>
-//         </div>
-//       </div>
-
-//       <div className="card w-full max-w-3xl">
-//         {view === "today" ? (
-//           <>
-//             <div className="meeting-header-container mb-4">
-//               <h2 className="title">Today's Meetings</h2>
-//             </div>
-//             <div className="card-content">
-//               <table className="meeting-table w-full">
-//                 <thead>
-//                   <tr>
-//                     <th>Meeting Title</th>
-//                     <th>Time</th>
-//                     <th>Location</th>
-//                     <th>Participants</th>
-//                     <th>Action</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {meetings.map((meeting, index) => (
-//                     <tr key={index}>
-//                       <td>{meeting.title}</td>
-//                       <td className="flex items-center"><Clock className="time-icon mr-1" />{new Date(meeting.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-//                       <td>{meeting.location}</td>
-//                       <td>{meeting.participants}</td>
-//                       <td><button className="view-button">ReSchedule</button></td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </>
-//         ) : view === "upcoming" ? (
-//           // <Events />
-//           <>
-//            <div className="meeting-header-container mb-4">
-//               <h2 className="title">Upcoming Meetings</h2>
-//               </div>
-//               <table className="meeting-table w-full">
-//                 <thead>
-//                   <tr>
-//                     <th>Meeting Title</th>
-//                     <th>Date</th>
-//                     <th>Time</th>
-//                     <th>Location</th>
-//                     <th>Participants</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {upcomingMeetings.map((meeting, index) => (
-//                     <tr key={index}>
-//                       <td>{meeting.title}</td>
-//                       <td>{new Date(meeting.dateTime).toLocaleDateString()}</td>
-//                       <td><Clock className="time-icon mr-1" />{new Date(meeting.dateTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-//                       <td>{meeting.location}</td>
-//                       <td>{meeting.participants}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </>
-//         ) : null(
-//           // <div className="todo-container">
-//           //   <h2 className="todo-header">To-Do List</h2>
-//           //   <table className="todo-table">
-//           //     <thead>
-//           //       <tr>
-//           //         <th>Task</th>
-//           //         <th>Time</th>
-//           //         <th>Action</th>
-//           //       </tr>
-//           //     </thead>
-//           //     <tbody>
-//           //       {tasks.map((task, index) => (
-//           //         <tr key={index}>
-//           //           <td>{task.task}</td>
-//           //           <td>{task.time}</td>
-//           //           <td><CheckSquare className="todo-icon" /></td>
-//           //         </tr>
-//           //       ))}
-//           //     </tbody>
-//           //   </table>
-//           // </div>
-          
-//         )}
-//       </div>
-
-//       {isFormVisible && (
-//   <div className="modal-overlay">
-//     <div className="modal">
-//       <h2>Schedule New Meeting</h2>
-//       <form onSubmit={handleSave}>
-//         <label>Meeting Title:</label>
-//         <input type="text" name="title" value={formData.title} onChange={handleChange} required />
-
-//         <label>Date & Time:</label>
-//         <input type="datetime-local" name="dateTime" value={formData.dateTime} onChange={handleChange} required />
-
-//         <label>Location:</label>
-//         <input type="text" name="location" value={formData.location} onChange={handleChange} required />
-
-//         <label>Participants:</label>
-//         <input type="text" name="participants" value={formData.participants} onChange={handleChange} required />
-
-//         <label>Description:</label>
-//         <textarea name="description" value={formData.description} onChange={handleChange}></textarea>
-
-//         <label>Reminder:</label>
-//         <input type="text" name="reminder" value={formData.reminder} onChange={handleChange} />
-
-//         <div className="modal-buttons">
-//           <button type="button" className="cancel" onClick={handleCancel}>Cancel</button>
-//           <button type="submit" className="save">Save</button>
-//         </div>
-//       </form>
-//     </div>
-//   </div>
-
-//       )}
-//     </div>
-//     </div>
-//   );
-// };
-
-// export default Meeting;
-
-
-
-// import { useState, useEffect, useRef } from "react";
-// import DailyIframe from "@daily-co/daily-js";
-// import "./Meeting.css";
-// import { FaCopy, FaVideo, FaSignOutAlt, FaLink } from "react-icons/fa";
-// import Navbar from "./Navbar";
-// import SearchBar from "./Search-bar/SearchBar";
-
-// const Meeting = () => {
-//   const callFrameRef = useRef(null);
-//   const containerRef = useRef(null);
-//   const [roomName, setRoomName] = useState("");
-//   const [roomUrl, setRoomUrl] = useState("");
-//   const [isMeetingStarted, setIsMeetingStarted] = useState(false);
-//   const [joinLink, setJoinLink] = useState("");
-
-//   const createRoom = async () => {
-//     let generatedRoomName = roomName || `room-${Date.now()}`;
-
-//     try {
-//       const response = await fetch("https://api.daily.co/v1/rooms", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer 0ac72de6dfd54e6e5905a6673c8fb6c9db9c7c231be53e6734732f6295efe643`,
-//         },
-//         body: JSON.stringify({
-//           name: generatedRoomName,
-//           privacy: "public",
-//           properties: {
-//             enable_chat: true,
-//             enable_knocking: true,
-//             start_video_off: false,
-//             start_audio_off: false,
-//           },
-//         }),
-//       });
-
-//       const data = await response.json();
-//       if (data?.url) {
-//         setRoomUrl(data.url);
-//         setIsMeetingStarted(true);
-//       } else {
-//         alert(data?.error || "Failed to create room");
-//       }
-//     } catch (error) {
-//       console.error("Error creating room:", error);
-//       alert("Failed to create room");
-//     }
-//   };
-
-//   const joinMeeting = () => {
-//     if (joinLink) {
-//       setRoomUrl(joinLink);
-//       setIsMeetingStarted(true);
-//     } else {
-//       alert("Please enter a valid link!");
-//     }
-//   };
-
-//   useEffect(() => {
-//     if (isMeetingStarted && roomUrl && containerRef.current) {
-//       if (!callFrameRef.current) {
-//         callFrameRef.current = DailyIframe.createFrame(containerRef.current, {
-//           url: roomUrl,
-//           iframeStyle: {
-//             width: "100%",
-//             height: "100%",
-//             border: "none",
-//           },
-//         });
-
-//         callFrameRef.current.join({ url: roomUrl });
-//       }
-//     }
-
-//     return () => {
-//       if (callFrameRef.current) {
-//         callFrameRef.current.destroy();
-//         callFrameRef.current = null;
-//       }
-//     };
-//   }, [isMeetingStarted, roomUrl]);
-
-//   const endMeeting = () => {
-//     if (callFrameRef.current) {
-//       callFrameRef.current.destroy();
-//       callFrameRef.current = null;
-//     }
-//     setIsMeetingStarted(false);
-//     setRoomUrl("");
-//     setRoomName("");
-//     setJoinLink("");
-//   };
-
-//   const copyToClipboard = () => {
-//     navigator.clipboard.writeText(roomUrl);
-//     alert("Meeting link copied!");
-//   };
-
-//   return (
-//     <div className="main-cont">
-//      {/* <Navbar /> */}
-//      <div className="container flex flex-col items-center min-h-screen" style={{width:"80%"}}>
-//          <SearchBar/>
-//     <div className="flex flex-col items-center p-6 min-h-screen bg-gray-100">
-//       {/* Controls Section */}
-//       <div className="flex gap-3 w-full max-w-2xl mb-4">
-//         {/* Create Room Input + Button */}
-//         <div className="flex items-center w-1/2 border border-gray-300 rounded-md overflow-hidden">
-//           <FaVideo className="text-gray-500 mx-3" />
-//           <input
-//             type="text"
-//             placeholder="Enter Room Name"
-//             value={roomName}
-//             onChange={(e) => setRoomName(e.target.value)}
-//             className="flex-1 p-2 focus:outline-none"
-//           />
-//           <button
-//             onClick={createRoom}
-//             className="bg-blue-500 text-white px-4 py-2 hover:bg-blue-600"
-//           >
-//             Start
-//           </button>
-//         </div>
-
-//         {/* Join with Link Input + Button */}
-//         <div className="flex items-center w-1/2 border border-gray-300 rounded-md overflow-hidden">
-//           <FaLink className="text-gray-500 mx-3" />
-//           <input
-//             type="text"
-//             placeholder={
-//               isMeetingStarted ? "Enter Meeting Link" : "No meeting active"
-//             }
-//             value={joinLink}
-//             onChange={(e) => setJoinLink(e.target.value)}
-//             className="flex-1 p-2 focus:outline-none"
-//           />
-//           <button
-//             onClick={joinMeeting}
-//             className="bg-green-500 text-white px-4 py-2 hover:bg-green-600"
-//           >
-//             Join
-//           </button>
-//         </div>
-//         {isMeetingStarted && roomUrl && (
-//           <div className="mt-4 w-full max-w-md">
-//             <div className="flex items-center justify-between bg-gray-100 border border-gray-300 p-2 rounded-md">
-//               <span className="truncate text-sm">{roomUrl}</span>
-//               <button onClick={copyToClipboard} className="text-blue-500">
-//                 <FaCopy />
-//               </button>
-//             </div>
-//             <button
-//               onClick={endMeeting}
-//               className="w-full bg-red-500 text-white mt-2 p-2 rounded-md hover:bg-red-600 flex items-center justify-center"
-//             >
-//               <FaSignOutAlt className="mr-2" />
-//               End Meeting
-//             </button>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Meeting Screen */}
-//       <div className="w-screen max-w-7xl h-[82vh] bg-white border border-gray-100 rounded-md flex items-center justify-center">
-//         {isMeetingStarted && roomUrl ? (
-//           <div ref={containerRef} className="w-full h-full" />
-//         ) : (
-//           <span className="text-gray-400 text-lg">No meetings are active</span>
-//         )}
-//       </div>
-
-//       {/* Meeting Controls */}
-//       {isMeetingStarted && roomUrl && (
-//         <div className="mt-4 w-full max-w-md">
-//           <div className="flex items-center justify-between bg-gray-100 border border-gray-300 p-2 rounded-md">
-//             <span className="truncate text-sm">{roomUrl}</span>
-//             <button onClick={copyToClipboard} className="text-blue-500">
-//               <FaCopy />
-//             </button>
-//           </div>
-//           <button
-//             onClick={endMeeting}
-//             className="w-full bg-red-500 text-white mt-2 p-2 rounded-md hover:bg-red-600 flex items-center justify-center"
-//           >
-//             <FaSignOutAlt className="mr-2" />
-//             End Meeting
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//     </div>
-//     </div>
-//   );
-// };
-
-// export default Meeting;
