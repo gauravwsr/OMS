@@ -116,9 +116,6 @@ const AdminDashboard = () => {
     try {
       await axios.delete(
         "http://146.190.165.62:5001/api/notifications/cleanup-test",
-        // "http://146.190.165.62:5001/api/notifications/cleanup-test",
-        "http://146.190.165.62:5001/api/notifications/cleanup-test",
-        // "http://146.190.165.62:5001/api/notifications/cleanup-test",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -510,7 +507,6 @@ const AdminDashboard = () => {
     setEventsLoading(true);
     console.log("Fetching upcoming events...");
     try {
-      const response = await axios.post("http://146.190.165.62:5001/GetData");
       const response = await axios.post("http://146.190.165.62:5001/GetData");
       console.log("Events API response:", response.data);
       const allEvents = response.data || [];
