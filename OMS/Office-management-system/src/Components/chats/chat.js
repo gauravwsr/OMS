@@ -89,7 +89,7 @@ const Chat = () => {
   }, []);
 
   // Function to show browser notification with sound
-  const showNotification = (message) => {
+  const showNotification = useCallback((message) => {
     console.log("🔔 Attempting to show notification for message:", message);
     
     // Play notification sound first
@@ -192,7 +192,7 @@ const Chat = () => {
         }
       });
     }
-  };
+  }, [setInAppNotifications]); // Dependencies for useCallback
 
   // Debug user authentication
   useEffect(() => {
@@ -621,10 +621,6 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
       return newMessages;
     });
     
-    // Show notification for current chat too
-    console.log("🔔 Showing notification for current chat message");
-    showNotification(newMessageReceived);
-    
     // Also force scroll to bottom after a small delay to ensure DOM update
     setTimeout(() => {
       const messagesContainer = document.querySelector('.messages-container');
@@ -633,10 +629,17 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
         console.log("📜 Auto-scrolled to bottom for new message");
       }
     }, 100);
-    
-  } else if (!isFromCurrentUser) {
-    console.log("🔔 Message is for different chat, showing notification");
-    // Show browser notification since message is not from current user and not on current chat
+  } 
+  
+  // Show notification for ALL messages from other users (only once)
+  if (!isFromCurrentUser) {
+    console.log("🔔 Message from another user - showing notification");
+    console.log("🔔 Notification details:", {
+      isCurrentChat,
+      senderName: newMessageReceived.sender.name,
+      chatName: newMessageReceived.chat?.chatName || "Direct Message",
+      currentChatName: selectedChat?.chatName || "Direct Message"
+    });
     showNotification(newMessageReceived);
   }
 }, [selectedChat, user._id, setChats, setMessages, showNotification]);
