@@ -33,7 +33,7 @@ const Inbox = () => {
     setCheckingConfig(true);
     try {
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/check-config",
+        "http://localhost:5001/api/emails/check-config",
         {
           method: "GET",
           headers: {
@@ -121,11 +121,11 @@ const Inbox = () => {
     const token = localStorage.getItem("token");
     let url = "";
     if (activeTab === "inbox") {
-      url = "http://146.190.165.62:5001/api/emails/inbox";
+      url = "http://localhost:5001/api/emails/inbox";
     } else if (activeTab === "sent") {
-      url = "http://146.190.165.62:5001/api/emails/sent";
+      url = "http://localhost:5001/api/emails/sent";
     } else if (activeTab === "drafts") {
-      url = "http://146.190.165.62:5001/api/emails/drafts";
+      url = "http://localhost:5001/api/emails/drafts";
     }
 
     try {

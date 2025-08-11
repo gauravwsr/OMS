@@ -23,7 +23,7 @@ const CertificateHistory = () => {
       }
 
       const response = await fetch(
-        "http://146.190.165.62:5000/api/certificates",
+        "http://localhost:5000/api/certificates",
         {
           method: "GET",
           headers: {
@@ -62,7 +62,7 @@ const CertificateHistory = () => {
       }
 
       const response = await fetch(
-        `http://146.190.165.62:5000/api/certificates/${id}`,
+        `http://localhost:5000/api/certificates/${id}`,
         {
           method: "DELETE",
           headers: {

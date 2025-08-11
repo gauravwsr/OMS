@@ -69,7 +69,7 @@ gunicorn --config gunicorn.conf.py wsgi:app
 
 ## Server URL
 
-- http://146.190.165.62:5002 or http://0.0.0.0:5002
+- http://localhost:5002 or http://0.0.0.0:5002
 
 ## Troubleshooting
 

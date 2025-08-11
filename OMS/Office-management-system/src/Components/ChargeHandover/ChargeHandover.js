@@ -21,7 +21,7 @@ const ChargeHandover = () => {
   });
 
   const API_BASE_URL =
-    process.env.REACT_APP_API_URL || "http://146.190.165.62:5001";
+    process.env.REACT_APP_API_URL || "http://localhost:5001";
 
   useEffect(() => {
     if (user?.role === "Admin" && user?.subRole === "HR Manager") {

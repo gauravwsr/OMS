@@ -6,7 +6,7 @@ let io;
 exports.init = (server) => {
   io = socketio(server, {
     cors: {
-      origin: ["http://146.190.165.62:3000", "http://146.190.165.62:3001"],
+      origin: ["http://localhost:3000", "http://localhost:3001"],
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"],

@@ -111,7 +111,7 @@ const Completion = () => {
 
       // Save to database via API (you can create a separate completion API endpoint)
       const response = await fetch(
-        "http://146.190.165.62:5000/api/completions",
+        "http://localhost:5000/api/completions",
         {
           method: "POST",
           headers: {
@@ -395,7 +395,7 @@ const Completion = () => {
         if (token) {
           console.log("Attempting to save completion to database...");
           const response = await fetch(
-            "http://146.190.165.62:5000/api/completions",
+            "http://localhost:5000/api/completions",
             {
               method: "POST",
               headers: {

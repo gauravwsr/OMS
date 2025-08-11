@@ -1,7 +1,7 @@
 # Gunicorn configuration file for Face Recognition Server
 
 # Server socket
-bind = "146.190.165.62:5002"
+bind = "localhost:5002"
 backlog = 2048
 
 # Worker processes

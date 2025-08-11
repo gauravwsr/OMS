@@ -48,12 +48,12 @@ const HRLeaveApplication = () => {
       if (user && user._id) {
         console.log("Using user ID:", user._id);
         response = await axios.get(
-          `http://146.190.165.62:5001/api/leave/user/${user._id}`
+          `http://localhost:5001/api/leave/user/${user._id}`
         );
       } else if (user && user.email) {
         console.log("Using user email:", user.email);
         response = await axios.get(
-          `http://146.190.165.62:5001/api/leave/user-by-email/${user.email}`
+          `http://localhost:5001/api/leave/user-by-email/${user.email}`
         );
       } else {
         console.log("No user ID or email available");
@@ -198,7 +198,7 @@ const HRLeaveApplication = () => {
       console.log("User object:", user);
 
       const response = await axios.post(
-        "http://146.190.165.62:5001/api/leave/apply",
+        "http://localhost:5001/api/leave/apply",
         payload
       );
 

@@ -72,9 +72,9 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "http://146.190.165.62:3000",
-      "http://146.190.165.62:3001",
-      "http://146.190.165.62:5002",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5002",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -208,9 +208,9 @@ server.listen(port, '0.0.0.0', (err) => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(
     `✅ CORS enabled for origins: ${JSON.stringify([
-      "http://146.190.165.62:3000",
-      "http://146.190.165.62:3001",
-      "http://146.190.165.62:5002",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5002",
     ])}`
   );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
