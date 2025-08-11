@@ -5,6 +5,12 @@ const {
   verifyUserRegistration,
   getRegisteredUsers,
 } = require("../middlewares/faceRecognitionMiddleware");
+const {
+  getAttendanceValidation,
+  getCurrentISTTime,
+  validateCheckInTime,
+  validateCheckOutTime,
+} = require("../utils/attendanceTimeValidation");
 
 // Mark attendance
 const markAttendance = async (req, res) => {
@@ -80,7 +86,33 @@ const markAttendance = async (req, res) => {
       });
     }
 
-    // Validate minimum working hours for check-out (6 hours minimum)
+    // ===== NEW ATTENDANCE TIME VALIDATION =====
+    console.log(`🕐 Validating ${finalAttendanceType} time rules...`);
+
+    const currentISTTime = getCurrentISTTime();
+    const attendanceValidation = getAttendanceValidation(
+      finalAttendanceType,
+      todayCheck,
+      currentISTTime
+    );
+
+    console.log("📋 Attendance validation result:", attendanceValidation);
+
+    if (!attendanceValidation.isValid) {
+      const statusCode =
+        attendanceValidation.type === "CHECK_IN_NOT_ALLOWED" ? 403 : 400;
+      return res.status(statusCode).json({
+        message: attendanceValidation.message,
+        error: attendanceValidation.type,
+        validation: attendanceValidation,
+        currentTime: attendanceValidation.currentDateTime,
+        timezone: "Asia/Kolkata (IST)",
+      });
+    }
+
+    console.log(`✅ Time validation passed for ${finalAttendanceType}`);
+
+    // Validate minimum working hours for check-out (keeping existing logic as backup)
     if (
       finalAttendanceType === "check_out" &&
       todayCheck.hasCheckIn &&
@@ -91,7 +123,7 @@ const markAttendance = async (req, res) => {
       const timeDifferenceInHours =
         (currentTime - checkInTime) / (1000 * 60 * 60); // Convert to hours
 
-      const MINIMUM_WORKING_HOURS = 6;
+      const MINIMUM_WORKING_HOURS = 8; // Changed from 6 to 8 hours as per requirements
 
       if (timeDifferenceInHours < MINIMUM_WORKING_HOURS) {
         const remainingTime = MINIMUM_WORKING_HOURS - timeDifferenceInHours;
@@ -101,7 +133,7 @@ const markAttendance = async (req, res) => {
         );
 
         return res.status(400).json({
-          message: `You must work for at least ${MINIMUM_WORKING_HOURS} hours before checking out`,
+          message: `You can only check-out after completing 8 hours from your check-in time.`,
           error: "MINIMUM_WORKING_HOURS_NOT_COMPLETED",
           details: {
             checkInTime: checkInTime.toISOString(),
@@ -161,14 +193,39 @@ const markAttendance = async (req, res) => {
           confidence: result.data.confidence,
           recognizedName: result.data.recognizedName,
         },
+        timeValidation: {
+          status: result.data.metadata?.timeValidation?.status || "Present",
+          isHalfDay: result.data.isHalfDay || false,
+          isLate: result.data.isLateAttendance || false,
+          currentTime: attendanceValidation.currentDateTime,
+          message: attendanceValidation.message,
+          timezone: "Asia/Kolkata (IST)",
+        },
       });
     }
 
-    // Handle manual attendance
+    // Handle manual attendance with enhanced status based on time validation
+    let attendanceStatus = status;
+    let isHalfDay = false;
+
+    // Set status based on time validation for check-in
+    if (finalAttendanceType === "check_in") {
+      if (attendanceValidation.isLate) {
+        attendanceStatus = "Late";
+        isHalfDay = true;
+      } else {
+        attendanceStatus = "Present";
+        isHalfDay = false;
+      }
+    } else if (finalAttendanceType === "check_out") {
+      // For check-out, maintain the existing status logic
+      attendanceStatus = "Present";
+    }
+
     const attendanceData = {
       userId,
       method,
-      status,
+      status: attendanceStatus,
       attendance_type: finalAttendanceType, // Add attendance type
       confidence: confidence || null,
       recognizedName: recognizedName || null,
@@ -180,11 +237,18 @@ const markAttendance = async (req, res) => {
         browser: req.get("sec-ch-ua") || "Unknown",
       },
       location: location || null,
-      notes: notes || null,
+      notes:
+        notes ||
+        `${finalAttendanceType} at ${
+          attendanceValidation.currentDateTime
+        } IST ${isHalfDay ? "(Half Day - Late)" : "(Full Day)"}`,
       metadata: {
         source: "web_application",
         apiVersion: "1.0",
         requestId: req.headers["x-request-id"] || null,
+        timeValidation: attendanceValidation, // Include validation details
+        isHalfDay: isHalfDay,
+        timezone: "Asia/Kolkata",
       },
     };
 
@@ -207,11 +271,15 @@ const markAttendance = async (req, res) => {
       result.data._id
     );
 
-    // Response based on attendance type
-    const responseMessage =
+    // Enhanced response message based on attendance type and time validation
+    let responseMessage =
       finalAttendanceType === "check_in"
         ? "Check-in recorded successfully"
         : "Check-out recorded successfully";
+
+    if (finalAttendanceType === "check_in" && isHalfDay) {
+      responseMessage = "Late check-in recorded - Half day marked";
+    }
 
     res.status(201).json({
       message: responseMessage,
@@ -219,6 +287,14 @@ const markAttendance = async (req, res) => {
       attendanceType: finalAttendanceType,
       workingHours: result.workingHours || null,
       dailySummary: result.dailySummary || null,
+      timeValidation: {
+        status: attendanceValidation.status,
+        isHalfDay: isHalfDay,
+        isLate: attendanceValidation.isLate || false,
+        currentTime: attendanceValidation.currentDateTime,
+        message: attendanceValidation.message,
+        timezone: "Asia/Kolkata (IST)",
+      },
     });
   } catch (error) {
     console.error("❌ Error marking attendance:", error);
@@ -567,6 +643,42 @@ const getRegisteredUsersAPI = async (req, res) => {
   }
 };
 
+// Get current time validation status
+const getTimeValidationStatus = async (req, res) => {
+  try {
+    const { attendanceType = "check_in" } = req.query;
+
+    // Get validation for the specified attendance type
+    const validation =
+      attendanceType === "check_in"
+        ? validateCheckInTime()
+        : validateCheckOutTime(null); // null for current time check
+
+    const currentTime = getCurrentISTTime();
+
+    res.json({
+      success: true,
+      validation: {
+        isValid: validation.isAllowed,
+        message: validation.message,
+        status: validation.status,
+        isHalfDay: validation.isHalfDay || false,
+        isLate: validation.isLate || false,
+        currentTime: currentTime.format("YYYY-MM-DD HH:mm:ss"),
+        attendanceType: attendanceType,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error getting time validation status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get time validation status",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   markAttendance,
   getAttendanceHistory,
@@ -579,4 +691,5 @@ module.exports = {
   deleteAttendance,
   healthCheck,
   getRegisteredUsersAPI,
+  getTimeValidationStatus,
 };

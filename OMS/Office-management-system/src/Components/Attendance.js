@@ -24,6 +24,8 @@ const Attendance = () => {
   const [error, setError] = useState("");
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [lastRegistrationCheck, setLastRegistrationCheck] = useState(null);
+  const [currentTimeInfo, setCurrentTimeInfo] = useState(null); // New state for time validation
+  const [timeValidationStatus, setTimeValidationStatus] = useState(null); // New state for attendance validation
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const { user, isAuthenticated } = useAuth();
@@ -35,8 +37,17 @@ const Attendance = () => {
       fetchRegisteredUsers();
       checkUserFaceRegistration();
       checkMongoDBConnection();
+      fetchCurrentTimeInfo();
+      fetchTimeValidationStatus();
     }
   }, [user, isAuthenticated]);
+
+  // Update validation when attendance type changes
+  useEffect(() => {
+    if (user?.name) {
+      fetchTimeValidationStatus();
+    }
+  }, [attendanceType, user]);
 
   // Auto-refresh registered users every 30 seconds to catch new registrations
   useEffect(() => {
@@ -99,19 +110,22 @@ const Attendance = () => {
 
   const checkMongoDBConnection = async () => {
     try {
-      const response = await axios.get("http://localhost:5001/api/health", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        timeout: 5000,
-      });
+      const response = await axios.get(
+        "http://localhost:5001/api/health",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          timeout: 5000,
+        }
+      );
 
       console.log("MongoDB connection status:", response.data);
 
       if (response.data && response.data.database === "connected") {
         console.log("✅ MongoDB database is connected and ready");
       } else {
-        console.warn("⚠️ MongoDB database connection uncertain");
+        console.log("⚠️ MongoDB database connection uncertain");
       }
     } catch (error) {
       console.error("❌ MongoDB connection check failed:", error);
@@ -233,6 +247,41 @@ const Attendance = () => {
     }
   };
 
+  // Fetch current time information
+  const fetchCurrentTimeInfo = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5001/api/attendance-validation/current-time"
+      );
+      if (response.data) {
+        setCurrentTimeInfo(response.data);
+      }
+    } catch (error) {
+      console.log("Could not fetch current time info:", error);
+    }
+  };
+
+  // Fetch time validation status for current attendance type
+  const fetchTimeValidationStatus = async () => {
+    if (!user?.name) return;
+
+    try {
+      const response = await axios.get(
+        `http://localhost:5001/api/attendance/validate-time?attendanceType=${attendanceType}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (response.data) {
+        setTimeValidationStatus(response.data);
+      }
+    } catch (error) {
+      console.log("Could not fetch time validation status:", error);
+    }
+  };
+
   const fetchRegisteredUsers = async () => {
     try {
       const response = await axios.get(
@@ -312,6 +361,17 @@ const Attendance = () => {
 
   // Open camera
   const handleOpenCamera = async () => {
+    // Check time validation first
+    if (timeValidationStatus && !timeValidationStatus.validation?.isValid) {
+      setError(
+        `❌ Camera access denied: ${
+          timeValidationStatus.validation?.message ||
+          "Check-in not allowed at this time"
+        }\n\nCamera will only be available during allowed attendance hours.`
+      );
+      return;
+    }
+
     await fetchRegisteredUsers();
 
     setCameraOpen(true);
@@ -571,11 +631,25 @@ const Attendance = () => {
           console.log("✅ MongoDB save successful:", mongoResponse.data);
           fetchAttendanceHistory();
           fetchTodayAttendance(); // Refresh today's attendance
+          fetchTimeValidationStatus(); // Refresh validation status
 
-          // Show success message with working hours if available
+          // Show success message with time validation and working hours
           let successMessage = `\n💾 ${
             attendanceType === "check_in" ? "Check-in" : "Check-out"
           } saved to database!`;
+
+          // Add time validation information
+          if (mongoResponse.data.timeValidation) {
+            const timeVal = mongoResponse.data.timeValidation;
+            successMessage += `\n🕐 Time: ${timeVal.currentTime}`;
+            successMessage += `\n📋 Status: ${timeVal.status}`;
+
+            if (timeVal.isHalfDay) {
+              successMessage += `\n⚠️ Half Day (Late check-in)`;
+            } else if (timeVal.status === "Present") {
+              successMessage += `\n✅ Full Day`;
+            }
+          }
 
           if (mongoResponse.data.workingHours) {
             successMessage += `\n⏰ Working Hours: ${mongoResponse.data.workingHours.hours}h ${mongoResponse.data.workingHours.minutes}m`;
@@ -894,6 +968,161 @@ const Attendance = () => {
       )}
 
       <div className="attendance-content">
+        {/* Current Time & Validation Status */}
+        {currentTimeInfo && (
+          <div
+            className="time-validation-status"
+            style={{
+              padding: "20px",
+              backgroundColor: "#e3f2fd",
+              borderRadius: "8px",
+              marginBottom: "20px",
+              border: "2px solid #bbdefb",
+            }}
+          >
+            <h3
+              style={{
+                color: "#1565c0",
+                marginBottom: "15px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <Clock size={20} style={{ marginRight: "8px" }} />
+              Current Time & Attendance Rules
+            </h3>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "15px",
+              }}
+            >
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "6px",
+                  border: "1px solid #90caf9",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    color: "#1565c0",
+                    marginBottom: "5px",
+                  }}
+                >
+                  🕐 Current Time (IST)
+                </div>
+                <div
+                  style={{
+                    fontSize: "18px",
+                    color: "#1976d2",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currentTimeInfo.currentTimeOnly}
+                </div>
+                <div style={{ fontSize: "12px", color: "#666" }}>
+                  {currentTimeInfo.dayOfWeek}, {currentTimeInfo.currentDate}
+                </div>
+              </div>
+
+              {timeValidationStatus && (
+                <div
+                  style={{
+                    padding: "15px",
+                    backgroundColor: timeValidationStatus.validation?.isValid
+                      ? "#e8f5e8"
+                      : "#ffebee",
+                    borderRadius: "6px",
+                    border: `1px solid ${
+                      timeValidationStatus.validation?.isValid
+                        ? "#4caf50"
+                        : "#f44336"
+                    }`,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: "bold",
+                      color: timeValidationStatus.validation?.isValid
+                        ? "#2e7d32"
+                        : "#c62828",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    {attendanceType === "check_in"
+                      ? "📍 Check-in Status"
+                      : "🚪 Check-out Status"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: timeValidationStatus.validation?.isValid
+                        ? "#2e7d32"
+                        : "#c62828",
+                    }}
+                  >
+                    {timeValidationStatus.validation?.isValid
+                      ? "✅ Allowed"
+                      : "❌ Not Allowed"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#666",
+                      marginTop: "5px",
+                    }}
+                  >
+                    {timeValidationStatus.validation?.message}
+                  </div>
+                  {timeValidationStatus.validation?.isHalfDay && (
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#ff9800",
+                        marginTop: "3px",
+                      }}
+                    >
+                      ⚠️ Half Day Status
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div
+                style={{
+                  padding: "15px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "6px",
+                  border: "1px solid #90caf9",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: "bold",
+                    color: "#1565c0",
+                    marginBottom: "8px",
+                  }}
+                >
+                  📋 Attendance Rules
+                </div>
+                <div
+                  style={{ fontSize: "12px", color: "#666", lineHeight: "1.4" }}
+                >
+                  <div>✅ Before 10:30 AM: Present (Full Day)</div>
+                  <div>⚠️ 10:30-11:00 AM: Late (Half Day)</div>
+                  <div>❌ After 11:00 AM: Absent</div>
+                  <div>🕐 Check-out: After 8 hours</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Today's Attendance Status */}
         {todayAttendance && (
           <div
@@ -1041,6 +1270,26 @@ const Attendance = () => {
               <Camera size={64} />
               <p>Hello {user.name}, ready to mark attendance?</p>
 
+              {/* Time Validation Warning */}
+              {timeValidationStatus &&
+                !timeValidationStatus.validation?.isValid && (
+                  <div
+                    style={{
+                      margin: "10px 0",
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      backgroundColor: "#fff3e0",
+                      color: "#ef6c00",
+                      border: "1px solid #ffcc02",
+                    }}
+                  >
+                    ⚠️{" "}
+                    {timeValidationStatus.validation?.message ||
+                      "Check-in not allowed at this time"}
+                  </div>
+                )}
+
               {/* Registration Status Display */}
               {user?.name && (
                 <div
@@ -1086,13 +1335,32 @@ const Attendance = () => {
               )}
 
               {user?.name && (
-                <button
-                  onClick={handleOpenCamera}
-                  className="camera-btn primary"
-                >
-                  <Camera size={20} />
-                  Open Camera
-                </button>
+                <>
+                  {timeValidationStatus &&
+                  !timeValidationStatus.validation?.isValid ? (
+                    <button
+                      className="camera-btn disabled"
+                      disabled
+                      style={{
+                        backgroundColor: "#f5f5f5",
+                        color: "#999",
+                        borderColor: "#ddd",
+                        cursor: "not-allowed",
+                      }}
+                    >
+                      <Camera size={20} />
+                      Camera Disabled - Time Not Allowed
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleOpenCamera}
+                      className="camera-btn primary"
+                    >
+                      <Camera size={20} />
+                      Open Camera
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}

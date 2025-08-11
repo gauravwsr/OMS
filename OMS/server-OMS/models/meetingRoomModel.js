@@ -133,6 +133,19 @@ const meetingRoomSchema = new mongoose.Schema(
       enum: ["active", "ended", "scheduled"],
       default: "active",
     },
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+    actualStartTime: {
+      type: Date,
+      default: null,
+    },
     scheduledFor: {
       type: Date,
       default: null,
@@ -144,6 +157,14 @@ const meetingRoomSchema = new mongoose.Schema(
     duration: {
       type: Number, // in minutes
       default: null,
+    },
+    emailReminder: {
+      type: Boolean,
+      default: false,
+    },
+    reminderMinutes: {
+      type: Number,
+      default: 15,
     },
     // Security and access control
     accessRules: {
@@ -192,6 +213,7 @@ meetingRoomSchema.index({ roomId: 1 }, { unique: true });
 meetingRoomSchema.index({ createdBy: 1, createdAt: -1 });
 meetingRoomSchema.index({ roomType: 1, teamName: 1 });
 meetingRoomSchema.index({ meetingStatus: 1 });
+meetingRoomSchema.index({ scheduledAt: 1 });
 meetingRoomSchema.index({ "participants.userId": 1 });
 meetingRoomSchema.index({ "invitedUsers.userId": 1 });
 meetingRoomSchema.index({ "invitedUsers.inviteToken": 1 });

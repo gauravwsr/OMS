@@ -21,10 +21,12 @@ const HRLeaveManagement = () => {
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
-      console.log('Fetching employee leave applications...');
-      const response = await axios.get('http://localhost:5001/api/leave/employees');
-      console.log('Employee leave applications response:', response.data);
-      
+      console.log("Fetching employee leave applications...");
+      const response = await axios.get(
+        "http://localhost:5001/api/leave/employees"
+      );
+      console.log("Employee leave applications response:", response.data);
+
       if (response.data.success) {
         setLeaveApplications(response.data.data);
         console.log("Employee leave applications set:", response.data.data);
@@ -73,7 +75,7 @@ const HRLeaveManagement = () => {
         });
         return;
       }
-      
+
       console.log("Token available:", !!token);
 
       const requestData = {
@@ -81,16 +83,23 @@ const HRLeaveManagement = () => {
         reviewComments: comments,
         reviewedBy: user._id,
       };
-      
-      console.log('Request data:', requestData);
-      console.log('Making API call to:', `http://localhost:5001/api/leave/status/${leaveId}`);
 
-      const response = await axios.patch(`http://localhost:5001/api/leave/status/${leaveId}`, requestData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      console.log("Request data:", requestData);
+      console.log(
+        "Making API call to:",
+        `http://localhost:5001/api/leave/status/${leaveId}`
+      );
+
+      const response = await axios.patch(
+        `http://localhost:5001/api/leave/status/${leaveId}`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       console.log("API Response:", response.data);
 
@@ -100,7 +109,7 @@ const HRLeaveManagement = () => {
           text: `Leave application ${action.toLowerCase()} successfully`,
         });
         fetchLeaveApplications(); // Refresh the list
-        
+
         // Clear message after 3 seconds
         setTimeout(() => {
           setMessage({ type: "", text: "" });
@@ -120,7 +129,7 @@ const HRLeaveManagement = () => {
       console.error("Error status:", error.response?.status);
 
       let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Authentication failed. Please login again.";
       } else if (error.response?.status === 403) {
@@ -137,7 +146,7 @@ const HRLeaveManagement = () => {
       });
     }
   };
-// ...existing code...
+  // ...existing code...
 
   const approveLeave = (leaveId) => {
     handleLeaveAction(leaveId, "Approved");

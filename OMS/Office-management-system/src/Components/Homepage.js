@@ -256,72 +256,71 @@ const NewDashboard = () => {
       <div className="dashboard-wrapper">
         <div className="dashboard-container-new">
           <div className="dashboard-main">
-            
-          {/* Enhanced User Profile Card */}
-              <div className="profile-section">
-                <h2 className="section-title">
-                  <span className="title-icon">👤</span>
-                  Employee Profile
-                </h2>
-                <div className="user-profile-card-modern">
-                  <div className="profile-header">
-                    <div className="profile-avatar">
-                      <div className="avatar-circle">
-                        <span>{user?.name?.charAt(0) || "U"}</span>
-                      </div>
-                      <div className="avatar-decoration">
-                        <div className="decoration-ring"></div>
-                        <div className="status-indicator online"></div>
-                      </div>
+            {/* Enhanced User Profile Card */}
+            <div className="profile-section">
+              <h2 className="section-title">
+                <span className="title-icon">👤</span>
+                Employee Profile
+              </h2>
+              <div className="user-profile-card-modern">
+                <div className="profile-header">
+                  <div className="profile-avatar">
+                    <div className="avatar-circle">
+                      <span>{user?.name?.charAt(0) || "U"}</span>
                     </div>
-                    <div className="profile-basic">
-                      <h3 className="profile-name">{user?.name || "N/A"}</h3>
-                      <p className="profile-id">ID: {user?.userId || "N/A"}</p>
-                      <span className="profile-status active">
-                        <span className="status-dot"></span>
-                        Active
-                      </span>
+                    <div className="avatar-decoration">
+                      <div className="decoration-ring"></div>
+                      <div className="status-indicator online"></div>
                     </div>
                   </div>
+                  <div className="profile-basic">
+                    <h3 className="profile-name">{user?.name || "N/A"}</h3>
+                    <p className="profile-id">ID: {user?.userId || "N/A"}</p>
+                    <span className="profile-status active">
+                      <span className="status-dot"></span>
+                      Active
+                    </span>
+                  </div>
+                </div>
 
-                  <div className="profile-details-modern">
-                    <div className="details-grid">
-                      <div className="detail-card">
-                        <div className="detail-icon">📧</div>
-                        <div className="detail-content">
-                          <label>Email Address</label>
-                          <p className="email-value">{user?.email || "N/A"}</p>
-                        </div>
+                <div className="profile-details-modern">
+                  <div className="details-grid">
+                    <div className="detail-card">
+                      <div className="detail-icon">📧</div>
+                      <div className="detail-content">
+                        <label>Email Address</label>
+                        <p className="email-value">{user?.email || "N/A"}</p>
                       </div>
+                    </div>
 
-                      <div className="detail-card">
-                        <div className="detail-icon">🏢</div>
-                        <div className="detail-content">
-                          <label>Department</label>
-                          <p>{user?.department || "General"}</p>
-                        </div>
+                    <div className="detail-card">
+                      <div className="detail-icon">🏢</div>
+                      <div className="detail-content">
+                        <label>Department</label>
+                        <p>{user?.department || "General"}</p>
                       </div>
+                    </div>
 
-                      <div className="detail-card">
-                        <div className="detail-icon">💼</div>
-                        <div className="detail-content">
-                          <label>Position</label>
-                          <p>{user?.position || user?.role || "Employee"}</p>
-                        </div>
+                    <div className="detail-card">
+                      <div className="detail-icon">💼</div>
+                      <div className="detail-content">
+                        <label>Position</label>
+                        <p>{user?.position || user?.role || "Employee"}</p>
                       </div>
+                    </div>
 
-                      <div className="detail-card">
-                        <div className="detail-icon">🎯</div>
-                        <div className="detail-content">
-                          <label>Specialization</label>
-                          <p>{user?.subRole || "N/A"}</p>
-                        </div>
+                    <div className="detail-card">
+                      <div className="detail-icon">🎯</div>
+                      <div className="detail-content">
+                        <label>Specialization</label>
+                        <p>{user?.subRole || "N/A"}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+            </div>
+
             <div className="dashboard-content">
               {/* Enhanced Quick Stats */}
               <div className="stats-section">
@@ -439,64 +438,90 @@ const NewDashboard = () => {
                       </div>
                     </div>
 
-                    <div className="timeline-item-modern notification">
-                      <div className="timeline-marker">
-                        <div className="marker-icon">🔔</div>
-                        <div className="marker-line"></div>
-                      </div>
-                      <div className="timeline-content-modern">
-                        <div className="activity-header">
-                          <h4>New Notification</h4>
-                          <span className="activity-badge warning">New</span>
+                    {/* Calendar Notifications */}
+                    {eventsLoading ? (
+                      <div className="timeline-item-modern notification">
+                        <div className="timeline-marker">
+                          <div className="marker-icon">⏳</div>
+                          <div className="marker-line"></div>
                         </div>
-                        <p>You have a new task assignment waiting for review</p>
-                        <span className="activity-time">
-                          <span className="time-icon">🕐</span>
-                          Apr 4, 10:15 AM
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Upcoming Events Section */}
-              <div className="activity-section">
-                <div className="section-header">
-                  <h3>Upcoming Events</h3>
-                </div>
-
-                <div className="upcoming-events-scrollable">
-                  {eventsLoading ? (
-                    <div className="activity-timeline">
-                      <div className="timeline-item">
-                        <div className="timeline-icon notification">⏳</div>
-                        <div className="timeline-content">
-                          <h4>Loading Events</h4>
-                          <p>Please wait while we fetch your events...</p>
-                          <span className="timeline-time">Just now</span>
+                        <div className="timeline-content-modern">
+                          <div className="activity-header">
+                            <h4>Loading Calendar Events</h4>
+                            <span className="activity-badge info">Loading</span>
+                          </div>
+                          <p>Fetching your upcoming calendar events...</p>
+                          <span className="activity-time">
+                            <span className="time-icon">🕐</span>
+                            Just now
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  ) : eventsError ? (
-                    <div className="activity-timeline">
-                      <div className="timeline-item">
-                        <div className="timeline-icon notification">❌</div>
-                        <div className="timeline-content">
-                          <h4>Error Loading Events</h4>
-                          <p>Unable to fetch upcoming events</p>
-                          <span className="timeline-time">Just now</span>
+                    ) : eventsError ? (
+                      <div className="timeline-item-modern notification">
+                        <div className="timeline-marker">
+                          <div className="marker-icon">❌</div>
+                          <div className="marker-line"></div>
+                        </div>
+                        <div className="timeline-content-modern">
+                          <div className="activity-header">
+                            <h4>Calendar Error</h4>
+                            <span className="activity-badge error">Error</span>
+                          </div>
+                          <p>Unable to load calendar events</p>
+                          <span className="activity-time">
+                            <span className="time-icon">🕐</span>
+                            Just now
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  ) : upcomingEvents.length === 0 ? (
-                    <div className="activity-timeline">
-                      <div className="timeline-item">
-                        <div className="timeline-icon notification">📅</div>
-                        <div className="timeline-content">
-                          <h4>No Upcoming Events</h4>
-                          <p>No events scheduled for today</p>
-                          <span className="timeline-time">
+                    ) : upcomingEvents.length > 0 ? (
+                      upcomingEvents.slice(0, 2).map((event, index) => (
+                        <div
+                          key={event._id}
+                          className="timeline-item-modern notification"
+                        >
+                          <div className="timeline-marker">
+                            <div className="marker-icon">📅</div>
+                            <div className="marker-line"></div>
+                          </div>
+                          <div className="timeline-content-modern">
+                            <div className="activity-header">
+                              <h4>{event.Subject}</h4>
+                              {/* <span className={`activity-badge ${
+                                new Date(event.StartTime) <= new Date(Date.now() + 24 * 60 * 60 * 1000) 
+                                  ? 'warning' : 'info'
+                              }`}>
+                                {new Date(event.StartTime) <= new Date(Date.now() + 24 * 60 * 60 * 1000) 
+                                  ? 'Urgent' : 'Upcoming'}
+                              </span> */}
+                            </div>
+                            <p>
+                              {event.Description || "Scheduled calendar event"}
+                            </p>
+                            <span className="activity-time">
+                              <span className="time-icon">🕐</span>
+                              {formatEventDate(event.StartTime, event.EndTime)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="timeline-item-modern notification">
+                        <div className="timeline-marker">
+                          <div className="marker-icon">📅</div>
+                          <div className="marker-line"></div>
+                        </div>
+                        <div className="timeline-content-modern">
+                          <div className="activity-header">
+                            <h4>No Upcoming Events</h4>
+                            <span className="activity-badge success">
+                              Clear
+                            </span>
+                          </div>
+                          <p>Your calendar is clear for today</p>
+                          <span className="activity-time">
+                            <span className="time-icon">🕐</span>
                             {new Date().toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -507,23 +532,8 @@ const NewDashboard = () => {
                           </span>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="activity-timeline">
-                      {upcomingEvents.map((event) => (
-                        <div key={event._id} className="timeline-item">
-                          <div className="timeline-icon notification">📅</div>
-                          <div className="timeline-content">
-                            <h4>{event.Subject}</h4>
-                            <p>{event.Description || "Event scheduled"}</p>
-                            <span className="timeline-time">
-                              {formatEventDate(event.StartTime, event.EndTime)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

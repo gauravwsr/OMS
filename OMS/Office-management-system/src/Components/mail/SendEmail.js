@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import './SendEmail.css';
+import React, { useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import "./SendEmail.css";
 
 const SendEmail = () => {
   const [email, setEmail] = useState('');
+  const [cc, setCc] = useState('');
+  const [bcc, setBcc] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [attachment, setAttachment] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
 
   // Function to handle going back to the previous page
   const handleBack = () => {
@@ -16,21 +20,16 @@ const SendEmail = () => {
   };
 
   const saveDraft = async () => {
-    if (!email && !subject && !body) {
-      alert('Draft is empty. Nothing to save.');
+    if (!email && !cc && !bcc && !subject && !body) {
+      alert('Draft is empty. Please add some content before saving.');
       return;
     }
 
     setIsSaving(true);
 
-    const draftData = {
-      to: email,
-      subject: subject,
-      body: body,
-      date: new Date().toISOString()
-    };
-
     try {
+      console.log('Saving draft with data:', { to: email, cc, bcc, subject, body });
+      
       const response = await fetch('http://localhost:5001/api/emails/save-draft', {
         method: 'POST',
         headers: {
@@ -39,20 +38,25 @@ const SendEmail = () => {
         },
         body: JSON.stringify({
           to: email,
+          cc: cc,
+          bcc: bcc,
           subject: subject,
           body: body
         })
       });
 
       const data = await response.json();
-      if (response.ok) {
-        alert('Draft saved successfully!');
+      
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}`);
+        console.log('Draft saved successfully:', data.draft);
       } else {
-        alert(`Failed to save draft: ${data.message}`);
+        alert(`❌ Failed to save draft: ${data.message}`);
+        console.error('Draft save failed:', data);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while saving the draft.');
+      console.error("Error saving draft:", error);
+      alert("❌ An error occurred while saving the draft. Please check your connection and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -61,22 +65,21 @@ const SendEmail = () => {
   const sendEmail = async (e) => {
     e.preventDefault();
 
-    if (!email || !subject || !body) {
-      alert('Please fill in all required fields.');
+    if (!email && !cc && !bcc) {
+      alert('📧 Please provide at least one recipient (To, Cc, or Bcc).');
+      return;
+    }
+
+    if (!subject || !body) {
+      alert('📝 Please fill in both subject and message body.');
       return;
     }
 
     setIsSending(true);
 
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('subject', subject);
-    formData.append('body', body);
-    if (attachment) {
-      formData.append('attachment', attachment);
-    }
-
     try {
+      console.log('Sending email with data:', { to: email, cc, bcc, subject, body: body.substring(0, 100) + '...' });
+      
       const response = await fetch('http://localhost:5001/api/emails/send', {
         method: 'POST',
         headers: {
@@ -85,25 +88,35 @@ const SendEmail = () => {
         },
         body: JSON.stringify({
           to: email,
+          cc: cc,
+          bcc: bcc,
           subject: subject,
           body: body
         })
       });
 
       const data = await response.json();
-      if (response.ok) {
-        alert('Email sent successfully!');
+      
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}`);
+        console.log('Email sent successfully:', data.messageId);
+        
         // Clear form after successful send
         setEmail('');
+        setCc('');
+        setBcc('');
         setSubject('');
         setBody('');
         setAttachment(null);
+        setShowCc(false);
+        setShowBcc(false);
       } else {
-        alert(`Failed to send email: ${data.message}`);
+        alert(`❌ Failed to send email: ${data.message}`);
+        console.error('Email send failed:', data);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while sending the email.');
+      console.error("Error sending email:", error);
+      alert("❌ An error occurred while sending the email. Please check your connection and email configuration.");
     } finally {
       setIsSending(false);
     }
@@ -125,11 +138,76 @@ const SendEmail = () => {
             id="to"
             className="input-field"
             placeholder="Recipient"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          <div className="cc-bcc-toggle">
+            {!showCc && (
+              <button
+                type="button"
+                className="toggle-button"
+                onClick={() => setShowCc(true)}
+              >
+                + Cc
+              </button>
+            )}
+            {!showBcc && (
+              <button
+                type="button"
+                className="toggle-button"
+                onClick={() => setShowBcc(true)}
+              >
+                + Bcc
+              </button>
+            )}
+          </div>
         </div>
+
+        {showCc && (
+          <div className="form-group">
+            <input
+              type="email"
+              id="cc"
+              className="input-field"
+              placeholder="Cc (Carbon Copy)"
+              value={cc}
+              onChange={(e) => setCc(e.target.value)}
+            />
+            <button
+              type="button"
+              className="remove-field-button"
+              onClick={() => {
+                setCc('');
+                setShowCc(false);
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {showBcc && (
+          <div className="form-group">
+            <input
+              type="email"
+              id="bcc"
+              className="input-field"
+              placeholder="Bcc (Blind Carbon Copy)"
+              value={bcc}
+              onChange={(e) => setBcc(e.target.value)}
+            />
+            <button
+              type="button"
+              className="remove-field-button"
+              onClick={() => {
+                setBcc('');
+                setShowBcc(false);
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <div className="form-group">
           <input
@@ -174,14 +252,14 @@ const SendEmail = () => {
             onClick={saveDraft}
             disabled={isSaving || isSending}
           >
-            {isSaving ? 'Saving...' : 'Save Draft'}
+            {isSaving ? "Saving..." : "Save Draft"}
           </button>
           <button
             type="submit"
             className="send-button"
             disabled={isSaving || isSending}
           >
-            {isSending ? 'Sending...' : 'Send'}
+            {isSending ? "Sending..." : "Send"}
           </button>
         </div>
       </form>

@@ -27,13 +27,16 @@ const Certificate = () => {
       }
 
       console.log("Checking existing certificates...");
-      const response = await fetch("http://localhost:5001/api/certificates", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/certificates",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -270,23 +273,26 @@ const Certificate = () => {
       );
 
       // Save to database via API
-      const response = await fetch("http://localhost:5001/api/certificates", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          candidateName: certificateData.candidateName,
-          collegeName: certificateData.collegeName,
-          internshipType: certificateData.internshipType,
-          companyName: certificateData.companyName,
-          startDate: certificateData.startDate,
-          endDate: certificateData.endDate,
-          certID: certificateData.certID,
-          issueDate: certificateData.issueDate,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/certificates",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            candidateName: certificateData.candidateName,
+            collegeName: certificateData.collegeName,
+            internshipType: certificateData.internshipType,
+            companyName: certificateData.companyName,
+            startDate: certificateData.startDate,
+            endDate: certificateData.endDate,
+            certID: certificateData.certID,
+            issueDate: certificateData.issueDate,
+          }),
+        }
+      );
 
       console.log("Server response status:", response.status);
 
@@ -315,12 +321,12 @@ const Certificate = () => {
       );
 
       setIsSaved(true);
-      
+
       // Refresh certificate history if it's currently being shown
       if (showCertificateHistory) {
         fetchCertificateHistory();
       }
-      
+
       setTimeout(() => {
         setCertificateData(initialCertificateData);
         setIsSaved(false);
@@ -337,7 +343,7 @@ const Certificate = () => {
   const fetchCertificateHistory = async () => {
     try {
       setHistoryLoading(true);
-      
+
       // Get auth token from localStorage
       const token = localStorage.getItem("token");
       if (!token) {
@@ -347,13 +353,16 @@ const Certificate = () => {
       }
 
       // Fetch all certificates from database
-      const response = await fetch("http://localhost:5001/api/certificates", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/certificates",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -372,25 +381,25 @@ const Certificate = () => {
   };
 
   const handleCertificateHistoryToggle = () => {
-  if (!showCertificateHistory) {
-    fetchCertificateHistory();
-  }
-  setShowCertificateHistory(!showCertificateHistory);
-};
+    if (!showCertificateHistory) {
+      fetchCertificateHistory();
+    }
+    setShowCertificateHistory(!showCertificateHistory);
+  };
 
-const handleCompletionHistoryToggle = () => {
-  if (!showCompletionHistory) {
-    fetchCompletionHistory();
-  }
-  setShowCompletionHistory(!showCompletionHistory);
-};
+  const handleCompletionHistoryToggle = () => {
+    if (!showCompletionHistory) {
+      fetchCompletionHistory();
+    }
+    setShowCompletionHistory(!showCompletionHistory);
+  };
 
-const handleOfferHistoryToggle = () => {
-  if (!showOfferHistory) {
-    fetchOfferHistory();
-  }
-  setShowOfferHistory(!showOfferHistory);
-};
+  const handleOfferHistoryToggle = () => {
+    if (!showOfferHistory) {
+      fetchOfferHistory();
+    }
+    setShowOfferHistory(!showOfferHistory);
+  };
 
   // Download certificate as PDF
   const downloadCertificate = async () => {
@@ -679,23 +688,26 @@ const handleOfferHistoryToggle = () => {
       }
 
       // Save to database via API - FIXED
-      const response = await fetch("http://localhost:5001/api/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          candidateName: completionData.candidateName,
-          courseType: completionData.courseType,
-          organizationName: completionData.organizationName,
-          startDate: completionData.startDate,
-          endDate: completionData.endDate,
-          certID: completionData.certID,
-          issueDate: completionData.issueDate,
-          duration: completionData.duration,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            candidateName: completionData.candidateName,
+            courseType: completionData.courseType,
+            organizationName: completionData.organizationName,
+            startDate: completionData.startDate,
+            endDate: completionData.endDate,
+            certID: completionData.certID,
+            issueDate: completionData.issueDate,
+            duration: completionData.duration,
+          }),
+        }
+      );
 
       // FIXED - Only read response once
       const result = await response.json();
@@ -724,12 +736,12 @@ const handleOfferHistoryToggle = () => {
       );
 
       setIsSaved(true);
-      
+
       // Refresh completion history if it's currently being shown
       if (showCompletionHistory) {
         fetchCompletionHistory();
       }
-      
+
       setTimeout(() => {
         setCompletionData(initialCompletionData);
         setIsSaved(false);
@@ -745,7 +757,7 @@ const handleOfferHistoryToggle = () => {
   const fetchCompletionHistory = async () => {
     try {
       setHistoryLoading(true);
-      
+
       // Get auth token from localStorage
       const token = localStorage.getItem("token");
       if (!token) {
@@ -755,13 +767,16 @@ const handleOfferHistoryToggle = () => {
       }
 
       // Fetch all completions from database
-      const response = await fetch("http://localhost:5001/api/completions", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/completions",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -1141,12 +1156,12 @@ const handleOfferHistoryToggle = () => {
       );
 
       setIsSaved(true);
-      
+
       // Refresh offer history if it's currently being shown
       if (showOfferHistory) {
         fetchOfferHistory();
       }
-      
+
       setTimeout(() => {
         setOfferData(initialOfferData);
         setIsSaved(false);
@@ -1162,7 +1177,7 @@ const handleOfferHistoryToggle = () => {
   const fetchOfferHistory = async () => {
     try {
       setHistoryLoading(true);
-      
+
       // Get auth token from localStorage
       const token = localStorage.getItem("token");
       if (!token) {
@@ -1424,20 +1439,24 @@ const handleOfferHistoryToggle = () => {
 
         if (token) {
           console.log("Attempting to save offer to database...");
-          const response = await fetch("http://localhost:5001/api/offers", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              candidateName: offerData.candidateName,
-              position: offerData.position,
-              joiningDate: offerData.joiningDate,
-              offerID: offerData.offerID,
-              issueDate: offerData.issueDate || new Date().toLocaleDateString(),
-            }),
-          });
+          const response = await fetch(
+            "http://localhost:5001/api/offers",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                candidateName: offerData.candidateName,
+                position: offerData.position,
+                joiningDate: offerData.joiningDate,
+                offerID: offerData.offerID,
+                issueDate:
+                  offerData.issueDate || new Date().toLocaleDateString(),
+              }),
+            }
+          );
 
           console.log("Download save response status:", response.status);
 
@@ -1675,13 +1694,17 @@ const handleOfferHistoryToggle = () => {
                 onClick={handleCertificateHistoryToggle}
                 className="history-button"
               >
-                {showCertificateHistory ? "Hide History" : "View Certificate History"}
+                {showCertificateHistory
+                  ? "Hide History"
+                  : "View Certificate History"}
               </button>
 
               <button
                 onClick={downloadCertificate}
                 className="download-button"
-                disabled={!certificateData.candidateName || !certificateData.certID}
+                disabled={
+                  !certificateData.candidateName || !certificateData.certID
+                }
               >
                 Download Certificate
               </button>
@@ -1693,7 +1716,9 @@ const handleOfferHistoryToggle = () => {
                 {historyLoading ? (
                   <div className="loading-message">Loading history...</div>
                 ) : certificateHistory.length === 0 ? (
-                  <div className="no-data-message">No certificates found in database.</div>
+                  <div className="no-data-message">
+                    No certificates found in database.
+                  </div>
                 ) : (
                   <div className="history-table-container">
                     <table className="history-table">
@@ -1719,7 +1744,11 @@ const handleOfferHistoryToggle = () => {
                             <td>{cert.startDate || "N/A"}</td>
                             <td>{cert.endDate || "N/A"}</td>
                             <td>{cert.issueDate || "N/A"}</td>
-                            <td>{cert.createdAt ? new Date(cert.createdAt).toLocaleDateString() : "N/A"}</td>
+                            <td>
+                              {cert.createdAt
+                                ? new Date(cert.createdAt).toLocaleDateString()
+                                : "N/A"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -1921,13 +1950,17 @@ const handleOfferHistoryToggle = () => {
                 onClick={handleCompletionHistoryToggle}
                 className="history-button"
               >
-                {showCompletionHistory ? "Hide History" : "View Completion History"}
+                {showCompletionHistory
+                  ? "Hide History"
+                  : "View Completion History"}
               </button>
 
               <button
                 onClick={downloadCompletion}
                 className="download-button"
-                disabled={!completionData.candidateName || !completionData.certID}
+                disabled={
+                  !completionData.candidateName || !completionData.certID
+                }
               >
                 {isLoading ? "Generating..." : "Download Certificate"}
               </button>
@@ -1940,7 +1973,9 @@ const handleOfferHistoryToggle = () => {
                 {historyLoading ? (
                   <div className="loading-message">Loading history...</div>
                 ) : completionHistory.length === 0 ? (
-                  <div className="no-data-message">No completion certificates found in database.</div>
+                  <div className="no-data-message">
+                    No completion certificates found in database.
+                  </div>
                 ) : (
                   <div className="history-table-container">
                     <table className="history-table">
@@ -1968,7 +2003,13 @@ const handleOfferHistoryToggle = () => {
                             <td>{completion.startDate || "N/A"}</td>
                             <td>{completion.endDate || "N/A"}</td>
                             <td>{completion.issueDate}</td>
-                            <td>{completion.createdAt ? new Date(completion.createdAt).toLocaleDateString() : "N/A"}</td>
+                            <td>
+                              {completion.createdAt
+                                ? new Date(
+                                    completion.createdAt
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2118,7 +2159,9 @@ const handleOfferHistoryToggle = () => {
                 {historyLoading ? (
                   <div className="loading-message">Loading history...</div>
                 ) : offerHistory.length === 0 ? (
-                  <div className="no-data-message">No offer letters found in database.</div>
+                  <div className="no-data-message">
+                    No offer letters found in database.
+                  </div>
                 ) : (
                   <div className="history-table-container">
                     <table className="history-table">
@@ -2140,7 +2183,11 @@ const handleOfferHistoryToggle = () => {
                             <td>{offer.joiningDate}</td>
                             <td>{offer.offerID}</td>
                             <td>{offer.issueDate}</td>
-                            <td>{offer.createdAt ? new Date(offer.createdAt).toLocaleDateString() : "N/A"}</td>
+                            <td>
+                              {offer.createdAt
+                                ? new Date(offer.createdAt).toLocaleDateString()
+                                : "N/A"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

@@ -18,15 +18,15 @@ const InboxSection = ({ emails }) => {
       </div>
       
       {emails.length > 0 ? (
-        emails.map((email) => (
-          <div key={email._id || email.id} className="email-row" onClick={() => handleEmailClick(email)}>
+        emails.map((email, index) => (
+          <div key={email._id || email.id || `inbox-email-${index}`} className="email-row" onClick={() => handleEmailClick(email)}>
             <div className="email-name">
               {/* <input
                 type="checkbox"
-                id={`email-${email._id || email.id}`}
+                id={`email-${email._id || email.id || index}`}
                 className="email-checkbox"
               /> */}
-              <label htmlFor={`email-${email._id || email.id}`} className="email-label">
+              <label htmlFor={`email-${email._id || email.id || index}`} className="email-label">
                 {email.sender || email.from}
               </label>
             </div>

@@ -16,19 +16,22 @@ const CertificateHistory = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         setError("Authentication required. Please login.");
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/certificates", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        "http://localhost:5000/api/certificates",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const result = await response.json();
 
@@ -52,19 +55,22 @@ const CertificateHistory = () => {
 
     try {
       const token = localStorage.getItem("token");
-      
+
       if (!token) {
         setError("Authentication required. Please login.");
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/certificates/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/certificates/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const result = await response.json();
 
@@ -84,7 +90,7 @@ const CertificateHistory = () => {
     try {
       if (certificate.certificateImageData) {
         // Create download link for base64 image
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = certificate.certificateImageData;
         link.download = `${certificate.studentName}-${certificate.certID}-certificate.png`;
         document.body.appendChild(link);
@@ -143,14 +149,28 @@ const CertificateHistory = () => {
                     <h4>{cert.studentName}</h4>
                     <span className="cert-id">ID: {cert.certID}</span>
                   </div>
-                  
+
                   <div className="certificate-details">
-                    <p><strong>College:</strong> {cert.collegeName}</p>
-                    <p><strong>Internship:</strong> {cert.internshipType}</p>
-                    <p><strong>Company:</strong> {cert.companyName}</p>
-                    <p><strong>Duration:</strong> {cert.startDate} to {cert.endDate}</p>
-                    <p><strong>Issue Date:</strong> {cert.issueDate}</p>
-                    <p><strong>Created:</strong> {new Date(cert.createdAt).toLocaleDateString()}</p>
+                    <p>
+                      <strong>College:</strong> {cert.collegeName}
+                    </p>
+                    <p>
+                      <strong>Internship:</strong> {cert.internshipType}
+                    </p>
+                    <p>
+                      <strong>Company:</strong> {cert.companyName}
+                    </p>
+                    <p>
+                      <strong>Duration:</strong> {cert.startDate} to{" "}
+                      {cert.endDate}
+                    </p>
+                    <p>
+                      <strong>Issue Date:</strong> {cert.issueDate}
+                    </p>
+                    <p>
+                      <strong>Created:</strong>{" "}
+                      {new Date(cert.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
 
                   <div className="certificate-actions">
@@ -180,7 +200,7 @@ const CertificateHistory = () => {
                           height: "200px",
                           objectFit: "cover",
                           borderRadius: "8px",
-                          marginTop: "10px"
+                          marginTop: "10px",
                         }}
                       />
                     </div>
