@@ -28,16 +28,13 @@ const SuperAdminLeaveManagement = () => {
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
-
-      console.log("Fetching admin/HR leave applications...");
-      const response = await axios.get(
-        "http://146.190.165.62:5001/api/leave/admin-hr",
-        {
-          headers,
-        }
-      );
-      console.log("Admin/HR leave applications response:", response.data);
-
+      
+      console.log('Fetching admin/HR leave applications...');
+      const response = await axios.get('http://146.190.165.62:5001/api/leave/admin-hr', {
+        headers
+      });
+      console.log('Admin/HR leave applications response:', response.data);
+      
       if (response.data.success) {
         setLeaveApplications(response.data.data);
         console.log("Admin/HR leave applications set:", response.data.data);
@@ -107,21 +104,14 @@ const SuperAdminLeaveManagement = () => {
         reviewComments: comments,
         reviewedBy: user._id,
       };
-
-      console.log("Request data:", requestData);
-      console.log(
-        "Making API call to:",
-        `http://146.190.165.62:5001/api/leave/status/${leaveId}`
-      );
-
-      const response = await axios.patch(
-        `http://146.190.165.62:5001/api/leave/status/${leaveId}`,
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      
+      console.log('Request data:', requestData);
+      console.log('Making API call to:', `http://146.190.165.62:5001/api/leave/status/${leaveId}`);
+      
+      const response = await axios.patch(`http://146.190.165.62:5001/api/leave/status/${leaveId}`, requestData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       );
 

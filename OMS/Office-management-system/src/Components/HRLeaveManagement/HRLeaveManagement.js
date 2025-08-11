@@ -21,12 +21,10 @@ const HRLeaveManagement = () => {
   const fetchLeaveApplications = async () => {
     setLoading(true);
     try {
-      console.log("Fetching employee leave applications...");
-      const response = await axios.get(
-        "http://146.190.165.62:5001/api/leave/employees"
-      );
-      console.log("Employee leave applications response:", response.data);
-
+      console.log('Fetching employee leave applications...');
+      const response = await axios.get('http://146.190.165.62:5001/api/leave/employees');
+      console.log('Employee leave applications response:', response.data);
+      
       if (response.data.success) {
         setLeaveApplications(response.data.data);
         console.log("Employee leave applications set:", response.data.data);
@@ -83,21 +81,14 @@ const HRLeaveManagement = () => {
         reviewComments: comments,
         reviewedBy: user._id,
       };
+      
+      console.log('Request data:', requestData);
+      console.log('Making API call to:', `http://146.190.165.62:5001/api/leave/status/${leaveId}`);
 
-      console.log("Request data:", requestData);
-      console.log(
-        "Making API call to:",
-        `http://146.190.165.62:5001/api/leave/status/${leaveId}`
-      );
-
-      const response = await axios.patch(
-        `http://146.190.165.62:5001/api/leave/status/${leaveId}`,
-        requestData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const response = await axios.patch(`http://146.190.165.62:5001/api/leave/status/${leaveId}`, requestData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       );
 

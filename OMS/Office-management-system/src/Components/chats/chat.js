@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Container,
   Row,
@@ -18,6 +19,35 @@ import { io } from "socket.io-client";
 import "./chat.css";
 import "./chat-header.css";
 import { useAuth } from "../AuthProvider/AuthContext"; // Assuming you have an auth context
+
+// Helper to format date as WhatsApp style (Today, Yesterday, or date)
+function getDateLabel(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const isToday = date.toDateString() === today.toDateString();
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  if (isToday) return "Today";
+  if (isYesterday) return "Yesterday";
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Helper to group messages by date
+function groupMessagesByDate(messages) {
+  const groups = [];
+  let lastDate = null;
+  messages.forEach((msg) => {
+    if (!msg.createdAt) return;
+    const msgDate = new Date(msg.createdAt).toDateString();
+    if (msgDate !== lastDate) {
+      groups.push({ type: 'date', date: msg.createdAt });
+      lastDate = msgDate;
+    }
+    groups.push({ type: 'message', message: msg });
+  });
+  return groups;
+}
 
 const Chat = () => {
   const { user } = useAuth();
@@ -39,45 +69,130 @@ const Chat = () => {
   const [candidates, setCandidates] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [inAppNotifications, setInAppNotifications] = useState([]);
   const typingTimeout = useRef(null);
 
-  const API_BASE_URL =
-    process.env.REACT_APP_API_URL || "http://146.190.165.62:5001";
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://146.190.165.62:5001";
 
   // Request notification permission on component mount
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    if ("Notification" in window) {
+      console.log("Current notification permission:", Notification.permission);
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((permission) => {
+          console.log("Notification permission granted:", permission);
+        });
+      }
+    } else {
+      console.log("Browser doesn't support notifications");
     }
   }, []);
 
-  // Function to show browser notification
-  const showNotification = (message) => {
-    if ("Notification" in window && Notification.permission === "granted") {
-      const senderName = message.sender?.name || "Someone";
-      const chatName =
-        message.chat?.chatName ||
-        (message.chat?.isGroupChat ? "Group Chat" : senderName);
-
-      const notification = new Notification(`New message from ${senderName}`, {
-        body: message.content,
-        icon: "/favicon.ico", // You can change this to your app icon
-        tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
-        badge: "/favicon.ico",
-      });
-
-      // Auto close notification after 5 seconds
-      setTimeout(() => {
-        notification.close();
-      }, 5000);
-
-      // Handle notification click to focus on chat
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+  // Function to show browser notification with sound
+  const showNotification = useCallback((message) => {
+    console.log("🔔 Attempting to show notification for message:", message);
+    
+    // Play notification sound first
+    try {
+      // Create a simple notification sound
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+      
+      console.log("🔊 Notification sound played");
+    } catch (error) {
+      console.log("🔇 Could not play notification sound:", error);
     }
-  };
+    
+    // Always show in-app notification as fallback
+    const inAppNotification = {
+      id: Date.now(),
+      senderName: message.sender?.name || "Someone",
+      content: message.content,
+      chatId: message.chat._id || message.chat,
+      timestamp: new Date(),
+    };
+    
+    setInAppNotifications(prev => [...prev, inAppNotification]);
+    
+    // Auto remove in-app notification after 5 seconds
+    setTimeout(() => {
+      setInAppNotifications(prev => prev.filter(notif => notif.id !== inAppNotification.id));
+    }, 5000);
+    
+    // Check if notifications are supported
+    if (!("Notification" in window)) {
+      console.log("Browser doesn't support notifications, using in-app notification only");
+      return;
+    }
+
+    // Check permission status
+    console.log("Notification permission status:", Notification.permission);
+    
+    if (Notification.permission === "granted") {
+      const senderName = message.sender?.name || "Someone";
+      const chatName = message.chat?.chatName || (
+        message.chat?.isGroupChat ? "Group Chat" : senderName
+      );
+      
+      console.log("🔔 Creating browser notification for:", senderName);
+      
+      try {
+        const notification = new Notification(`💬 New message from ${senderName}`, {
+          body: message.content.length > 100 ? message.content.substring(0, 100) + "..." : message.content,
+          icon: "/favicon.ico", // You can change this to your app icon
+          tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
+          badge: "/favicon.ico",
+          requireInteraction: false, // Auto-dismiss after timeout
+          silent: false // Allow system sound
+        });
+
+        console.log("✅ Browser notification created successfully");
+
+        // Auto close notification after 6 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 6000);
+        
+        // Handle notification click to focus on chat
+        notification.onclick = () => {
+          console.log("🖱️ Notification clicked - focusing window");
+          window.focus();
+          notification.close();
+          
+          // Try to bring the window to front
+          if (window.parent) {
+            window.parent.focus();
+          }
+        };
+      } catch (error) {
+        console.error("❌ Error creating browser notification:", error);
+      }
+    } else if (Notification.permission === "denied") {
+      console.log("🚫 Notifications are denied by user, using in-app notification only");
+    } else if (Notification.permission === "default") {
+      console.log("❓ Requesting notification permission...");
+      Notification.requestPermission().then((permission) => {
+        console.log("Permission result:", permission);
+        if (permission === "granted") {
+          console.log("✅ Permission granted, retrying notification");
+          // Retry showing notification
+          showNotification(message);
+        }
+      });
+    }
+  }, [setInAppNotifications]); // Dependencies for useCallback
 
   // Debug user authentication
   useEffect(() => {
@@ -302,78 +417,101 @@ const Chat = () => {
   }, [API_BASE_URL]);
 
   // Poll for chats, users, candidates every 2 seconds
-  useEffect(() => {
-    const fetchData = async () => {
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+      // Fetch users
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const headers = {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        };
-        // Fetch users
-        try {
-          const usersRes = await axios.get(`${API_BASE_URL}/users`, {
-            headers,
-          });
-          if (usersRes.data && Array.isArray(usersRes.data)) {
-            setUsers(usersRes.data.filter((u) => u.role !== "Super_Admin"));
-          } else {
-            setUsers([]);
-          }
-        } catch {
+        const usersRes = await axios.get(`${API_BASE_URL}/users`, {
+          headers,
+        });
+        if (usersRes.data && Array.isArray(usersRes.data)) {
+          setUsers(usersRes.data.filter((u) => u.role !== "Super_Admin"));
+        } else {
           setUsers([]);
         }
-        // Fetch candidates
-        try {
-          const candidatesRes = await axios.get(
-            `${API_BASE_URL}/api/candidates`,
-            { headers }
-          );
-          if (
-            candidatesRes.data?.data &&
-            Array.isArray(candidatesRes.data.data)
-          ) {
-            setCandidates(candidatesRes.data.data);
-          } else if (Array.isArray(candidatesRes.data)) {
-            setCandidates(candidatesRes.data);
-          } else {
-            setCandidates([]);
-          }
-        } catch {
+      } catch {
+        setUsers([]);
+      }
+      // Fetch candidates
+      try {
+        const candidatesRes = await axios.get(
+          `${API_BASE_URL}/api/candidates`,
+          { headers }
+        );
+        if (
+          candidatesRes.data?.data &&
+          Array.isArray(candidatesRes.data.data)
+        ) {
+          setCandidates(candidatesRes.data.data);
+        } else if (Array.isArray(candidatesRes.data)) {
+          setCandidates(candidatesRes.data);
+        } else {
           setCandidates([]);
         }
-        // Fetch chats
-        try {
-          const axiosInstance = axios.create({
-            baseURL: API_BASE_URL,
-            withCredentials: true,
-            timeout: 15000,
-            headers,
-          });
-          const chatsRes = await axiosInstance.get("/api/chat");
-          if (Array.isArray(chatsRes.data)) {
-            setChats(chatsRes.data);
-          } else if (
-            chatsRes.data?.data?.chats &&
-            Array.isArray(chatsRes.data.data.chats)
-          ) {
-            setChats(chatsRes.data.data.chats);
-          } else if (
-            chatsRes.data?.chats &&
-            Array.isArray(chatsRes.data.chats)
-          ) {
-            setChats(chatsRes.data.chats);
-          } else {
-            setChats([]);
-          }
-        } catch {
+      } catch {
+        setCandidates([]);
+      }
+      // Fetch chats
+      try {
+        const axiosInstance = axios.create({
+          baseURL: API_BASE_URL,
+          withCredentials: true,
+          timeout: 15000,
+          headers,
+        });
+        const chatsRes = await axiosInstance.get("/api/chat");
+        if (Array.isArray(chatsRes.data)) {
+          const chatsData = chatsRes.data;
+          setChats(chatsData);
+          // Dispatch event for sidebar notification
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: chatsData }
+          }));
+        } else if (
+          chatsRes.data?.data?.chats &&
+          Array.isArray(chatsRes.data.data.chats)
+        ) {
+          const chatsData = chatsRes.data.data.chats;
+          setChats(chatsData);
+          // Dispatch event for sidebar notification
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: chatsData }
+          }));
+        } else if (
+          chatsRes.data?.chats &&
+          Array.isArray(chatsRes.data.chats)
+        ) {
+          const chatsData = chatsRes.data.chats;
+          setChats(chatsData);
+          // Dispatch event for sidebar notification
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: chatsData }
+          }));
+        } else {
           setChats([]);
+          // Dispatch event for sidebar notification with empty array
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: [] }
+          }));
         }
-      } catch {}
-    };
-    fetchData();
-  }, [API_BASE_URL]);
+      } catch {
+        setChats([]);
+        // Dispatch event for sidebar notification with empty array
+        window.dispatchEvent(new CustomEvent("chat-unread-status", {
+          detail: { chats: [] }
+        }));
+      }
+    } catch {}
+  };
+  fetchData();
+}, [API_BASE_URL]);
 
   // Fetch messages for selected chat
   useEffect(() => {
@@ -409,58 +547,144 @@ const Chat = () => {
     fetchMessages();
   }, [selectedChat, API_BASE_URL]);
 
-  // Setup socket listeners for real-time updates
-  useEffect(() => {
-    if (!socket) return;
-
-    // Listen for new messages
-    const handleMessageReceived = (newMessageReceived) => {
-      console.log("New message received via socket:", newMessageReceived);
-
-      // Determine the chat ID from the message
-      const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
-
-      // Check if this message is for the currently selected chat
-      const isCurrentChat = selectedChat && selectedChat._id === chatId;
-
-      // Update the chat list with latest message and notification status
-      setChats((prev) =>
-        prev.map((chat) => {
-          if (chat._id === chatId) {
-            // If it's not the current chat and message is not from current user, increment unread count
-            const shouldIncrementUnread =
-              !isCurrentChat && newMessageReceived.sender._id !== user._id;
-
-            return {
-              ...chat,
-              latestMessage: newMessageReceived,
-              unreadCount: shouldIncrementUnread
-                ? (chat.unreadCount || 0) + 1
-                : chat.unreadCount || 0,
-              notification: shouldIncrementUnread ? true : chat.notification,
-            };
-          }
-          return chat;
-        })
-      );
-
-      // Only add message if it's for the current selected chat
-      if (isCurrentChat) {
-        setMessages((prev) => {
-          // Check if message already exists to avoid duplicates
-          const messageExists = prev.some(
-            (msg) => msg._id === newMessageReceived._id
-          );
-          if (messageExists) {
-            return prev;
-          }
-          return [...prev, newMessageReceived];
-        });
-      } else if (newMessageReceived.sender._id !== user._id) {
-        // Show browser notification if not on current chat and message is not from current user
-        showNotification(newMessageReceived);
+// Define handleMessageReceived with useCallback to prevent unnecessary re-renders
+const handleMessageReceived = useCallback((newMessageReceived) => {
+  console.log("📨 Received message from socket:", newMessageReceived);
+  console.log("📨 Message details:", {
+    messageId: newMessageReceived._id,
+    senderId: newMessageReceived.sender?._id,
+    currentUserId: user._id,
+    chatId: newMessageReceived.chat?._id || newMessageReceived.chat,
+    selectedChatId: selectedChat?._id,
+    content: newMessageReceived.content
+  });
+  
+  // Determine the chat ID from the message
+  const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
+  
+  // Check if this message is for the currently selected chat
+  const isCurrentChat = selectedChat && selectedChat._id === chatId;
+  
+  // Check if this message is from the current user
+  const isFromCurrentUser = newMessageReceived.sender._id === user._id;
+  
+  console.log("📨 Processing flags:", {
+    isCurrentChat,
+    isFromCurrentUser,
+    shouldShowInCurrentChat: isCurrentChat && !isFromCurrentUser
+  });
+  
+  // IMPORTANT: Skip processing our own messages for the current chat to avoid duplicates
+  // We already show our own messages immediately when sending via the temp message system
+  if (isFromCurrentUser && isCurrentChat) {
+    console.log("🚫 Skipping own message for current chat to avoid duplicate");
+    return;
+  }
+  
+  // Update the chat list with latest message and notification status
+  setChats((prev) => {
+    const updated = prev.map((chat) => {
+      if (chat._id === chatId) {
+        // Only increment unread count for messages from other users and not in current chat
+        const shouldIncrementUnread = !isFromCurrentUser && !isCurrentChat;
+        
+        return {
+          ...chat,
+          latestMessage: newMessageReceived,
+          unreadCount: shouldIncrementUnread ? (chat.unreadCount || 0) + 1 : (chat.unreadCount || 0),
+          notification: shouldIncrementUnread ? true : chat.notification
+        };
       }
-    };
+      return chat;
+    });
+    
+    // Dispatch event for sidebar notification
+    window.dispatchEvent(new CustomEvent("chat-unread-status", {
+      detail: { chats: updated }
+    }));
+    
+    return updated;
+  });
+  
+  // Add message to current chat if it's for the selected chat AND from another user
+  if (isCurrentChat && !isFromCurrentUser) {
+    console.log("📬 Adding message from other user to current chat");
+    setMessages((prev) => {
+      // Check if message already exists to avoid duplicates
+      const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
+      if (messageExists) {
+        console.log("⚠️ Message already exists, skipping duplicate");
+        return prev;
+      }
+      console.log("✅ Adding new message to current chat - REAL TIME UPDATE");
+      const newMessages = [...prev, newMessageReceived];
+      
+      // Force a re-render by creating a new array reference
+      console.log("🔄 Total messages after adding:", newMessages.length);
+      return newMessages;
+    });
+    
+    // Also force scroll to bottom after a small delay to ensure DOM update
+    setTimeout(() => {
+      const messagesContainer = document.querySelector('.messages-container');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        console.log("📜 Auto-scrolled to bottom for new message");
+      }
+    }, 100);
+  } 
+  
+  // Show notification for ALL messages from other users (only once)
+  if (!isFromCurrentUser) {
+    console.log("🔔 Message from another user - showing notification");
+    console.log("🔔 Notification details:", {
+      isCurrentChat,
+      senderName: newMessageReceived.sender.name,
+      chatName: newMessageReceived.chat?.chatName || "Direct Message",
+      currentChatName: selectedChat?.chatName || "Direct Message"
+    });
+    showNotification(newMessageReceived);
+  }
+}, [selectedChat, user._id, setChats, setMessages, showNotification]);
+
+// Track joined rooms to prevent duplicate joins
+const [joinedRooms, setJoinedRooms] = useState(new Set());
+
+// Join ALL user's chat rooms for real-time notifications
+const joinAllChatRooms = useCallback(() => {
+  if (socket && socket.connected && chats.length > 0) {
+    const roomsToJoin = chats.filter(chat => !joinedRooms.has(chat._id));
+    
+    if (roomsToJoin.length > 0) {
+      console.log("🏠 Joining new chat rooms for real-time notifications:", roomsToJoin.length, "new rooms out of", chats.length, "total");
+      
+      roomsToJoin.forEach(chat => {
+        socket.emit("join chat", chat._id);
+        console.log("🔗 Joined chat room:", chat._id, chat.chatName || "Direct Message");
+      });
+      
+      // Update joined rooms set
+      setJoinedRooms(prev => {
+        const newSet = new Set(prev);
+        roomsToJoin.forEach(chat => newSet.add(chat._id));
+        return newSet;
+      });
+    } else {
+      console.log("✅ All chat rooms already joined (", chats.length, "rooms)");
+    }
+  } else {
+    console.log("❌ Cannot join chat rooms:", {
+      socketConnected: socket?.connected,
+      chatsCount: chats.length
+    });
+  }
+}, [socket, chats, joinedRooms]);
+
+// Setup socket listeners for real-time updates
+useEffect(() => {
+  if (!socket) return;
+
+  // Listen for new messages
 
     // Listen for typing indicators
     const handleTyping = (data) => {
@@ -495,35 +719,139 @@ const Chat = () => {
       }
     };
 
-    // Join chat room when chat is selected
-    const handleJoinChat = () => {
-      if (selectedChat && socket.connected) {
-        console.log("Joining chat room:", selectedChat._id);
-        socket.emit("join chat", selectedChat._id);
-      }
-    };
+  // Join chat room when chat is selected
+  const handleJoinChat = () => {
+    if (selectedChat && socket.connected) {
+      console.log("🏠 Joining chat room:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+      
+      // Add listener for join confirmation
+      socket.once("joined chat", (chatId) => {
+        console.log("✅ Successfully joined chat room:", chatId);
+      });
+    } else {
+      console.log("❌ Cannot join chat room:", {
+        hasSelectedChat: !!selectedChat,
+        socketConnected: socket?.connected,
+        selectedChatId: selectedChat?._id
+      });
+    }
+  };
 
-    // Add event listeners
-    socket.on("message received", handleMessageReceived);
-    socket.on("typing", handleTyping);
-    socket.on("stop typing", handleStopTyping);
+  // Add event listeners with better error handling
+  const messageHandler = (data) => {
+    console.log("🎯 Direct message handler called with:", data);
+    handleMessageReceived(data);
+  };
+  
+  socket.on("message received", messageHandler);
+  socket.on("typing", handleTyping);
+  socket.on("stop typing", handleStopTyping);
+  
+  // Also listen for alternative event names (just in case)
+  socket.on("new message", messageHandler);
+  socket.on("messageReceived", messageHandler);
+  
+  // Join the chat room for real-time updates
+  handleJoinChat();
+  
+  // Join all chat rooms for real-time notifications (only if not already joined)
+  if (chats.length > 0) {
+    joinAllChatRooms();
+  }
 
-    // Join the chat room for real-time updates
-    handleJoinChat();
+  // Add debug listeners
+  socket.on("connect", () => {
+    console.log("✅ Socket connected in message handler:", socket.id);
+    // Clear joined rooms on new connection
+    setJoinedRooms(new Set());
+    
+    // Re-join chat room on reconnection
+    if (selectedChat) {
+      console.log("🔄 Re-joining current chat room after connection:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+    }
+    // Join all chat rooms for real-time notifications (will only join new ones)
+    joinAllChatRooms();
+  });
+  
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected in message handler");
+    // Clear joined rooms tracking on disconnect
+    setJoinedRooms(new Set());
+  });
 
-    // Cleanup function
-    return () => {
-      socket.off("message received", handleMessageReceived);
-      socket.off("typing", handleTyping);
-      socket.off("stop typing", handleStopTyping);
+  // Cleanup function
+  return () => {
+    socket.off("message received", messageHandler);
+    socket.off("new message", messageHandler);
+    socket.off("messageReceived", messageHandler);
+    socket.off("typing", handleTyping);
+    socket.off("stop typing", handleStopTyping);
+    
+    // Leave chat room when cleanup
+    if (selectedChat && socket.connected) {
+      console.log("🚪 Leaving chat room:", selectedChat._id);
+      socket.emit("leave chat", selectedChat._id);
+    }
+  };
+}, [socket, selectedChat, user._id, handleMessageReceived, chats, joinAllChatRooms, setJoinedRooms]);
 
-      // Leave chat room when cleanup
-      if (selectedChat && socket.connected) {
-        console.log("Leaving chat room:", selectedChat._id);
-        socket.emit("leave chat", selectedChat._id);
-      }
-    };
-  }, [socket, selectedChat, user._id]);
+// Join all chat rooms when chats are loaded or updated
+useEffect(() => {
+  if (socket && socket.connected && chats.length > 0) {
+    // Only join if we have new chats that aren't already joined
+    const newChats = chats.filter(chat => !joinedRooms.has(chat._id));
+    if (newChats.length > 0) {
+      console.log("🔄 New chats detected, joining", newChats.length, "new chat rooms");
+      joinAllChatRooms();
+    }
+  }
+}, [chats, socket, joinAllChatRooms, joinedRooms]);
+
+// Add a test function to manually trigger notifications (for debugging)
+const testNotification = () => {
+  console.log("🧪 Testing notification system...");
+  const testMessage = {
+    _id: "test-" + Date.now(),
+    sender: { _id: "test-user", name: "Test User" },
+    content: "This is a test notification message!",
+    chat: { _id: "test-chat" },
+    createdAt: new Date()
+  };
+  showNotification(testMessage);
+};
+
+// Expose test function globally for debugging
+window.testNotification = testNotification;
+
+// Add a test function to verify real-time functionality
+const testRealtimeConnection = () => {
+  if (socket && socket.connected) {
+    console.log("🧪 Testing real-time connection...");
+    console.log("🧪 Socket status:", {
+      connected: socket.connected,
+      id: socket.id,
+      rooms: Array.from(socket.rooms || []),
+      selectedChat: selectedChat?._id,
+      userId: user._id
+    });
+    
+    // Send a ping to test connection
+    socket.emit("ping", { test: true, timestamp: new Date() });
+    
+    // Check if properly joined chat room
+    if (selectedChat) {
+      console.log("🧪 Re-joining chat room to ensure connection:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+    }
+  } else {
+    console.error("🧪 Socket not connected for real-time test");
+  }
+};
+
+// Expose test function globally for debugging
+window.testRealtimeConnection = testRealtimeConnection;
 
   // Debug socket connection status
   useEffect(() => {
@@ -659,22 +987,31 @@ const Chat = () => {
         )
       );
 
-      // Emit to socket for other users to receive the message
-      if (socket && socket.connected) {
-        console.log("Emitting new message via socket:", messageData._id);
-        // Emit with proper structure
-        socket.emit("new message", {
-          ...messageData,
-          chat: selectedChat._id, // Ensure chat ID is properly set
-        });
-      } else {
-        console.warn(
-          "Socket disconnected, message sent but real-time updates unavailable"
-        );
-      }
-    } catch (err) {
-      networkError = true;
-      console.error("Error sending message:", err);
+    // Emit to socket for other users to receive the message
+    if (socket && socket.connected) {
+      console.log("Emitting new message via socket:", messageData._id);
+      // Emit with proper structure including full message data
+      socket.emit("new message", {
+        ...messageData,
+        chat: {
+          _id: selectedChat._id,
+          ...selectedChat // Include full chat data for better handling
+        }
+      });
+      console.log("✅ Message emitted successfully to socket");
+    } else {
+      console.warn(
+        "⚠️ Socket disconnected, message sent but real-time updates unavailable"
+      );
+      console.log("Socket status:", {
+        exists: !!socket,
+        connected: socket?.connected,
+        id: socket?.id
+      });
+    }
+  } catch (err) {
+    networkError = true;
+    console.error("Error sending message:", err);
 
       const errorMsg =
         err.response?.data?.message || err.message || "Failed to send message";
@@ -972,16 +1309,23 @@ const Chat = () => {
     });
   };
 
-  // Function to clear notifications for a specific chat
-  const clearChatNotifications = (chatId) => {
-    setChats((prev) =>
-      prev.map((chat) =>
-        chat._id === chatId
-          ? { ...chat, unreadCount: 0, notification: false }
-          : chat
-      )
+// Function to clear notifications for a specific chat
+const clearChatNotifications = (chatId) => {
+  setChats((prev) => {
+    const updated = prev.map((chat) =>
+      chat._id === chatId
+        ? { ...chat, unreadCount: 0, notification: false }
+        : chat
     );
-  };
+    
+    // Dispatch event for sidebar notification
+    window.dispatchEvent(new CustomEvent("chat-unread-status", {
+      detail: { chats: updated }
+    }));
+    
+    return updated;
+  });
+};
 
   // Enhanced chat selection handler
   const handleChatSelect = (chat) => {
@@ -1180,53 +1524,75 @@ const Chat = () => {
     );
   }
 
-  return (
-    <Container fluid className="chat-container">
-      <Row className="h-100 g-0">
-        {/* Left sidebar - Chats list */}
-        <Col xs={12} md={4} className="p-0 border-end sidebar">
-          {/* Mobile Office Chat Header */}
-          <div className="office-chat-header">Office Chat</div>
-
-          {/* Mobile Buttons Container */}
-          <div className="mobile-buttons-container">
-            <div className="sidebar-buttons">
-              <button
-                className="sidebar-button"
-                onClick={() => setShowAddFriendModal(true)}
-              >
-                Add Friend
-              </button>
-              <button
-                className="sidebar-button"
-                onClick={() => setShowNewGroupModal(true)}
-              >
-                New Group
-              </button>
-            </div>
+return (
+  <Container fluid className="chat-container">
+    {/* In-App Notifications */}
+    <div className="in-app-notifications">
+      {inAppNotifications.map((notification) => (
+        <div key={notification.id} className="in-app-notification">
+          <div className="notification-header">
+            <strong>New message from {notification.senderName}</strong>
+            <button 
+              className="notification-close" 
+              onClick={() => setInAppNotifications(prev => prev.filter(n => n.id !== notification.id))}
+            >
+              ×
+            </button>
           </div>
-
-          {/* Desktop Header */}
-          <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Office Chat</h5>
-            <div className="btn-cont">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowAddFriendModal(true)}
-                className="me-2"
-              >
-                Add Friend
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowNewGroupModal(true)}
-              >
-                New Group
-              </Button>
-            </div>
+          <div className="notification-body">
+            {notification.content}
           </div>
+        </div>
+      ))}
+    </div>
+
+    <Row className="h-100 g-0">
+      {/* Left sidebar - Chats list */}
+      <Col xs={12} md={4} className="p-0 border-end sidebar">
+        {/* Mobile Office Chat Header */}
+        <div className="office-chat-header">
+          Office Chat
+        </div>
+        
+        {/* Mobile Buttons Container */}
+        <div className="mobile-buttons-container">
+          <div className="sidebar-buttons">
+            <button 
+              className="sidebar-button"
+              onClick={() => setShowAddFriendModal(true)}
+            >
+              Add Friend
+            </button>
+            <button 
+              className="sidebar-button"
+              onClick={() => setShowNewGroupModal(true)}
+            >
+              New Group
+            </button>
+          </div>
+        </div>
+        
+        {/* Desktop Header */}
+        <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Office Chat</h5>
+          <div className="btn-cont">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowAddFriendModal(true)}
+              className="me-2"
+            >
+              Add Friend
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowNewGroupModal(true)}
+            >
+              New Group
+            </Button>
+          </div>
+        </div>
 
           <Tab.Container
             activeKey={activeTab}
@@ -1242,110 +1608,104 @@ const Chat = () => {
               </Nav.Item>
             </Nav>
 
-            <Tab.Content className="tab-content p-2">
-              <Tab.Pane eventKey="personal">
-                <Form.Control
-                  type="text"
-                  placeholder="Search chats..."
-                  className="mb-3"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <ListGroup variant="flush">
-                  {chats
-                    .filter((chat) => !chat.isGroupChat)
-                    .filter(
-                      (chat) =>
-                        chat.chatName
-                          ?.toLowerCase()
-                          .includes(searchTerm.toLowerCase()) ||
-                        chat.participants?.some((p) =>
-                          p.name
-                            ?.toLowerCase()
-                            .includes(searchTerm.toLowerCase())
-                        )
-                    )
-                    .map((chat) => (
-                      <ListGroup.Item
-                        key={chat._id}
-                        action
-                        active={selectedChat?._id === chat._id}
-                        onClick={() => handleChatSelect(chat)}
-                        className="d-flex align-items-center"
+          <Tab.Content className="tab-content p-2">
+            <Tab.Pane eventKey="personal">
+              <Form.Control
+                type="text"
+                placeholder="Search chats..."
+                className="mb-3"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <ListGroup variant="flush">
+                {chats
+                  .filter((chat) => !chat.isGroupChat)
+                  .filter(
+                    (chat) =>
+                      chat.chatName
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      chat.participants?.some((p) =>
+                        p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                  )
+                  .map((chat) => (
+                    <ListGroup.Item
+                      key={chat._id}
+                      action
+                      active={selectedChat?._id === chat._id}
+                      onClick={() => handleChatSelect(chat)}
+                      className="d-flex align-items-center"
+                    >
+                      <div
+                        className="avatar me-3"
+                        style={{ position: "relative" }}
                       >
-                        <div
-                          className="avatar me-3"
-                          style={{ position: "relative" }}
-                        >
-                          {getAvatarText(
-                            chat.participants &&
-                              Array.isArray(chat.participants)
+                        {getAvatarText(
+                          chat.participants && Array.isArray(chat.participants)
+                            ? chat.participants.find(
+                                (p) =>
+                                  p &&
+                                  p._id &&
+                                  user &&
+                                  user._id &&
+                                  p._id !== user._id
+                              )?.name || "?"
+                            : "?"
+                        )}
+                        {(chat.unreadCount > 0 || chat.notification) && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "-4px",
+                              right: "-4px",
+                              background: "#dc3545",
+                              color: "white",
+                              borderRadius: "50%",
+                              fontSize: "0.7rem",
+                              minWidth: chat.unreadCount > 0 ? "18px" : "10px",
+                              height: chat.unreadCount > 0 ? "18px" : "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: chat.unreadCount > 0 ? "0 4px" : 0,
+                              zIndex: 2,
+                            }}
+                          >
+                            {chat.unreadCount > 0
+                              ? chat.unreadCount > 9
+                                ? "9+"
+                                : chat.unreadCount
+                              : ""}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-grow-1">
+                        <div className="d-flex justify-content-between">
+                          <strong>
+                            {chat.participants &&
+                            Array.isArray(chat.participants) &&
+                            user &&
+                            user._id
                               ? chat.participants.find(
-                                  (p) =>
-                                    p &&
-                                    p._id &&
-                                    user &&
-                                    user._id &&
-                                    p._id !== user._id
-                                )?.name || "?"
-                              : "?"
-                          )}
-                          {(chat.unreadCount > 0 || chat.notification) && (
-                            <span
-                              style={{
-                                position: "absolute",
-                                top: "-4px",
-                                right: "-4px",
-                                background: "#dc3545",
-                                color: "white",
-                                borderRadius: "50%",
-                                fontSize: "0.7rem",
-                                minWidth:
-                                  chat.unreadCount > 0 ? "18px" : "10px",
-                                height: chat.unreadCount > 0 ? "18px" : "10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: chat.unreadCount > 0 ? "0 4px" : 0,
-                                zIndex: 2,
-                              }}
-                            >
-                              {chat.unreadCount > 0
-                                ? chat.unreadCount > 9
-                                  ? "9+"
-                                  : chat.unreadCount
-                                : ""}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between">
-                            <strong>
-                              {chat.participants &&
-                              Array.isArray(chat.participants) &&
-                              user &&
-                              user._id
-                                ? chat.participants.find(
-                                    (p) => p && p._id && p._id !== user._id
-                                  )?.name || "Chat"
-                                : "Chat"}
-                            </strong>
-                            <small className="text-muted">
-                              {chat.latestMessage?.createdAt
-                                ? new Date(
-                                    chat.latestMessage.createdAt
-                                  ).toLocaleTimeString()
-                                : ""}
-                            </small>
-                          </div>
+                                  (p) => p && p._id && p._id !== user._id
+                                )?.name || "Chat"
+                              : "Chat"}
+                          </strong>
                           <small className="text-muted">
-                            {chat.latestMessage?.content || "No messages yet"}
+                            {chat.latestMessage && chat.latestMessage.createdAt
+                              ? new Date(chat.latestMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : "--:--"}
                           </small>
                         </div>
-                      </ListGroup.Item>
-                    ))}
-                </ListGroup>
-              </Tab.Pane>
+                        <small className="text-muted">
+                          {chat.latestMessage?.content || "No messages yet"}
+                        </small>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+              </ListGroup>
+            </Tab.Pane>
 
               <Tab.Pane eventKey="groups">
                 <ListGroup variant="flush">
@@ -1514,106 +1874,124 @@ const Chat = () => {
                 </div>
               </div>
 
-              <div className="messages-container">
-                {messages.length === 0 ? (
-                  <div className="d-flex justify-content-center align-items-center h-100">
-                    <p className="text-muted">
-                      No messages yet. Start the conversation!
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((message) => {
-                    // Add safety checks to prevent accessing properties of undefined objects
-                    if (!message || !message._id) {
-                      return null; // Skip rendering invalid messages
-                    }
-
-                    const isSender =
-                      message.sender &&
-                      message.sender._id &&
-                      user &&
-                      user._id &&
-                      message.sender._id === user._id;
-
-                    const isTemp = message.isTemp;
-                    const sendFailed = message.sendFailed;
-                    const isSending = message.sending && !sendFailed;
-                    const slowNetwork = message.slowNetwork;
-
+            <div className="messages-container">
+              {messages.length === 0 ? (
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  <p className="text-muted">
+                    No messages yet. Start the conversation!
+                  </p>
+                </div>
+              ) : (
+                groupMessagesByDate(messages).map((item, idx) => {
+                  if (item.type === 'date') {
                     return (
                       <div
-                        key={message._id}
-                        className={`message mb-3 ${
-                          isSender ? "sent" : "received"
-                        } ${isTemp ? "temp" : ""} ${
-                          sendFailed ? "send-failed" : ""
-                        }`}
+                        key={"date-" + item.date + idx}
+                        className="chat-date-separator d-flex justify-content-center align-items-center my-3"
+                        style={{ position: 'relative', zIndex: 1 }}
                       >
-                        <div className="message-content">
-                          {/* Show sender name in group chats for received messages */}
-                          {selectedChat.isGroupChat &&
-                            !isSender &&
-                            message.sender && (
-                              <div className="message-sender-name text-muted small mb-1">
-                                {message.sender.name || "Unknown User"}
-                              </div>
-                            )}
-                          <div className="message-text">
-                            {renderMessageWithLinks(message.content || "")}
-                          </div>
-                          <div className="message-time">
-                            {message.createdAt
-                              ? new Date(message.createdAt).toLocaleTimeString(
-                                  [],
-                                  { hour: "2-digit", minute: "2-digit" }
-                                )
-                              : ""}
-                          </div>
-                          {isSender && (
-                            <div
-                              className={`message-status ${
-                                isSending ? "sending" : ""
-                              } ${sendFailed ? "error" : ""} ${
-                                !isTemp && !sendFailed ? "delivered" : ""
-                              }`}
-                            >
-                              {sendFailed && (
-                                <span>
-                                  Failed to send
-                                  <Button
-                                    variant="link"
-                                    size="sm"
-                                    className="p-0 ms-1"
-                                    onClick={() => {
-                                      // Set the message back to input field to retry
-                                      setNewMessage(message.content);
-                                      // Remove the failed message
-                                      setMessages((prev) =>
-                                        prev.filter(
-                                          (m) => m._id !== message._id
-                                        )
-                                      );
-                                    }}
-                                  >
-                                    Retry
-                                  </Button>
-                                </span>
-                              )}
-                              {isSending && (
-                                <span>{slowNetwork ? "Sending..." : "●"}</span>
-                              )}
-                              {!isTemp && !sendFailed && !message.wasTemp && (
-                                <span>✓</span>
-                              )}
-                              {message.wasTemp && <span>✓✓</span>}
-                            </div>
-                          )}
-                        </div>
+                        <span
+                          style={{
+                            background: '#e0e7ff',
+                            color: '#374151',
+                            fontWeight: 600,
+                            fontSize: '0.95rem',
+                            borderRadius: '16px',
+                            padding: '4px 18px',
+                            boxShadow: '0 2px 8px rgba(60,72,120,0.07)',
+                            letterSpacing: '0.01em',
+                            border: '1px solid #c7d2fe',
+                          }}
+                        >
+                          {getDateLabel(item.date)}
+                        </span>
                       </div>
                     );
-                  })
-                )}
-              </div>
+                  }
+                  const message = item.message;
+                  if (!message || !message._id) return null;
+                  const isSender =
+                    message.sender &&
+                    message.sender._id &&
+                    user &&
+                    user._id &&
+                    message.sender._id === user._id;
+                  const isTemp = message.isTemp;
+                  const sendFailed = message.sendFailed;
+                  const isSending = message.sending && !sendFailed;
+                  const slowNetwork = message.slowNetwork;
+                  return (
+                    <div
+                      key={message._id}
+                      className={`message mb-3 ${
+                        isSender ? "sent" : "received"
+                      } ${isTemp ? "temp" : ""} ${
+                        sendFailed ? "send-failed" : ""
+                      }`}
+                    >
+                      <div className="message-content">
+                        {/* Show sender name in group chats for received messages */}
+                        {selectedChat.isGroupChat &&
+                          !isSender &&
+                          message.sender && (
+                            <div className="message-sender-name text-muted small mb-1">
+                              {message.sender.name || "Unknown User"}
+                            </div>
+                          )}
+                        <div className="message-text">
+                          {renderMessageWithLinks(message.content || "")}
+                        </div>
+                        <div className="message-time">
+                          {message.createdAt
+                            ? new Date(message.createdAt).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" }
+                              )
+                            : ""}
+                        </div>
+                        {isSender && (
+                          <div
+                            className={`message-status ${
+                              isSending ? "sending" : ""
+                            } ${sendFailed ? "error" : ""} ${
+                              !isTemp && !sendFailed ? "delivered" : ""
+                            }`}
+                          >
+                            {sendFailed && (
+                              <span>
+                                Failed to send
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="p-0 ms-1"
+                                  onClick={() => {
+                                    // Set the message back to input field to retry
+                                    setNewMessage(message.content);
+                                    // Remove the failed message
+                                    setMessages((prev) =>
+                                      prev.filter((m) => m._id !== message._id)
+                                    );
+                                  }}
+                                >
+                                  Retry
+                                </Button>
+                              </span>
+                            )}
+                            {isSending && (
+                              <span>{slowNetwork ? "Sending..." : "●"}</span>
+                            )}
+                            {!isTemp && !sendFailed && !message.wasTemp && (
+                              <span>✓</span>
+                            )}
+                            {message.wasTemp && <span>✓✓</span>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
 
               {isTyping && (
                 <div className="typing-indicator px-3 py-2">

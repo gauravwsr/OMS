@@ -173,6 +173,7 @@ const Calender = () => {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
         const response = await fetch("http://146.190.165.62:5001/users/me", {
+
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

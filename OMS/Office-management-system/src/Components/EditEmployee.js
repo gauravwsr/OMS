@@ -192,13 +192,10 @@ const EditEmployee = () => {
 
     try {
       // Register face with the face recognition server
-      const response = await axios.post(
-        "http://146.190.165.62:5002/register_face",
-        {
-          name: formData.fullName,
-          images: capturedImages,
-        }
-      );
+      const response = await axios.post("http://146.190.165.62:5002/register_face", {
+        name: formData.fullName,
+        images: capturedImages,
+      });
       console.log("Face registration response:", response.data);
 
       // Store face encodings in backend database

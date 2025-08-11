@@ -102,15 +102,12 @@ export default function ProjectList() {
       }
 
       // Fetch projects from local database
-      const response = await fetch(
-        "http://146.190.165.62:5001/api/client-projects",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("http://146.190.165.62:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

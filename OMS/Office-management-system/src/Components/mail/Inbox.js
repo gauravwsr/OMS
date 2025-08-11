@@ -32,14 +32,11 @@ const Inbox = () => {
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
     try {
-      const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/check-config",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      const response = await fetch('http://146.190.165.62:5001/api/emails/check-config', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       );
 
@@ -118,14 +115,14 @@ const Inbox = () => {
     setLoading(true);
     setError(null);
 
-    const token = localStorage.getItem("token");
-    let url = "";
-    if (activeTab === "inbox") {
-      url = "http://146.190.165.62:5001/api/emails/inbox";
-    } else if (activeTab === "sent") {
-      url = "http://146.190.165.62:5001/api/emails/sent";
-    } else if (activeTab === "drafts") {
-      url = "http://146.190.165.62:5001/api/emails/drafts";
+    const token = localStorage.getItem('token');
+    let url = '';
+    if (activeTab === 'inbox') {
+      url = 'http://146.190.165.62:5001/api/emails/inbox';
+    } else if (activeTab === 'sent') {
+      url = 'http://146.190.165.62:5001/api/emails/sent';
+    } else if (activeTab === 'drafts') {
+      url = 'http://146.190.165.62:5001/api/emails/drafts';
     }
 
     try {

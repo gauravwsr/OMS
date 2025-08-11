@@ -108,15 +108,12 @@ const SuperAdminProjectView = () => {
       }
 
       // Fetch fresh data from API
-      const response = await fetch(
-        "http://146.190.165.62:5001/api/client-projects",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("http://146.190.165.62:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -400,30 +397,24 @@ const SuperAdminProjectView = () => {
 
         // First, try to import/sync remote projects to local database
         try {
-          await fetch(
-            "http://146.190.165.62:5001/api/client-projects/import-remote",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
+          await fetch("http://146.190.165.62:5001/api/client-projects/import-remote", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
         } catch (importError) {
           console.warn("Failed to import remote projects:", importError);
         }
 
         // Fetch projects from local database
-        const response = await fetch(
-          "http://146.190.165.62:5001/api/client-projects",
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch("http://146.190.165.62:5001/api/client-projects", {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

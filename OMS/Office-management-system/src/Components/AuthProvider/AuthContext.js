@@ -150,6 +150,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.put(
         "http://146.190.165.62:5001/users/updateRole",
+        "http://146.190.165.62:5001/users/updateRole",
         {
           userId: user.email,
           newRole,
@@ -170,6 +171,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(
         "http://146.190.165.62:5001/users/check-super-admin"
+        // "http://146.190.165.62:5001/users/check-super-admin"
       );
       return response.data.exists;
     } catch (error) {
@@ -182,6 +184,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(
         "http://146.190.165.62:5001/users/available-super-admin-subroles"
+        // "http://146.190.165.62:5001/users/available-super-admin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -194,6 +197,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(
         "http://146.190.165.62:5001/users/superadmin-subroles"
+        // "http://146.190.165.62:5001/users/superadmin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -212,6 +216,7 @@ export const AuthProvider = ({ children }) => {
   const addSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.post(
+        "http://146.190.165.62:5001/users/add-superadmin-subrole",
         "http://146.190.165.62:5001/users/add-superadmin-subrole",
         {
           subRole,
@@ -232,6 +237,7 @@ export const AuthProvider = ({ children }) => {
   const deleteSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.delete(
+        `http://146.190.165.62:5001/users/delete-superadmin-subrole/${subRole}`,
         `http://146.190.165.62:5001/users/delete-superadmin-subrole/${subRole}`,
         {
           headers: {
@@ -256,6 +262,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const response = await axios.get(
+        "http://146.190.165.62:5001/api/notifications",
         "http://146.190.165.62:5001/api/notifications",
         {
           headers: {
@@ -285,6 +292,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await axios.patch(
         `http://146.190.165.62:5001/api/notifications/${notificationId}/read`,
+        `http://146.190.165.62:5001/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -308,6 +316,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(
         "http://146.190.165.62:5001/api/notifications",
+        "http://146.190.165.62:5001/api/notifications",
         notificationData,
         {
           headers: {
@@ -325,6 +334,7 @@ export const AuthProvider = ({ children }) => {
   const clearAllNotifications = async () => {
     try {
       await axios.delete("http://146.190.165.62:5001/api/notifications/clear", {
+      // await axios.delete("http://146.190.165.62:5001/api/notifications/clear", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

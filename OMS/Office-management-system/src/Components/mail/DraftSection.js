@@ -24,21 +24,18 @@ const DraftSection = ({ drafts: propDrafts }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/send",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            to: draft.to,
-            subject: draft.subject,
-            body: draft.body,
-          }),
-        }
-      );
+      const response = await fetch("http://146.190.165.62:5001/api/emails/send", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          to: draft.to,
+          subject: draft.subject,
+          body: draft.body
+        })
+      });
 
       const data = await response.json();
       if (response.ok) {
@@ -47,13 +44,10 @@ const DraftSection = ({ drafts: propDrafts }) => {
         setDrafts(drafts.filter((d) => d.id !== draft.id));
         // Delete the draft after successful send
         try {
-          await fetch(
-            `http://146.190.165.62:5001/api/emails/delete-draft/${draft._id}`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
+          await fetch(`http://146.190.165.62:5001/api/emails/delete-draft/${draft._id}`, {
+            method: "DELETE",
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
           );
           // Remove the draft from the list

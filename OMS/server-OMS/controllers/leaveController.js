@@ -1,3 +1,28 @@
+// Get recent leave applications (for dashboard activity)
+const getRecentLeaveApplications = async (req, res) => {
+  try {
+    // Get the 10 most recent leave applications for Employee or Intern
+    const leaves = await Leave.find({
+      status: 'Pending',
+      $or: [
+        { employeeRole: /Employee/i },
+        { employeeRole: /Intern/i }
+      ]
+    })
+      .sort({ appliedDate: -1 })
+      .limit(10);
+
+    // Format for dashboard
+    const data = leaves.map(l => ({
+      name: l.employeeName,
+      role: l.employeeRole,
+      appliedAt: l.appliedDate
+    }));
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch recent leave applications' });
+  }
+};
 const Leave = require('../models/leaveModel');
 const User = require('../models/userModel');
 const mongoose = require('mongoose');
@@ -553,4 +578,5 @@ module.exports = {
   updateLeaveStatus,
   getLeaveStatistics,
   deleteLeaveApplication
+  ,getRecentLeaveApplications
 };

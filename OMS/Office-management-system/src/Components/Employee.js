@@ -110,19 +110,17 @@ const Employee = () => {
 
     try {
       // Register face with the face recognition server
-      const response = await axios.post(
-        "http://146.190.165.62:5002/register_face",
-        {
-          name: formData.fullName,
-          images: capturedImages,
-        }
-      );
+      const response = await axios.post("http://146.190.165.62:5002/register_face", {
+        name: formData.fullName,
+        images: capturedImages,
+      });
       console.log("Face registration response:", response.data);
 
       // Store face encodings in backend database
       if (formData.candidateId) {
         try {
           const faceEncodingsResponse = await axios.put(
+            `http://146.190.165.62:5001/api/candidates/${formData.candidateId}/face-encodings`,
             `http://146.190.165.62:5001/api/candidates/${formData.candidateId}/face-encodings`,
             {
               faceEncodings: capturedImages, // Store captured images as face data
@@ -392,6 +390,9 @@ const Employee = () => {
   const checkServerStatus = async () => {
     try {
       console.log("🔍 Checking server status...");
+      const response = await axios.get("http://146.190.165.62:5001/api/health", {
+        timeout: 3000,
+      });
       const response = await axios.get(
         "http://146.190.165.62:5001/api/health",
         {
