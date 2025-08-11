@@ -49,7 +49,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
-          );
+          });
           // Remove the draft from the list
           setDrafts(drafts.filter((d) => d._id !== draft._id));
         } catch (deleteError) {
