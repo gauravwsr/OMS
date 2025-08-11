@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post(
-        "http://localhost:5001/users/login",
+        "http://146.190.165.62:5001/users/login",
         {
           email,
           password,
