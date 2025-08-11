@@ -54,10 +54,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("http://localhost:5001/users/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:5001/users/login",
+        {
+          email,
+          password,
+        }
+      );
 
       if (response.data && response.data.token) {
         message.success("Login successful!");
@@ -96,14 +99,17 @@ export const AuthProvider = ({ children }) => {
     additionalData = {}
   ) => {
     try {
-      const response = await axios.post("http://localhost:5001/users/signup", {
-        name,
-        email,
-        password,
-        role,
-        subRole,
-        ...additionalData, // Spread additional form data
-      });
+      const response = await axios.post(
+        "http://localhost:5001/users/signup",
+        {
+          name,
+          email,
+          password,
+          role,
+          subRole,
+          ...additionalData, // Spread additional form data
+        }
+      );
 
       if (response.status === 201) {
         message.success("Signup successful! Redirecting to login page...");

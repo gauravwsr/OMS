@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FiSearch, 
-  FiFilter, 
-  FiDownload, 
-  FiEye, 
-  FiEdit, 
-  FiTrash2, 
+import React, { useState, useEffect } from "react";
+import {
+  FiSearch,
+  FiFilter,
+  FiDownload,
+  FiEye,
+  FiEdit,
+  FiTrash2,
   FiPlus,
   FiCalendar,
   FiUser,
@@ -21,22 +21,22 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiPause,
-  FiPlay
-} from 'react-icons/fi';
-import './SuperAdminProjectView.css';
+  FiPlay,
+} from "react-icons/fi";
+import "./SuperAdminProjectView.css";
 
 const SuperAdminProjectView = () => {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('grid');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState('asc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("grid");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
   const [selectedProjects, setSelectedProjects] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,7 +54,7 @@ const SuperAdminProjectView = () => {
   };
 
   const handleEditProject = (project) => {
-    console.log('Edit project:', project);
+    console.log("Edit project:", project);
     // Add edit functionality here
     alert(`Edit functionality for ${project.name} - Coming soon!`);
   };
@@ -66,7 +66,7 @@ const SuperAdminProjectView = () => {
 
   const handleDeleteProject = (project) => {
     if (window.confirm(`Are you sure you want to delete "${project.name}"?`)) {
-      console.log('Delete project:', project);
+      console.log("Delete project:", project);
       // Add delete functionality here
       alert(`Delete functionality for ${project.name} - Coming soon!`);
     }
@@ -74,14 +74,14 @@ const SuperAdminProjectView = () => {
   };
 
   const handleCloneProject = (project) => {
-    console.log('Clone project:', project);
+    console.log("Clone project:", project);
     // Add clone functionality here
     alert(`Clone functionality for ${project.name} - Coming soon!`);
     setShowMoreActions(null);
   };
 
   const handleArchiveProject = (project) => {
-    console.log('Archive project:', project);
+    console.log("Archive project:", project);
     // Add archive functionality here
     alert(`Archive functionality for ${project.name} - Coming soon!`);
     setShowMoreActions(null);
@@ -108,12 +108,15 @@ const SuperAdminProjectView = () => {
       }
 
       // Fetch fresh data from API
-      const response = await fetch("http://localhost:5001/api/client-projects", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/client-projects",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -137,86 +140,109 @@ const SuperAdminProjectView = () => {
                 },
               }
             );
-            
+
             if (taskCountsResponse.ok) {
               const taskResult = await taskCountsResponse.json();
               if (taskResult.success && taskResult.data) {
                 const tasks = taskResult.data;
                 const taskCounts = {
                   total: tasks.length,
-                  completed: tasks.filter(task => task.status === "Completed").length,
-                  inProgress: tasks.filter(task => task.status === "In Progress").length,
-                  pending: tasks.filter(task => task.status === "Pending").length,
+                  completed: tasks.filter((task) => task.status === "Completed")
+                    .length,
+                  inProgress: tasks.filter(
+                    (task) => task.status === "In Progress"
+                  ).length,
+                  pending: tasks.filter((task) => task.status === "Pending")
+                    .length,
                 };
 
-                const progress = taskCounts.total > 0 
-                  ? Math.round((taskCounts.completed / taskCounts.total) * 100) 
-                  : 0;
+                const progress =
+                  taskCounts.total > 0
+                    ? Math.round(
+                        (taskCounts.completed / taskCounts.total) * 100
+                      )
+                    : 0;
 
-                return { 
-                  ...project, 
-                  tasks: taskCounts, 
+                return {
+                  ...project,
+                  tasks: taskCounts,
                   progress: progress,
                   id: project._id,
                   name: project.projectName || project.name,
                   client: project.clientName || project.client,
-                  status: project.status || 'planning',
-                  priority: project.priority || 'medium',
+                  status: project.status || "planning",
+                  priority: project.priority || "medium",
                   budget: project.budget || 0,
                   spent: project.spent || 0,
                   startDate: project.startDate || project.createdAt,
                   endDate: project.endDate || project.deadline,
-                  teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-                  description: project.description || 'No description available',
-                  projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                  teamMembers:
+                    project.teamSize || project.assignedEmployees?.length || 0,
+                  description:
+                    project.description || "No description available",
+                  projectManager:
+                    project.projectManager ||
+                    project.assignedTeamLead ||
+                    "Not assigned",
                   technologies: project.technologies || project.techStack || [],
                   risks: project.risks || [],
-                  milestones: project.milestones || []
+                  milestones: project.milestones || [],
                 };
               }
             }
-            
-            return { 
-              ...project, 
+
+            return {
+              ...project,
               tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
               progress: 0,
               id: project._id,
               name: project.projectName || project.name,
               client: project.clientName || project.client,
-              status: project.status || 'planning',
-              priority: project.priority || 'medium',
+              status: project.status || "planning",
+              priority: project.priority || "medium",
               budget: project.budget || 0,
               spent: project.spent || 0,
               startDate: project.startDate || project.createdAt,
               endDate: project.endDate || project.deadline,
-              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-              description: project.description || 'No description available',
-              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              teamMembers:
+                project.teamSize || project.assignedEmployees?.length || 0,
+              description: project.description || "No description available",
+              projectManager:
+                project.projectManager ||
+                project.assignedTeamLead ||
+                "Not assigned",
               technologies: project.technologies || project.techStack || [],
               risks: project.risks || [],
-              milestones: project.milestones || []
+              milestones: project.milestones || [],
             };
           } catch (taskError) {
-            console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
-            return { 
-              ...project, 
+            console.warn(
+              `Failed to fetch tasks for project ${project._id}:`,
+              taskError
+            );
+            return {
+              ...project,
               tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
               progress: 0,
               id: project._id,
               name: project.projectName || project.name,
               client: project.clientName || project.client,
-              status: project.status || 'planning',
-              priority: project.priority || 'medium',
+              status: project.status || "planning",
+              priority: project.priority || "medium",
               budget: project.budget || 0,
               spent: project.spent || 0,
               startDate: project.startDate || project.createdAt,
               endDate: project.endDate || project.deadline,
-              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-              description: project.description || 'No description available',
-              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              teamMembers:
+                project.teamSize || project.assignedEmployees?.length || 0,
+              description: project.description || "No description available",
+              projectManager:
+                project.projectManager ||
+                project.assignedTeamLead ||
+                "Not assigned",
               technologies: project.technologies || project.techStack || [],
               risks: project.risks || [],
-              milestones: project.milestones || []
+              milestones: project.milestones || [],
             };
           }
         })
@@ -224,10 +250,9 @@ const SuperAdminProjectView = () => {
 
       setProjects(projectsWithTaskCounts);
       setFilteredProjects(projectsWithTaskCounts);
-      
     } catch (error) {
       console.error("Error refreshing projects:", error);
-      setError(error.message || 'Failed to refresh projects');
+      setError(error.message || "Failed to refresh projects");
     } finally {
       setRefreshing(false);
     }
@@ -247,7 +272,8 @@ const SuperAdminProjectView = () => {
       startDate: "2024-01-15",
       endDate: "2024-04-30",
       teamMembers: 8,
-      description: "Complete redesign of the e-commerce platform with modern UI/UX",
+      description:
+        "Complete redesign of the e-commerce platform with modern UI/UX",
       projectManager: "John Smith",
       technologies: ["React", "Node.js", "MongoDB"],
       risks: ["Budget overrun", "Timeline delay"],
@@ -255,8 +281,8 @@ const SuperAdminProjectView = () => {
         { name: "UI Design", completed: true, date: "2024-02-01" },
         { name: "Frontend Development", completed: true, date: "2024-03-15" },
         { name: "Backend Integration", completed: false, date: "2024-04-10" },
-        { name: "Testing & QA", completed: false, date: "2024-04-25" }
-      ]
+        { name: "Testing & QA", completed: false, date: "2024-04-25" },
+      ],
     },
     {
       id: 2,
@@ -270,16 +296,21 @@ const SuperAdminProjectView = () => {
       startDate: "2023-10-01",
       endDate: "2024-02-28",
       teamMembers: 12,
-      description: "Secure mobile banking application with biometric authentication",
+      description:
+        "Secure mobile banking application with biometric authentication",
       projectManager: "Sarah Johnson",
       technologies: ["React Native", "Express.js", "PostgreSQL"],
       risks: [],
       milestones: [
         { name: "Requirements Analysis", completed: true, date: "2023-10-15" },
-        { name: "Security Implementation", completed: true, date: "2023-12-01" },
+        {
+          name: "Security Implementation",
+          completed: true,
+          date: "2023-12-01",
+        },
         { name: "User Testing", completed: true, date: "2024-01-20" },
-        { name: "Deployment", completed: true, date: "2024-02-28" }
-      ]
+        { name: "Deployment", completed: true, date: "2024-02-28" },
+      ],
     },
     {
       id: 3,
@@ -301,8 +332,8 @@ const SuperAdminProjectView = () => {
         { name: "Data Analysis", completed: true, date: "2024-03-15" },
         { name: "AI Model Development", completed: false, date: "2024-04-30" },
         { name: "Dashboard Design", completed: false, date: "2024-05-31" },
-        { name: "Integration & Testing", completed: false, date: "2024-06-25" }
-      ]
+        { name: "Integration & Testing", completed: false, date: "2024-06-25" },
+      ],
     },
     {
       id: 4,
@@ -324,8 +355,8 @@ const SuperAdminProjectView = () => {
         { name: "System Analysis", completed: true, date: "2023-12-20" },
         { name: "Database Migration", completed: true, date: "2024-01-31" },
         { name: "Feature Development", completed: false, date: "2024-04-15" },
-        { name: "User Training", completed: false, date: "2024-05-10" }
-      ]
+        { name: "User Training", completed: false, date: "2024-05-10" },
+      ],
     },
     {
       id: 5,
@@ -339,7 +370,8 @@ const SuperAdminProjectView = () => {
       startDate: "2024-01-01",
       endDate: "2024-07-31",
       teamMembers: 10,
-      description: "Comprehensive healthcare management system with patient records",
+      description:
+        "Comprehensive healthcare management system with patient records",
       projectManager: "Dr. Emily Brown",
       technologies: ["Vue.js", "Django", "PostgreSQL"],
       risks: ["HIPAA compliance", "Data security"],
@@ -347,9 +379,9 @@ const SuperAdminProjectView = () => {
         { name: "Security Framework", completed: true, date: "2024-02-15" },
         { name: "Patient Module", completed: true, date: "2024-04-01" },
         { name: "Doctor Portal", completed: false, date: "2024-06-01" },
-        { name: "Compliance Testing", completed: false, date: "2024-07-15" }
-      ]
-    }
+        { name: "Compliance Testing", completed: false, date: "2024-07-15" },
+      ],
+    },
   ];
 
   useEffect(() => {
@@ -361,29 +393,37 @@ const SuperAdminProjectView = () => {
         // Get JWT token for authentication
         const token = localStorage.getItem("token");
         if (!token) {
-          throw new Error("Authentication token not found. Please login again.");
+          throw new Error(
+            "Authentication token not found. Please login again."
+          );
         }
 
         // First, try to import/sync remote projects to local database
         try {
-          await fetch("http://localhost:5001/api/client-projects/import-remote", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          await fetch(
+            "http://localhost:5001/api/client-projects/import-remote",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
         } catch (importError) {
           console.warn("Failed to import remote projects:", importError);
         }
 
         // Fetch projects from local database
-        const response = await fetch("http://localhost:5001/api/client-projects", {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          "http://localhost:5001/api/client-projects",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -409,104 +449,133 @@ const SuperAdminProjectView = () => {
                   },
                 }
               );
-              
+
               if (taskCountsResponse.ok) {
                 const taskResult = await taskCountsResponse.json();
                 if (taskResult.success && taskResult.data) {
                   const tasks = taskResult.data;
                   const taskCounts = {
                     total: tasks.length,
-                    completed: tasks.filter(task => task.status === "Completed").length,
-                    inProgress: tasks.filter(task => task.status === "In Progress").length,
-                    pending: tasks.filter(task => task.status === "Pending").length,
+                    completed: tasks.filter(
+                      (task) => task.status === "Completed"
+                    ).length,
+                    inProgress: tasks.filter(
+                      (task) => task.status === "In Progress"
+                    ).length,
+                    pending: tasks.filter((task) => task.status === "Pending")
+                      .length,
                   };
 
                   // Calculate project progress based on completed tasks
-                  const progress = taskCounts.total > 0 
-                    ? Math.round((taskCounts.completed / taskCounts.total) * 100) 
-                    : 0;
+                  const progress =
+                    taskCounts.total > 0
+                      ? Math.round(
+                          (taskCounts.completed / taskCounts.total) * 100
+                        )
+                      : 0;
 
-                  return { 
-                    ...project, 
-                    tasks: taskCounts, 
+                  return {
+                    ...project,
+                    tasks: taskCounts,
                     progress: progress,
                     // Map API fields to component expected fields
                     id: project._id,
                     name: project.projectName || project.name,
                     client: project.clientName || project.client,
-                    status: project.status || 'planning',
-                    priority: project.priority || 'medium',
+                    status: project.status || "planning",
+                    priority: project.priority || "medium",
                     budget: project.budget || 0,
                     spent: project.spent || 0,
                     startDate: project.startDate || project.createdAt,
                     endDate: project.endDate || project.deadline,
-                    teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-                    description: project.description || 'No description available',
-                    projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
-                    technologies: project.technologies || project.techStack || [],
+                    teamMembers:
+                      project.teamSize ||
+                      project.assignedEmployees?.length ||
+                      0,
+                    description:
+                      project.description || "No description available",
+                    projectManager:
+                      project.projectManager ||
+                      project.assignedTeamLead ||
+                      "Not assigned",
+                    technologies:
+                      project.technologies || project.techStack || [],
                     risks: project.risks || [],
-                    milestones: project.milestones || []
+                    milestones: project.milestones || [],
                   };
                 }
               }
-              
+
               // Return project with default task counts if fetch fails
               const progress = 0;
-              return { 
-                ...project, 
+              return {
+                ...project,
                 tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
                 progress: progress,
                 id: project._id,
                 name: project.projectName || project.name,
                 client: project.clientName || project.client,
-                status: project.status || 'planning',
-                priority: project.priority || 'medium',
+                status: project.status || "planning",
+                priority: project.priority || "medium",
                 budget: project.budget || 0,
                 spent: project.spent || 0,
                 startDate: project.startDate || project.createdAt,
                 endDate: project.endDate || project.deadline,
-                teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-                description: project.description || 'No description available',
-                projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                teamMembers:
+                  project.teamSize || project.assignedEmployees?.length || 0,
+                description: project.description || "No description available",
+                projectManager:
+                  project.projectManager ||
+                  project.assignedTeamLead ||
+                  "Not assigned",
                 technologies: project.technologies || project.techStack || [],
                 risks: project.risks || [],
-                milestones: project.milestones || []
+                milestones: project.milestones || [],
               };
             } catch (taskError) {
-              console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
+              console.warn(
+                `Failed to fetch tasks for project ${project._id}:`,
+                taskError
+              );
               const progress = 0;
-              return { 
-                ...project, 
+              return {
+                ...project,
                 tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
                 progress: progress,
                 id: project._id,
                 name: project.projectName || project.name,
                 client: project.clientName || project.client,
-                status: project.status || 'planning',
-                priority: project.priority || 'medium',
+                status: project.status || "planning",
+                priority: project.priority || "medium",
                 budget: project.budget || 0,
                 spent: project.spent || 0,
                 startDate: project.startDate || project.createdAt,
                 endDate: project.endDate || project.deadline,
-                teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-                description: project.description || 'No description available',
-                projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+                teamMembers:
+                  project.teamSize || project.assignedEmployees?.length || 0,
+                description: project.description || "No description available",
+                projectManager:
+                  project.projectManager ||
+                  project.assignedTeamLead ||
+                  "Not assigned",
                 technologies: project.technologies || project.techStack || [],
                 risks: project.risks || [],
-                milestones: project.milestones || []
+                milestones: project.milestones || [],
               };
             }
           })
         );
 
-        console.log("Super Admin - Projects with task counts:", projectsWithTaskCounts);
+        console.log(
+          "Super Admin - Projects with task counts:",
+          projectsWithTaskCounts
+        );
         setProjects(projectsWithTaskCounts);
         setFilteredProjects(projectsWithTaskCounts);
-
       } catch (err) {
         console.error("Error fetching projects:", err);
-        setError(err.message || 'Failed to fetch projects');
-        
+        setError(err.message || "Failed to fetch projects");
+
         // Fallback to mock data if API fails
         setProjects(mockProjects);
         setFilteredProjects(mockProjects);
@@ -520,18 +589,22 @@ const SuperAdminProjectView = () => {
 
   // Filter and search functionality
   useEffect(() => {
-    let filtered = projects.filter(project => {
-      const projectName = project.name || project.projectName || '';
-      const clientName = project.client || project.clientName || '';
-      const managerName = project.projectManager || project.assignedTeamLead || '';
-      
-      const matchesSearch = projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           managerName.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-      const matchesPriority = priorityFilter === 'all' || project.priority === priorityFilter;
-      
+    let filtered = projects.filter((project) => {
+      const projectName = project.name || project.projectName || "";
+      const clientName = project.client || project.clientName || "";
+      const managerName =
+        project.projectManager || project.assignedTeamLead || "";
+
+      const matchesSearch =
+        projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        managerName.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || project.status === statusFilter;
+      const matchesPriority =
+        priorityFilter === "all" || project.priority === priorityFilter;
+
       return matchesSearch && matchesStatus && matchesPriority;
     });
 
@@ -540,12 +613,12 @@ const SuperAdminProjectView = () => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
 
-      if (sortBy === 'budget' || sortBy === 'spent' || sortBy === 'progress') {
+      if (sortBy === "budget" || sortBy === "spent" || sortBy === "progress") {
         aValue = Number(aValue);
         bValue = Number(bValue);
       }
 
-      if (sortOrder === 'asc') {
+      if (sortOrder === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -559,18 +632,21 @@ const SuperAdminProjectView = () => {
   // Pagination
   const indexOfLastProject = currentPage * projectsPerPage;
   const indexOfFirstProject = indexOfLastProject - projectsPerPage;
-  const currentProjects = filteredProjects.slice(indexOfFirstProject, indexOfLastProject);
+  const currentProjects = filteredProjects.slice(
+    indexOfFirstProject,
+    indexOfLastProject
+  );
   const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
 
   const getStatusColor = (status) => {
     const statusColors = {
-      completed: '#10b981',
-      in_progress: '#3b82f6',
-      planning: '#f59e0b',
-      on_hold: '#ef4444',
-      cancelled: '#6b7280'
+      completed: "#10b981",
+      in_progress: "#3b82f6",
+      planning: "#f59e0b",
+      on_hold: "#ef4444",
+      cancelled: "#6b7280",
     };
-    return statusColors[status] || '#6b7280';
+    return statusColors[status] || "#6b7280";
   };
 
   const getStatusIcon = (status) => {
@@ -579,40 +655,44 @@ const SuperAdminProjectView = () => {
       in_progress: <FiPlay />,
       planning: <FiClock />,
       on_hold: <FiPause />,
-      cancelled: <FiAlertCircle />
+      cancelled: <FiAlertCircle />,
     };
     return statusIcons[status] || <FiClock />;
   };
 
   const getPriorityColor = (priority) => {
     const priorityColors = {
-      high: '#ef4444',
-      medium: '#f59e0b',
-      low: '#10b981'
+      high: "#ef4444",
+      medium: "#f59e0b",
+      low: "#10b981",
     };
-    return priorityColors[priority] || '#6b7280';
+    return priorityColors[priority] || "#6b7280";
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const getProjectStats = () => {
     const totalProjects = projects.length;
-    const completedProjects = projects.filter(p => p.status === 'completed').length;
-    const inProgressProjects = projects.filter(p => p.status === 'in_progress').length;
+    const completedProjects = projects.filter(
+      (p) => p.status === "completed"
+    ).length;
+    const inProgressProjects = projects.filter(
+      (p) => p.status === "in_progress"
+    ).length;
     const totalBudget = projects.reduce((sum, p) => sum + p.budget, 0);
     const totalSpent = projects.reduce((sum, p) => sum + p.spent, 0);
 
@@ -622,7 +702,10 @@ const SuperAdminProjectView = () => {
       inProgressProjects,
       totalBudget,
       totalSpent,
-      completionRate: totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0
+      completionRate:
+        totalProjects > 0
+          ? Math.round((completedProjects / totalProjects) * 100)
+          : 0,
     };
   };
 
@@ -646,7 +729,10 @@ const SuperAdminProjectView = () => {
           <FiAlertCircle size={48} />
           <h3>Error Loading Projects</h3>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()} className="retry-button">
+          <button
+            onClick={() => window.location.reload()}
+            className="retry-button"
+          >
             <FiRefreshCw /> Try Again
           </button>
         </div>
@@ -673,13 +759,13 @@ const SuperAdminProjectView = () => {
           </div>
         </div>
         <div className="header-actions">
-          <button 
+          <button
             className="btn-secondary"
             onClick={refreshProjects}
             disabled={refreshing}
           >
-            <FiRefreshCw className={refreshing ? 'rotating' : ''} /> 
-            {refreshing ? 'Refreshing...' : 'Refresh Data'}
+            <FiRefreshCw className={refreshing ? "rotating" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh Data"}
           </button>
           <button className="btn-secondary">
             <FiDownload /> Export Report
@@ -727,7 +813,9 @@ const SuperAdminProjectView = () => {
             <FiDollarSign />
           </div>
           <div className="stat-content">
-            <div className="stat-number">{formatCurrency(stats.totalBudget)}</div>
+            <div className="stat-number">
+              {formatCurrency(stats.totalBudget)}
+            </div>
             <div className="stat-label">Total Budget</div>
             <div className="stat-subtitle">
               {formatCurrency(stats.totalSpent)} spent
@@ -752,23 +840,23 @@ const SuperAdminProjectView = () => {
         </div>
 
         <div className="filter-section">
-          <button 
-            className={`filter-toggle ${showFilters ? 'active' : ''}`}
+          <button
+            className={`filter-toggle ${showFilters ? "active" : ""}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <FiFilter /> Filters
           </button>
 
           <div className="view-controls">
-            <button 
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
+            <button
+              className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
+              onClick={() => setViewMode("grid")}
             >
               <FiGrid />
             </button>
-            <button 
-              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
+            <button
+              className={`view-btn ${viewMode === "list" ? "active" : ""}`}
+              onClick={() => setViewMode("list")}
             >
               <FiList />
             </button>
@@ -781,7 +869,10 @@ const SuperAdminProjectView = () => {
         <div className="filter-panel">
           <div className="filter-group">
             <label>Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
               <option value="all">All Status</option>
               <option value="completed">Completed</option>
               <option value="in_progress">In Progress</option>
@@ -792,7 +883,10 @@ const SuperAdminProjectView = () => {
 
           <div className="filter-group">
             <label>Priority</label>
-            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+            >
               <option value="all">All Priorities</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>
@@ -814,7 +908,10 @@ const SuperAdminProjectView = () => {
 
           <div className="filter-group">
             <label>Order</label>
-            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+            >
               <option value="asc">Ascending</option>
               <option value="desc">Descending</option>
             </select>
@@ -831,7 +928,7 @@ const SuperAdminProjectView = () => {
             <p>Try adjusting your filters or search terms</p>
           </div>
         ) : (
-          currentProjects.map(project => (
+          currentProjects.map((project) => (
             <div key={project.id} className="project-card">
               <div className="project-header">
                 <div className="project-title-section">
@@ -846,23 +943,23 @@ const SuperAdminProjectView = () => {
                   </div>
                 </div>
                 <div className="project-actions">
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     title="View Details"
                     onClick={() => handleViewDetails(project)}
                   >
                     <FiEye />
                   </button>
-                  <button 
-                    className="action-btn" 
+                  <button
+                    className="action-btn"
                     title="Edit Project"
                     onClick={() => handleEditProject(project)}
                   >
                     <FiEdit />
                   </button>
                   <div className="more-actions-container">
-                    <button 
-                      className="action-btn more-actions" 
+                    <button
+                      className="action-btn more-actions"
                       title="More Actions"
                       onClick={(e) => handleMoreActions(project.id, e)}
                     >
@@ -876,7 +973,7 @@ const SuperAdminProjectView = () => {
                         <button onClick={() => handleArchiveProject(project)}>
                           <FiDownload /> Archive
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDeleteProject(project)}
                           className="delete-action"
                         >
@@ -889,23 +986,23 @@ const SuperAdminProjectView = () => {
               </div>
 
               <div className="project-status-row">
-                <div 
+                <div
                   className="status-badge"
-                  style={{ 
+                  style={{
                     backgroundColor: `${getStatusColor(project.status)}20`,
                     color: getStatusColor(project.status),
-                    border: `1px solid ${getStatusColor(project.status)}40`
+                    border: `1px solid ${getStatusColor(project.status)}40`,
                   }}
                 >
                   {getStatusIcon(project.status)}
-                  {project.status.replace('_', ' ').toUpperCase()}
+                  {project.status.replace("_", " ").toUpperCase()}
                 </div>
-                <div 
+                <div
                   className="priority-badge"
-                  style={{ 
+                  style={{
                     backgroundColor: `${getPriorityColor(project.priority)}20`,
                     color: getPriorityColor(project.priority),
-                    border: `1px solid ${getPriorityColor(project.priority)}40`
+                    border: `1px solid ${getPriorityColor(project.priority)}40`,
                   }}
                 >
                   {project.priority.toUpperCase()} PRIORITY
@@ -919,14 +1016,16 @@ const SuperAdminProjectView = () => {
               <div className="project-progress">
                 <div className="progress-header">
                   <span>Progress</span>
-                  <span className="progress-percentage">{project.progress}%</span>
+                  <span className="progress-percentage">
+                    {project.progress}%
+                  </span>
                 </div>
                 <div className="progress-bar">
-                  <div 
+                  <div
                     className="progress-fill"
-                    style={{ 
+                    style={{
                       width: `${project.progress}%`,
-                      backgroundColor: getStatusColor(project.status)
+                      backgroundColor: getStatusColor(project.status),
                     }}
                   ></div>
                 </div>
@@ -939,7 +1038,8 @@ const SuperAdminProjectView = () => {
                     <div className="detail-content">
                       <span className="detail-label">Duration</span>
                       <span className="detail-value">
-                        {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                        {formatDate(project.startDate)} -{" "}
+                        {formatDate(project.endDate)}
                       </span>
                     </div>
                   </div>
@@ -951,7 +1051,8 @@ const SuperAdminProjectView = () => {
                     <div className="detail-content">
                       <span className="detail-label">Budget</span>
                       <span className="detail-value">
-                        {formatCurrency(project.spent)} / {formatCurrency(project.budget)}
+                        {formatCurrency(project.spent)} /{" "}
+                        {formatCurrency(project.budget)}
                       </span>
                     </div>
                   </div>
@@ -962,7 +1063,9 @@ const SuperAdminProjectView = () => {
                     <FiUser className="detail-icon" />
                     <div className="detail-content">
                       <span className="detail-label">Team Size</span>
-                      <span className="detail-value">{project.teamMembers} members</span>
+                      <span className="detail-value">
+                        {project.teamMembers} members
+                      </span>
                     </div>
                   </div>
                   <div className="detail-item">
@@ -970,7 +1073,10 @@ const SuperAdminProjectView = () => {
                     <div className="detail-content">
                       <span className="detail-label">Tasks</span>
                       <span className="detail-value">
-                        {project.tasks ? `${project.tasks.completed}/${project.tasks.total}` : '0/0'} completed
+                        {project.tasks
+                          ? `${project.tasks.completed}/${project.tasks.total}`
+                          : "0/0"}{" "}
+                        completed
                       </span>
                     </div>
                   </div>
@@ -982,7 +1088,9 @@ const SuperAdminProjectView = () => {
                       <span className="detail-label">Technologies</span>
                       <div className="tech-tags">
                         {project.technologies.map((tech, index) => (
-                          <span key={index} className="tech-tag">{tech}</span>
+                          <span key={index} className="tech-tag">
+                            {tech}
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -997,7 +1105,9 @@ const SuperAdminProjectView = () => {
                         <span className="detail-label">Risks</span>
                         <div className="risk-list">
                           {project.risks.map((risk, index) => (
-                            <span key={index} className="risk-item">{risk}</span>
+                            <span key={index} className="risk-item">
+                              {risk}
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -1009,13 +1119,26 @@ const SuperAdminProjectView = () => {
                   <span className="detail-label">Milestones</span>
                   <div className="milestones-list">
                     {project.milestones.map((milestone, index) => (
-                      <div key={index} className={`milestone-item ${milestone.completed ? 'completed' : 'pending'}`}>
+                      <div
+                        key={index}
+                        className={`milestone-item ${
+                          milestone.completed ? "completed" : "pending"
+                        }`}
+                      >
                         <div className="milestone-status">
-                          {milestone.completed ? <FiCheckCircle /> : <FiClock />}
+                          {milestone.completed ? (
+                            <FiCheckCircle />
+                          ) : (
+                            <FiClock />
+                          )}
                         </div>
                         <div className="milestone-content">
-                          <span className="milestone-name">{milestone.name}</span>
-                          <span className="milestone-date">{formatDate(milestone.date)}</span>
+                          <span className="milestone-name">
+                            {milestone.name}
+                          </span>
+                          <span className="milestone-date">
+                            {formatDate(milestone.date)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -1030,22 +1153,22 @@ const SuperAdminProjectView = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
-          <button 
+          <button
             className="pagination-btn"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
           >
             Previous
           </button>
-          
+
           <div className="pagination-info">
             <span>
-              Page {currentPage} of {totalPages} 
-              ({filteredProjects.length} projects)
+              Page {currentPage} of {totalPages}({filteredProjects.length}{" "}
+              projects)
             </span>
           </div>
-          
-          <button 
+
+          <button
             className="pagination-btn"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
@@ -1057,11 +1180,17 @@ const SuperAdminProjectView = () => {
 
       {/* Project Details Modal */}
       {showProjectDetails && selectedProject && (
-        <div className="modal-overlay" onClick={() => setShowProjectDetails(false)}>
-          <div className="project-details-modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowProjectDetails(false)}
+        >
+          <div
+            className="project-details-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>{selectedProject.name}</h2>
-              <button 
+              <button
                 className="close-modal"
                 onClick={() => setShowProjectDetails(false)}
               >
@@ -1081,7 +1210,7 @@ const SuperAdminProjectView = () => {
                 <div className="overview-item">
                   <label>Status:</label>
                   <span className={`status-${selectedProject.status}`}>
-                    {selectedProject.status.replace('_', ' ').toUpperCase()}
+                    {selectedProject.status.replace("_", " ").toUpperCase()}
                   </span>
                 </div>
                 <div className="overview-item">
@@ -1108,10 +1237,13 @@ const SuperAdminProjectView = () => {
                 </div>
                 <div className="overview-item">
                   <label>Duration:</label>
-                  <span>{formatDate(selectedProject.startDate)} - {formatDate(selectedProject.endDate)}</span>
+                  <span>
+                    {formatDate(selectedProject.startDate)} -{" "}
+                    {formatDate(selectedProject.endDate)}
+                  </span>
                 </div>
               </div>
-              
+
               <div className="project-description-modal">
                 <label>Description:</label>
                 <p>{selectedProject.description}</p>
@@ -1121,7 +1253,9 @@ const SuperAdminProjectView = () => {
                 <label>Technologies:</label>
                 <div className="tech-tags">
                   {selectedProject.technologies.map((tech, index) => (
-                    <span key={index} className="tech-tag">{tech}</span>
+                    <span key={index} className="tech-tag">
+                      {tech}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -1141,7 +1275,12 @@ const SuperAdminProjectView = () => {
                 <label>Milestones:</label>
                 <div className="milestones-grid">
                   {selectedProject.milestones.map((milestone, index) => (
-                    <div key={index} className={`milestone-card ${milestone.completed ? 'completed' : 'pending'}`}>
+                    <div
+                      key={index}
+                      className={`milestone-card ${
+                        milestone.completed ? "completed" : "pending"
+                      }`}
+                    >
                       <div className="milestone-status">
                         {milestone.completed ? <FiCheckCircle /> : <FiClock />}
                       </div>
@@ -1159,19 +1298,27 @@ const SuperAdminProjectView = () => {
                   <label>Task Summary:</label>
                   <div className="task-summary-grid">
                     <div className="task-stat">
-                      <span className="task-number">{selectedProject.tasks.total}</span>
+                      <span className="task-number">
+                        {selectedProject.tasks.total}
+                      </span>
                       <span className="task-label">Total Tasks</span>
                     </div>
                     <div className="task-stat completed">
-                      <span className="task-number">{selectedProject.tasks.completed}</span>
+                      <span className="task-number">
+                        {selectedProject.tasks.completed}
+                      </span>
                       <span className="task-label">Completed</span>
                     </div>
                     <div className="task-stat in-progress">
-                      <span className="task-number">{selectedProject.tasks.inProgress}</span>
+                      <span className="task-number">
+                        {selectedProject.tasks.inProgress}
+                      </span>
                       <span className="task-label">In Progress</span>
                     </div>
                     <div className="task-stat pending">
-                      <span className="task-number">{selectedProject.tasks.pending}</span>
+                      <span className="task-number">
+                        {selectedProject.tasks.pending}
+                      </span>
                       <span className="task-label">Pending</span>
                     </div>
                   </div>

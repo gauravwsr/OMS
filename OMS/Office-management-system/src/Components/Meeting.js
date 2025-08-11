@@ -16,6 +16,12 @@ import {
   FaLock,
   FaClock,
   FaEye,
+  FaCalendarPlus,
+  FaChartBar,
+  FaPlay,
+  FaBell,
+  FaCalendarCheck,
+  FaDownload,
 } from "react-icons/fa";
 import { useAuth } from "./AuthProvider/AuthContext";
 import axios from "axios";
@@ -50,6 +56,33 @@ const Meeting = () => {
   // Meeting data
   const [availableMeetings, setAvailableMeetings] = useState([]);
   const [meetingStats, setMeetingStats] = useState(null);
+  const [upcomingMeetings, setUpcomingMeetings] = useState([]);
+  const [scheduledMeetings, setScheduledMeetings] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState(null);
+
+  // Enhanced UI state
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+
+  // Schedule form state
+  const [scheduleForm, setScheduleForm] = useState({
+    meetingName: "",
+    roomType: "",
+    teamName: "",
+    date: "",
+    time: "",
+    duration: 60,
+    description: "",
+    reminderMinutes: 15,
+    emailReminder: true,
+    meetingSettings: {
+      enableChat: true,
+      enableKnocking: true,
+      startVideoOff: false,
+      startAudioOff: false,
+      maxParticipants: 50,
+    },
+  });
 
   // Create meeting form state
   const [createForm, setCreateForm] = useState({
@@ -75,11 +108,14 @@ const Meeting = () => {
   useEffect(() => {
     if (isAuthenticated && user) {
       loadAvailableMeetings();
+      loadUpcomingMeetings();
+      loadScheduledMeetings();
       if (
         user.role === "Super_Admin" ||
         (user.role === "Admin" && user.subRole === "HR Manager")
       ) {
         loadMeetingStats();
+        loadAnalyticsData();
       }
     }
   }, [isAuthenticated, user]);
@@ -130,6 +166,116 @@ const Meeting = () => {
     } catch (error) {
       console.error("Failed to load meeting stats:", error);
     }
+  };
+
+  // New enhanced functions
+  const loadUpcomingMeetings = async () => {
+    try {
+      const response = await apiCall("/upcoming");
+      setUpcomingMeetings(response.data || []);
+    } catch (error) {
+      console.error("Failed to load upcoming meetings:", error);
+    }
+  };
+
+  const loadScheduledMeetings = async () => {
+    try {
+      const response = await apiCall("/scheduled");
+      setScheduledMeetings(response.data || []);
+    } catch (error) {
+      console.error("Failed to load scheduled meetings:", error);
+    }
+  };
+
+  const loadAnalyticsData = async () => {
+    try {
+      const response = await apiCall("/analytics/detailed?range=week");
+      setAnalyticsData(response.data);
+    } catch (error) {
+      console.error("Failed to load analytics:", error);
+    }
+  };
+
+  const scheduleMeeting = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // Combine date and time
+      const scheduledDateTime = new Date(
+        `${scheduleForm.date}T${scheduleForm.time}`
+      );
+
+      if (scheduledDateTime <= new Date()) {
+        setError("Scheduled time must be in the future");
+        return;
+      }
+
+      const response = await apiCall("/schedule", "POST", {
+        meetingName: scheduleForm.meetingName,
+        roomType: scheduleForm.roomType,
+        teamName: scheduleForm.teamName,
+        description: scheduleForm.description,
+        duration: scheduleForm.duration,
+        emailReminder: scheduleForm.emailReminder,
+        reminderMinutes: scheduleForm.reminderMinutes,
+        scheduledAt: scheduledDateTime.toISOString(),
+        meetingSettings: scheduleForm.meetingSettings,
+      });
+
+      if (response.success) {
+        setSuccess("Meeting scheduled successfully!");
+        loadUpcomingMeetings();
+        resetScheduleForm();
+      }
+    } catch (error) {
+      setError(error.message || "Failed to schedule meeting");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startScheduledMeeting = async (scheduleId) => {
+    try {
+      setLoading(true);
+      const response = await apiCall(`/start-scheduled/${scheduleId}`, "POST");
+
+      if (response.success) {
+        setSuccess("Meeting started successfully!");
+        // Join the meeting directly
+        setRoomUrl(response.data.roomUrl);
+        setCurrentRoomId(response.data.roomId);
+        setRoomName(response.data.roomName);
+        setIsMeetingStarted(true);
+        joinMeetingRoom(response.data.roomUrl);
+        loadScheduledMeetings();
+      }
+    } catch (error) {
+      setError(error.message || "Failed to start meeting");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetScheduleForm = () => {
+    setScheduleForm({
+      meetingName: "",
+      roomType: "",
+      teamName: "",
+      date: "",
+      time: "",
+      duration: 60,
+      description: "",
+      reminderMinutes: 15,
+      emailReminder: true,
+      meetingSettings: {
+        enableChat: true,
+        enableKnocking: true,
+        startVideoOff: false,
+        startAudioOff: false,
+        maxParticipants: 50,
+      },
+    });
   };
 
   // Meeting functions
@@ -582,6 +728,60 @@ const Meeting = () => {
         )}
       </div>
 
+      {/* Quick Stats Bar */}
+      {!isMeetingStarted && (
+        <div className="quick-actions">
+          <div className="quick-stats">
+            {upcomingMeetings.length > 0 && (
+              <div className="stat-item">
+                <FaClock />
+                <span>
+                  {upcomingMeetings.length} upcoming meeting
+                  {upcomingMeetings.length > 1 ? "s" : ""}
+                </span>
+              </div>
+            )}
+            {availableMeetings.length > 0 && (
+              <div className="stat-item">
+                <FaUsers />
+                <span>
+                  {availableMeetings.length} active meeting
+                  {availableMeetings.length > 1 ? "s" : ""}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="quick-buttons">
+            {canCreateMeeting() && (
+              <button
+                className="quick-action-btn schedule"
+                onClick={() => setActiveTab("schedule")}
+              >
+                <FaCalendarPlus /> Quick Schedule
+              </button>
+            )}
+
+            <button
+              className="quick-action-btn instant"
+              onClick={() => setActiveTab("create")}
+            >
+              <FaVideo /> Instant Meeting
+            </button>
+
+            {(user.role === "Super_Admin" ||
+              (user.role === "Admin" && user.subRole === "HR Manager")) && (
+              <button
+                className="quick-action-btn analytics"
+                onClick={() => setActiveTab("analytics")}
+              >
+                <FaChartBar /> Analytics
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Error and Success Messages */}
       {error && (
         <div className="alert alert-error">
@@ -629,6 +829,16 @@ const Meeting = () => {
               >
                 <FaLink /> Join Meeting
               </button>
+              {canCreateMeeting() && (
+                <button
+                  className={`tab-button ${
+                    activeTab === "schedule" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("schedule")}
+                >
+                  <FaCalendarPlus /> Schedule Meeting
+                </button>
+              )}
               {(user.role === "Super_Admin" ||
                 (user.role === "Admin" && user.subRole === "HR Manager")) && (
                 <button
@@ -637,7 +847,7 @@ const Meeting = () => {
                   }`}
                   onClick={() => setActiveTab("analytics")}
                 >
-                  <FaEye /> Analytics
+                  <FaChartBar /> Analytics
                 </button>
               )}
             </div>
@@ -1055,6 +1265,307 @@ const Meeting = () => {
                     )}
                   </div>
                 )}
+
+              {/* Schedule Meeting Tab */}
+              {activeTab === "schedule" && canCreateMeeting() && (
+                <div className="schedule-meeting">
+                  <div className="section-header">
+                    <h2>Schedule Meeting</h2>
+                  </div>
+
+                  <div className="schedule-form">
+                    <div className="form-section">
+                      <h3>Meeting Information</h3>
+
+                      <div className="input-group">
+                        <label htmlFor="scheduleMeetingName">
+                          Meeting Name *
+                        </label>
+                        <input
+                          id="scheduleMeetingName"
+                          type="text"
+                          placeholder="Enter meeting name"
+                          value={scheduleForm.meetingName}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              meetingName: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="scheduleDescription">Description</label>
+                        <textarea
+                          id="scheduleDescription"
+                          placeholder="Meeting description (optional)"
+                          value={scheduleForm.description}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              description: e.target.value,
+                            }))
+                          }
+                          rows="3"
+                        />
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="scheduleType">Meeting Type</label>
+                        <select
+                          id="scheduleType"
+                          value={scheduleForm.roomType}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              roomType: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">Auto (based on your role)</option>
+                          {canCreateGlobalMeeting() && (
+                            <option value="global">Global Meeting</option>
+                          )}
+                          {canCreateTeamMeeting() && (
+                            <option value="team">Team Meeting</option>
+                          )}
+                        </select>
+                      </div>
+
+                      {(scheduleForm.roomType === "team" ||
+                        (!scheduleForm.roomType &&
+                          user.role === "Employee")) && (
+                        <div className="input-group">
+                          <label htmlFor="scheduleTeamName">Team Name</label>
+                          <input
+                            id="scheduleTeamName"
+                            type="text"
+                            placeholder={user.team || "Enter team name"}
+                            value={scheduleForm.teamName}
+                            onChange={(e) =>
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                teamName: e.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-section">
+                      <h3>Date & Time</h3>
+
+                      <div className="input-group">
+                        <label htmlFor="scheduleDate">Date *</label>
+                        <input
+                          id="scheduleDate"
+                          type="date"
+                          value={scheduleForm.date}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              date: e.target.value,
+                            }))
+                          }
+                          min={new Date().toISOString().split("T")[0]}
+                          required
+                        />
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="scheduleTime">Time *</label>
+                        <input
+                          id="scheduleTime"
+                          type="time"
+                          value={scheduleForm.time}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              time: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="scheduleDuration">
+                          Duration (minutes)
+                        </label>
+                        <input
+                          id="scheduleDuration"
+                          type="number"
+                          min="15"
+                          max="480"
+                          step="15"
+                          value={scheduleForm.duration}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              duration: parseInt(e.target.value),
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-section">
+                      <h3>Notification Settings</h3>
+
+                      <div className="checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={scheduleForm.emailReminder}
+                            onChange={(e) =>
+                              setScheduleForm((prev) => ({
+                                ...prev,
+                                emailReminder: e.target.checked,
+                              }))
+                            }
+                          />
+                          Send email reminder
+                        </label>
+                      </div>
+
+                      <div className="input-group">
+                        <label htmlFor="reminderMinutes">
+                          Reminder (minutes before)
+                        </label>
+                        <select
+                          id="reminderMinutes"
+                          value={scheduleForm.reminderMinutes}
+                          onChange={(e) =>
+                            setScheduleForm((prev) => ({
+                              ...prev,
+                              reminderMinutes: parseInt(e.target.value),
+                            }))
+                          }
+                          disabled={!scheduleForm.emailReminder}
+                        >
+                          <option value="5">5 minutes</option>
+                          <option value="10">10 minutes</option>
+                          <option value="15">15 minutes</option>
+                          <option value="30">30 minutes</option>
+                          <option value="60">1 hour</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="cancel-button"
+                        onClick={resetScheduleForm}
+                      >
+                        Reset
+                      </button>
+                      <button
+                        type="submit"
+                        className="schedule-button"
+                        onClick={scheduleMeeting}
+                        disabled={
+                          !scheduleForm.meetingName ||
+                          !scheduleForm.date ||
+                          !scheduleForm.time
+                        }
+                      >
+                        <FaCalendarPlus /> Schedule Meeting
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Scheduled Meetings List */}
+                  <div className="scheduled-meetings-section">
+                    <div className="section-header">
+                      <h3>Scheduled Meetings</h3>
+                      <button
+                        onClick={loadUpcomingMeetings}
+                        className="refresh-button"
+                        disabled={loading}
+                      >
+                        {loading ? "Loading..." : "Refresh"}
+                      </button>
+                    </div>
+
+                    {upcomingMeetings.length === 0 ? (
+                      <div className="no-meetings">
+                        <p>No meetings scheduled.</p>
+                      </div>
+                    ) : (
+                      <div className="scheduled-meetings-list">
+                        {upcomingMeetings.map((meeting) => (
+                          <div
+                            key={meeting._id}
+                            className="scheduled-meeting-card"
+                          >
+                            <div className="meeting-header">
+                              <h4>{meeting.meetingName}</h4>
+                              <span
+                                className={`meeting-status ${meeting.status}`}
+                              >
+                                {meeting.status}
+                              </span>
+                            </div>
+
+                            <div className="meeting-details">
+                              <p>
+                                <FaClock />{" "}
+                                {new Date(
+                                  meeting.scheduledDateTime
+                                ).toLocaleString()}
+                              </p>
+                              <p>
+                                <FaUsers /> Duration: {meeting.duration} minutes
+                              </p>
+                              {meeting.teamName && (
+                                <p>Team: {meeting.teamName}</p>
+                              )}
+                              {meeting.description && (
+                                <p>{meeting.description}</p>
+                              )}
+                            </div>
+
+                            <div className="meeting-actions">
+                              {meeting.status === "scheduled" &&
+                                new Date(meeting.scheduledDateTime) <=
+                                  new Date() && (
+                                  <button
+                                    className="start-button"
+                                    onClick={() =>
+                                      startScheduledMeeting(meeting._id)
+                                    }
+                                  >
+                                    <FaPlay /> Start Meeting
+                                  </button>
+                                )}
+                              <button
+                                className="copy-button"
+                                onClick={() => {
+                                  const meetingInfo = `Meeting: ${
+                                    meeting.meetingName
+                                  }\nDate: ${new Date(
+                                    meeting.scheduledDateTime
+                                  ).toLocaleString()}\nDuration: ${
+                                    meeting.duration
+                                  } minutes`;
+                                  navigator.clipboard.writeText(meetingInfo);
+                                  setSuccess("Meeting details copied!");
+                                }}
+                              >
+                                <FaCopy /> Copy Details
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (

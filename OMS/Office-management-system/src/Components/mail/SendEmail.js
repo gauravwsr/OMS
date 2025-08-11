@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import './SendEmail.css';
+import React, { useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import "./SendEmail.css";
 
 const SendEmail = () => {
   const [email, setEmail] = useState('');
@@ -21,22 +21,15 @@ const SendEmail = () => {
 
   const saveDraft = async () => {
     if (!email && !cc && !bcc && !subject && !body) {
-      alert('Draft is empty. Nothing to save.');
+      alert('Draft is empty. Please add some content before saving.');
       return;
     }
 
     setIsSaving(true);
 
-    const draftData = {
-      to: email,
-      cc: cc,
-      bcc: bcc,
-      subject: subject,
-      body: body,
-      date: new Date().toISOString()
-    };
-
     try {
+      console.log('Saving draft with data:', { to: email, cc, bcc, subject, body });
+      
       const response = await fetch('http://localhost:5001/api/emails/save-draft', {
         method: 'POST',
         headers: {
@@ -53,14 +46,17 @@ const SendEmail = () => {
       });
 
       const data = await response.json();
-      if (response.ok) {
-        alert('Draft saved successfully!');
+      
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}`);
+        console.log('Draft saved successfully:', data.draft);
       } else {
-        alert(`Failed to save draft: ${data.message}`);
+        alert(`❌ Failed to save draft: ${data.message}`);
+        console.error('Draft save failed:', data);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while saving the draft.');
+      console.error("Error saving draft:", error);
+      alert("❌ An error occurred while saving the draft. Please check your connection and try again.");
     } finally {
       setIsSaving(false);
     }
@@ -70,18 +66,20 @@ const SendEmail = () => {
     e.preventDefault();
 
     if (!email && !cc && !bcc) {
-      alert('Please provide at least one recipient (To, Cc, or Bcc).');
+      alert('📧 Please provide at least one recipient (To, Cc, or Bcc).');
       return;
     }
 
     if (!subject || !body) {
-      alert('Please fill in subject and message body.');
+      alert('📝 Please fill in both subject and message body.');
       return;
     }
 
     setIsSending(true);
 
     try {
+      console.log('Sending email with data:', { to: email, cc, bcc, subject, body: body.substring(0, 100) + '...' });
+      
       const response = await fetch('http://localhost:5001/api/emails/send', {
         method: 'POST',
         headers: {
@@ -98,8 +96,11 @@ const SendEmail = () => {
       });
 
       const data = await response.json();
-      if (response.ok) {
-        alert('Email sent successfully!');
+      
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}`);
+        console.log('Email sent successfully:', data.messageId);
+        
         // Clear form after successful send
         setEmail('');
         setCc('');
@@ -110,11 +111,12 @@ const SendEmail = () => {
         setShowCc(false);
         setShowBcc(false);
       } else {
-        alert(`Failed to send email: ${data.message}`);
+        alert(`❌ Failed to send email: ${data.message}`);
+        console.error('Email send failed:', data);
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred while sending the email.');
+      console.error("Error sending email:", error);
+      alert("❌ An error occurred while sending the email. Please check your connection and email configuration.");
     } finally {
       setIsSending(false);
     }
@@ -250,14 +252,14 @@ const SendEmail = () => {
             onClick={saveDraft}
             disabled={isSaving || isSending}
           >
-            {isSaving ? 'Saving...' : 'Save Draft'}
+            {isSaving ? "Saving..." : "Save Draft"}
           </button>
           <button
             type="submit"
             className="send-button"
             disabled={isSaving || isSending}
           >
-            {isSending ? 'Sending...' : 'Send'}
+            {isSending ? "Sending..." : "Send"}
           </button>
         </div>
       </form>

@@ -110,10 +110,13 @@ const Employee = () => {
 
     try {
       // Register face with the face recognition server
-      const response = await axios.post("http://146.190.165.62:5002/register_face", {
-        name: formData.fullName,
-        images: capturedImages,
-      });
+      const response = await axios.post(
+        "http://localhost:5002/register_face",
+        {
+          name: formData.fullName,
+          images: capturedImages,
+        }
+      );
       console.log("Face registration response:", response.data);
 
       // Store face encodings in backend database
@@ -389,9 +392,12 @@ const Employee = () => {
   const checkServerStatus = async () => {
     try {
       console.log("🔍 Checking server status...");
-      const response = await axios.get("http://localhost:5001/api/health", {
-        timeout: 3000,
-      });
+      const response = await axios.get(
+        "http://localhost:5001/api/health",
+        {
+          timeout: 3000,
+        }
+      );
       console.log("✅ Server is running and accessible");
       return true;
     } catch (error) {

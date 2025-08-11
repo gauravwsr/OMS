@@ -427,19 +427,28 @@ const EmployeeProjects = () => {
     <div className="employee-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
             <h1>My Projects</h1>
             <p>
-              Welcome back, {currentUser.name || currentUser.username || "Employee"}
-              ! Here are your assigned projects and tasks.
+              Welcome back,{" "}
+              {currentUser.name || currentUser.username || "Employee"}! Here are
+              your assigned projects and tasks.
             </p>
           </div>
           <div>
             <button
               onClick={() => {
                 // Open a modal or navigate to view all tasks across projects
-                alert("This feature can be expanded to show all tasks across all projects");
+                alert(
+                  "This feature can be expanded to show all tasks across all projects"
+                );
               }}
               style={{
                 background: "#3b82f6",
@@ -452,7 +461,7 @@ const EmployeeProjects = () => {
                 alignItems: "center",
                 gap: "8px",
                 fontSize: "14px",
-                fontWeight: "500"
+                fontWeight: "500",
               }}
               title="View all your tasks across all projects"
             >
