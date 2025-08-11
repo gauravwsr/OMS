@@ -111,7 +111,7 @@ const Employee = () => {
     try {
       // Register face with the face recognition server
       const response = await axios.post(
-        "http://localhost:5002/register_face",
+        "http://146.190.165.62:5002/register_face",
         {
           name: formData.fullName,
           images: capturedImages,
