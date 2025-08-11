@@ -116,7 +116,7 @@ const AdminDashboard = () => {
     try {
       await axios.delete(
         "http://localhost:5001/api/notifications/cleanup-test",
-        "http://localhost:5001/api/notifications/cleanup-test",
+        // "http://localhost:5001/api/notifications/cleanup-test",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
