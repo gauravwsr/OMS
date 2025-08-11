@@ -15,8 +15,8 @@ start "Face Recognition Server" cmd /k "cd /d d:\OMS\OMS\OMS\face-recognition-se
 
 echo.
 echo Both servers are starting...
-echo - Node.js server: http://localhost:5001
-echo - Python face recognition server: http://localhost:5002
+echo - Node.js server: http://146.190.165.62:5001
+echo - Python face recognition server: http://146.190.165.62:5002
 echo.
 echo Press any key to exit this window (servers will continue running)
 pause > nul

@@ -24,7 +24,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5001/api/emails/send", {
+      const response = await fetch("http://146.190.165.62:5001/api/emails/send", {
         method: "POST",
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
         setDrafts(drafts.filter((d) => d.id !== draft.id));
         // Delete the draft after successful send
         try {
-          await fetch(`http://localhost:5001/api/emails/delete-draft/${draft._id}`, {
+          await fetch(`http://146.190.165.62:5001/api/emails/delete-draft/${draft._id}`, {
             method: "DELETE",
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`

@@ -26,7 +26,7 @@ async function testMeetingCreationFixed() {
     // This will still fail due to auth, but we should get a different error
     // (401 unauthorized instead of 400 validation error)
     const response = await axios.post(
-      "http://localhost:5001/api/meetings/create",
+      "http://146.190.165.62:5001/api/meetings/create",
       meetingData,
       {
         headers: {

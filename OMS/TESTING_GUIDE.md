@@ -15,7 +15,7 @@ npm run dev
 
 ```bash
 # Create Employee
-curl -X POST http://localhost:5001/api/candidates \
+curl -X POST http://146.190.165.62:5001/api/candidates \
   -H "Content-Type: application/json" \
   -d '{
     "candidateId": "EMP001",
@@ -29,15 +29,15 @@ curl -X POST http://localhost:5001/api/candidates \
   }'
 
 # Get All Employees
-curl http://localhost:5001/api/candidates
+curl http://146.190.165.62:5001/api/candidates
 
 # Update Employee
-curl -X PUT http://localhost:5001/api/candidates/EMP001 \
+curl -X PUT http://146.190.165.62:5001/api/candidates/EMP001 \
   -H "Content-Type: application/json" \
   -d '{"fullName": "Updated Name"}'
 
 # Delete Employee
-curl -X DELETE http://localhost:5001/api/candidates/EMP001
+curl -X DELETE http://146.190.165.62:5001/api/candidates/EMP001
 ```
 
 ### 2. Face Recognition Server Testing
@@ -53,10 +53,10 @@ python server.py
 
 ```bash
 # Get Registered Users
-curl http://localhost:5001/api/registered-users
+curl http://146.190.165.62:5001/api/registered-users
 
 # Test Face Recognition (with base64 image)
-curl -X POST http://localhost:5001/api/mark-attendance \
+curl -X POST http://146.190.165.62:5001/api/mark-attendance \
   -H "Content-Type: application/json" \
   -d '{"image": "base64_image_data_here"}'
 ```
@@ -260,7 +260,7 @@ Solution:
 ```bash
 # Test multiple simultaneous employee creation
 for i in {1..10}; do
-  curl -X POST http://localhost:5001/api/candidates \
+  curl -X POST http://146.190.165.62:5001/api/candidates \
     -H "Content-Type: application/json" \
     -d "{
       \"candidateId\": \"EMP00$i\",
