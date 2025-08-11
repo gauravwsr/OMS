@@ -28,7 +28,7 @@ const Certificate = () => {
 
       console.log("Checking existing certificates...");
       const response = await fetch(
-        "http://localhost:5001/api/certificates",
+        "http://146.190.165.62:5001/api/certificates",
         {
           method: "GET",
           headers: {
@@ -77,7 +77,7 @@ const Certificate = () => {
 
       // Test with a simple endpoint
       console.log("Testing authentication with offers endpoint...");
-      const response = await fetch("http://localhost:5001/api/offers", {
+      const response = await fetch("http://146.190.165.62:5001/api/offers", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -274,7 +274,7 @@ const Certificate = () => {
 
       // Save to database via API
       const response = await fetch(
-        "http://localhost:5001/api/certificates",
+        "http://146.190.165.62:5001/api/certificates",
         {
           method: "POST",
           headers: {
@@ -354,7 +354,7 @@ const Certificate = () => {
 
       // Fetch all certificates from database
       const response = await fetch(
-        "http://localhost:5001/api/certificates",
+        "http://146.190.165.62:5001/api/certificates",
         {
           method: "GET",
           headers: {
@@ -689,7 +689,7 @@ const Certificate = () => {
 
       // Save to database via API - FIXED
       const response = await fetch(
-        "http://localhost:5001/api/completions",
+        "http://146.190.165.62:5001/api/completions",
         {
           method: "POST",
           headers: {
@@ -768,7 +768,7 @@ const Certificate = () => {
 
       // Fetch all completions from database
       const response = await fetch(
-        "http://localhost:5001/api/completions",
+        "http://146.190.165.62:5001/api/completions",
         {
           method: "GET",
           headers: {
@@ -1011,7 +1011,7 @@ const Certificate = () => {
         if (token) {
           console.log("Attempting to save completion to database...");
           const response = await fetch(
-            "http://localhost:5001/api/completions",
+            "http://146.190.165.62:5001/api/completions",
             {
               method: "POST",
               headers: {
@@ -1116,7 +1116,7 @@ const Certificate = () => {
       console.log("Attempting to save offer with ID:", offerData.offerID);
 
       // Save to database via API
-      const response = await fetch("http://localhost:5001/api/offers", {
+      const response = await fetch("http://146.190.165.62:5001/api/offers", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1187,7 +1187,7 @@ const Certificate = () => {
       }
 
       // Fetch all offers from database
-      const response = await fetch("http://localhost:5001/api/offers", {
+      const response = await fetch("http://146.190.165.62:5001/api/offers", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -1440,7 +1440,7 @@ const Certificate = () => {
         if (token) {
           console.log("Attempting to save offer to database...");
           const response = await fetch(
-            "http://localhost:5001/api/offers",
+            "http://146.190.165.62:5001/api/offers",
             {
               method: "POST",
               headers: {

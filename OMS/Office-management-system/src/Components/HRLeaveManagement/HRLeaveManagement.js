@@ -23,7 +23,7 @@ const HRLeaveManagement = () => {
     try {
       console.log("Fetching employee leave applications...");
       const response = await axios.get(
-        "http://localhost:5001/api/leave/employees"
+        "http://146.190.165.62:5001/api/leave/employees"
       );
       console.log("Employee leave applications response:", response.data);
 
@@ -87,11 +87,11 @@ const HRLeaveManagement = () => {
       console.log("Request data:", requestData);
       console.log(
         "Making API call to:",
-        `http://localhost:5001/api/leave/status/${leaveId}`
+        `http://146.190.165.62:5001/api/leave/status/${leaveId}`
       );
 
       const response = await axios.patch(
-        `http://localhost:5001/api/leave/status/${leaveId}`,
+        `http://146.190.165.62:5001/api/leave/status/${leaveId}`,
         requestData,
         {
           headers: {

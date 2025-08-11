@@ -42,7 +42,7 @@ const Chat = () => {
   const typingTimeout = useRef(null);
 
   const API_BASE_URL =
-    process.env.REACT_APP_API_URL || "http://localhost:5001";
+    process.env.REACT_APP_API_URL || "http://146.190.165.62:5001";
 
   // Request notification permission on component mount
   useEffect(() => {

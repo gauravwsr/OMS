@@ -53,7 +53,7 @@ const EditEmployee = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5001/api/candidates/${id}`,
+        `http://146.190.165.62:5001/api/candidates/${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -125,8 +125,8 @@ const EditEmployee = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:5001/api/candidates/${id}`,
-        `http://localhost:5001/api/candidates/${id}`,
+        `http://146.190.165.62:5001/api/candidates/${id}`,
+        `http://146.190.165.62:5001/api/candidates/${id}`,
         formData
       );
 
@@ -205,8 +205,8 @@ const EditEmployee = () => {
       if (formData.candidateId) {
         try {
           const faceEncodingsResponse = await axios.put(
-            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
-            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
+            `http://146.190.165.62:5001/api/candidates/${formData.candidateId}/face-encodings`,
+            `http://146.190.165.62:5001/api/candidates/${formData.candidateId}/face-encodings`,
             {
               faceEncodings: capturedImages, // Store captured images as face data
               faceImagePaths: [`face_images/${formData.fullName}`], // Store image path

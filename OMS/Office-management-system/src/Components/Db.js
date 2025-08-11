@@ -29,7 +29,7 @@ const EmployeeList = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:5001/api/candidates",
+          "http://146.190.165.62:5001/api/candidates",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -171,7 +171,7 @@ const EmployeeList = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.delete(
-          `http://localhost:5001/api/candidates/${id}`,
+          `http://146.190.165.62:5001/api/candidates/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -195,7 +195,7 @@ Details:
 
           // Refresh the employee list
           const refreshResponse = await axios.get(
-            "http://localhost:5001/api/candidates",
+            "http://146.190.165.62:5001/api/candidates",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -322,7 +322,7 @@ Details:
                       <img
                         src={
                           employee.photoPath
-                            ? `http://localhost:5001/uploads/photos/${employee.photoPath}`
+                            ? `http://146.190.165.62:5001/uploads/photos/${employee.photoPath}`
                             : `https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
                         }
                         alt={employee.fullName}
@@ -493,7 +493,7 @@ Details:
                   <img
                     src={
                       employee.photoPath
-                        ? `http://localhost:5001/uploads/photos/${employee.photoPath}`
+                        ? `http://146.190.165.62:5001/uploads/photos/${employee.photoPath}`
                         : ` https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
                     }
                     alt={employee.fullName}

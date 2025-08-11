@@ -25,7 +25,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
 
     try {
       const response = await fetch(
-        "http://localhost:5001/api/emails/send",
+        "http://146.190.165.62:5001/api/emails/send",
         {
           method: "POST",
           headers: {
@@ -48,7 +48,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
         // Delete the draft after successful send
         try {
           await fetch(
-            `http://localhost:5001/api/emails/delete-draft/${draft._id}`,
+            `http://146.190.165.62:5001/api/emails/delete-draft/${draft._id}`,
             {
               method: "DELETE",
               headers: {
