@@ -66,7 +66,7 @@ const EmployeeProjects = () => {
         currentUser.id || currentUser.email || currentUser.name;
 
       const response = await fetch(
-        `http://localhost:5001/api/client-projects/employee/${identifier}`,
+        `http://146.190.165.62:5001/api/client-projects/employee/${identifier}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -83,7 +83,7 @@ const EmployeeProjects = () => {
         assignedProjects.map(async (project) => {
           try {
             const taskResponse = await fetch(
-              `http://localhost:5001/api/employee/projects/${project._id}/tasks`,
+              `http://146.190.165.62:5001/api/employee/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -284,7 +284,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/employee/projects/${projectId}/tasks`,
+        `http://146.190.165.62:5001/api/employee/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -340,7 +340,7 @@ const EmployeeProjects = () => {
 
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/employee/tasks/${taskId}/status`,
+        `http://146.190.165.62:5001/api/employee/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -366,7 +366,7 @@ const EmployeeProjects = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/employee/tasks/${taskId}/points/${pointId}`,
+        `http://146.190.165.62:5001/api/employee/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -427,19 +427,28 @@ const EmployeeProjects = () => {
     <div className="employee-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
             <h1>My Projects</h1>
             <p>
-              Welcome back, {currentUser.name || currentUser.username || "Employee"}
-              ! Here are your assigned projects and tasks.
+              Welcome back,{" "}
+              {currentUser.name || currentUser.username || "Employee"}! Here are
+              your assigned projects and tasks.
             </p>
           </div>
           <div>
             <button
               onClick={() => {
                 // Open a modal or navigate to view all tasks across projects
-                alert("This feature can be expanded to show all tasks across all projects");
+                alert(
+                  "This feature can be expanded to show all tasks across all projects"
+                );
               }}
               style={{
                 background: "#3b82f6",
@@ -452,7 +461,7 @@ const EmployeeProjects = () => {
                 alignItems: "center",
                 gap: "8px",
                 fontSize: "14px",
-                fontWeight: "500"
+                fontWeight: "500",
               }}
               title="View all your tasks across all projects"
             >

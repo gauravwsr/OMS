@@ -47,7 +47,7 @@ const AnalyticsManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:5001/api/users/all-users",
+        "http://146.190.165.62:5001/api/users/all-users",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -103,7 +103,7 @@ const AnalyticsManagement = () => {
   const fetchLeaveData = async (config) => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/analytics/leave-analytics",
+        "http://146.190.165.62:5001/api/analytics/leave-analytics",
         config
       );
       console.log("Fetched Leave Data:", response.data); // Debugging log
@@ -117,7 +117,7 @@ const AnalyticsManagement = () => {
   const fetchAttendanceData = async (config) => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/analytics/attendance-analytics",
+        "http://146.190.165.62:5001/api/analytics/attendance-analytics",
         config
       );
       setAttendanceData(response.data || []);
@@ -130,7 +130,7 @@ const AnalyticsManagement = () => {
   const fetchCheckInOutData = async (config) => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/analytics/checkinout-analytics",
+        "http://146.190.165.62:5001/api/analytics/checkinout-analytics",
         config
       );
       setCheckInOutData(response.data || []);

@@ -7,7 +7,7 @@ def send_attendance_to_mongodb(name, status):
     try:
         # First, get all employees to find the correct candidateId
         employees_response = requests.get(
-            "http://localhost:5000/api/candidates",
+            "http://146.190.165.62:5000/api/candidates",
             timeout=5
         )
         
@@ -46,7 +46,7 @@ def send_attendance_to_mongodb(name, status):
         
         # Send to Node.js backend
         response = requests.post(
-            "http://localhost:5000/api/candidates/attendance/mark",
+            "http://146.190.165.62:5000/api/candidates/attendance/mark",
             json=attendance_data,
             headers={"Content-Type": "application/json"},
             timeout=5

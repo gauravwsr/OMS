@@ -54,10 +54,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("http://localhost:5001/users/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://146.190.165.62:5001/users/login",
+        {
+          email,
+          password,
+        }
+      );
 
       if (response.data && response.data.token) {
         message.success("Login successful!");
@@ -96,14 +99,17 @@ export const AuthProvider = ({ children }) => {
     additionalData = {}
   ) => {
     try {
-      const response = await axios.post("http://localhost:5001/users/signup", {
-        name,
-        email,
-        password,
-        role,
-        subRole,
-        ...additionalData, // Spread additional form data
-      });
+      const response = await axios.post(
+        "http://146.190.165.62:5001/users/signup",
+        {
+          name,
+          email,
+          password,
+          role,
+          subRole,
+          ...additionalData, // Spread additional form data
+        }
+      );
 
       if (response.status === 201) {
         message.success("Signup successful! Redirecting to login page...");
@@ -143,7 +149,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const response = await axios.put(
-        "http://localhost:5001/users/updateRole",
+        "http://146.190.165.62:5001/users/updateRole",
         {
           userId: user.email,
           newRole,
@@ -163,7 +169,7 @@ export const AuthProvider = ({ children }) => {
   const checkSuperAdminExists = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/users/check-super-admin"
+        "http://146.190.165.62:5001/users/check-super-admin"
       );
       return response.data.exists;
     } catch (error) {
@@ -175,7 +181,7 @@ export const AuthProvider = ({ children }) => {
   const getAvailableSuperAdminSubRoles = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/users/available-super-admin-subroles"
+        "http://146.190.165.62:5001/users/available-super-admin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -187,7 +193,7 @@ export const AuthProvider = ({ children }) => {
   const getSuperAdminSubRoles = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/users/superadmin-subroles"
+        "http://146.190.165.62:5001/users/superadmin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -206,7 +212,7 @@ export const AuthProvider = ({ children }) => {
   const addSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.post(
-        "http://localhost:5001/users/add-superadmin-subrole",
+        "http://146.190.165.62:5001/users/add-superadmin-subrole",
         {
           subRole,
         },
@@ -226,7 +232,7 @@ export const AuthProvider = ({ children }) => {
   const deleteSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.delete(
-        `http://localhost:5001/users/delete-superadmin-subrole/${subRole}`,
+        `http://146.190.165.62:5001/users/delete-superadmin-subrole/${subRole}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -250,7 +256,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const response = await axios.get(
-        "http://localhost:5001/api/notifications",
+        "http://146.190.165.62:5001/api/notifications",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -278,7 +284,7 @@ export const AuthProvider = ({ children }) => {
   const markNotificationAsRead = async (notificationId) => {
     try {
       await axios.patch(
-        `http://localhost:5001/api/notifications/${notificationId}/read`,
+        `http://146.190.165.62:5001/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -301,7 +307,7 @@ export const AuthProvider = ({ children }) => {
   const createNotification = async (notificationData) => {
     try {
       const response = await axios.post(
-        "http://localhost:5001/api/notifications",
+        "http://146.190.165.62:5001/api/notifications",
         notificationData,
         {
           headers: {
@@ -318,7 +324,7 @@ export const AuthProvider = ({ children }) => {
 
   const clearAllNotifications = async () => {
     try {
-      await axios.delete("http://localhost:5001/api/notifications/clear", {
+      await axios.delete("http://146.190.165.62:5001/api/notifications/clear", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Pencil, Settings } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../AuthProvider/AuthContext';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthProvider/AuthContext";
 import SearchBar from "../Search-bar/SearchBar";
-import InboxSection from './InboxSection';
-import SentSection from './SentSection';
-import DraftSection from './DraftSection';
-import EmailConfig from './EmailConfig';
-import './Inbox.css';
+import InboxSection from "./InboxSection";
+import SentSection from "./SentSection";
+import DraftSection from "./DraftSection";
+import EmailConfig from "./EmailConfig";
+import "./Inbox.css";
 
 const Inbox = () => {
   const { user } = useAuth();
@@ -32,20 +32,23 @@ const Inbox = () => {
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
     try {
-      const response = await fetch('http://localhost:5001/api/emails/check-config', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/emails/check-config",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
+      );
 
       const data = await response.json();
       if (response.ok && data.configured) {
         setIsEmailConfigured(true);
       }
     } catch (error) {
-      console.error('Error checking email configuration:', error);
+      console.error("Error checking email configuration:", error);
     } finally {
       setCheckingConfig(false);
     }
@@ -63,7 +66,7 @@ const Inbox = () => {
   };
 
   const handleEditConfig = () => {
-    navigate('/email-config');
+    navigate("/email-config");
   };
 
   useEffect(() => {
@@ -115,46 +118,51 @@ const Inbox = () => {
     setLoading(true);
     setError(null);
 
-    const token = localStorage.getItem('token');
-    let url = '';
-    if (activeTab === 'inbox') {
-      url = 'http://localhost:5001/api/emails/inbox';
-    } else if (activeTab === 'sent') {
-      url = 'http://localhost:5001/api/emails/sent';
-    } else if (activeTab === 'drafts') {
-      url = 'http://localhost:5001/api/emails/drafts';
+    const token = localStorage.getItem("token");
+    let url = "";
+    if (activeTab === "inbox") {
+      url = "http://146.190.165.62:5001/api/emails/inbox";
+    } else if (activeTab === "sent") {
+      url = "http://146.190.165.62:5001/api/emails/sent";
+    } else if (activeTab === "drafts") {
+      url = "http://146.190.165.62:5001/api/emails/drafts";
     }
 
     try {
       const res = await fetch(url, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Failed to fetch data');
+        throw new Error(data.message || "Failed to fetch data");
       }
 
-      if (activeTab === 'inbox') {
+      if (activeTab === "inbox") {
         setEmails(data.emails || []);
         setFilteredEmails(data.emails || []);
-      } else if (activeTab === 'sent') {
+      } else if (activeTab === "sent") {
         setSentEmails(data.emails || []);
-      } else if (activeTab === 'drafts') {
+      } else if (activeTab === "drafts") {
         setDrafts(data.emails || data || []);
       }
     } catch (err) {
       console.error(`Error fetching ${activeTab} emails:`, err);
       // More specific error handling
-      if (err.message.includes('Email not configured')) {
+      if (err.message.includes("Email not configured")) {
         setIsEmailConfigured(false);
-        setError('Please configure your email settings first');
-      } else if (err.message.includes('timeout') || err.message.includes('IMAP')) {
-        setError(`Connection timeout. Please check your internet connection and email server settings.`);
+        setError("Please configure your email settings first");
+      } else if (
+        err.message.includes("timeout") ||
+        err.message.includes("IMAP")
+      ) {
+        setError(
+          `Connection timeout. Please check your internet connection and email server settings.`
+        );
       } else {
         setError(`Failed to fetch ${activeTab} emails: ${err.message}`);
       }

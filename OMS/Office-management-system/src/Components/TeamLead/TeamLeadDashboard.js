@@ -15,7 +15,6 @@ import {
   FaEnvelope,
   FaChartLine,
   FaMapMarkerAlt,
- 
   FaTimes,
   FaClock,
   FaUser,
@@ -83,7 +82,8 @@ const TeamLeadDashboard = () => {
 
   // Employee Task Viewing States
   const [showEmployeeTasksModal, setShowEmployeeTasksModal] = useState(false);
-  const [selectedEmployeeForTasks, setSelectedEmployeeForTasks] = useState(null);
+  const [selectedEmployeeForTasks, setSelectedEmployeeForTasks] =
+    useState(null);
   const [employeeTasks, setEmployeeTasks] = useState({
     Pending: [],
     "In Progress": [],
@@ -92,7 +92,8 @@ const TeamLeadDashboard = () => {
   const [loadingEmployeeTasks, setLoadingEmployeeTasks] = useState(false);
 
   // Task History Dashboard States
-  const [showTaskHistoryDashboard, setShowTaskHistoryDashboard] = useState(false);
+  const [showTaskHistoryDashboard, setShowTaskHistoryDashboard] =
+    useState(false);
   const [taskHistory, setTaskHistory] = useState([]);
   const [loadingTaskHistory, setLoadingTaskHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState("all"); // all, today, week, month
@@ -113,7 +114,7 @@ const TeamLeadDashboard = () => {
       const identifier =
         currentUser.id || currentUser.name || currentUser.email;
       const response = await fetch(
-        `http://localhost:5001/api/client-projects/team-lead/${identifier}`,
+        `http://146.190.165.62:5001/api/client-projects/team-lead/${identifier}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -129,7 +130,7 @@ const TeamLeadDashboard = () => {
         assignedProjects.map(async (project) => {
           try {
             const taskResponse = await fetch(
-              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
+              `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -301,7 +302,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/projects/${projectId}/tasks`,
+        `http://146.190.165.62:5001/api/team-lead/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -358,7 +359,7 @@ const TeamLeadDashboard = () => {
       console.log("Sending task data:", taskData);
 
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
+        `http://146.190.165.62:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
         {
           method: "POST",
           headers: {
@@ -406,7 +407,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}/assignment`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/assignment`,
         {
           method: "PUT",
           headers: {
@@ -442,7 +443,7 @@ const TeamLeadDashboard = () => {
 
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}/status`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -487,7 +488,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}`,
         {
           method: "DELETE",
           headers: {
@@ -517,7 +518,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -691,7 +692,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5001/api/team-lead/employees",
+        "http://146.190.165.62:5001/api/team-lead/employees",
         {
           headers: {
             "Content-Type": "application/json",
@@ -709,7 +710,7 @@ const TeamLeadDashboard = () => {
       try {
         const token = localStorage.getItem("token");
         const fallbackResponse = await fetch(
-          "http://localhost:5001/api/candidates/employees",
+          "http://146.190.165.62:5001/api/candidates/employees",
           {
             headers: {
               "Content-Type": "application/json",
@@ -760,7 +761,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/client-projects/${selectedProjectForAssignment._id}/assign-employees`,
+        `http://146.190.165.62:5001/api/client-projects/${selectedProjectForAssignment._id}/assign-employees`,
         {
           method: "PUT",
           headers: {
@@ -798,7 +799,7 @@ const TeamLeadDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       await fetch(
-        `http://localhost:5001/api/client-projects/${projectId}/progress`,
+        `http://146.190.165.62:5001/api/client-projects/${projectId}/progress`,
         {
           method: "PUT",
           headers: {
@@ -830,34 +831,34 @@ const TeamLeadDashboard = () => {
   };
 
   // Employee Task Management Functions
-  
+
   // Function to fetch tasks for a specific employee
   const fetchEmployeeTasks = async (employee, projectId = null) => {
     try {
       setLoadingEmployeeTasks(true);
       const token = localStorage.getItem("token");
-      
+
       // Extract employee ID - handle different object structures
       const extractEmployeeId = (empData) => {
-        if (typeof empData === 'string') return empData;
-        if (typeof empData === 'object' && empData !== null) {
+        if (typeof empData === "string") return empData;
+        if (typeof empData === "object" && empData !== null) {
           const id = empData._id || empData.id || empData.employeeId;
-          if (typeof id === 'string') return id;
-          if (typeof id === 'object' && id !== null) {
-            return id._id || id.id || id.employeeId || '';
+          if (typeof id === "string") return id;
+          if (typeof id === "object" && id !== null) {
+            return id._id || id.id || id.employeeId || "";
           }
         }
-        return '';
+        return "";
       };
-      
+
       const employeeId = extractEmployeeId(employee);
-      
+
       if (!employeeId) {
         console.error("Employee ID not found. Employee object:", employee);
         throw new Error("Employee ID not found");
       }
 
-      let url = `http://localhost:5001/api/team-lead/employees/${employeeId}/tasks`;
+      let url = `http://146.190.165.62:5001/api/team-lead/employees/${employeeId}/tasks`;
       if (projectId) {
         url += `?projectId=${projectId}`;
       }
@@ -889,7 +890,7 @@ const TeamLeadDashboard = () => {
     } finally {
       setLoadingEmployeeTasks(false);
     }
-  };  // Function to view tasks for a specific employee
+  }; // Function to view tasks for a specific employee
   const handleViewEmployeeTasks = async (employee, projectId = null) => {
     try {
       // Ensure we have a valid employee object
@@ -897,33 +898,41 @@ const TeamLeadDashboard = () => {
         console.error("No employee provided");
         return;
       }
-      
+
       // Create a clean employee object for state storage
       const extractId = (idField) => {
-        if (typeof idField === 'string') return idField;
-        if (typeof idField === 'object' && idField !== null) {
-          return idField._id || idField.id || idField.employeeId || '';
+        if (typeof idField === "string") return idField;
+        if (typeof idField === "object" && idField !== null) {
+          return idField._id || idField.id || idField.employeeId || "";
         }
-        return '';
+        return "";
       };
-      
+
       const cleanEmployee = {
-        _id: extractId(employee._id) || extractId(employee.id) || extractId(employee.employeeId),
-        id: extractId(employee._id) || extractId(employee.id) || extractId(employee.employeeId),
-        name: employee.name || 'Unknown',
-        email: employee.email || '',
-        role: employee.role || '',
-        subRole: employee.subRole || ''
+        _id:
+          extractId(employee._id) ||
+          extractId(employee.id) ||
+          extractId(employee.employeeId),
+        id:
+          extractId(employee._id) ||
+          extractId(employee.id) ||
+          extractId(employee.employeeId),
+        name: employee.name || "Unknown",
+        email: employee.email || "",
+        role: employee.role || "",
+        subRole: employee.subRole || "",
       };
-      
+
       console.log("Viewing tasks for employee:", cleanEmployee);
-      
+
       setSelectedEmployeeForTasks(cleanEmployee);
       setShowEmployeeTasksModal(true);
-      
+
       const taskData = await fetchEmployeeTasks(cleanEmployee, projectId);
       if (taskData) {
-        console.log(`Loaded ${taskData.total} tasks for employee: ${cleanEmployee.name}`);
+        console.log(
+          `Loaded ${taskData.total} tasks for employee: ${cleanEmployee.name}`
+        );
       }
     } catch (error) {
       console.error("Error viewing employee tasks:", error);
@@ -947,7 +956,7 @@ const TeamLeadDashboard = () => {
     try {
       setLoadingTaskHistory(true);
       const token = localStorage.getItem("token");
-      
+
       const response = await fetch("/api/team-lead/tasks/history", {
         method: "GET",
         headers: {
@@ -962,7 +971,7 @@ const TeamLeadDashboard = () => {
 
       const data = await response.json();
       console.log("Task history response:", data);
-      
+
       if (data.success) {
         setTaskHistory(data.data.history || []);
         setFilteredTaskHistory(data.data.history || []);
@@ -988,7 +997,7 @@ const TeamLeadDashboard = () => {
     if (historySearchTerm.trim()) {
       const searchLower = historySearchTerm.toLowerCase();
       filtered = filtered.filter(
-        entry =>
+        (entry) =>
           entry.taskTitle?.toLowerCase().includes(searchLower) ||
           entry.projectTitle?.toLowerCase().includes(searchLower) ||
           entry.changedBy?.name?.toLowerCase().includes(searchLower) ||
@@ -1005,13 +1014,19 @@ const TeamLeadDashboard = () => {
 
     switch (historyFilter) {
       case "today":
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= today);
+        filtered = filtered.filter(
+          (entry) => new Date(entry.timestamp) >= today
+        );
         break;
       case "week":
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= weekAgo);
+        filtered = filtered.filter(
+          (entry) => new Date(entry.timestamp) >= weekAgo
+        );
         break;
       case "month":
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= monthAgo);
+        filtered = filtered.filter(
+          (entry) => new Date(entry.timestamp) >= monthAgo
+        );
         break;
       default:
         // "all" - no additional filtering
@@ -1161,7 +1176,7 @@ const TeamLeadDashboard = () => {
           <p>Access important features and reports</p>
         </div>
         <div className="quick-actions-grid">
-          <button 
+          <button
             className="action-button task-history-btn"
             onClick={handleOpenTaskHistoryDashboard}
           >
@@ -1170,7 +1185,9 @@ const TeamLeadDashboard = () => {
             </div>
             <div className="action-content">
               <div className="action-title">Task History</div>
-              <div className="action-description">View all task status changes</div>
+              <div className="action-description">
+                View all task status changes
+              </div>
             </div>
           </button>
         </div>
@@ -1353,38 +1370,65 @@ const TeamLeadDashboard = () => {
                       </h6>
                       {project.assignedEmployees &&
                       project.assignedEmployees.length > 0 ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}
+                        >
                           <div className="team-members-container">
                             {project.assignedEmployees
                               .slice(0, 3)
                               .map((emp, idx) => (
-                                <span 
-                                  key={idx} 
+                                <span
+                                  key={idx}
                                   className="team-member-badge"
                                   onClick={() => {
                                     const extractId = (idField) => {
-                                      if (typeof idField === 'string') return idField;
-                                      if (typeof idField === 'object' && idField !== null) {
-                                        return idField._id || idField.id || idField.employeeId || '';
+                                      if (typeof idField === "string")
+                                        return idField;
+                                      if (
+                                        typeof idField === "object" &&
+                                        idField !== null
+                                      ) {
+                                        return (
+                                          idField._id ||
+                                          idField.id ||
+                                          idField.employeeId ||
+                                          ""
+                                        );
                                       }
-                                      return '';
+                                      return "";
                                     };
-                                    
+
                                     const employeeData = {
-                                      _id: extractId(emp.employeeId) || extractId(emp._id) || idx,
-                                      id: extractId(emp.employeeId) || extractId(emp._id) || idx,
-                                      name: emp.name || 'Unknown',
-                                      role: emp.role || '',
-                                      subRole: emp.subRole || '',
-                                      email: emp.email || ''
+                                      _id:
+                                        extractId(emp.employeeId) ||
+                                        extractId(emp._id) ||
+                                        idx,
+                                      id:
+                                        extractId(emp.employeeId) ||
+                                        extractId(emp._id) ||
+                                        idx,
+                                      name: emp.name || "Unknown",
+                                      role: emp.role || "",
+                                      subRole: emp.subRole || "",
+                                      email: emp.email || "",
                                     };
-                                    console.log("Clicking employee:", employeeData);
-                                    handleViewEmployeeTasks(employeeData, project._id);
+                                    console.log(
+                                      "Clicking employee:",
+                                      employeeData
+                                    );
+                                    handleViewEmployeeTasks(
+                                      employeeData,
+                                      project._id
+                                    );
                                   }}
-                                  style={{ 
-                                    cursor: "pointer", 
+                                  style={{
+                                    cursor: "pointer",
                                     transition: "all 0.2s",
-                                    border: "1px solid transparent" 
+                                    border: "1px solid transparent",
                                   }}
                                   onMouseEnter={(e) => {
                                     e.target.style.backgroundColor = "#3b82f6";
@@ -1396,9 +1440,11 @@ const TeamLeadDashboard = () => {
                                     e.target.style.color = "";
                                     e.target.style.borderColor = "transparent";
                                   }}
-                                  title={`Click to view ${emp?.name || 'Unknown'}'s tasks`}
+                                  title={`Click to view ${
+                                    emp?.name || "Unknown"
+                                  }'s tasks`}
                                 >
-                                  {emp?.name || 'Unknown'}
+                                  {emp?.name || "Unknown"}
                                 </span>
                               ))}
                             {project.assignedEmployees.length > 3 && (
@@ -1407,7 +1453,13 @@ const TeamLeadDashboard = () => {
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: 11, color: "#6b7280", fontStyle: "italic" }}>
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "#6b7280",
+                              fontStyle: "italic",
+                            }}
+                          >
                             💡 Click on team member names to view their tasks
                           </div>
                         </div>
@@ -1851,11 +1903,15 @@ const TeamLeadDashboard = () => {
                                           gap: 4,
                                         }}
                                       >
-                                        {task.assignedTo && task.assignedTo.length > 0 ? (
+                                        {task.assignedTo &&
+                                        task.assignedTo.length > 0 ? (
                                           task.assignedTo.map((emp, idx) => (
                                             <span
                                               key={`${task._id}-pending-${
-                                                emp?.employeeId || emp?._id || emp?.name || idx
+                                                emp?.employeeId ||
+                                                emp?._id ||
+                                                emp?.name ||
+                                                idx
                                               }-${idx}`}
                                               style={{
                                                 background: "#fecaca",
@@ -1865,11 +1921,17 @@ const TeamLeadDashboard = () => {
                                                 fontSize: 10,
                                               }}
                                             >
-                                              {String(emp?.name || 'Unknown')}
+                                              {String(emp?.name || "Unknown")}
                                             </span>
                                           ))
                                         ) : (
-                                          <span style={{ fontSize: 10, color: "#6b7280", fontStyle: "italic" }}>
+                                          <span
+                                            style={{
+                                              fontSize: 10,
+                                              color: "#6b7280",
+                                              fontStyle: "italic",
+                                            }}
+                                          >
                                             No assignments
                                           </span>
                                         )}
@@ -2182,11 +2244,15 @@ const TeamLeadDashboard = () => {
                                         gap: 4,
                                       }}
                                     >
-                                      {task.assignedTo && task.assignedTo.length > 0 ? (
+                                      {task.assignedTo &&
+                                      task.assignedTo.length > 0 ? (
                                         task.assignedTo.map((emp, idx) => (
                                           <span
                                             key={`${task._id}-inprogress-${
-                                              emp?.employeeId || emp?._id || emp?.name || idx
+                                              emp?.employeeId ||
+                                              emp?._id ||
+                                              emp?.name ||
+                                              idx
                                             }-${idx}`}
                                             style={{
                                               background: "#bfdbfe",
@@ -2196,11 +2262,17 @@ const TeamLeadDashboard = () => {
                                               fontSize: 10,
                                             }}
                                           >
-                                            {emp?.name || 'Unknown'}
+                                            {emp?.name || "Unknown"}
                                           </span>
                                         ))
                                       ) : (
-                                        <span style={{ fontSize: 10, color: "#6b7280", fontStyle: "italic" }}>
+                                        <span
+                                          style={{
+                                            fontSize: 10,
+                                            color: "#6b7280",
+                                            fontStyle: "italic",
+                                          }}
+                                        >
                                           No assignments
                                         </span>
                                       )}
@@ -2410,11 +2482,15 @@ const TeamLeadDashboard = () => {
                                         gap: 4,
                                       }}
                                     >
-                                      {task.assignedTo && task.assignedTo.length > 0 ? (
+                                      {task.assignedTo &&
+                                      task.assignedTo.length > 0 ? (
                                         task.assignedTo.map((emp, idx) => (
                                           <span
                                             key={`${task._id}-completed-${
-                                              emp?.employeeId || emp?._id || emp?.name || idx
+                                              emp?.employeeId ||
+                                              emp?._id ||
+                                              emp?.name ||
+                                              idx
                                             }-${idx}`}
                                             style={{
                                               background: "#86efac",
@@ -2424,11 +2500,17 @@ const TeamLeadDashboard = () => {
                                               fontSize: 10,
                                             }}
                                           >
-                                            {emp?.name || 'Unknown'}
+                                            {emp?.name || "Unknown"}
                                           </span>
                                         ))
                                       ) : (
-                                        <span style={{ fontSize: 10, color: "#6b7280", fontStyle: "italic" }}>
+                                        <span
+                                          style={{
+                                            fontSize: 10,
+                                            color: "#6b7280",
+                                            fontStyle: "italic",
+                                          }}
+                                        >
                                           No assignments
                                         </span>
                                       )}
@@ -2995,7 +3077,8 @@ const TeamLeadDashboard = () => {
                         <div>
                           <div style={{ fontWeight: 600 }}>{emp.name}</div>
                           <div style={{ fontSize: 11, color: "#6b7280" }}>
-                            {emp.role}{emp.subRole ? ` - ${emp.subRole}` : ''}
+                            {emp.role}
+                            {emp.subRole ? ` - ${emp.subRole}` : ""}
                           </div>
                         </div>
                       </label>
@@ -3329,10 +3412,10 @@ const TeamLeadDashboard = () => {
                             color: "#1e40af",
                           }}
                         >
-                          {emp?.name || 'Unknown'}
+                          {emp?.name || "Unknown"}
                         </div>
                         <div style={{ fontSize: 11, color: "#6b7280" }}>
-                          {emp?.role || 'Unknown'} • {emp?.email || 'No email'}
+                          {emp?.role || "Unknown"} • {emp?.email || "No email"}
                         </div>
                       </div>
                     ))}
@@ -3830,7 +3913,8 @@ const TeamLeadDashboard = () => {
                             {employee.name}
                           </div>
                           <div style={{ fontSize: 12, color: "#6b7280" }}>
-                            {employee.role}{employee.subRole ? ` - ${employee.subRole}` : ''}
+                            {employee.role}
+                            {employee.subRole ? ` - ${employee.subRole}` : ""}
                           </div>
                           <div style={{ fontSize: 11, color: "#9ca3af" }}>
                             {employee.email}
@@ -3892,21 +3976,44 @@ const TeamLeadDashboard = () => {
           <div className="modal-content large-modal">
             <div className="modal-header">
               <div>
-                <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: "#3b82f6" }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontWeight: 700,
+                    fontSize: 22,
+                    color: "#3b82f6",
+                  }}
+                >
                   <FaUser style={{ marginRight: 8 }} />
-                  Tasks Assigned to {String(selectedEmployeeForTasks?.name || 'Unknown Employee')}
+                  Tasks Assigned to{" "}
+                  {String(selectedEmployeeForTasks?.name || "Unknown Employee")}
                 </h3>
-                <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: 14 }}>
-                  Employee ID: {(() => {
-                    const empId = selectedEmployeeForTasks?.id || selectedEmployeeForTasks?._id;
-                    if (typeof empId === 'object' && empId !== null) {
-                      return String(empId._id || empId.id || empId.employeeId || 'Unknown');
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    color: "#6b7280",
+                    fontSize: 14,
+                  }}
+                >
+                  Employee ID:{" "}
+                  {(() => {
+                    const empId =
+                      selectedEmployeeForTasks?.id ||
+                      selectedEmployeeForTasks?._id;
+                    if (typeof empId === "object" && empId !== null) {
+                      return String(
+                        empId._id || empId.id || empId.employeeId || "Unknown"
+                      );
                     }
-                    return String(empId || 'Unknown');
-                  })()} | Role: {String(selectedEmployeeForTasks?.role || 'Unknown')}
+                    return String(empId || "Unknown");
+                  })()}{" "}
+                  | Role: {String(selectedEmployeeForTasks?.role || "Unknown")}
                 </p>
               </div>
-              <button className="modal-close" onClick={handleCloseEmployeeTasksModal}>
+              <button
+                className="modal-close"
+                onClick={handleCloseEmployeeTasksModal}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -3919,77 +4026,197 @@ const TeamLeadDashboard = () => {
                     <div className="spinner-ring"></div>
                     <div className="spinner-ring"></div>
                   </div>
-                  <p style={{ marginTop: 16, color: "#6b7280" }}>Loading employee tasks...</p>
+                  <p style={{ marginTop: 16, color: "#6b7280" }}>
+                    Loading employee tasks...
+                  </p>
                 </div>
               ) : (
                 <>
                   {/* Task Statistics */}
-                  <div className="task-stats" style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-                    <div className="task-stat-card" style={{
-                      flex: 1, background: "#fef3c7", padding: 16, borderRadius: 8, textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: "#f59e0b" }}>
+                  <div
+                    className="task-stats"
+                    style={{ display: "flex", gap: 16, marginBottom: 24 }}
+                  >
+                    <div
+                      className="task-stat-card"
+                      style={{
+                        flex: 1,
+                        background: "#fef3c7",
+                        padding: 16,
+                        borderRadius: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#f59e0b",
+                        }}
+                      >
                         {employeeTasks.Pending.length}
                       </div>
-                      <div style={{ color: "#92400e", fontSize: 14, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          color: "#92400e",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
                         Pending Tasks
                       </div>
                     </div>
-                    <div className="task-stat-card" style={{
-                      flex: 1, background: "#dbeafe", padding: 16, borderRadius: 8, textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: "#3b82f6" }}>
+                    <div
+                      className="task-stat-card"
+                      style={{
+                        flex: 1,
+                        background: "#dbeafe",
+                        padding: 16,
+                        borderRadius: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#3b82f6",
+                        }}
+                      >
                         {employeeTasks["In Progress"].length}
                       </div>
-                      <div style={{ color: "#1e40af", fontSize: 14, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          color: "#1e40af",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
                         In Progress
                       </div>
                     </div>
-                    <div className="task-stat-card" style={{
-                      flex: 1, background: "#d1fae5", padding: 16, borderRadius: 8, textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: "#10b981" }}>
+                    <div
+                      className="task-stat-card"
+                      style={{
+                        flex: 1,
+                        background: "#d1fae5",
+                        padding: 16,
+                        borderRadius: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#10b981",
+                        }}
+                      >
                         {employeeTasks.Completed.length}
                       </div>
-                      <div style={{ color: "#047857", fontSize: 14, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          color: "#047857",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
                         Completed
                       </div>
                     </div>
                   </div>
 
                   {/* Task Board */}
-                  <div className="task-board" style={{
-                    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20
-                  }}>
+                  <div
+                    className="task-board"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: 20,
+                    }}
+                  >
                     {/* Pending Tasks */}
                     <div className="task-column">
-                      <h4 style={{ color: "#f59e0b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                      <h4
+                        style={{
+                          color: "#f59e0b",
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
                         <FaClock /> Pending ({employeeTasks.Pending.length})
                       </h4>
-                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div
+                        className="task-list"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
                         {employeeTasks.Pending.map((task) => (
-                          <div key={task._id} className="task-card" style={{
-                            background: "#fffbf0", border: "1px solid #fed7aa", borderRadius: 8, padding: 12,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                          }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#92400e", marginBottom: 8 }}>
+                          <div
+                            key={task._id}
+                            className="task-card"
+                            style={{
+                              background: "#fffbf0",
+                              border: "1px solid #fed7aa",
+                              borderRadius: 8,
+                              padding: 12,
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 14,
+                                color: "#92400e",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.title}
                             </div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#6b7280",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.description}
                             </div>
-                            <div style={{ fontSize: 11, color: "#d97706", marginBottom: 8 }}>
-                              Project: {task.projectId?.projectId || 'Unknown'} | Due: {formatDate(task.dueDate)}
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#d97706",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Project: {task.projectId?.projectId || "Unknown"}{" "}
+                              | Due: {formatDate(task.dueDate)}
                             </div>
                             {task.taskPoints && task.taskPoints.length > 0 && (
                               <div style={{ fontSize: 11, color: "#92400e" }}>
-                                {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points completed
+                                {
+                                  task.taskPoints.filter((p) => p.isCompleted)
+                                    .length
+                                }
+                                /{task.taskPoints.length} points completed
                               </div>
                             )}
                           </div>
                         ))}
                         {employeeTasks.Pending.length === 0 && (
-                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#6b7280",
+                              fontSize: 14,
+                              padding: 20,
+                            }}
+                          >
                             No pending tasks
                           </div>
                         )}
@@ -3998,48 +4225,119 @@ const TeamLeadDashboard = () => {
 
                     {/* In Progress Tasks */}
                     <div className="task-column">
-                      <h4 style={{ color: "#3b82f6", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                        <FaPlay /> In Progress ({employeeTasks["In Progress"].length})
+                      <h4
+                        style={{
+                          color: "#3b82f6",
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <FaPlay /> In Progress (
+                        {employeeTasks["In Progress"].length})
                       </h4>
-                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div
+                        className="task-list"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
                         {employeeTasks["In Progress"].map((task) => (
-                          <div key={task._id} className="task-card" style={{
-                            background: "#f0f7ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 12,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                          }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#1e40af", marginBottom: 8 }}>
+                          <div
+                            key={task._id}
+                            className="task-card"
+                            style={{
+                              background: "#f0f7ff",
+                              border: "1px solid #bfdbfe",
+                              borderRadius: 8,
+                              padding: 12,
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 14,
+                                color: "#1e40af",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.title}
                             </div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#6b7280",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.description}
                             </div>
-                            <div style={{ fontSize: 11, color: "#2563eb", marginBottom: 8 }}>
-                              Project: {task.projectId?.projectId || 'Unknown'} | Due: {formatDate(task.dueDate)}
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#2563eb",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Project: {task.projectId?.projectId || "Unknown"}{" "}
+                              | Due: {formatDate(task.dueDate)}
                             </div>
                             {task.progressPercentage !== undefined && (
                               <div style={{ marginBottom: 8 }}>
-                                <div style={{
-                                  width: "100%", height: 6, background: "#e5e7eb", borderRadius: 3, overflow: "hidden"
-                                }}>
-                                  <div style={{
-                                    height: "100%", background: "#3b82f6", width: `${task.progressPercentage || 0}%`,
-                                    transition: "width 0.3s ease"
-                                  }}></div>
+                                <div
+                                  style={{
+                                    width: "100%",
+                                    height: 6,
+                                    background: "#e5e7eb",
+                                    borderRadius: 3,
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: "100%",
+                                      background: "#3b82f6",
+                                      width: `${task.progressPercentage || 0}%`,
+                                      transition: "width 0.3s ease",
+                                    }}
+                                  ></div>
                                 </div>
-                                <div style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, marginTop: 2 }}>
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#3b82f6",
+                                    fontWeight: 600,
+                                    marginTop: 2,
+                                  }}
+                                >
                                   {task.progressPercentage || 0}% Complete
                                 </div>
                               </div>
                             )}
                             {task.taskPoints && task.taskPoints.length > 0 && (
                               <div style={{ fontSize: 11, color: "#1e40af" }}>
-                                {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points completed
+                                {
+                                  task.taskPoints.filter((p) => p.isCompleted)
+                                    .length
+                                }
+                                /{task.taskPoints.length} points completed
                               </div>
                             )}
                           </div>
                         ))}
                         {employeeTasks["In Progress"].length === 0 && (
-                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#6b7280",
+                              fontSize: 14,
+                              padding: 20,
+                            }}
+                          >
                             No tasks in progress
                           </div>
                         )}
@@ -4048,37 +4346,101 @@ const TeamLeadDashboard = () => {
 
                     {/* Completed Tasks */}
                     <div className="task-column">
-                      <h4 style={{ color: "#10b981", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                        <FaCheckCircle /> Completed ({employeeTasks.Completed.length})
+                      <h4
+                        style={{
+                          color: "#10b981",
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <FaCheckCircle /> Completed (
+                        {employeeTasks.Completed.length})
                       </h4>
-                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div
+                        className="task-list"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
                         {employeeTasks.Completed.map((task) => (
-                          <div key={task._id} className="task-card" style={{
-                            background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: 12,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                          }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#047857", marginBottom: 8 }}>
+                          <div
+                            key={task._id}
+                            className="task-card"
+                            style={{
+                              background: "#f0fdf4",
+                              border: "1px solid #bbf7d0",
+                              borderRadius: 8,
+                              padding: 12,
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 14,
+                                color: "#047857",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.title}
                             </div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#6b7280",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.description}
                             </div>
-                            <div style={{ fontSize: 11, color: "#059669", marginBottom: 8 }}>
-                              Project: {task.projectId?.projectId || 'Unknown'} | Completed: {formatDate(task.completedAt)}
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#059669",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Project: {task.projectId?.projectId || "Unknown"}{" "}
+                              | Completed: {formatDate(task.completedAt)}
                             </div>
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
-                              background: "#dcfce7", borderRadius: 4
-                            }}>
-                              <FaCheckCircle style={{ color: "#16a34a", fontSize: 12 }} />
-                              <span style={{ fontSize: 11, color: "#047857", fontWeight: 600 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "4px 8px",
+                                background: "#dcfce7",
+                                borderRadius: 4,
+                              }}
+                            >
+                              <FaCheckCircle
+                                style={{ color: "#16a34a", fontSize: 12 }}
+                              />
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: "#047857",
+                                  fontWeight: 600,
+                                }}
+                              >
                                 Task Completed Successfully
                               </span>
                             </div>
                           </div>
                         ))}
                         {employeeTasks.Completed.length === 0 && (
-                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#6b7280",
+                              fontSize: 14,
+                              padding: 20,
+                            }}
+                          >
                             No completed tasks
                           </div>
                         )}
@@ -4101,7 +4463,10 @@ const TeamLeadDashboard = () => {
                 <FaClock className="modal-icon" />
                 Task History Dashboard
               </h2>
-              <button className="modal-close" onClick={handleCloseTaskHistoryDashboard}>
+              <button
+                className="modal-close"
+                onClick={handleCloseTaskHistoryDashboard}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -4122,8 +4487,8 @@ const TeamLeadDashboard = () => {
                   </div>
                   <div className="filter-group">
                     <label>Time Period:</label>
-                    <select 
-                      value={historyFilter} 
+                    <select
+                      value={historyFilter}
                       onChange={(e) => setHistoryFilter(e.target.value)}
                       className="filter-select"
                     >
@@ -4159,32 +4524,57 @@ const TeamLeadDashboard = () => {
                     {filteredTaskHistory.map((entry, index) => (
                       <div key={index} className="history-entry">
                         <div className="history-marker">
-                          <div className={`status-dot ${(entry?.newStatus || 'unknown').toLowerCase().replace(' ', '-')}`}></div>
+                          <div
+                            className={`status-dot ${(
+                              entry?.newStatus || "unknown"
+                            )
+                              .toLowerCase()
+                              .replace(" ", "-")}`}
+                          ></div>
                         </div>
                         <div className="history-content-card">
                           <div className="history-header">
                             <div className="history-title">
-                              <strong>{entry?.taskTitle || 'Unknown Task'}</strong>
-                              <span className="project-badge">{entry?.projectTitle || 'Unknown Project'}</span>
+                              <strong>
+                                {entry?.taskTitle || "Unknown Task"}
+                              </strong>
+                              <span className="project-badge">
+                                {entry?.projectTitle || "Unknown Project"}
+                              </span>
                             </div>
                             <div className="history-timestamp">
-                              {entry?.timestamp ? new Date(entry.timestamp).toLocaleString() : 'Unknown time'}
+                              {entry?.timestamp
+                                ? new Date(entry.timestamp).toLocaleString()
+                                : "Unknown time"}
                             </div>
                           </div>
                           <div className="history-body">
                             <div className="status-change">
-                              <span className={`status-badge ${(entry?.previousStatus || 'unknown').toLowerCase().replace(' ', '-')}`}>
-                                {entry?.previousStatus || 'Unknown'}
+                              <span
+                                className={`status-badge ${(
+                                  entry?.previousStatus || "unknown"
+                                )
+                                  .toLowerCase()
+                                  .replace(" ", "-")}`}
+                              >
+                                {entry?.previousStatus || "Unknown"}
                               </span>
                               <FaArrowDown className="arrow-icon" />
-                              <span className={`status-badge ${(entry?.newStatus || 'unknown').toLowerCase().replace(' ', '-')}`}>
-                                {entry?.newStatus || 'Unknown'}
+                              <span
+                                className={`status-badge ${(
+                                  entry?.newStatus || "unknown"
+                                )
+                                  .toLowerCase()
+                                  .replace(" ", "-")}`}
+                              >
+                                {entry?.newStatus || "Unknown"}
                               </span>
                             </div>
                             <div className="changed-by">
                               <FaUser size={12} />
                               <span>
-                                {entry?.changedBy?.name || 'Unknown'} ({entry?.changedBy?.role || 'Unknown'})
+                                {entry?.changedBy?.name || "Unknown"} (
+                                {entry?.changedBy?.role || "Unknown"})
                               </span>
                             </div>
                             {entry?.reason && (
@@ -4192,16 +4582,22 @@ const TeamLeadDashboard = () => {
                                 <strong>Reason:</strong> {entry.reason}
                               </div>
                             )}
-                            {entry?.assignedEmployees && entry.assignedEmployees.length > 0 && (
-                              <div className="assigned-employees">
-                                <strong>Assigned to:</strong>
-                                {entry.assignedEmployees.map((emp, empIndex) => (
-                                  <span key={empIndex} className="employee-tag">
-                                    {emp?.name || 'Unknown'}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            {entry?.assignedEmployees &&
+                              entry.assignedEmployees.length > 0 && (
+                                <div className="assigned-employees">
+                                  <strong>Assigned to:</strong>
+                                  {entry.assignedEmployees.map(
+                                    (emp, empIndex) => (
+                                      <span
+                                        key={empIndex}
+                                        className="employee-tag"
+                                      >
+                                        {emp?.name || "Unknown"}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              )}
                           </div>
                         </div>
                       </div>

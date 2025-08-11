@@ -26,7 +26,6 @@ import {
   FaPhone,
   FaFlag,
   FaMapMarkerAlt,
- 
   FaUser,
 } from "react-icons/fa";
 import "./ProjectManagerDashboard.css";
@@ -86,7 +85,8 @@ const ProjectManagerDashboard = () => {
 
   // Employee Task Viewing States
   const [showEmployeeTasksModal, setShowEmployeeTasksModal] = useState(false);
-  const [selectedEmployeeForTasks, setSelectedEmployeeForTasks] = useState(null);
+  const [selectedEmployeeForTasks, setSelectedEmployeeForTasks] =
+    useState(null);
   const [employeeTasks, setEmployeeTasks] = useState({
     Pending: [],
     "In Progress": [],
@@ -95,7 +95,8 @@ const ProjectManagerDashboard = () => {
   const [loadingEmployeeTasks, setLoadingEmployeeTasks] = useState(false);
 
   // Task History Dashboard States
-  const [showTaskHistoryDashboard, setShowTaskHistoryDashboard] = useState(false);
+  const [showTaskHistoryDashboard, setShowTaskHistoryDashboard] =
+    useState(false);
   const [taskHistory, setTaskHistory] = useState([]);
   const [loadingTaskHistory, setLoadingTaskHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState("all"); // all, today, week, month
@@ -112,7 +113,7 @@ const ProjectManagerDashboard = () => {
         const token = localStorage.getItem("token");
         try {
           await fetch(
-            "http://localhost:5001/api/client-projects/import-remote",
+            "http://146.190.165.62:5001/api/client-projects/import-remote",
             {
               method: "POST",
               headers: {
@@ -127,7 +128,7 @@ const ProjectManagerDashboard = () => {
 
         // Now fetch from local database
         const response = await fetch(
-          "http://localhost:5001/api/client-projects",
+          "http://146.190.165.62:5001/api/client-projects",
           {
             headers: {
               "Content-Type": "application/json",
@@ -152,7 +153,7 @@ const ProjectManagerDashboard = () => {
           projectsData.map(async (project) => {
             try {
               const taskCountsResponse = await fetch(
-                `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
+                `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -160,25 +161,39 @@ const ProjectManagerDashboard = () => {
                   },
                 }
               );
-              
+
               if (taskCountsResponse.ok) {
                 const taskResult = await taskCountsResponse.json();
                 if (taskResult.success && taskResult.data) {
                   const tasks = taskResult.data;
                   const taskCounts = {
                     total: tasks.length,
-                    completed: tasks.filter(task => task.status === "Completed").length,
-                    inProgress: tasks.filter(task => task.status === "In Progress").length,
-                    pending: tasks.filter(task => task.status === "Pending").length,
+                    completed: tasks.filter(
+                      (task) => task.status === "Completed"
+                    ).length,
+                    inProgress: tasks.filter(
+                      (task) => task.status === "In Progress"
+                    ).length,
+                    pending: tasks.filter((task) => task.status === "Pending")
+                      .length,
                   };
                   return { ...project, tasks: taskCounts };
                 }
               }
               // Return project with default task counts if fetch fails
-              return { ...project, tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 } };
+              return {
+                ...project,
+                tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+              };
             } catch (taskError) {
-              console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
-              return { ...project, tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 } };
+              console.warn(
+                `Failed to fetch tasks for project ${project._id}:`,
+                taskError
+              );
+              return {
+                ...project,
+                tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+              };
             }
           })
         );
@@ -206,7 +221,7 @@ const ProjectManagerDashboard = () => {
       try {
         const token = localStorage.getItem("token"); // or sessionStorage.getItem('token')
         const response = await fetch(
-          "http://localhost:5001/api/client-projects/team-leads",
+          "http://146.190.165.62:5001/api/client-projects/team-leads",
           {
             credentials: "include",
             headers: {
@@ -648,7 +663,7 @@ const ProjectManagerDashboard = () => {
   //     const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
 
   //     // Make API call to assign the team lead using the correct endpoint
-  //     const response = await fetch(`http://localhost:5001/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+  //     const response = await fetch(`http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-team-lead`, {
   //       method: 'PUT',
   //       headers: {
   //         'Content-Type': 'application/json',
@@ -702,7 +717,7 @@ const ProjectManagerDashboard = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
+        `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
         {
           method: "PUT",
           headers: {
@@ -720,7 +735,7 @@ const ProjectManagerDashboard = () => {
       if (response.ok) {
         // Fetch updated projects from backend to ensure persistence
         const updatedProjectsRes = await fetch(
-          "http://localhost:5001/api/client-projects",
+          "http://146.190.165.62:5001/api/client-projects",
           {
             headers: {
               "Content-Type": "application/json",
@@ -793,7 +808,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/client-projects/employees/sub-role/${subRole}`,
+        `http://146.190.165.62:5001/api/client-projects/employees/sub-role/${subRole}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -812,7 +827,7 @@ const ProjectManagerDashboard = () => {
     if (!selectedEmployee || !selectedProject) return;
     const token = localStorage.getItem("token");
     await fetch(
-      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-employee`,
+      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-employee`,
       {
         method: "PUT",
         headers: {
@@ -875,7 +890,7 @@ const ProjectManagerDashboard = () => {
     if (!selectedProject) return;
     const token = localStorage.getItem("token");
     await fetch(
-      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-employees`,
+      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-employees`,
       {
         method: "PUT",
         headers: {
@@ -900,7 +915,7 @@ const ProjectManagerDashboard = () => {
 
     // Save team lead
     await fetch(
-      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
+      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
       {
         method: "PUT",
         headers: {
@@ -916,7 +931,7 @@ const ProjectManagerDashboard = () => {
 
     // Save employees
     await fetch(
-      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-employees`,
+      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-employees`,
       {
         method: "PUT",
         headers: {
@@ -929,7 +944,7 @@ const ProjectManagerDashboard = () => {
 
     // Refresh projects
     const updatedProjectsRes = await fetch(
-      "http://localhost:5001/api/client-projects",
+      "http://146.190.165.62:5001/api/client-projects",
       {
         headers: {
           "Content-Type": "application/json",
@@ -960,7 +975,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/projects/${projectId}/tasks`,
+        `http://146.190.165.62:5001/api/team-lead/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1017,7 +1032,7 @@ const ProjectManagerDashboard = () => {
       console.log("Sending task data:", taskData);
 
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
+        `http://146.190.165.62:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
         {
           method: "POST",
           headers: {
@@ -1067,7 +1082,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}/assignment`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/assignment`,
         {
           method: "PUT",
           headers: {
@@ -1091,7 +1106,7 @@ const ProjectManagerDashboard = () => {
   // Enhanced Update task status
   const updateTaskStatusEnhanced = async (taskId, status) => {
     console.log("Updating task status:", { taskId, status });
-    
+
     try {
       // Add confirmation when marking task as completed
       if (status === "Completed") {
@@ -1111,11 +1126,13 @@ const ProjectManagerDashboard = () => {
       }
 
       // Find the current task to check its current status
-      const currentTask = Object.values(tasks).flat().find(task => task._id === taskId);
+      const currentTask = Object.values(tasks)
+        .flat()
+        .find((task) => task._id === taskId);
       console.log("Current task found:", currentTask);
-      
+
       let finalStatus = status;
-      
+
       // Special handling for reopening completed tasks
       if (currentTask && currentTask.status === "Completed") {
         if (status === "In Progress" || status === "Pending") {
@@ -1126,7 +1143,7 @@ const ProjectManagerDashboard = () => {
 
       console.log("Making API call to update task status...");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}/status`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -1138,43 +1155,49 @@ const ProjectManagerDashboard = () => {
       );
 
       console.log("Response status:", response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Server error:", errorText);
-        alert(`Failed to update task status: ${response.status} - ${errorText}`);
+        alert(
+          `Failed to update task status: ${response.status} - ${errorText}`
+        );
         return;
       }
 
       const result = await response.json();
       console.log("Response data:", result);
-      
+
       if (result.success) {
         console.log("Task status updated successfully, refreshing data...");
-        
+
         // Refresh tasks data to reflect changes
         await fetchProjectTasks(selectedProject._id);
         await fetchAssignedProjects();
-        
+
         // Refresh task counts for the current project
         await refreshProjectTaskCounts(selectedProject._id);
-        
+
         // Show appropriate success message
-        const message = currentTask && currentTask.status === "Completed" && finalStatus !== "Completed" 
-          ? `Task reopened and moved to: ${finalStatus}` 
-          : `Task status updated to: ${finalStatus}`;
-        
+        const message =
+          currentTask &&
+          currentTask.status === "Completed" &&
+          finalStatus !== "Completed"
+            ? `Task reopened and moved to: ${finalStatus}`
+            : `Task status updated to: ${finalStatus}`;
+
         alert(message);
-        
+
         // Force refresh after a short delay to ensure UI updates
         setTimeout(async () => {
           await fetchProjectTasks(selectedProject._id);
           await refreshProjectTaskCounts(selectedProject._id);
         }, 500);
-        
       } else {
         console.error("Update failed:", result.error);
-        alert(`Failed to update task status: ${result.error || 'Unknown error'}`);
+        alert(
+          `Failed to update task status: ${result.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error updating task status:", error);
@@ -1207,7 +1230,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}`,
         {
           method: "DELETE",
           headers: {
@@ -1244,7 +1267,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
+        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -1297,14 +1320,17 @@ const ProjectManagerDashboard = () => {
         totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:5001/api/client-projects/${projectId}/progress`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ progress }),
-      });
+      await fetch(
+        `http://146.190.165.62:5001/api/client-projects/${projectId}/progress`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ progress }),
+        }
+      );
     } catch (error) {
       console.error("Error updating project progress:", error);
     }
@@ -1314,21 +1340,26 @@ const ProjectManagerDashboard = () => {
   const fetchAssignedProjects = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5001/api/client-projects", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "http://146.190.165.62:5001/api/client-projects",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const result = await response.json();
-      const projectsData = Array.isArray(result) ? result : result.data || result.projects || [];
-      
+      const projectsData = Array.isArray(result)
+        ? result
+        : result.data || result.projects || [];
+
       // Fetch real-time task counts for each project
       const projectsWithTaskCounts = await Promise.all(
         projectsData.map(async (project) => {
           try {
             const taskCountsResponse = await fetch(
-              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
+              `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -1336,29 +1367,42 @@ const ProjectManagerDashboard = () => {
                 },
               }
             );
-            
+
             if (taskCountsResponse.ok) {
               const taskResult = await taskCountsResponse.json();
               if (taskResult.success && taskResult.data) {
                 const tasks = taskResult.data;
                 const taskCounts = {
                   total: tasks.length,
-                  completed: tasks.filter(task => task.status === "Completed").length,
-                  inProgress: tasks.filter(task => task.status === "In Progress").length,
-                  pending: tasks.filter(task => task.status === "Pending").length,
+                  completed: tasks.filter((task) => task.status === "Completed")
+                    .length,
+                  inProgress: tasks.filter(
+                    (task) => task.status === "In Progress"
+                  ).length,
+                  pending: tasks.filter((task) => task.status === "Pending")
+                    .length,
                 };
                 return { ...project, tasks: taskCounts };
               }
             }
             // Return project with default task counts if fetch fails
-            return { ...project, tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 } };
+            return {
+              ...project,
+              tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+            };
           } catch (taskError) {
-            console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
-            return { ...project, tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 } };
+            console.warn(
+              `Failed to fetch tasks for project ${project._id}:`,
+              taskError
+            );
+            return {
+              ...project,
+              tasks: { total: 0, completed: 0, inProgress: 0, pending: 0 },
+            };
           }
         })
       );
-      
+
       setProjects(projectsWithTaskCounts);
       setFilteredProjects(projectsWithTaskCounts);
     } catch (error) {
@@ -1371,7 +1415,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const taskCountsResponse = await fetch(
-        `http://localhost:5001/api/team-lead/projects/${projectId}/tasks`,
+        `http://146.190.165.62:5001/api/team-lead/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1379,30 +1423,32 @@ const ProjectManagerDashboard = () => {
           },
         }
       );
-      
+
       if (taskCountsResponse.ok) {
         const taskResult = await taskCountsResponse.json();
         if (taskResult.success && taskResult.data) {
           const tasks = taskResult.data;
           const taskCounts = {
             total: tasks.length,
-            completed: tasks.filter(task => task.status === "Completed").length,
-            inProgress: tasks.filter(task => task.status === "In Progress").length,
-            pending: tasks.filter(task => task.status === "Pending").length,
+            completed: tasks.filter((task) => task.status === "Completed")
+              .length,
+            inProgress: tasks.filter((task) => task.status === "In Progress")
+              .length,
+            pending: tasks.filter((task) => task.status === "Pending").length,
           };
-          
+
           // Update the specific project in the projects array
-          setProjects(prevProjects => 
-            prevProjects.map(project => 
-              project._id === projectId 
+          setProjects((prevProjects) =>
+            prevProjects.map((project) =>
+              project._id === projectId
                 ? { ...project, tasks: taskCounts }
                 : project
             )
           );
-          
-          setFilteredProjects(prevProjects => 
-            prevProjects.map(project => 
-              project._id === projectId 
+
+          setFilteredProjects((prevProjects) =>
+            prevProjects.map((project) =>
+              project._id === projectId
                 ? { ...project, tasks: taskCounts }
                 : project
             )
@@ -1498,14 +1544,17 @@ const ProjectManagerDashboard = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5001/tasks/${editTask._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newTask),
-      });
+      const response = await fetch(
+        `http://146.190.165.62:5001/tasks/${editTask._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(newTask),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -1536,23 +1585,25 @@ const ProjectManagerDashboard = () => {
   // Open Assignment Modal
   const openAssignmentModal = (task) => {
     setEditTask(task);
-    
+
     // Ensure existing assignments have all required fields
-    const normalizedAssignments = (task.assignedTo || []).map(emp => ({
+    const normalizedAssignments = (task.assignedTo || []).map((emp) => ({
       employeeId: emp.employeeId,
       name: emp.name,
-      email: emp.email || emp.employeeId + '@company.com', // Provide fallback email
-      role: emp.role || '',
-      _id: emp.employeeId || emp._id
+      email: emp.email || emp.employeeId + "@company.com", // Provide fallback email
+      role: emp.role || "",
+      _id: emp.employeeId || emp._id,
     }));
-    
+
     setEditAssignment(normalizedAssignments);
 
     // Set available employees (those not currently assigned to this task)
-    const assignedIds = normalizedAssignments.map(emp => emp.employeeId) || [];
-    const available = selectedProject?.assignedEmployees?.filter(
-      emp => !assignedIds.includes(emp.employeeId)
-    ) || [];
+    const assignedIds =
+      normalizedAssignments.map((emp) => emp.employeeId) || [];
+    const available =
+      selectedProject?.assignedEmployees?.filter(
+        (emp) => !assignedIds.includes(emp.employeeId)
+      ) || [];
     setAvailableEmployees(available);
 
     setShowEditModal(true);
@@ -1560,14 +1611,17 @@ const ProjectManagerDashboard = () => {
 
   // Add Employee to Task
   const addEmployeeToTask = (employee) => {
-    if (!editAssignment.find(emp => emp.employeeId === employee.employeeId)) {
-      setEditAssignment(prev => [...prev, {
-        employeeId: employee.employeeId,
-        name: employee.name,
-        email: employee.email || employee.employeeId + '@company.com', // Provide fallback email
-        role: employee.role,
-        _id: employee.employeeId
-      }]);
+    if (!editAssignment.find((emp) => emp.employeeId === employee.employeeId)) {
+      setEditAssignment((prev) => [
+        ...prev,
+        {
+          employeeId: employee.employeeId,
+          name: employee.name,
+          email: employee.email || employee.employeeId + "@company.com", // Provide fallback email
+          role: employee.role,
+          _id: employee.employeeId,
+        },
+      ]);
 
       // Remove from available employees
       setAvailableEmployees((prev) =>
@@ -1603,32 +1657,37 @@ const ProjectManagerDashboard = () => {
 
     try {
       // Validate that all assignments have required fields
-      const validatedAssignments = editAssignment.map(emp => {
+      const validatedAssignments = editAssignment.map((emp) => {
         if (!emp.employeeId || !emp.name) {
-          throw new Error(`Missing required fields for employee: ${emp.name || 'Unknown'}`);
+          throw new Error(
+            `Missing required fields for employee: ${emp.name || "Unknown"}`
+          );
         }
         return {
           employeeId: emp.employeeId,
           name: emp.name,
-          email: emp.email || emp.employeeId + '@company.com', // Provide fallback email if missing
-          role: emp.role || '',
-          assignedAt: emp.assignedAt || new Date()
+          email: emp.email || emp.employeeId + "@company.com", // Provide fallback email if missing
+          role: emp.role || "",
+          assignedAt: emp.assignedAt || new Date(),
         };
       });
 
-      console.log('Sending assignment data:', validatedAssignments);
+      console.log("Sending assignment data:", validatedAssignments);
 
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5001/api/team-lead/tasks/${editTask._id}/assignment`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          assignedTo: validatedAssignments
-        }),
-      });
+      const response = await fetch(
+        `http://146.190.165.62:5001/api/team-lead/tasks/${editTask._id}/assignment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            assignedTo: validatedAssignments,
+          }),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -1654,21 +1713,21 @@ const ProjectManagerDashboard = () => {
   };
 
   // Employee Task Management Functions
-  
+
   // Function to fetch tasks for a specific employee
   const fetchEmployeeTasks = async (employee, projectId = null) => {
     try {
       setLoadingEmployeeTasks(true);
       const token = localStorage.getItem("token");
-      
+
       // Extract employee ID - handle different object structures
       const employeeId = employee._id || employee.id || employee.employeeId;
-      
+
       if (!employeeId) {
         throw new Error("Employee ID not found");
       }
-      
-      let url = `http://localhost:5001/api/team-lead/employees/${employeeId}/tasks`;
+
+      let url = `http://146.190.165.62:5001/api/team-lead/employees/${employeeId}/tasks`;
       if (projectId) {
         url += `?projectId=${projectId}`;
       }
@@ -1701,10 +1760,12 @@ const ProjectManagerDashboard = () => {
     try {
       setSelectedEmployeeForTasks(employee);
       setShowEmployeeTasksModal(true);
-      
+
       const taskData = await fetchEmployeeTasks(employee, projectId);
       if (taskData) {
-        console.log(`Loaded ${taskData.total} tasks for employee: ${employee.name}`);
+        console.log(
+          `Loaded ${taskData.total} tasks for employee: ${employee.name}`
+        );
       }
     } catch (error) {
       console.error("Error viewing employee tasks:", error);
@@ -1728,7 +1789,7 @@ const ProjectManagerDashboard = () => {
     try {
       setLoadingTaskHistory(true);
       const token = localStorage.getItem("token");
-      
+
       const response = await fetch("/api/client-projects/tasks/history", {
         method: "GET",
         headers: {
@@ -1743,7 +1804,7 @@ const ProjectManagerDashboard = () => {
 
       const data = await response.json();
       console.log("Task history response:", data);
-      
+
       if (data.success) {
         setTaskHistory(data.data.history || []);
         setFilteredTaskHistory(data.data.history || []);
@@ -1769,7 +1830,7 @@ const ProjectManagerDashboard = () => {
     if (historySearchTerm.trim()) {
       const searchLower = historySearchTerm.toLowerCase();
       filtered = filtered.filter(
-        entry =>
+        (entry) =>
           entry.taskTitle?.toLowerCase().includes(searchLower) ||
           entry.projectTitle?.toLowerCase().includes(searchLower) ||
           entry.changedBy?.name?.toLowerCase().includes(searchLower) ||
@@ -1786,13 +1847,19 @@ const ProjectManagerDashboard = () => {
 
     switch (historyFilter) {
       case "today":
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= today);
+        filtered = filtered.filter(
+          (entry) => new Date(entry.timestamp) >= today
+        );
         break;
       case "week":
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= weekAgo);
+        filtered = filtered.filter(
+          (entry) => new Date(entry.timestamp) >= weekAgo
+        );
         break;
       case "month":
-        filtered = filtered.filter(entry => new Date(entry.timestamp) >= monthAgo);
+        filtered = filtered.filter(
+          (entry) => new Date(entry.timestamp) >= monthAgo
+        );
         break;
       default:
         // "all" - no additional filtering
@@ -1953,7 +2020,7 @@ const ProjectManagerDashboard = () => {
           <p>Access important features and reports</p>
         </div>
         <div className="quick-actions-grid">
-          <button 
+          <button
             className="action-button task-history-btn"
             onClick={handleOpenTaskHistoryDashboard}
           >
@@ -1962,7 +2029,9 @@ const ProjectManagerDashboard = () => {
             </div>
             <div className="action-content">
               <div className="action-title">Task History</div>
-              <div className="action-description">View all task status changes</div>
+              <div className="action-description">
+                View all task status changes
+              </div>
             </div>
           </button>
         </div>
@@ -2167,7 +2236,6 @@ const ProjectManagerDashboard = () => {
                     <span>Updated: {formatDate(project.updatedAt)}</span>
                   </div>
                   <div className="meta-item">
-                    
                     <span>
                       Password: {project.projectPassword || "Not Set"}
                     </span>
@@ -2382,7 +2450,7 @@ const ProjectManagerDashboard = () => {
                           border: "1px solid #e5e7eb",
                           borderRadius: "6px",
                           marginBottom: "6px",
-                          background: "#f9fafb"
+                          background: "#f9fafb",
                         }}
                       >
                         <span>
@@ -2391,14 +2459,19 @@ const ProjectManagerDashboard = () => {
                         <div style={{ display: "flex", gap: "8px" }}>
                           <button
                             type="button"
-                            onClick={() => handleViewEmployeeTasks({
-                              _id: emp.employeeId || emp._id,
-                              id: emp.employeeId || emp._id,
-                              name: emp.name,
-                              role: emp.role,
-                              subRole: emp.subRole,
-                              email: emp.email
-                            }, selectedProject?._id)}
+                            onClick={() =>
+                              handleViewEmployeeTasks(
+                                {
+                                  _id: emp.employeeId || emp._id,
+                                  id: emp.employeeId || emp._id,
+                                  name: emp.name,
+                                  role: emp.role,
+                                  subRole: emp.subRole,
+                                  email: emp.email,
+                                },
+                                selectedProject?._id
+                              )
+                            }
                             style={{
                               background: "#3b82f6",
                               color: "white",
@@ -2409,7 +2482,7 @@ const ProjectManagerDashboard = () => {
                               fontSize: "12px",
                               display: "flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "4px",
                             }}
                             title="View assigned tasks for this employee"
                           >
@@ -2425,7 +2498,7 @@ const ProjectManagerDashboard = () => {
                               padding: "4px 8px",
                               borderRadius: "4px",
                               cursor: "pointer",
-                              fontSize: "12px"
+                              fontSize: "12px",
                             }}
                             title="Remove employee from project"
                           >
@@ -3547,15 +3620,36 @@ const ProjectManagerDashboard = () => {
           <div className="modal-content large-modal">
             <div className="modal-header">
               <div>
-                <h3 style={{ margin: 0, fontWeight: 700, fontSize: 22, color: "#3b82f6" }}>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontWeight: 700,
+                    fontSize: 22,
+                    color: "#3b82f6",
+                  }}
+                >
                   <FaUser style={{ marginRight: 8 }} />
-                  Tasks Assigned to {selectedEmployeeForTasks?.name || 'Unknown Employee'}
+                  Tasks Assigned to{" "}
+                  {selectedEmployeeForTasks?.name || "Unknown Employee"}
                 </h3>
-                <p style={{ margin: "4px 0 0 0", color: "#6b7280", fontSize: 14 }}>
-                  Employee ID: {selectedEmployeeForTasks?.id || selectedEmployeeForTasks?._id || 'Unknown'} | Role: {selectedEmployeeForTasks?.role || 'Unknown'}
+                <p
+                  style={{
+                    margin: "4px 0 0 0",
+                    color: "#6b7280",
+                    fontSize: 14,
+                  }}
+                >
+                  Employee ID:{" "}
+                  {selectedEmployeeForTasks?.id ||
+                    selectedEmployeeForTasks?._id ||
+                    "Unknown"}{" "}
+                  | Role: {selectedEmployeeForTasks?.role || "Unknown"}
                 </p>
               </div>
-              <button className="modal-close" onClick={handleCloseEmployeeTasksModal}>
+              <button
+                className="modal-close"
+                onClick={handleCloseEmployeeTasksModal}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -3568,77 +3662,197 @@ const ProjectManagerDashboard = () => {
                     <div className="spinner-ring"></div>
                     <div className="spinner-ring"></div>
                   </div>
-                  <p style={{ marginTop: 16, color: "#6b7280" }}>Loading employee tasks...</p>
+                  <p style={{ marginTop: 16, color: "#6b7280" }}>
+                    Loading employee tasks...
+                  </p>
                 </div>
               ) : (
                 <>
                   {/* Task Statistics */}
-                  <div className="task-stats" style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-                    <div className="task-stat-card" style={{
-                      flex: 1, background: "#fef3c7", padding: 16, borderRadius: 8, textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: "#f59e0b" }}>
+                  <div
+                    className="task-stats"
+                    style={{ display: "flex", gap: 16, marginBottom: 24 }}
+                  >
+                    <div
+                      className="task-stat-card"
+                      style={{
+                        flex: 1,
+                        background: "#fef3c7",
+                        padding: 16,
+                        borderRadius: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#f59e0b",
+                        }}
+                      >
                         {employeeTasks.Pending.length}
                       </div>
-                      <div style={{ color: "#92400e", fontSize: 14, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          color: "#92400e",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
                         Pending Tasks
                       </div>
                     </div>
-                    <div className="task-stat-card" style={{
-                      flex: 1, background: "#dbeafe", padding: 16, borderRadius: 8, textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: "#3b82f6" }}>
+                    <div
+                      className="task-stat-card"
+                      style={{
+                        flex: 1,
+                        background: "#dbeafe",
+                        padding: 16,
+                        borderRadius: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#3b82f6",
+                        }}
+                      >
                         {employeeTasks["In Progress"].length}
                       </div>
-                      <div style={{ color: "#1e40af", fontSize: 14, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          color: "#1e40af",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
                         In Progress
                       </div>
                     </div>
-                    <div className="task-stat-card" style={{
-                      flex: 1, background: "#d1fae5", padding: 16, borderRadius: 8, textAlign: "center"
-                    }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: "#10b981" }}>
+                    <div
+                      className="task-stat-card"
+                      style={{
+                        flex: 1,
+                        background: "#d1fae5",
+                        padding: 16,
+                        borderRadius: 8,
+                        textAlign: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#10b981",
+                        }}
+                      >
                         {employeeTasks.Completed.length}
                       </div>
-                      <div style={{ color: "#047857", fontSize: 14, fontWeight: 500 }}>
+                      <div
+                        style={{
+                          color: "#047857",
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
                         Completed
                       </div>
                     </div>
                   </div>
 
                   {/* Task Board */}
-                  <div className="task-board" style={{
-                    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20
-                  }}>
+                  <div
+                    className="task-board"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: 20,
+                    }}
+                  >
                     {/* Pending Tasks */}
                     <div className="task-column">
-                      <h4 style={{ color: "#f59e0b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                      <h4
+                        style={{
+                          color: "#f59e0b",
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
                         <FaClock /> Pending ({employeeTasks.Pending.length})
                       </h4>
-                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div
+                        className="task-list"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
                         {employeeTasks.Pending.map((task) => (
-                          <div key={task._id} className="task-card" style={{
-                            background: "#fffbf0", border: "1px solid #fed7aa", borderRadius: 8, padding: 12,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                          }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#92400e", marginBottom: 8 }}>
+                          <div
+                            key={task._id}
+                            className="task-card"
+                            style={{
+                              background: "#fffbf0",
+                              border: "1px solid #fed7aa",
+                              borderRadius: 8,
+                              padding: 12,
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 14,
+                                color: "#92400e",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.title}
                             </div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#6b7280",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.description}
                             </div>
-                            <div style={{ fontSize: 11, color: "#d97706", marginBottom: 8 }}>
-                              Project: {task.projectId?.projectId || 'Unknown'} | Due: {formatDate(task.dueDate)}
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#d97706",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Project: {task.projectId?.projectId || "Unknown"}{" "}
+                              | Due: {formatDate(task.dueDate)}
                             </div>
                             {task.taskPoints && task.taskPoints.length > 0 && (
                               <div style={{ fontSize: 11, color: "#92400e" }}>
-                                {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points completed
+                                {
+                                  task.taskPoints.filter((p) => p.isCompleted)
+                                    .length
+                                }
+                                /{task.taskPoints.length} points completed
                               </div>
                             )}
                           </div>
                         ))}
                         {employeeTasks.Pending.length === 0 && (
-                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#6b7280",
+                              fontSize: 14,
+                              padding: 20,
+                            }}
+                          >
                             No pending tasks
                           </div>
                         )}
@@ -3647,48 +3861,119 @@ const ProjectManagerDashboard = () => {
 
                     {/* In Progress Tasks */}
                     <div className="task-column">
-                      <h4 style={{ color: "#3b82f6", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                        <FaPlay /> In Progress ({employeeTasks["In Progress"].length})
+                      <h4
+                        style={{
+                          color: "#3b82f6",
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <FaPlay /> In Progress (
+                        {employeeTasks["In Progress"].length})
                       </h4>
-                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div
+                        className="task-list"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
                         {employeeTasks["In Progress"].map((task) => (
-                          <div key={task._id} className="task-card" style={{
-                            background: "#f0f7ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 12,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                          }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#1e40af", marginBottom: 8 }}>
+                          <div
+                            key={task._id}
+                            className="task-card"
+                            style={{
+                              background: "#f0f7ff",
+                              border: "1px solid #bfdbfe",
+                              borderRadius: 8,
+                              padding: 12,
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 14,
+                                color: "#1e40af",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.title}
                             </div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#6b7280",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.description}
                             </div>
-                            <div style={{ fontSize: 11, color: "#2563eb", marginBottom: 8 }}>
-                              Project: {task.projectId?.projectId || 'Unknown'} | Due: {formatDate(task.dueDate)}
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#2563eb",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Project: {task.projectId?.projectId || "Unknown"}{" "}
+                              | Due: {formatDate(task.dueDate)}
                             </div>
                             {task.progressPercentage !== undefined && (
                               <div style={{ marginBottom: 8 }}>
-                                <div style={{
-                                  width: "100%", height: 6, background: "#e5e7eb", borderRadius: 3, overflow: "hidden"
-                                }}>
-                                  <div style={{
-                                    height: "100%", background: "#3b82f6", width: `${task.progressPercentage || 0}%`,
-                                    transition: "width 0.3s ease"
-                                  }}></div>
+                                <div
+                                  style={{
+                                    width: "100%",
+                                    height: 6,
+                                    background: "#e5e7eb",
+                                    borderRadius: 3,
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      height: "100%",
+                                      background: "#3b82f6",
+                                      width: `${task.progressPercentage || 0}%`,
+                                      transition: "width 0.3s ease",
+                                    }}
+                                  ></div>
                                 </div>
-                                <div style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, marginTop: 2 }}>
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#3b82f6",
+                                    fontWeight: 600,
+                                    marginTop: 2,
+                                  }}
+                                >
                                   {task.progressPercentage || 0}% Complete
                                 </div>
                               </div>
                             )}
                             {task.taskPoints && task.taskPoints.length > 0 && (
                               <div style={{ fontSize: 11, color: "#1e40af" }}>
-                                {task.taskPoints.filter(p => p.isCompleted).length}/{task.taskPoints.length} points completed
+                                {
+                                  task.taskPoints.filter((p) => p.isCompleted)
+                                    .length
+                                }
+                                /{task.taskPoints.length} points completed
                               </div>
                             )}
                           </div>
                         ))}
                         {employeeTasks["In Progress"].length === 0 && (
-                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#6b7280",
+                              fontSize: 14,
+                              padding: 20,
+                            }}
+                          >
                             No tasks in progress
                           </div>
                         )}
@@ -3697,37 +3982,101 @@ const ProjectManagerDashboard = () => {
 
                     {/* Completed Tasks */}
                     <div className="task-column">
-                      <h4 style={{ color: "#10b981", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                        <FaCheckCircle /> Completed ({employeeTasks.Completed.length})
+                      <h4
+                        style={{
+                          color: "#10b981",
+                          marginBottom: 16,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <FaCheckCircle /> Completed (
+                        {employeeTasks.Completed.length})
                       </h4>
-                      <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div
+                        className="task-list"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
                         {employeeTasks.Completed.map((task) => (
-                          <div key={task._id} className="task-card" style={{
-                            background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: 12,
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-                          }}>
-                            <div style={{ fontWeight: 600, fontSize: 14, color: "#047857", marginBottom: 8 }}>
+                          <div
+                            key={task._id}
+                            className="task-card"
+                            style={{
+                              background: "#f0fdf4",
+                              border: "1px solid #bbf7d0",
+                              borderRadius: 8,
+                              padding: 12,
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 14,
+                                color: "#047857",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.title}
                             </div>
-                            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                color: "#6b7280",
+                                marginBottom: 8,
+                              }}
+                            >
                               {task.description}
                             </div>
-                            <div style={{ fontSize: 11, color: "#059669", marginBottom: 8 }}>
-                              Project: {task.projectId?.projectId || 'Unknown'} | Completed: {formatDate(task.completedAt)}
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#059669",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Project: {task.projectId?.projectId || "Unknown"}{" "}
+                              | Completed: {formatDate(task.completedAt)}
                             </div>
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
-                              background: "#dcfce7", borderRadius: 4
-                            }}>
-                              <FaCheckCircle style={{ color: "#16a34a", fontSize: 12 }} />
-                              <span style={{ fontSize: 11, color: "#047857", fontWeight: 600 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                                padding: "4px 8px",
+                                background: "#dcfce7",
+                                borderRadius: 4,
+                              }}
+                            >
+                              <FaCheckCircle
+                                style={{ color: "#16a34a", fontSize: 12 }}
+                              />
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  color: "#047857",
+                                  fontWeight: 600,
+                                }}
+                              >
                                 Task Completed Successfully
                               </span>
                             </div>
                           </div>
                         ))}
                         {employeeTasks.Completed.length === 0 && (
-                          <div style={{ textAlign: "center", color: "#6b7280", fontSize: 14, padding: 20 }}>
+                          <div
+                            style={{
+                              textAlign: "center",
+                              color: "#6b7280",
+                              fontSize: 14,
+                              padding: 20,
+                            }}
+                          >
                             No completed tasks
                           </div>
                         )}
@@ -3750,7 +4099,10 @@ const ProjectManagerDashboard = () => {
                 <FaClock className="modal-icon" />
                 Task History Dashboard
               </h2>
-              <button className="modal-close" onClick={handleCloseTaskHistoryDashboard}>
+              <button
+                className="modal-close"
+                onClick={handleCloseTaskHistoryDashboard}
+              >
                 <FaTimes />
               </button>
             </div>
@@ -3771,8 +4123,8 @@ const ProjectManagerDashboard = () => {
                   </div>
                   <div className="filter-group">
                     <label>Time Period:</label>
-                    <select 
-                      value={historyFilter} 
+                    <select
+                      value={historyFilter}
                       onChange={(e) => setHistoryFilter(e.target.value)}
                       className="filter-select"
                     >
@@ -3808,13 +4160,21 @@ const ProjectManagerDashboard = () => {
                     {filteredTaskHistory.map((entry, index) => (
                       <div key={index} className="history-entry">
                         <div className="history-marker">
-                          <div className={`status-dot ${entry.newStatus.toLowerCase().replace(' ', '-')}`}></div>
+                          <div
+                            className={`status-dot ${entry.newStatus
+                              .toLowerCase()
+                              .replace(" ", "-")}`}
+                          ></div>
                         </div>
                         <div className="history-content-card">
                           <div className="history-header">
                             <div className="history-title">
-                              <strong>{entry.taskTitle || 'Unknown Task'}</strong>
-                              <span className="project-badge">{entry.projectTitle || 'Unknown Project'}</span>
+                              <strong>
+                                {entry.taskTitle || "Unknown Task"}
+                              </strong>
+                              <span className="project-badge">
+                                {entry.projectTitle || "Unknown Project"}
+                              </span>
                             </div>
                             <div className="history-timestamp">
                               {new Date(entry.timestamp).toLocaleString()}
@@ -3822,18 +4182,31 @@ const ProjectManagerDashboard = () => {
                           </div>
                           <div className="history-body">
                             <div className="status-change">
-                              <span className={`status-badge ${(entry.previousStatus || 'unknown').toLowerCase().replace(' ', '-')}`}>
-                                {entry.previousStatus || 'Unknown'}
+                              <span
+                                className={`status-badge ${(
+                                  entry.previousStatus || "unknown"
+                                )
+                                  .toLowerCase()
+                                  .replace(" ", "-")}`}
+                              >
+                                {entry.previousStatus || "Unknown"}
                               </span>
                               <FaArrowDown className="arrow-icon" />
-                              <span className={`status-badge ${(entry.newStatus || 'unknown').toLowerCase().replace(' ', '-')}`}>
-                                {entry.newStatus || 'Unknown'}
+                              <span
+                                className={`status-badge ${(
+                                  entry.newStatus || "unknown"
+                                )
+                                  .toLowerCase()
+                                  .replace(" ", "-")}`}
+                              >
+                                {entry.newStatus || "Unknown"}
                               </span>
                             </div>
                             <div className="changed-by">
                               <FaUser size={12} />
                               <span>
-                                {entry.changedBy?.name || 'Unknown'} ({entry.changedBy?.role || 'Unknown'})
+                                {entry.changedBy?.name || "Unknown"} (
+                                {entry.changedBy?.role || "Unknown"})
                               </span>
                             </div>
                             {entry.reason && (
@@ -3841,16 +4214,22 @@ const ProjectManagerDashboard = () => {
                                 <strong>Reason:</strong> {entry.reason}
                               </div>
                             )}
-                            {entry.assignedEmployees && entry.assignedEmployees.length > 0 && (
-                              <div className="assigned-employees">
-                                <strong>Assigned to:</strong>
-                                {entry.assignedEmployees.map((emp, empIndex) => (
-                                  <span key={empIndex} className="employee-tag">
-                                    {emp?.name || 'Unknown'}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            {entry.assignedEmployees &&
+                              entry.assignedEmployees.length > 0 && (
+                                <div className="assigned-employees">
+                                  <strong>Assigned to:</strong>
+                                  {entry.assignedEmployees.map(
+                                    (emp, empIndex) => (
+                                      <span
+                                        key={empIndex}
+                                        className="employee-tag"
+                                      >
+                                        {emp?.name || "Unknown"}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              )}
                           </div>
                         </div>
                       </div>

@@ -24,17 +24,20 @@ const SuperAdminLeaveManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const headers = {};
-      
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
-      
-      console.log('Fetching admin/HR leave applications...');
-      const response = await axios.get('http://localhost:5001/api/leave/admin-hr', {
-        headers
-      });
-      console.log('Admin/HR leave applications response:', response.data);
-      
+
+      console.log("Fetching admin/HR leave applications...");
+      const response = await axios.get(
+        "http://146.190.165.62:5001/api/leave/admin-hr",
+        {
+          headers,
+        }
+      );
+      console.log("Admin/HR leave applications response:", response.data);
+
       if (response.data.success) {
         setLeaveApplications(response.data.data);
         console.log("Admin/HR leave applications set:", response.data.data);
@@ -45,20 +48,22 @@ const SuperAdminLeaveManagement = () => {
         );
         setMessage({
           type: "error",
-          text: response.data.message || "Failed to fetch admin/HR leave applications",
+          text:
+            response.data.message ||
+            "Failed to fetch admin/HR leave applications",
         });
       }
     } catch (error) {
       console.error("Error fetching admin/HR leave applications:", error);
       console.error("Error response:", error.response?.data);
-      
+
       let errorMessage = "Failed to fetch admin/HR leave applications";
       if (error.response?.status === 401) {
         errorMessage = "Authentication failed. Please login again.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       setMessage({
         type: "error",
         text: errorMessage,
@@ -94,7 +99,7 @@ const SuperAdminLeaveManagement = () => {
         });
         return;
       }
-      
+
       console.log("Token available:", !!token);
 
       const requestData = {
@@ -102,16 +107,23 @@ const SuperAdminLeaveManagement = () => {
         reviewComments: comments,
         reviewedBy: user._id,
       };
-      
-      console.log('Request data:', requestData);
-      console.log('Making API call to:', `http://localhost:5001/api/leave/status/${leaveId}`);
-      
-      const response = await axios.patch(`http://localhost:5001/api/leave/status/${leaveId}`, requestData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+
+      console.log("Request data:", requestData);
+      console.log(
+        "Making API call to:",
+        `http://146.190.165.62:5001/api/leave/status/${leaveId}`
+      );
+
+      const response = await axios.patch(
+        `http://146.190.165.62:5001/api/leave/status/${leaveId}`,
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       console.log("API Response:", response.data);
 
@@ -121,7 +133,7 @@ const SuperAdminLeaveManagement = () => {
           text: `Leave application ${action.toLowerCase()} successfully`,
         });
         fetchLeaveApplications(); // Refresh the list
-        
+
         // Clear message after 3 seconds
         setTimeout(() => {
           setMessage({ type: "", text: "" });
@@ -141,7 +153,7 @@ const SuperAdminLeaveManagement = () => {
       console.error("Error status:", error.response?.status);
 
       let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Authentication failed. Please login again.";
       } else if (error.response?.status === 403) {
@@ -158,7 +170,7 @@ const SuperAdminLeaveManagement = () => {
       });
     }
   };
-// ...existing code...
+  // ...existing code...
 
   const approveLeave = (leaveId) => {
     handleLeaveAction(leaveId, "Approved");
