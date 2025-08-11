@@ -90,7 +90,7 @@ const HRLeaveManagement = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      );
+      });
 
       console.log("API Response:", response.data);
 
