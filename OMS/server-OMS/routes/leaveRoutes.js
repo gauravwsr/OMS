@@ -15,6 +15,9 @@ const {
 // Apply for leave
 router.post('/apply', applyLeave);
 
+// Get recent leave applications for dashboard
+router.get('/recent', require('../controllers/leaveController').getRecentLeaveApplications);
+
 // Get all leave applications (Super Admin)
 router.get('/all', getAllLeaveApplications);
 

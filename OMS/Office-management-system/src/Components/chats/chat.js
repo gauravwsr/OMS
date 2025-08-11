@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Container,
   Row,
@@ -88,9 +88,32 @@ const Chat = () => {
     }
   }, []);
 
-  // Function to show browser notification
+  // Function to show browser notification with sound
   const showNotification = (message) => {
-    console.log("Attempting to show notification for message:", message);
+    console.log("🔔 Attempting to show notification for message:", message);
+    
+    // Play notification sound first
+    try {
+      // Create a simple notification sound
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+      
+      console.log("🔊 Notification sound played");
+    } catch (error) {
+      console.log("🔇 Could not play notification sound:", error);
+    }
     
     // Always show in-app notification as fallback
     const inAppNotification = {
@@ -123,38 +146,47 @@ const Chat = () => {
         message.chat?.isGroupChat ? "Group Chat" : senderName
       );
       
-      console.log("Creating notification for:", senderName);
+      console.log("🔔 Creating browser notification for:", senderName);
       
       try {
-        const notification = new Notification(`New message from ${senderName}`, {
-          body: message.content,
+        const notification = new Notification(`💬 New message from ${senderName}`, {
+          body: message.content.length > 100 ? message.content.substring(0, 100) + "..." : message.content,
           icon: "/favicon.ico", // You can change this to your app icon
           tag: message.chat._id || message.chat, // Prevent duplicate notifications for same chat
-          badge: "/favicon.ico"
+          badge: "/favicon.ico",
+          requireInteraction: false, // Auto-dismiss after timeout
+          silent: false // Allow system sound
         });
 
-        console.log("Notification created successfully");
+        console.log("✅ Browser notification created successfully");
 
-        // Auto close notification after 5 seconds
+        // Auto close notification after 6 seconds
         setTimeout(() => {
           notification.close();
-        }, 5000);
+        }, 6000);
         
         // Handle notification click to focus on chat
         notification.onclick = () => {
+          console.log("🖱️ Notification clicked - focusing window");
           window.focus();
           notification.close();
+          
+          // Try to bring the window to front
+          if (window.parent) {
+            window.parent.focus();
+          }
         };
       } catch (error) {
-        console.error("Error creating notification:", error);
+        console.error("❌ Error creating browser notification:", error);
       }
     } else if (Notification.permission === "denied") {
-      console.log("Notifications are denied by user, using in-app notification");
+      console.log("🚫 Notifications are denied by user, using in-app notification only");
     } else if (Notification.permission === "default") {
-      console.log("Requesting notification permission...");
+      console.log("❓ Requesting notification permission...");
       Notification.requestPermission().then((permission) => {
         console.log("Permission result:", permission);
         if (permission === "granted") {
+          console.log("✅ Permission granted, retrying notification");
           // Retry showing notification
           showNotification(message);
         }
@@ -433,22 +465,45 @@ useEffect(() => {
         });
         const chatsRes = await axiosInstance.get("/api/chat");
         if (Array.isArray(chatsRes.data)) {
-          setChats(chatsRes.data);
+          const chatsData = chatsRes.data;
+          setChats(chatsData);
+          // Dispatch event for sidebar notification
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: chatsData }
+          }));
         } else if (
           chatsRes.data?.data?.chats &&
           Array.isArray(chatsRes.data.data.chats)
         ) {
-          setChats(chatsRes.data.data.chats);
+          const chatsData = chatsRes.data.data.chats;
+          setChats(chatsData);
+          // Dispatch event for sidebar notification
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: chatsData }
+          }));
         } else if (
           chatsRes.data?.chats &&
           Array.isArray(chatsRes.data.chats)
         ) {
-          setChats(chatsRes.data.chats);
+          const chatsData = chatsRes.data.chats;
+          setChats(chatsData);
+          // Dispatch event for sidebar notification
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: chatsData }
+          }));
         } else {
           setChats([]);
+          // Dispatch event for sidebar notification with empty array
+          window.dispatchEvent(new CustomEvent("chat-unread-status", {
+            detail: { chats: [] }
+          }));
         }
       } catch {
         setChats([]);
+        // Dispatch event for sidebar notification with empty array
+        window.dispatchEvent(new CustomEvent("chat-unread-status", {
+          detail: { chats: [] }
+        }));
       }
     } catch {}
   };
@@ -489,63 +544,141 @@ useEffect(() => {
   fetchMessages();
 }, [selectedChat, API_BASE_URL]);
 
+// Define handleMessageReceived with useCallback to prevent unnecessary re-renders
+const handleMessageReceived = useCallback((newMessageReceived) => {
+  console.log("📨 Received message from socket:", newMessageReceived);
+  console.log("📨 Message details:", {
+    messageId: newMessageReceived._id,
+    senderId: newMessageReceived.sender?._id,
+    currentUserId: user._id,
+    chatId: newMessageReceived.chat?._id || newMessageReceived.chat,
+    selectedChatId: selectedChat?._id,
+    content: newMessageReceived.content
+  });
+  
+  // Determine the chat ID from the message
+  const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
+  
+  // Check if this message is for the currently selected chat
+  const isCurrentChat = selectedChat && selectedChat._id === chatId;
+  
+  // Check if this message is from the current user
+  const isFromCurrentUser = newMessageReceived.sender._id === user._id;
+  
+  console.log("📨 Processing flags:", {
+    isCurrentChat,
+    isFromCurrentUser,
+    shouldShowInCurrentChat: isCurrentChat && !isFromCurrentUser
+  });
+  
+  // IMPORTANT: Skip processing our own messages for the current chat to avoid duplicates
+  // We already show our own messages immediately when sending via the temp message system
+  if (isFromCurrentUser && isCurrentChat) {
+    console.log("🚫 Skipping own message for current chat to avoid duplicate");
+    return;
+  }
+  
+  // Update the chat list with latest message and notification status
+  setChats((prev) => {
+    const updated = prev.map((chat) => {
+      if (chat._id === chatId) {
+        // Only increment unread count for messages from other users and not in current chat
+        const shouldIncrementUnread = !isFromCurrentUser && !isCurrentChat;
+        
+        return {
+          ...chat,
+          latestMessage: newMessageReceived,
+          unreadCount: shouldIncrementUnread ? (chat.unreadCount || 0) + 1 : (chat.unreadCount || 0),
+          notification: shouldIncrementUnread ? true : chat.notification
+        };
+      }
+      return chat;
+    });
+    
+    // Dispatch event for sidebar notification
+    window.dispatchEvent(new CustomEvent("chat-unread-status", {
+      detail: { chats: updated }
+    }));
+    
+    return updated;
+  });
+  
+  // Add message to current chat if it's for the selected chat AND from another user
+  if (isCurrentChat && !isFromCurrentUser) {
+    console.log("📬 Adding message from other user to current chat");
+    setMessages((prev) => {
+      // Check if message already exists to avoid duplicates
+      const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
+      if (messageExists) {
+        console.log("⚠️ Message already exists, skipping duplicate");
+        return prev;
+      }
+      console.log("✅ Adding new message to current chat - REAL TIME UPDATE");
+      const newMessages = [...prev, newMessageReceived];
+      
+      // Force a re-render by creating a new array reference
+      console.log("🔄 Total messages after adding:", newMessages.length);
+      return newMessages;
+    });
+    
+    // Show notification for current chat too
+    console.log("🔔 Showing notification for current chat message");
+    showNotification(newMessageReceived);
+    
+    // Also force scroll to bottom after a small delay to ensure DOM update
+    setTimeout(() => {
+      const messagesContainer = document.querySelector('.messages-container');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        console.log("📜 Auto-scrolled to bottom for new message");
+      }
+    }, 100);
+    
+  } else if (!isFromCurrentUser) {
+    console.log("🔔 Message is for different chat, showing notification");
+    // Show browser notification since message is not from current user and not on current chat
+    showNotification(newMessageReceived);
+  }
+}, [selectedChat, user._id, setChats, setMessages, showNotification]);
+
+// Track joined rooms to prevent duplicate joins
+const [joinedRooms, setJoinedRooms] = useState(new Set());
+
+// Join ALL user's chat rooms for real-time notifications
+const joinAllChatRooms = useCallback(() => {
+  if (socket && socket.connected && chats.length > 0) {
+    const roomsToJoin = chats.filter(chat => !joinedRooms.has(chat._id));
+    
+    if (roomsToJoin.length > 0) {
+      console.log("🏠 Joining new chat rooms for real-time notifications:", roomsToJoin.length, "new rooms out of", chats.length, "total");
+      
+      roomsToJoin.forEach(chat => {
+        socket.emit("join chat", chat._id);
+        console.log("🔗 Joined chat room:", chat._id, chat.chatName || "Direct Message");
+      });
+      
+      // Update joined rooms set
+      setJoinedRooms(prev => {
+        const newSet = new Set(prev);
+        roomsToJoin.forEach(chat => newSet.add(chat._id));
+        return newSet;
+      });
+    } else {
+      console.log("✅ All chat rooms already joined (", chats.length, "rooms)");
+    }
+  } else {
+    console.log("❌ Cannot join chat rooms:", {
+      socketConnected: socket?.connected,
+      chatsCount: chats.length
+    });
+  }
+}, [socket, chats, joinedRooms]);
+
 // Setup socket listeners for real-time updates
 useEffect(() => {
   if (!socket) return;
 
   // Listen for new messages
-  const handleMessageReceived = (newMessageReceived) => {
-    console.log("New message received via socket:", newMessageReceived);
-    
-    // Skip if this message is from the current user (to avoid duplicates when sender sends)
-    if (newMessageReceived.sender._id === user._id) {
-      console.log("Skipping own message to avoid duplicate");
-      return;
-    }
-    
-    // Determine the chat ID from the message
-    const chatId = newMessageReceived.chat._id || newMessageReceived.chat;
-    
-    // Check if this message is for the currently selected chat
-    const isCurrentChat = selectedChat && selectedChat._id === chatId;
-    
-    // Update the chat list with latest message and notification status
-    setChats((prev) =>
-      prev.map((chat) => {
-        if (chat._id === chatId) {
-          // Since we've already filtered out own messages, increment unread count for others
-          const shouldIncrementUnread = !isCurrentChat;
-          
-          return {
-            ...chat,
-            latestMessage: newMessageReceived,
-            unreadCount: shouldIncrementUnread ? (chat.unreadCount || 0) + 1 : (chat.unreadCount || 0),
-            notification: shouldIncrementUnread ? true : chat.notification
-          };
-        }
-        return chat;
-      })
-    );
-    
-    // Only add message if it's for the current selected chat
-    if (isCurrentChat) {
-      console.log("Message is for current chat, adding to messages");
-      setMessages((prev) => {
-        // Check if message already exists to avoid duplicates
-        const messageExists = prev.some(msg => msg._id === newMessageReceived._id);
-        if (messageExists) {
-          console.log("Message already exists, skipping");
-          return prev;
-        }
-        console.log("Adding new message to current chat");
-        return [...prev, newMessageReceived];
-      });
-    } else {
-      console.log("Message is for different chat, showing notification");
-      // Show browser notification since message is not from current user and not on current chat
-      showNotification(newMessageReceived);
-    }
-  };
 
   // Listen for typing indicators
   const handleTyping = (data) => {
@@ -577,32 +710,136 @@ useEffect(() => {
   // Join chat room when chat is selected
   const handleJoinChat = () => {
     if (selectedChat && socket.connected) {
-      console.log("Joining chat room:", selectedChat._id);
+      console.log("🏠 Joining chat room:", selectedChat._id);
       socket.emit("join chat", selectedChat._id);
+      
+      // Add listener for join confirmation
+      socket.once("joined chat", (chatId) => {
+        console.log("✅ Successfully joined chat room:", chatId);
+      });
+    } else {
+      console.log("❌ Cannot join chat room:", {
+        hasSelectedChat: !!selectedChat,
+        socketConnected: socket?.connected,
+        selectedChatId: selectedChat?._id
+      });
     }
   };
 
-  // Add event listeners
-  socket.on("message received", handleMessageReceived);
+  // Add event listeners with better error handling
+  const messageHandler = (data) => {
+    console.log("🎯 Direct message handler called with:", data);
+    handleMessageReceived(data);
+  };
+  
+  socket.on("message received", messageHandler);
   socket.on("typing", handleTyping);
   socket.on("stop typing", handleStopTyping);
   
+  // Also listen for alternative event names (just in case)
+  socket.on("new message", messageHandler);
+  socket.on("messageReceived", messageHandler);
+  
   // Join the chat room for real-time updates
   handleJoinChat();
+  
+  // Join all chat rooms for real-time notifications (only if not already joined)
+  if (chats.length > 0) {
+    joinAllChatRooms();
+  }
+
+  // Add debug listeners
+  socket.on("connect", () => {
+    console.log("✅ Socket connected in message handler:", socket.id);
+    // Clear joined rooms on new connection
+    setJoinedRooms(new Set());
+    
+    // Re-join chat room on reconnection
+    if (selectedChat) {
+      console.log("🔄 Re-joining current chat room after connection:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+    }
+    // Join all chat rooms for real-time notifications (will only join new ones)
+    joinAllChatRooms();
+  });
+  
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected in message handler");
+    // Clear joined rooms tracking on disconnect
+    setJoinedRooms(new Set());
+  });
 
   // Cleanup function
   return () => {
-    socket.off("message received", handleMessageReceived);
+    socket.off("message received", messageHandler);
+    socket.off("new message", messageHandler);
+    socket.off("messageReceived", messageHandler);
     socket.off("typing", handleTyping);
     socket.off("stop typing", handleStopTyping);
     
     // Leave chat room when cleanup
     if (selectedChat && socket.connected) {
-      console.log("Leaving chat room:", selectedChat._id);
+      console.log("🚪 Leaving chat room:", selectedChat._id);
       socket.emit("leave chat", selectedChat._id);
     }
   };
-}, [socket, selectedChat, user._id]);
+}, [socket, selectedChat, user._id, handleMessageReceived, chats, joinAllChatRooms, setJoinedRooms]);
+
+// Join all chat rooms when chats are loaded or updated
+useEffect(() => {
+  if (socket && socket.connected && chats.length > 0) {
+    // Only join if we have new chats that aren't already joined
+    const newChats = chats.filter(chat => !joinedRooms.has(chat._id));
+    if (newChats.length > 0) {
+      console.log("🔄 New chats detected, joining", newChats.length, "new chat rooms");
+      joinAllChatRooms();
+    }
+  }
+}, [chats, socket, joinAllChatRooms, joinedRooms]);
+
+// Add a test function to manually trigger notifications (for debugging)
+const testNotification = () => {
+  console.log("🧪 Testing notification system...");
+  const testMessage = {
+    _id: "test-" + Date.now(),
+    sender: { _id: "test-user", name: "Test User" },
+    content: "This is a test notification message!",
+    chat: { _id: "test-chat" },
+    createdAt: new Date()
+  };
+  showNotification(testMessage);
+};
+
+// Expose test function globally for debugging
+window.testNotification = testNotification;
+
+// Add a test function to verify real-time functionality
+const testRealtimeConnection = () => {
+  if (socket && socket.connected) {
+    console.log("🧪 Testing real-time connection...");
+    console.log("🧪 Socket status:", {
+      connected: socket.connected,
+      id: socket.id,
+      rooms: Array.from(socket.rooms || []),
+      selectedChat: selectedChat?._id,
+      userId: user._id
+    });
+    
+    // Send a ping to test connection
+    socket.emit("ping", { test: true, timestamp: new Date() });
+    
+    // Check if properly joined chat room
+    if (selectedChat) {
+      console.log("🧪 Re-joining chat room to ensure connection:", selectedChat._id);
+      socket.emit("join chat", selectedChat._id);
+    }
+  } else {
+    console.error("🧪 Socket not connected for real-time test");
+  }
+};
+
+// Expose test function globally for debugging
+window.testRealtimeConnection = testRealtimeConnection;
 
 // Debug socket connection status
 useEffect(() => {
@@ -739,15 +976,24 @@ const handleSendMessage = async () => {
     // Emit to socket for other users to receive the message
     if (socket && socket.connected) {
       console.log("Emitting new message via socket:", messageData._id);
-      // Emit with proper structure
+      // Emit with proper structure including full message data
       socket.emit("new message", {
         ...messageData,
-        chat: selectedChat._id // Ensure chat ID is properly set
+        chat: {
+          _id: selectedChat._id,
+          ...selectedChat // Include full chat data for better handling
+        }
       });
+      console.log("✅ Message emitted successfully to socket");
     } else {
       console.warn(
-        "Socket disconnected, message sent but real-time updates unavailable"
+        "⚠️ Socket disconnected, message sent but real-time updates unavailable"
       );
+      console.log("Socket status:", {
+        exists: !!socket,
+        connected: socket?.connected,
+        id: socket?.id
+      });
     }
   } catch (err) {
     networkError = true;
@@ -1051,13 +1297,20 @@ const toggleUserSelection = (userId) => {
 
 // Function to clear notifications for a specific chat
 const clearChatNotifications = (chatId) => {
-  setChats((prev) =>
-    prev.map((chat) =>
+  setChats((prev) => {
+    const updated = prev.map((chat) =>
       chat._id === chatId
         ? { ...chat, unreadCount: 0, notification: false }
         : chat
-    )
-  );
+    );
+    
+    // Dispatch event for sidebar notification
+    window.dispatchEvent(new CustomEvent("chat-unread-status", {
+      detail: { chats: updated }
+    }));
+    
+    return updated;
+  });
 };
 
 // Enhanced chat selection handler
