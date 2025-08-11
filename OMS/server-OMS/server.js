@@ -76,7 +76,7 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
+      "http://134.199.170.166:3000",
       "http://localhost:3001",
       "http://localhost:5002",
     ],
@@ -542,7 +542,7 @@ server.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(
     `✅ CORS enabled for origins: ${JSON.stringify([
-      "http://localhost:3000",
+      "http://134.199.170.166:3000",
       "http://localhost:3001",
       "http://localhost:5002",
     ])}`
