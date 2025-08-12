@@ -5,7 +5,7 @@ const testAttendanceAPI = async () => {
     // First login to get token
     console.log("🔑 Logging in to get authentication token...");
     const loginResponse = await axios.post(
-      "http://146.190.165.62:5001/users/login",
+      "http://localhost:5001/users/login",
       {
         email: "gaurav@tars.co.in",
         password: "Tars@2001",
@@ -22,7 +22,7 @@ const testAttendanceAPI = async () => {
     try {
       console.log("1. Testing /api/attendance/today...");
       const todayResponse = await axios.get(
-        "http://146.190.165.62:5001/api/attendance/today",
+        "http://localhost:5001/api/attendance/today",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -42,7 +42,7 @@ const testAttendanceAPI = async () => {
     try {
       console.log("\n2. Testing /api/attendance/history...");
       const historyResponse = await axios.get(
-        "http://146.190.165.62:5001/api/attendance/history",
+        "http://localhost:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${token}`,

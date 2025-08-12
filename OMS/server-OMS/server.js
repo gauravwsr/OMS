@@ -77,8 +77,9 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "http://http://134.199.170.166:3000",
-      "http://localhost:3001",
+      "http://localhost:3000",
+      "http://localhost:3001", 
+      "http://134.199.170.166:3000",
       "http://146.190.165.62:5002",
     ],
     credentials: true,

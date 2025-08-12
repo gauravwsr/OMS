@@ -22,7 +22,7 @@ async function testMeetingCreation() {
     console.log("Data:", JSON.stringify(meetingData, null, 2));
 
     const response = await axios.post(
-      "http://146.190.165.62:5001/api/meetings/create",
+      "http://localhost:5001/api/meetings/create",
       meetingData,
       {
         headers: {

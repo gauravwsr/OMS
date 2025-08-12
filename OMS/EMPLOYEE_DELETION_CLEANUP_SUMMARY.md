@@ -176,7 +176,7 @@ Employee: Jane Smith
 
 ## API Endpoints Added
 
-### Backend (`146.190.165.62:5001`)
+### Backend (`localhost:5001`)
 
 ```
 DELETE /api/candidates/:id
@@ -184,7 +184,7 @@ DELETE /api/candidates/:id
 - Returns detailed deletion report
 ```
 
-### Face Recognition Server (`146.190.165.62:5001`)
+### Face Recognition Server (`localhost:5001`)
 
 ```
 DELETE /api/delete-user/<username>

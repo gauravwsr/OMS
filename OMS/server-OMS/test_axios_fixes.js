@@ -6,7 +6,7 @@ const testAxiosCallsFixed = async () => {
     // First login to get token
     console.log("🔑 Logging in to get authentication token...");
     const loginResponse = await axios.post(
-      "http://146.190.165.62:5001/users/login",
+      "http://localhost:5001/users/login",
       {
         email: "gaurav@tars.co.in",
         password: "Tars@2001",
@@ -23,7 +23,7 @@ const testAxiosCallsFixed = async () => {
     try {
       console.log("1. Testing attendance history with proper axios syntax...");
       const historyResponse = await axios.get(
-        "http://146.190.165.62:5001/api/attendance/history",
+        "http://localhost:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -48,7 +48,7 @@ const testAxiosCallsFixed = async () => {
         "\n2. Testing today's attendance with proper axios syntax..."
       );
       const todayResponse = await axios.get(
-        "http://146.190.165.62:5001/api/attendance/today",
+        "http://localhost:5001/api/attendance/today",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -70,7 +70,7 @@ const testAxiosCallsFixed = async () => {
         "\n3. Testing attendance marking with proper axios syntax..."
       );
       const markResponse = await axios.post(
-        "http://146.190.165.62:5001/api/attendance/mark",
+        "http://localhost:5001/api/attendance/mark",
         {
           method: "manual",
           timestamp: new Date().toISOString(),

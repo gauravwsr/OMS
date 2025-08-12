@@ -4,7 +4,7 @@ const testLogin = async () => {
   try {
     console.log("🧪 Testing login with credentials...");
 
-    const response = await axios.post("http://146.190.165.62:5001/users/login", {
+    const response = await axios.post("http://localhost:5001/users/login", {
       email: "gaurav@tars.co.in",
       password: "Tars@2001",
     });

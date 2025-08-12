@@ -7,7 +7,7 @@ This API provides comprehensive client project management with team lead assignm
 ## Base URL
 
 ```
-http://146.190.165.62:5001/api
+http://localhost:5001/api
 ```
 
 ## Authentication

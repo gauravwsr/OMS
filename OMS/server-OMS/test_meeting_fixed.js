@@ -23,7 +23,7 @@ async function testMeetingCreationFixed() {
     // This would require a valid JWT token
     // For now, just test the endpoint exists
     const response = await axios.post(
-      "http://146.190.165.62:5001/api/meetings/create",
+      "http://localhost:5001/api/meetings/create",
       meetingData
     );
 

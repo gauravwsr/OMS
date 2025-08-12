@@ -6,7 +6,7 @@ async function testMeetingAPI() {
 
     // First, let's test login to get a token
     const loginResponse = await axios.post(
-      "http://146.190.165.62:5001/api/auth/login",
+      "http://localhost:5001/api/auth/login",
       {
         email: "test@example.com", // You'll need to use a real user's credentials
         password: "password123",
@@ -18,7 +18,7 @@ async function testMeetingAPI() {
 
     // Now test the meeting creation
     const meetingResponse = await axios.post(
-      "http://146.190.165.62:5001/api/meetings/create",
+      "http://localhost:5001/api/meetings/create",
       {
         roomName: "Test Meeting",
         roomType: "team",
