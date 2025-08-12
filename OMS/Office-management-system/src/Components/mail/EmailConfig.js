@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthProvider/AuthContext";
 import {
   Settings,
@@ -15,7 +14,6 @@ import "./EmailConfig.css";
 
 const EmailConfig = ({ onConfigured, isModal = false }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [emailConfig, setEmailConfig] = useState({
     email: "",
     password: "",
@@ -311,19 +309,6 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
           <button
             className="go-to-inbox-button"
             onClick={() => {
-              // Get the correct path based on user role
-              const rolePaths = {
-                Super_Admin: "/super_admin",
-                Admin: "/admin", 
-                Employee: "/employee",
-                Intern: "/intern",
-              };
-              const basePath = user?.role ? rolePaths[user.role] : "/admin";
-              const inboxPath = `${basePath}/Inbox`;
-              
-              console.log('Navigating to:', inboxPath);
-              navigate(inboxPath);
-              
               if (onConfigured) {
                 onConfigured();
               }

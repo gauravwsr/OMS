@@ -455,3 +455,57 @@
     font-size: 11px;
   }
 }
+
+/* Enhanced SentSection Styles */
+.email-subject-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.email-icon {
+  font-size: 14px;
+  min-width: 16px;
+}
+
+.source-badge {
+  font-size: 12px;
+  opacity: 0.7;
+  min-width: 16px;
+}
+
+.email-subject {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-count {
+  font-size: 11px;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.cc-indicator {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.no-emails-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.no-emails-message div {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.no-emails-message small {
+  font-size: 14px;
+  opacity: 0.8;
+}

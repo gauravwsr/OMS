@@ -20,8 +20,6 @@ const EmailDetails = () => {
   const [showOriginal, setShowOriginal] = useState(true);
   const [showPreviousMessage, setShowPreviousMessage] = useState(false);
   const [expandedMessages, setExpandedMessages] = useState(new Set([0])); // First message expanded by default
-  const [threadEmails, setThreadEmails] = useState([]);
-  const [loadingThread, setLoadingThread] = useState(false);
   
   const replyTextareaRef = useRef(null);
   const forwardTextareaRef = useRef(null);
@@ -38,64 +36,6 @@ const EmailDetails = () => {
       forwardTextareaRef.current.focus();
     }
   }, [isForwarding]);
-
-  // Fetch thread emails when component mounts
-  useEffect(() => {
-    if (email && email.subject) {
-      fetchThreadEmails();
-    }
-  }, [email]);
-
-  // Function to fetch actual thread emails from server
-  const fetchThreadEmails = async () => {
-    if (!email || !email.subject) return;
-    
-    setLoadingThread(true);
-    try {
-      const params = new URLSearchParams({
-        subject: email.subject,
-        ...(email.messageId && { messageId: email.messageId }),
-        ...(email.from && { sender: email.from }),
-        ...(email.to && { recipient: email.to })
-      });
-
-      console.log('🔍 Fetching thread emails with params:', {
-        subject: email.subject,
-        messageId: email.messageId,
-        sender: email.from,
-        recipient: email.to
-      });
-
-      const response = await fetch(`http://localhost:5001/api/emails/search-thread?${params}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        console.log(`📧 Fetched ${data.emails.length} thread emails from server`);
-        console.log('📊 Email breakdown by folder:', data.breakdown);
-        setThreadEmails(data.emails || []);
-        
-        // Set expanded messages - expand the latest message by default
-        if (data.emails && data.emails.length > 0) {
-          setExpandedMessages(new Set([data.emails.length - 1]));
-        }
-      } else {
-        console.error('Failed to fetch thread emails:', data.message);
-        setThreadEmails([]);
-      }
-    } catch (error) {
-      console.error('Error fetching thread emails:', error);
-      setThreadEmails([]);
-    } finally {
-      setLoadingThread(false);
-    }
-  };
 
   if (!email) {
     return <p className="text-center mt-5">No email details available.</p>;
@@ -491,49 +431,11 @@ const EmailDetails = () => {
     setExpandedMessages(newExpanded);
   };
 
-  // Use server-fetched emails if available, otherwise parse body content
-  const displayEmails = threadEmails.length > 0 ? threadEmails : [email];
   const { currentMessage, originalMessage, allMessages } = parseEmailContent(email.body);
   
-  // Determine final messages to display
-  let finalMessages = [];
-  if (threadEmails.length > 1) {
-    // Use server-fetched thread emails
-    finalMessages = threadEmails.map((threadEmail, index) => ({
-      type: index === threadEmails.length - 1 ? 'current' : 'previous',
-      from: threadEmail.from,
-      to: threadEmail.to,
-      date: threadEmail.date,
-      subject: threadEmail.subject,
-      content: threadEmail.body,
-      messageId: threadEmail.messageId,
-      folder: threadEmail.folder,
-      isExpanded: index === threadEmails.length - 1, // Latest message expanded
-      id: index
-    }));
-  } else if (allMessages.length > 1) {
-    // Use parsed messages from email body
-    finalMessages = allMessages;
-  } else {
-    // Single message
-    finalMessages = [{
-      type: 'current',
-      from: email.from || email.sender,
-      to: email.to || 'me',
-      date: email.date,
-      subject: email.subject,
-      content: email.body,
-      messageId: email.messageId,
-      isExpanded: true,
-      id: 0
-    }];
-  }
-  
-  // Debug log
-  if (threadEmails.length > 0) {
-    console.log(`📧 Displaying ${finalMessages.length} emails from server thread`);
-  } else if (allMessages.length > 1) {
-    console.log(`📧 Displaying ${finalMessages.length} parsed messages from email body`);
+  // Debug log - only run once when component mounts or email changes
+  if (email.body && allMessages.length > 1) {
+    console.log(`Email parsed into ${allMessages.length} messages`);
   }
   
   const formatDate = (dateStr) => {
@@ -611,23 +513,16 @@ const EmailDetails = () => {
 
         {/* Main Email Body */}
         <div className="email-content-section">
-          {loadingThread && (
-            <div className="loading-thread">
-              <div className="loading-spinner"></div>
-              <span>Loading email thread...</span>
-            </div>
-          )}
-
-          {/* Thread View - Multiple Messages */}
-          {finalMessages.length > 1 ? (
+          {/* Thread View - All Messages */}
+          {allMessages.length > 1 ? (
             <div className="email-thread">
-              {finalMessages.map((message, index) => {
+              {allMessages.map((message, index) => {
                 const messageDate = formatDate(message.date);
                 const isExpanded = expandedMessages.has(index);
-                const isLatest = index === finalMessages.length - 1;
+                const isLatest = index === 0;
                 
                 return (
-                  <div key={message.messageId || index} className={`thread-message ${isLatest ? 'latest-message' : 'previous-message'} ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                  <div key={index} className={`thread-message ${isLatest ? 'latest-message' : 'previous-message'} ${isExpanded ? 'expanded' : 'collapsed'}`}>
                     <div className="message-header" onClick={() => !isLatest && toggleMessageExpansion(index)}>
                       <div className="message-sender-info">
                         <div className="message-avatar">
@@ -636,24 +531,11 @@ const EmailDetails = () => {
                         <div className="message-meta">
                           <div className="sender-name">
                             <strong>{message.from || 'Unknown'}</strong>
-                            {message.folder && (
-                              <span className={`folder-indicator ${message.isSent || message.isFromUser ? 'sent' : 'received'}`}>
-                                {message.isSent || message.isFromUser ? '📤 Sent' : '� Received'}
-                              </span>
-                            )}
                           </div>
                           <div className="message-details">
                             <span className="message-to">to {message.to || 'me'}</span>
                             <span className="message-date">{messageDate.date} {messageDate.time}</span>
-                            {message.folder && (
-                              <span className="folder-name">• {message.folder}</span>
-                            )}
                           </div>
-                          {message.subject && message.subject !== email.subject && (
-                            <div className="message-subject">
-                              Subject: {message.subject}
-                            </div>
-                          )}
                         </div>
                       </div>
                       {!isLatest && (
@@ -694,7 +576,7 @@ const EmailDetails = () => {
                       </div>
                     )}
                     
-                    {index < finalMessages.length - 1 && <div className="message-separator"></div>}
+                    {index < allMessages.length - 1 && <div className="message-separator"></div>}
                   </div>
                 );
               })}

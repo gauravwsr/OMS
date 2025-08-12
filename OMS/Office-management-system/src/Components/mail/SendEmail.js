@@ -12,7 +12,7 @@ const SendEmail = () => {
   const [bcc, setBcc] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
-  const [attachment, setAttachment] = useState(null);
+  const [attachments, setAttachments] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(false);
@@ -36,6 +36,53 @@ const SendEmail = () => {
   // Function to handle going back to the previous page
   const handleBack = () => {
     window.history.back(); // Goes back to the previous page
+  };
+
+  // File attachment handling functions
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Validate file count
+    if (attachments.length + files.length > 10) {
+      alert('⚠️ Maximum 10 files allowed. Please remove some files first.');
+      return;
+    }
+    
+    // Validate each file
+    for (const file of files) {
+      // File size validation (25MB)
+      if (file.size > 25 * 1024 * 1024) {
+        alert(`⚠️ File "${file.name}" is too large. Maximum size is 25MB.`);
+        return;
+      }
+      
+      // File type validation
+      const allowedTypes = /\.(jpeg|jpg|png|gif|pdf|doc|docx|txt|zip|rar|csv|xlsx|xls|ppt|pptx)$/i;
+      if (!allowedTypes.test(file.name)) {
+        alert(`⚠️ File type not allowed: "${file.name}". Only images, documents, and archives are allowed.`);
+        return;
+      }
+    }
+    
+    // Add files to attachments
+    setAttachments(prev => [...prev, ...files]);
+    console.log('📎 Files added:', files.map(f => ({ name: f.name, size: f.size })));
+    
+    // Clear the input so the same file can be selected again
+    e.target.value = '';
+  };
+  
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+    console.log('🗑️ File removed at index:', index);
+  };
+  
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const saveDraft = async () => {
@@ -97,30 +144,59 @@ const SendEmail = () => {
     setIsSending(true);
 
     try {
-      console.log('Sending email with data:', { to: email, cc, bcc, subject, body: body.substring(0, 100) + '...' });
+      console.log('Sending email with data:', { 
+        to: email, 
+        cc, 
+        bcc, 
+        subject, 
+        body: body.substring(0, 100) + '...',
+        attachments: attachments.map(f => ({ name: f.name, size: f.size }))
+      });
       
-      const response = await fetch('http://localhost:5001/api/emails/send', {
+      // Create FormData for file uploads
+      const formData = new FormData();
+      formData.append('to', email);
+      formData.append('cc', cc);
+      formData.append('bcc', bcc);
+      formData.append('subject', subject);
+      formData.append('body', body);
+      formData.append('isReply', action === 'reply');
+      formData.append('isForward', action === 'forward');
+      if (emailData?.messageId) {
+        formData.append('originalMessageId', emailData.messageId);
+      }
+      
+      // Add attachments
+      attachments.forEach((file) => {
+        formData.append('attachments', file);
+      });
+      
+      // Debug: Log form data contents
+      console.log('📤 FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}:`, { name: value.name, size: value.size, type: value.type });
+        } else {
+          console.log(`${key}:`, value);
+        }
+      }
+      
+      // Check if user has a token, if not use test endpoint
+      const token = localStorage.getItem('token');
+      const endpoint = token ? '/api/emails/send' : '/api/emails/test-send';
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      
+      const response = await fetch(`http://localhost:5001${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          to: email,
-          cc: cc,
-          bcc: bcc,
-          subject: subject,
-          body: body,
-          isReply: action === 'reply',
-          isForward: action === 'forward',
-          originalMessageId: emailData?.messageId
-        })
+        headers: headers,
+        // Don't set Content-Type for FormData, let browser set it
+        body: formData
       });
 
       const data = await response.json();
       
       if (response.ok && data.success) {
-        alert(`✅ ${data.message}`);
+        alert(`✅ ${data.message}${data.attachmentCount > 0 ? ` (${data.attachmentCount} attachment${data.attachmentCount > 1 ? 's' : ''})` : ''}`);
         console.log('Email sent successfully:', data.messageId);
         
         // Clear form after successful send
@@ -129,7 +205,7 @@ const SendEmail = () => {
         setBcc('');
         setSubject('');
         setBody('');
-        setAttachment(null);
+        setAttachments([]);
         setShowCc(false);
         setShowBcc(false);
       } else {
@@ -261,15 +337,43 @@ const SendEmail = () => {
 
         <div className="form-group">
           <label className="attachment-label" htmlFor="attachment">
-            Attach File
+            📎 Attach Files (Max 10 files, 25MB each)
           </label>
           <input
             type="file"
             id="attachment"
             className="file-input"
-            onChange={(e) => setAttachment(e.target.files[0])}
+            multiple
+            accept=".jpeg,.jpg,.png,.gif,.pdf,.doc,.docx,.txt,.zip,.rar,.csv,.xlsx,.xls,.ppt,.pptx"
+            onChange={handleFileChange}
           />
         </div>
+
+        {/* Display attached files */}
+        {attachments.length > 0 && (
+          <div className="attachments-preview">
+            <h4>📎 Attached Files ({attachments.length}/10):</h4>
+            <div className="attachments-list">
+              {attachments.map((file, index) => (
+                <div key={index} className="attachment-item">
+                  <span className="file-icon">📄</span>
+                  <div className="file-info">
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">({formatFileSize(file.size)})</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="remove-attachment-btn"
+                    onClick={() => removeAttachment(index)}
+                    title="Remove file"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="form-actions">
           <button
