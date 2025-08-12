@@ -90,7 +90,7 @@ const Meeting = () => {
       const token = localStorage.getItem("token");
       const config = {
         method,
-        url: `http://146.190.165.62:5001/api/meetings${endpoint}`,
+        url: `http://localhost:5001/api/meetings${endpoint}`,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

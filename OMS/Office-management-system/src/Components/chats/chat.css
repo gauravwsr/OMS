@@ -14,7 +14,8 @@
 .chat-area {
   height: 100%;
   background-color: #fff;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
 }
 
@@ -518,7 +519,8 @@
 
   .chat-area {
     height: calc(100vh - 180px); /* Adjusted for larger sidebar */
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: 100%;
   }
 
@@ -562,7 +564,8 @@
   
   /* Default mobile view - show both sidebar and chat area side by side if needed */
   .chat-area {
-    display: block;
+    display: flex;
+    flex-direction: column;
     height: calc(100vh - 180px);
   }
   
@@ -574,7 +577,8 @@
   
   /* When chat is selected but not mobile-chat-open, show chat area */
   .chat-container .chat-area {
-    display: block;
+    display: flex;
+    flex-direction: column;
     width: 100%;
   }
   

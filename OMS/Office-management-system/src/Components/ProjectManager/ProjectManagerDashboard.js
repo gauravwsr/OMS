@@ -112,7 +112,7 @@ const ProjectManagerDashboard = () => {
         const token = localStorage.getItem("token");
         try {
           await fetch(
-            "http://146.190.165.62:5001/api/client-projects/import-remote",
+            "http://localhost:5001/api/client-projects/import-remote",
             {
               method: "POST",
               headers: {
@@ -127,7 +127,7 @@ const ProjectManagerDashboard = () => {
 
         // Now fetch from local database
         const response = await fetch(
-          "http://146.190.165.62:5001/api/client-projects",
+          "http://localhost:5001/api/client-projects",
           {
             headers: {
               "Content-Type": "application/json",
@@ -152,7 +152,7 @@ const ProjectManagerDashboard = () => {
           projectsData.map(async (project) => {
             try {
               const taskCountsResponse = await fetch(
-                `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
+                `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
                 {
                   headers: {
                     "Content-Type": "application/json",
@@ -206,7 +206,7 @@ const ProjectManagerDashboard = () => {
       try {
         const token = localStorage.getItem("token"); // or sessionStorage.getItem('token')
         const response = await fetch(
-          "http://146.190.165.62:5001/api/client-projects/team-leads",
+          "http://localhost:5001/api/client-projects/team-leads",
           {
             credentials: "include",
             headers: {
@@ -648,7 +648,7 @@ const ProjectManagerDashboard = () => {
   //     const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
 
   //     // Make API call to assign the team lead using the correct endpoint
-  //     const response = await fetch(`http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-team-lead`, {
+  //     const response = await fetch(`http://localhost:5001/api/client-projects/${selectedProject._id}/assign-team-lead`, {
   //       method: 'PUT',
   //       headers: {
   //         'Content-Type': 'application/json',
@@ -702,7 +702,7 @@ const ProjectManagerDashboard = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
+        `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
         {
           method: "PUT",
           headers: {
@@ -720,7 +720,7 @@ const ProjectManagerDashboard = () => {
       if (response.ok) {
         // Fetch updated projects from backend to ensure persistence
         const updatedProjectsRes = await fetch(
-          "http://146.190.165.62:5001/api/client-projects",
+          "http://localhost:5001/api/client-projects",
           {
             headers: {
               "Content-Type": "application/json",
@@ -735,7 +735,6 @@ const ProjectManagerDashboard = () => {
         setProjects(projectsData);
         setFilteredProjects(projectsData);
 
-        setShowAssignModal(false);
         setSelectedProject(null);
         setSelectedTeamLead("");
         alert(
@@ -793,7 +792,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://146.190.165.62:5001/api/client-projects/employees/sub-role/${subRole}`,
+        `http://localhost:5001/api/client-projects/employees/sub-role/${subRole}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -812,7 +811,7 @@ const ProjectManagerDashboard = () => {
     if (!selectedEmployee || !selectedProject) return;
     const token = localStorage.getItem("token");
     await fetch(
-      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-employee`,
+      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-employee`,
       {
         method: "PUT",
         headers: {
@@ -875,7 +874,7 @@ const ProjectManagerDashboard = () => {
     if (!selectedProject) return;
     const token = localStorage.getItem("token");
     await fetch(
-      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-employees`,
+      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-employees`,
       {
         method: "PUT",
         headers: {
@@ -900,7 +899,7 @@ const ProjectManagerDashboard = () => {
 
     // Save team lead
     await fetch(
-      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
+      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-team-lead`,
       {
         method: "PUT",
         headers: {
@@ -916,7 +915,7 @@ const ProjectManagerDashboard = () => {
 
     // Save employees
     await fetch(
-      `http://146.190.165.62:5001/api/client-projects/${selectedProject._id}/assign-employees`,
+      `http://localhost:5001/api/client-projects/${selectedProject._id}/assign-employees`,
       {
         method: "PUT",
         headers: {
@@ -929,7 +928,7 @@ const ProjectManagerDashboard = () => {
 
     // Refresh projects
     const updatedProjectsRes = await fetch(
-      "http://146.190.165.62:5001/api/client-projects",
+      "http://localhost:5001/api/client-projects",
       {
         headers: {
           "Content-Type": "application/json",
@@ -944,7 +943,6 @@ const ProjectManagerDashboard = () => {
     setProjects(projectsData);
     setFilteredProjects(projectsData);
 
-    setShowAssignModal(false);
     setSelectedProject(null);
     setSelectedTeamLead("");
     setAssignedEmployees([]);
@@ -960,7 +958,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/projects/${projectId}/tasks`,
+        `http://localhost:5001/api/team-lead/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1017,7 +1015,7 @@ const ProjectManagerDashboard = () => {
       console.log("Sending task data:", taskData);
 
       const response = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
+        `http://localhost:5001/api/team-lead/projects/${selectedProject._id}/tasks`,
         {
           method: "POST",
           headers: {
@@ -1067,7 +1065,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/assignment`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}/assignment`,
         {
           method: "PUT",
           headers: {
@@ -1126,7 +1124,7 @@ const ProjectManagerDashboard = () => {
 
       console.log("Making API call to update task status...");
       const response = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/status`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}/status`,
         {
           method: "PUT",
           headers: {
@@ -1207,7 +1205,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}`,
         {
           method: "DELETE",
           headers: {
@@ -1244,7 +1242,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
+        `http://localhost:5001/api/team-lead/tasks/${taskId}/points/${pointId}`,
         {
           method: "PUT",
           headers: {
@@ -1297,7 +1295,7 @@ const ProjectManagerDashboard = () => {
         totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       const token = localStorage.getItem("token");
-      await fetch(`http://146.190.165.62:5001/api/client-projects/${projectId}/progress`, {
+      await fetch(`http://localhost:5001/api/client-projects/${projectId}/progress`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1314,7 +1312,7 @@ const ProjectManagerDashboard = () => {
   const fetchAssignedProjects = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://146.190.165.62:5001/api/client-projects", {
+      const response = await fetch("http://localhost:5001/api/client-projects", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -1328,7 +1326,7 @@ const ProjectManagerDashboard = () => {
         projectsData.map(async (project) => {
           try {
             const taskCountsResponse = await fetch(
-              `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
+              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -1371,7 +1369,7 @@ const ProjectManagerDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const taskCountsResponse = await fetch(
-        `http://146.190.165.62:5001/api/team-lead/projects/${projectId}/tasks`,
+        `http://localhost:5001/api/team-lead/projects/${projectId}/tasks`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1498,7 +1496,7 @@ const ProjectManagerDashboard = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://146.190.165.62:5001/tasks/${editTask._id}`, {
+      const response = await fetch(`http://localhost:5001/tasks/${editTask._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1619,7 +1617,7 @@ const ProjectManagerDashboard = () => {
       console.log('Sending assignment data:', validatedAssignments);
 
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://146.190.165.62:5001/api/team-lead/tasks/${editTask._id}/assignment`, {
+      const response = await fetch(`http://localhost:5001/api/team-lead/tasks/${editTask._id}/assignment`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -1668,7 +1666,7 @@ const ProjectManagerDashboard = () => {
         throw new Error("Employee ID not found");
       }
       
-      let url = `http://146.190.165.62:5001/api/team-lead/employees/${employeeId}/tasks`;
+      let url = `http://localhost:5001/api/team-lead/employees/${employeeId}/tasks`;
       if (projectId) {
         url += `?projectId=${projectId}`;
       }

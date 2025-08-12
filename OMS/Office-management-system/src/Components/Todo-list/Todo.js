@@ -16,7 +16,7 @@ import "./Todo.css";
 
 const Todo = () => {
   const { user } = useAuth(); // Get current user context
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://146.190.165.62:5001";
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [assignedEmail, setAssignedEmail] = useState("");
@@ -195,8 +195,10 @@ const Todo = () => {
 
         <div className="todo-card">
           <div className="todo-card-header">
-            <List size={20} />
-            <h2>Task Manager</h2>
+            <div className="todo-card-header-content">
+              <List size={20} />
+              <h2>Task Manager</h2>
+            </div>
           </div>
 
           <div className="todo-input-container">

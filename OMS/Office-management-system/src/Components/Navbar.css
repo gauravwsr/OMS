@@ -1,23 +1,27 @@
-/* ========== Base Variables ========== */
+/* ========== Enhanced Modern Variables ========== */
 :root {
-  --primary-color: #4f46e5;
-  --primary-light: #6366f1;
-  --primary-dark: #4338ca;
-  --background: #ffffff;
-  --sidebar-bg: #f8fafc;
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #4f8cff 0%, #a8edea 100%);
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #22c55e 100%);
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
   --text-color: #1e293b;
   --text-light: #64748b;
-  --border-color: #e2e8f0;
-  --hover-bg: #f1f5f9;
-  --active-bg: #e0e7ff;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --border-color: rgba(226, 232, 240, 0.3);
+  --hover-bg: rgba(79, 140, 255, 0.1);
+  --active-bg: var(--primary-gradient);
+  --shadow-modern: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.12);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --sidebar-width: 280px;
   --sidebar-collapsed: 80px;
   --mobile-z-index: 1000;
+  --border-radius: 16px;
+  --backdrop-blur: blur(16px) saturate(180%);
 }
 
-/* ========== Sidebar Container ========== */
+/* ========== Modern Sidebar Container ========== */
 .sidebar-container {
   position: fixed;
   top: 0;
@@ -25,13 +29,15 @@
   height: 100vh;
   width: var(--sidebar-width);
   background: var(--sidebar-bg);
+  backdrop-filter: var(--backdrop-blur);
   border-right: 1px solid var(--border-color);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-modern);
   z-index: var(--mobile-z-index);
   transition: var(--transition);
   transform: translateX(-100%);
   display: flex;
   flex-direction: column;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
 }
 
 .sidebar-container.open {
@@ -55,49 +61,81 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 1.5rem 0;
+  padding: 2rem 0 1rem 0;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
 }
 
-/* ========== Mobile Toggle ========== */
+.sidebar-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ========== Enhanced Mobile Toggle ========== */
 .mobile-menu-toggle {
   position: fixed;
-  top: 1rem;
-  left: 1rem;
+  top: 1.5rem;
+  left: 1.5rem;
   z-index: calc(var(--mobile-z-index) + 10);
-  background: var(--primary-color);
+  background: var(--primary-gradient);
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
+  border-radius: 12px;
+  width: 3rem;
+  height: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-modern);
   transition: var(--transition);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--glass-border);
 }
 
 .mobile-menu-toggle:hover {
-  background: var(--primary-dark);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-hover);
 }
 
-/* ========== Collapse Toggle ========== */
+/* ========== Enhanced Collapse Toggle ========== */
 .collapse-toggle {
   position: absolute;
-  top: 1rem;
+  top: 1.5rem;
   right: -0.75rem;
   background: white;
   border: 1px solid var(--border-color);
   border-radius: 50%;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-modern);
+  transition: var(--transition);
+  z-index: 10;
+}
+
+.collapse-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-hover);
+  background: var(--primary-gradient);
+  color: white;
+}
   z-index: 10;
   transition: var(--transition);
 }

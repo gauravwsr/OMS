@@ -57,7 +57,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
       const token = localStorage.getItem('token');
       console.log('Checking email config with token:', token ? 'Present' : 'Missing');
       
-      const response = await fetch('http://146.190.165.62:5001/api/emails/check-config', {
+      const response = await fetch('http://localhost:5001/api/emails/check-config', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://146.190.165.62:5001/api/emails/configure', {
+      const response = await fetch('http://localhost:5001/api/emails/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://146.190.165.62:5001/api/emails/configure', {
+      const response = await fetch('http://localhost:5001/api/emails/configure', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -188,7 +188,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://146.190.165.62:5001/api/emails/remove-config', {
+      const response = await fetch('http://localhost:5001/api/emails/remove-config', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +239,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
   if (isConfigured && !isModal) {
     return (
-      <div className="email-config-success">
+      <div className="success">
         <CheckCircle className="success-icon" />
         <h3>Email Configured Successfully!</h3>
         <p>Your email ({emailConfig.email}) is ready to use.</p>

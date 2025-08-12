@@ -96,13 +96,13 @@ export default function ProjectList() {
       }
 
       // Fetch projects from local database
-      const response = await fetch("http://146.190.165.62:5001/api/client-projects", {
+      const response = await fetch("http://localhost:5001/api/client-projects", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -119,7 +119,7 @@ export default function ProjectList() {
         projectsData.map(async (project) => {
           try {
             const taskCountsResponse = await fetch(
-              `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
+              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -2607,7 +2607,7 @@ export default function ProjectList() {
   
 //     try {
 //       // Send the project data to the API
-//       const response = await fetch("http://146.190.165.62:5001/api/projects", {
+//       const response = await fetch("http://localhost:5001/api/projects", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newProject),
@@ -2824,7 +2824,7 @@ export default function ProjectList() {
 //           <button className="month-nav" onClick={nextMonth}>
 //             <ChevronRight size={16} />
 //           </button>
-//         </div>
+//         </div>localhost:5001
 //         <div className="kanban-board">
 //           <div className="kanban-column todo-column">
 //             <div className="column-header">TO DO List</div>

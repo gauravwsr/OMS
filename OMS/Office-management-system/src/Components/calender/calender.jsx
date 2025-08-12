@@ -23,11 +23,14 @@ const Calender = () => {
   const [users, setUsers] = useState([]);
   const { user } = useAuth(); // Get user info to check role
 
-  // Check if current user is Super Admin, Admin, or HR Manager
+
+  // Role logic for calendar permissions
   const isSuperAdmin = user?.role === "Super_Admin";
   const isAdmin = user?.role === "Admin";
-  // Check if current user is HR Manager (Admin with HR Manager subRole)
   const isHRManager = user?.role === "Admin" && user?.subRole === "HR Manager";
+  const isEmployee = user?.role === "Employee";
+  // Only Admin+HR Manager and Employee can edit calendar
+  const canEditCalendar = (isAdmin && isHRManager) || isEmployee;
 
   console.log("Calendar User Info:", {
     userName: user?.name,
@@ -39,7 +42,7 @@ const Calender = () => {
   });
 
   // HR Manager uses regular GetData route (backend will handle showing all events)
-  const baseUrl = "http://146.190.165.62:5001/GetData";
+  const baseUrl = "http://localhost:5001/GetData";
 
   class CustomAuthAdaptor extends UrlAdaptor {
     processQuery(dm, query, hierarchyFilters) {
@@ -81,7 +84,7 @@ const Calender = () => {
 
     return new DataManager({
       url: baseUrl,
-      crudUrl: "http://146.190.165.62:5001/BatchData",
+      crudUrl: "http://localhost:5001/BatchData",
       adaptor: new CustomAuthAdaptor(),
 
       crossDomain: true,
@@ -113,29 +116,28 @@ const Calender = () => {
     });
   }, [user, isAdmin, isHRManager, baseUrl]);
 
-  // Event handlers for Super Admin restrictions
+
+  // Event handlers for edit restrictions
   const onActionBegin = (args) => {
-    // Prevent all editing actions for Super Admin
-    if (isSuperAdmin && (args.requestType === 'eventCreate' ||
-      args.requestType === 'eventChange' ||
+    // Prevent all editing actions for users who cannot edit
+    if (!canEditCalendar && (args.requestType === 'eventCreate' || 
+      args.requestType === 'eventChange' || 
       args.requestType === 'eventRemove')) {
       args.cancel = true;
-      console.log(
-        "Action prevented: Super Admin has read-only access to calendar"
-      );
+      console.log("Action prevented: User does not have calendar edit permissions");
     }
   };
 
   const onCellClick = (args) => {
-    // Prevent cell click actions for Super Admin
-    if (isSuperAdmin) {
+    // Prevent cell click actions for users who cannot edit
+    if (!canEditCalendar) {
       args.cancel = true;
     }
   };
 
   const onEventClick = (args) => {
-    // Prevent event click editing for Super Admin
-    if (isSuperAdmin) {
+    // Prevent event click editing for users who cannot edit
+    if (!canEditCalendar) {
       args.cancel = true;
     }
   };
@@ -152,7 +154,7 @@ const Calender = () => {
       try {
         console.log("🔍 Testing token validity...");
         console.log("🔍 Token preview:", token.substring(0, 30) + "...");
-        const response = await fetch("http://146.190.165.62:5001/users/me", {
+        const response = await fetch("http://localhost:5001/users/me", {
 
           method: "GET",
           headers: {
@@ -172,7 +174,7 @@ const Calender = () => {
           );
           const errorText = await response.text();
           console.log("❌ Error response:", errorText);
-
+          
           if (response.status === 401) {
             console.log("🔄 Token expired or invalid. User should re-login.");
             // Optionally clear the invalid token
@@ -202,7 +204,7 @@ const Calender = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        const response = await axios.get("http://146.190.165.62:5001/users");
+        const response = await axios.get("http://localhost:5001/users");
         setUsers(response.data); // Set the room data to state
       } catch (error) {
         console.error("Error fetching room data:", error);
@@ -222,7 +224,7 @@ const Calender = () => {
           height: '100%',
           fontSize: '18px',
           color: '#666'
-        }}>
+        }}>localhost:5001
           Please login to access the calendar
         </div>
       ) : (
@@ -232,9 +234,9 @@ const Calender = () => {
           id="schedule"
           ref={scheduleObj}
           currentView="Week"
-          group={{ allowGroupEdit: !isSuperAdmin }} // Disable group editing for Super Admin
-          allowDragAndDrop={!isSuperAdmin} // Disable drag and drop for Super Admin
-          readonly={isSuperAdmin} // Make entire schedule readonly for Super Admin
+          group={{ allowGroupEdit: canEditCalendar }} // Only allow group edit for allowed users
+          allowDragAndDrop={canEditCalendar} // Only allow drag and drop for allowed users
+          readonly={!canEditCalendar} // Make entire schedule readonly for others
           eventSettings={{
             dataSource: dataManager,
             fields: {

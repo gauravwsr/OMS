@@ -110,7 +110,7 @@ const Attendance = () => {
 
   const checkMongoDBConnection = async () => {
     try {
-      const response = await axios.get("http://146.190.165.62:5001/api/health", {
+      const response = await axios.get("http://localhost:5001/api/health", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -203,7 +203,7 @@ const Attendance = () => {
   const fetchAttendanceHistory = async () => {
     try {
       const response = await axios.get(
-        "http://146.190.165.62:5001/api/attendance/history",
+        "http://localhost:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -219,7 +219,7 @@ const Attendance = () => {
   const fetchTodayAttendance = async () => {
     try {
       const response = await axios.get(
-        "http://146.190.165.62:5001/api/attendance/today",
+        "http://localhost:5001/api/attendance/today",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -248,7 +248,7 @@ const Attendance = () => {
   const fetchCurrentTimeInfo = async () => {
     try {
       const response = await axios.get(
-        "http://146.190.165.62:5001/api/attendance-validation/current-time"
+        "http://localhost:5001/api/attendance-validation/current-time"
       );
       if (response.data) {
         setCurrentTimeInfo(response.data);
@@ -264,7 +264,7 @@ const Attendance = () => {
 
     try {
       const response = await axios.get(
-        `http://146.190.165.62:5001/api/attendance/validate-time?attendanceType=${attendanceType}`,
+        `http://localhost:5001/api/attendance/validate-time?attendanceType=${attendanceType}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -612,7 +612,7 @@ const Attendance = () => {
           console.log("Saving attendance to MongoDB:", attendanceData);
 
           const mongoResponse = await axios.post(
-            "http://146.190.165.62:5001/api/attendance/mark",
+            "http://localhost:5001/api/attendance/mark",
             {
               ...attendanceData,
               attendance_type: attendanceType, // Add attendance type
@@ -743,7 +743,7 @@ const Attendance = () => {
                 );
 
                 const mongoResponse = await axios.post(
-                  "http://146.190.165.62:5001/api/attendance/mark",
+                  "http://localhost:5001/api/attendance/mark",
                   {
                     ...attendanceData,
                     attendance_type: attendanceType, // Add attendance type
