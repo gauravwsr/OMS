@@ -24,7 +24,7 @@ const SuperAdminLeaveManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const headers = {};
-      
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -45,20 +45,22 @@ const SuperAdminLeaveManagement = () => {
         );
         setMessage({
           type: "error",
-          text: response.data.message || "Failed to fetch admin/HR leave applications",
+          text:
+            response.data.message ||
+            "Failed to fetch admin/HR leave applications",
         });
       }
     } catch (error) {
       console.error("Error fetching admin/HR leave applications:", error);
       console.error("Error response:", error.response?.data);
-      
+
       let errorMessage = "Failed to fetch admin/HR leave applications";
       if (error.response?.status === 401) {
         errorMessage = "Authentication failed. Please login again.";
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-      
+
       setMessage({
         type: "error",
         text: errorMessage,
@@ -94,7 +96,7 @@ const SuperAdminLeaveManagement = () => {
         });
         return;
       }
-      
+
       console.log("Token available:", !!token);
 
       const requestData = {
@@ -121,7 +123,7 @@ const SuperAdminLeaveManagement = () => {
           text: `Leave application ${action.toLowerCase()} successfully`,
         });
         fetchLeaveApplications(); // Refresh the list
-        
+
         // Clear message after 3 seconds
         setTimeout(() => {
           setMessage({ type: "", text: "" });
@@ -141,7 +143,7 @@ const SuperAdminLeaveManagement = () => {
       console.error("Error status:", error.response?.status);
 
       let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Authentication failed. Please login again.";
       } else if (error.response?.status === 403) {
@@ -158,7 +160,7 @@ const SuperAdminLeaveManagement = () => {
       });
     }
   };
-// ...existing code...
+  // ...existing code...
 
   const approveLeave = (leaveId) => {
     handleLeaveAction(leaveId, "Approved");

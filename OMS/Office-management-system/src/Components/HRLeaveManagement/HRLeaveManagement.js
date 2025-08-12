@@ -73,7 +73,7 @@ const HRLeaveManagement = () => {
         });
         return;
       }
-      
+
       console.log("Token available:", !!token);
 
       const requestData = {
@@ -100,7 +100,7 @@ const HRLeaveManagement = () => {
           text: `Leave application ${action.toLowerCase()} successfully`,
         });
         fetchLeaveApplications(); // Refresh the list
-        
+
         // Clear message after 3 seconds
         setTimeout(() => {
           setMessage({ type: "", text: "" });
@@ -120,7 +120,7 @@ const HRLeaveManagement = () => {
       console.error("Error status:", error.response?.status);
 
       let errorMessage = `Failed to ${action.toLowerCase()} leave application`;
-      
+
       if (error.response?.status === 401) {
         errorMessage = "Authentication failed. Please login again.";
       } else if (error.response?.status === 403) {
@@ -137,7 +137,7 @@ const HRLeaveManagement = () => {
       });
     }
   };
-// ...existing code...
+  // ...existing code...
 
   const approveLeave = (leaveId) => {
     handleLeaveAction(leaveId, "Approved");

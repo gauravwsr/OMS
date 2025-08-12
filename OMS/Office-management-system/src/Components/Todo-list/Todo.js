@@ -37,9 +37,15 @@ const Todo = () => {
     if (!user?.email) return; // Don't fetch if no user email
 
     setIsLoading(true);
+    const token = localStorage.getItem("token");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
     axios
       .get(
-        `${API_BASE_URL}/api/notes?userEmail=${encodeURIComponent(user.email)}`
+        `${API_BASE_URL}/api/notes?userEmail=${encodeURIComponent(user.email)}`,
+        { headers }
       )
       .then((res) => {
         if (res.data) {
@@ -61,9 +67,15 @@ const Todo = () => {
   useEffect(() => {
     const fetchEmails = async () => {
       try {
+        const token = localStorage.getItem("token");
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
+
         // Fetch from candidates (employees) first
         const candidatesResponse = await axios.get(
-          `${API_BASE_URL}/api/candidates`
+          `${API_BASE_URL}/api/candidates`,
+          { headers }
         );
         const candidateEmails =
           candidatesResponse.data.data?.map(
@@ -71,7 +83,9 @@ const Todo = () => {
           ) || [];
 
         // Fetch from users as backup
-        const usersResponse = await axios.get(`${API_BASE_URL}/api/users`);
+        const usersResponse = await axios.get(`${API_BASE_URL}/api/users`, {
+          headers,
+        });
         const userEmails = usersResponse.data?.map((user) => user.email) || [];
 
         // Combine and remove duplicates
@@ -105,8 +119,13 @@ const Todo = () => {
       date: new Date().toLocaleString(),
     };
 
+    const token = localStorage.getItem("token");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
     axios
-      .post(`${API_BASE_URL}/api/notes`, task)
+      .post(`${API_BASE_URL}/api/notes`, task, { headers })
       .then((res) => {
         if (res.data && res.data.title) {
           // Only add to local state if the task is assigned to current user
@@ -134,10 +153,19 @@ const Todo = () => {
     const task = tasks.find((t) => t._id === id);
     if (!task) return;
 
+    const token = localStorage.getItem("token");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
     axios
-      .put(`${API_BASE_URL}/api/notes/${id}`, {
-        completed: !task.completed,
-      })
+      .put(
+        `${API_BASE_URL}/api/notes/${id}`,
+        {
+          completed: !task.completed,
+        },
+        { headers }
+      )
       .then(() => {
         setTasks(
           tasks.map((t) =>
@@ -153,8 +181,13 @@ const Todo = () => {
   };
 
   const deleteTask = (id) => {
+    const token = localStorage.getItem("token");
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
+
     axios
-      .delete(`${API_BASE_URL}/api/notes/${id}`)
+      .delete(`${API_BASE_URL}/api/notes/${id}`, { headers })
       .then(() => {
         setTasks(tasks.filter((t) => t._id !== id));
       })

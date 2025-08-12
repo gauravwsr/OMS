@@ -39,7 +39,6 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
-const attendanceTimeValidationRoutes = require("./routes/attendanceTimeValidationRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
@@ -71,12 +70,7 @@ app.use((req, res, next) => {
 // Apply CORS middleware BEFORE routes
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:3001", 
-      "http://134.199.170.166:3000",
-      "http://146.190.165.62:5002",
-    ],
+    origin: ["http://134.199.170.166:3000", "http://localhost:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -138,15 +132,6 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/hr-leave", hrLeaveRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/attendance", attendanceRoutes);
-
-// Attendance time validation testing routes
-app.use("/api/attendance-validation", attendanceTimeValidationRoutes);
-
-// Direct route for registered users (for backward compatibility)
-const { getRegisteredUsersAPI } = require("./controllers/attendanceController");
-app.get("/api/registered-users", getRegisteredUsersAPI);
-
-// Notification routes
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/team-lead", teamLeadTaskRoutes);
 app.use("/api/employee", employeeTaskRoutes);
@@ -201,30 +186,10 @@ process.on("unhandledRejection", (reason, promise) => {
 
 const port = process.env.PORT || 5000;
 
-server.listen(port, '0.0.0.0', (err) => {
-  if (err) {
-    console.error('❌ Failed to start server:', err);
-    process.exit(1);
-  }
+server.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(
-    `✅ CORS enabled for origins: ${JSON.stringify([
-      "http://http://134.199.170.166:3000",
-      "http://localhost:3001",
-      "http://146.190.165.62:5002",
-    ])}`
-  );
+  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://134.199.170.166:3000", "http://localhost:3001"])}`);
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
-  
-  // Verify server is actually listening
-  setTimeout(() => {
-    const http = require('http');
-    http.get(`http://localhost:${port}/api/health`, (res) => {
-      console.log('✅ Server health check passed');
-    }).on('error', (err) => {
-      console.error('❌ Server health check failed:', err.message);
-    });
-  }, 1000);
 });
 
 // Automatic cleanup function for finished events

@@ -283,6 +283,7 @@ const Attendance = () => {
     try {
       const response = await axios.get(
         `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
+        `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -551,6 +552,7 @@ const Attendance = () => {
       }
 
       const response = await axios.post(
+        "http://146.190.165.62:5002/api/mark-attendance",
         "http://146.190.165.62:5002/api/mark-attendance",
         {
           image: imageData,

@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
-  Legend, 
-  Tooltip, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   ResponsiveContainer,
   LineChart,
   Line,
   Area,
-  AreaChart
+  AreaChart,
 } from "recharts";
 import NotificationPopup from "./Components/NotificationPopup/NotificationPopup";
 import { useAuth } from "./Components/AuthProvider/AuthContext";
@@ -73,7 +73,7 @@ const AdminDashboard = () => {
     completedProjects: 0,
     overdueProjects: 0,
     totalProjectValue: 0,
-    loading: true
+    loading: true,
   });
 
   const API_BASE_URL = "https://crm-brown-gamma.vercel.app/api";
@@ -271,10 +271,12 @@ const AdminDashboard = () => {
     const monthlyData = [];
     for (let month = 0; month < 12; month++) {
       monthlyData.push({
-        month: new Date(yearNumber, month).toLocaleDateString('en-US', { month: 'short' }),
+        month: new Date(yearNumber, month).toLocaleDateString("en-US", {
+          month: "short",
+        }),
         revenue: 0,
         expenses: 0,
-        profit: 0
+        profit: 0,
       });
     }
 
@@ -333,7 +335,7 @@ const AdminDashboard = () => {
       }, 0);
 
     // Calculate monthly profits
-    monthlyData.forEach(data => {
+    monthlyData.forEach((data) => {
       data.profit = data.revenue - data.expenses;
     });
 
@@ -380,21 +382,28 @@ const AdminDashboard = () => {
       if (response.ok) {
         const result = await response.json();
         const projects = result.data || [];
-        
+
         const summary = {
           totalProjects: projects.length,
-          activeProjects: projects.filter(p => p.projectStatus === 'Active').length,
-          completedProjects: projects.filter(p => p.projectStatus === 'Completed').length,
-          overdueProjects: projects.filter(p => p.projectStatus === 'Overdue').length,
-          totalProjectValue: projects.reduce((sum, p) => sum + (p.finalAmount || 0), 0),
-          loading: false
+          activeProjects: projects.filter((p) => p.projectStatus === "Active")
+            .length,
+          completedProjects: projects.filter(
+            (p) => p.projectStatus === "Completed"
+          ).length,
+          overdueProjects: projects.filter((p) => p.projectStatus === "Overdue")
+            .length,
+          totalProjectValue: projects.reduce(
+            (sum, p) => sum + (p.finalAmount || 0),
+            0
+          ),
+          loading: false,
         };
-        
+
         setProjectSummary(summary);
       }
     } catch (error) {
       console.error("Error fetching project summary:", error);
-      setProjectSummary(prev => ({ ...prev, loading: false }));
+      setProjectSummary((prev) => ({ ...prev, loading: false }));
     }
   };
 
@@ -580,22 +589,22 @@ const AdminDashboard = () => {
   // Check if there are actual tasks with values greater than 0
   const hasTaskData = taskData.some((item) => item.value > 0);
   const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"]; // Colors for different statuses
-  
+
   // Colors for charts
   const CHART_COLORS = {
     primary: "#3b82f6",
-    secondary: "#10b981", 
+    secondary: "#10b981",
     accent: "#f59e0b",
     danger: "#ef4444",
     purple: "#8b5cf6",
-    teal: "#14b8a6"
+    teal: "#14b8a6",
   };
 
   // Format currency
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -603,9 +612,9 @@ const AdminDashboard = () => {
 
   // Format large numbers
   const formatNumber = (num) => {
-    if (num >= 10000000) return (num / 10000000).toFixed(1) + 'Cr';
-    if (num >= 100000) return (num / 100000).toFixed(1) + 'L';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    if (num >= 10000000) return (num / 10000000).toFixed(1) + "Cr";
+    if (num >= 100000) return (num / 100000).toFixed(1) + "L";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
     return num.toString();
   };
 

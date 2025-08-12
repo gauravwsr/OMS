@@ -1,12 +1,18 @@
 import "./ProjectListNew.css";
-import { Calendar, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../Firebase";
 // import Navbar from "./Navbar";
-import { 
-  FiBell, 
-  FiMenu, 
-  FiChevronDown, 
+import {
+  FiBell,
+  FiMenu,
+  FiChevronDown,
   FiChevronUp,
   FiSearch,
   FiFilter,
@@ -28,7 +34,7 @@ import {
   FiList,
   FiTrendingUp,
   FiFolder,
-  FiX
+  FiX,
 } from "react-icons/fi";
 import SearchBar from "./Search-bar/SearchBar";
 import DatePicker from "react-datepicker";
@@ -48,9 +54,9 @@ export default function ProjectList() {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [viewMode, setViewMode] = useState('grid');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [viewMode, setViewMode] = useState("grid");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showProjectDetails, setShowProjectDetails] = useState(false);
@@ -127,8 +133,13 @@ export default function ProjectList() {
                 },
               }
             );
-            
-            let taskCounts = { total: 0, completed: 0, inProgress: 0, pending: 0 };
+
+            let taskCounts = {
+              total: 0,
+              completed: 0,
+              inProgress: 0,
+              pending: 0,
+            };
             let progress = 0;
 
             if (taskCountsResponse.ok) {
@@ -137,34 +148,52 @@ export default function ProjectList() {
                 const tasks = taskResult.data;
                 taskCounts = {
                   total: tasks.length,
-                  completed: tasks.filter(task => task.status === "Completed").length,
-                  inProgress: tasks.filter(task => task.status === "In Progress").length,
-                  pending: tasks.filter(task => task.status === "Pending").length,
+                  completed: tasks.filter((task) => task.status === "Completed")
+                    .length,
+                  inProgress: tasks.filter(
+                    (task) => task.status === "In Progress"
+                  ).length,
+                  pending: tasks.filter((task) => task.status === "Pending")
+                    .length,
                 };
 
-                progress = taskCounts.total > 0 
-                  ? Math.round((taskCounts.completed / taskCounts.total) * 100) 
-                  : 0;
+                progress =
+                  taskCounts.total > 0
+                    ? Math.round(
+                        (taskCounts.completed / taskCounts.total) * 100
+                      )
+                    : 0;
               }
             }
 
             return {
               id: project._id,
-              name: project.projectName || project.clientName || "Untitled Project",
-              title: project.projectName || project.clientName || "Untitled Project",
-              client: project.clientName || project.client || 'Unknown Client',
-              clientName: project.clientName || project.client || 'Unknown Client',
-              description: project.description || `Project: ${project.projectName || 'Untitled'} | Client: ${project.clientName || 'Unknown'}`,
-              status: project.status || 'planning',
-              priority: project.priority || 'medium',
+              name:
+                project.projectName || project.clientName || "Untitled Project",
+              title:
+                project.projectName || project.clientName || "Untitled Project",
+              client: project.clientName || project.client || "Unknown Client",
+              clientName:
+                project.clientName || project.client || "Unknown Client",
+              description:
+                project.description ||
+                `Project: ${project.projectName || "Untitled"} | Client: ${
+                  project.clientName || "Unknown"
+                }`,
+              status: project.status || "planning",
+              priority: project.priority || "medium",
               progress: progress,
               budget: project.budget || 0,
               spent: project.spent || 0,
               startDate: project.startDate || project.createdAt,
               endDate: project.endDate || project.deadline,
               dueDate: project.endDate || project.deadline,
-              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              teamMembers:
+                project.teamSize || project.assignedEmployees?.length || 0,
+              projectManager:
+                project.projectManager ||
+                project.assignedTeamLead ||
+                "Not assigned",
               technologies: project.technologies || project.techStack || [],
               completedTasks: taskCounts.completed,
               pendingTasks: taskCounts.pending + taskCounts.inProgress,
@@ -173,29 +202,46 @@ export default function ProjectList() {
               projectPassword: project.projectPassword || "N/A",
               amount: project.finalAmount || project.budget || 0,
               createdAt: project.createdAt || new Date().toISOString(),
-              updatedAt: project.updatedAt || project.createdAt || new Date().toISOString(),
+              updatedAt:
+                project.updatedAt ||
+                project.createdAt ||
+                new Date().toISOString(),
               assignedEmployees: project.assignedEmployees || [],
-              _id: project._id
+              _id: project._id,
             };
           } catch (taskError) {
-            console.warn(`Failed to fetch tasks for project ${project._id}:`, taskError);
+            console.warn(
+              `Failed to fetch tasks for project ${project._id}:`,
+              taskError
+            );
             return {
               id: project._id,
-              name: project.projectName || project.clientName || "Untitled Project",
-              title: project.projectName || project.clientName || "Untitled Project",
-              client: project.clientName || project.client || 'Unknown Client',
-              clientName: project.clientName || project.client || 'Unknown Client',
-              description: project.description || `Project: ${project.projectName || 'Untitled'} | Client: ${project.clientName || 'Unknown'}`,
-              status: project.status || 'planning',
-              priority: project.priority || 'medium',
+              name:
+                project.projectName || project.clientName || "Untitled Project",
+              title:
+                project.projectName || project.clientName || "Untitled Project",
+              client: project.clientName || project.client || "Unknown Client",
+              clientName:
+                project.clientName || project.client || "Unknown Client",
+              description:
+                project.description ||
+                `Project: ${project.projectName || "Untitled"} | Client: ${
+                  project.clientName || "Unknown"
+                }`,
+              status: project.status || "planning",
+              priority: project.priority || "medium",
               progress: 0,
               budget: project.budget || 0,
               spent: project.spent || 0,
               startDate: project.startDate || project.createdAt,
               endDate: project.endDate || project.deadline,
               dueDate: project.endDate || project.deadline,
-              teamMembers: project.teamSize || project.assignedEmployees?.length || 0,
-              projectManager: project.projectManager || project.assignedTeamLead || 'Not assigned',
+              teamMembers:
+                project.teamSize || project.assignedEmployees?.length || 0,
+              projectManager:
+                project.projectManager ||
+                project.assignedTeamLead ||
+                "Not assigned",
               technologies: project.technologies || project.techStack || [],
               completedTasks: 0,
               pendingTasks: 0,
@@ -204,9 +250,12 @@ export default function ProjectList() {
               projectPassword: project.projectPassword || "N/A",
               amount: project.finalAmount || project.budget || 0,
               createdAt: project.createdAt || new Date().toISOString(),
-              updatedAt: project.updatedAt || project.createdAt || new Date().toISOString(),
+              updatedAt:
+                project.updatedAt ||
+                project.createdAt ||
+                new Date().toISOString(),
               assignedEmployees: project.assignedEmployees || [],
-              _id: project._id
+              _id: project._id,
             };
           }
         })
@@ -215,10 +264,9 @@ export default function ProjectList() {
       console.log("Project List - Projects with details:", projectsWithDetails);
       setProjects(projectsWithDetails);
       setFilteredProjects(projectsWithDetails);
-
     } catch (err) {
       console.error("Error fetching projects:", err);
-      setError(err.message || 'Failed to fetch projects');
+      setError(err.message || "Failed to fetch projects");
     } finally {
       setLoading(false);
     }
@@ -236,26 +284,35 @@ export default function ProjectList() {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((project) => {
         return (
-          (project.title && project.title.toLowerCase().includes(searchLower)) ||
-          (project.description && project.description.toLowerCase().includes(searchLower)) ||
-          (project.projectId && project.projectId.toLowerCase().includes(searchLower)) ||
-          (project.status && project.status.toLowerCase().includes(searchLower)) ||
-          (project.clientName && project.clientName.toLowerCase().includes(searchLower))
+          (project.title &&
+            project.title.toLowerCase().includes(searchLower)) ||
+          (project.description &&
+            project.description.toLowerCase().includes(searchLower)) ||
+          (project.projectId &&
+            project.projectId.toLowerCase().includes(searchLower)) ||
+          (project.status &&
+            project.status.toLowerCase().includes(searchLower)) ||
+          (project.clientName &&
+            project.clientName.toLowerCase().includes(searchLower))
         );
       });
     }
 
     // Apply status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((project) => 
-        project.status && project.status.toLowerCase() === statusFilter.toLowerCase()
+      filtered = filtered.filter(
+        (project) =>
+          project.status &&
+          project.status.toLowerCase() === statusFilter.toLowerCase()
       );
     }
 
     // Apply priority filter
     if (priorityFilter !== "all") {
-      filtered = filtered.filter((project) => 
-        project.priority && project.priority.toLowerCase() === priorityFilter.toLowerCase()
+      filtered = filtered.filter(
+        (project) =>
+          project.priority &&
+          project.priority.toLowerCase() === priorityFilter.toLowerCase()
       );
     }
 
@@ -286,11 +343,11 @@ export default function ProjectList() {
           { id: "home-2", text: "Implement navigation", checked: false },
           { id: "home-3", text: "Add footer", checked: false },
         ],
-      }
+      },
     ],
     pending: [],
     inProgress: [],
-    completed: []
+    completed: [],
   };
 
   const [tasks, setTasks] = useState(initialTasks);
@@ -307,11 +364,12 @@ export default function ProjectList() {
 
     useEffect(() => {
       const initialState = {};
-      Object.keys(initialTasks).forEach(column => {
-        initialTasks[column].forEach(task => {
+      Object.keys(initialTasks).forEach((column) => {
+        initialTasks[column].forEach((task) => {
           if (task.subtasks) {
-            task.subtasks.forEach(subtask => {
-              initialState[`${task.id}_${subtask.id}`] = subtask.checked || false;
+            task.subtasks.forEach((subtask) => {
+              initialState[`${task.id}_${subtask.id}`] =
+                subtask.checked || false;
             });
           }
         });
@@ -368,8 +426,13 @@ export default function ProjectList() {
       if (draggedColumn === targetColumn) return;
 
       const updatedTasks = { ...kanbanTasks };
-      updatedTasks[draggedColumn] = updatedTasks[draggedColumn].filter((task) => task.id !== draggedTask.id);
-      updatedTasks[targetColumn] = [...updatedTasks[targetColumn], { ...draggedTask, status: targetColumn }];
+      updatedTasks[draggedColumn] = updatedTasks[draggedColumn].filter(
+        (task) => task.id !== draggedTask.id
+      );
+      updatedTasks[targetColumn] = [
+        ...updatedTasks[targetColumn],
+        { ...draggedTask, status: targetColumn },
+      ];
       setKanbanTasks(updatedTasks);
       setDraggedTask(null);
       setDraggedColumn(null);
@@ -386,7 +449,7 @@ export default function ProjectList() {
       if (selectedTasks.length === 0) return;
 
       const updatedTasks = { ...kanbanTasks };
-      
+
       selectedTasks.forEach((taskKey) => {
         const [column, taskId] = taskKey.split("_");
         if (updatedTasks[column]) {
@@ -395,7 +458,7 @@ export default function ProjectList() {
           );
         }
       });
-      
+
       setKanbanTasks(updatedTasks);
       setSelectedTasks([]);
       toast.success("Tasks deleted successfully");
@@ -403,9 +466,9 @@ export default function ProjectList() {
 
     const handleToggleSubtask = (taskId, subtaskId) => {
       const key = `${taskId}_${subtaskId}`;
-      setSubtaskCheckedState(prev => ({
+      setSubtaskCheckedState((prev) => ({
         ...prev,
-        [key]: !prev[key]
+        [key]: !prev[key],
       }));
     };
 
@@ -415,44 +478,48 @@ export default function ProjectList() {
         return;
       }
 
-      const todoTaskKeys = selectedTasks.filter(taskKey => taskKey.startsWith("todo_"));
-      
+      const todoTaskKeys = selectedTasks.filter((taskKey) =>
+        taskKey.startsWith("todo_")
+      );
+
       if (todoTaskKeys.length === 0) {
         toast.info("No 'todo' tasks selected");
         return;
       }
-      
+
       const updatedTasks = { ...kanbanTasks };
       const newPendingTasks = [];
-      
+
       todoTaskKeys.forEach((taskKey) => {
         const taskId = taskKey.split("_")[1];
-        
+
         if (!updatedTasks.todo) {
           updatedTasks.todo = [];
           return;
         }
-        
+
         const taskIndex = updatedTasks.todo.findIndex(
           (task) => task && task.id && String(task.id) === String(taskId)
         );
-        
+
         if (taskIndex !== -1) {
           const task = updatedTasks.todo[taskIndex];
-          
+
           if (task.subtasks && task.subtasks.length > 0) {
             const checkedSubtasks = task.subtasks.filter(
-              subtask => subtaskCheckedState[`${task.id}_${subtask.id}`]
+              (subtask) => subtaskCheckedState[`${task.id}_${subtask.id}`]
             );
-            
+
             if (checkedSubtasks.length > 0) {
               const newTask = {
                 ...task,
-                id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-                subtasks: checkedSubtasks.map(subtask => ({
+                id: `pending_${Date.now()}_${Math.random()
+                  .toString(36)
+                  .substring(2, 9)}`,
+                subtasks: checkedSubtasks.map((subtask) => ({
                   ...subtask,
-                  checked: true
-                }))
+                  checked: true,
+                })),
               };
               newPendingTasks.push(newTask);
             } else {
@@ -461,22 +528,24 @@ export default function ProjectList() {
           } else {
             const newTask = {
               ...task,
-              id: `pending_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+              id: `pending_${Date.now()}_${Math.random()
+                .toString(36)
+                .substring(2, 9)}`,
             };
             newPendingTasks.push(newTask);
           }
         }
       });
-      
+
       if (newPendingTasks.length === 0) {
         toast.info("No tasks were moved to pending");
         return;
       }
-      
+
       if (!updatedTasks.pending) {
         updatedTasks.pending = [];
       }
-      
+
       updatedTasks.pending = [...updatedTasks.pending, ...newPendingTasks];
       setKanbanTasks(updatedTasks);
       toast.success(`${newPendingTasks.length} task(s) moved to pending`);
@@ -514,7 +583,7 @@ export default function ProjectList() {
           {selectedTasks.length > 0 && (
             <div className="bulk-actions">
               <span>{selectedTasks.length} task(s) selected</span>
-              <button 
+              <button
                 className="submit-selected-btn"
                 onClick={handleSubmitSelectedTasks}
                 style={{
@@ -528,7 +597,7 @@ export default function ProjectList() {
               >
                 Submit Selected to Pending
               </button>
-              <button 
+              <button
                 className="delete-selected-btn"
                 onClick={handleDeleteSelected}
               >
@@ -542,7 +611,10 @@ export default function ProjectList() {
             {Object.keys(columnTitles).map((column) => {
               const columnTasks = kanbanTasks[column] || [];
               const allSelected =
-                columnTasks.length > 0 && columnTasks.every((task) => selectedTasks.includes(`${column}_${task.id}`));
+                columnTasks.length > 0 &&
+                columnTasks.every((task) =>
+                  selectedTasks.includes(`${column}_${task.id}`)
+                );
 
               return (
                 <div
@@ -570,7 +642,9 @@ export default function ProjectList() {
                       return (
                         <div
                           key={task.id}
-                          className={`task-card ${isSelected ? "selected" : ""}`}
+                          className={`task-card ${
+                            isSelected ? "selected" : ""
+                          }`}
                           draggable
                           onDragStart={(e) => handleDragStart(e, task, column)}
                         >
@@ -588,11 +662,17 @@ export default function ProjectList() {
                             <div className="subtasks-list">
                               {task.subtasks.map((subtask) => (
                                 <div key={subtask.id} className="subtask-item">
-                                  <input 
-                                    type="checkbox" 
+                                  <input
+                                    type="checkbox"
                                     className="subtask-checkbox"
-                                    checked={subtaskCheckedState[`${task.id}_${subtask.id}`] || false}
-                                    onChange={() => handleToggleSubtask(task.id, subtask.id)}
+                                    checked={
+                                      subtaskCheckedState[
+                                        `${task.id}_${subtask.id}`
+                                      ] || false
+                                    }
+                                    onChange={() =>
+                                      handleToggleSubtask(task.id, subtask.id)
+                                    }
                                   />
                                   <span className="subtask-bullet">•</span>
                                   <span>{subtask.text}</span>
@@ -636,10 +716,10 @@ export default function ProjectList() {
       dueDate: new Date(),
       time: "12:00",
     });
-  
+
     const [subtasks, setSubtasks] = useState([]);
     const [newSubtaskText, setNewSubtaskText] = useState("");
-  
+
     const handleTaskChange = (e) => {
       const { name, value } = e.target;
       setNewTask((prev) => ({
@@ -647,32 +727,32 @@ export default function ProjectList() {
         [name]: value,
       }));
     };
-  
+
     const handleDateChange = (date) => {
       setNewTask((prev) => ({
         ...prev,
         dueDate: date,
       }));
     };
-  
+
     const handleAddSubtask = () => {
       if (newSubtaskText.trim() !== "") {
         const newSubtask = {
           id: Date.now(),
           text: newSubtaskText,
-          checked: false
+          checked: false,
         };
         setSubtasks([...subtasks, newSubtask]);
         setNewSubtaskText("");
       }
     };
-  
+
     const handleTaskSubmit = () => {
       if (!newTask.title) {
         alert("Please enter a task title");
         return;
       }
-  
+
       const formattedDate = newTask.dueDate
         .toLocaleDateString("en-GB", {
           day: "2-digit",
@@ -680,7 +760,7 @@ export default function ProjectList() {
           year: "numeric",
         })
         .replace(/\s/g, " ");
-  
+
       const newTaskWithSubtasks = {
         id: Date.now() + Math.random(),
         title: newTask.title,
@@ -689,14 +769,14 @@ export default function ProjectList() {
         time: newTask.time,
         assignedTo: "Unassigned",
         assigneeId: "ID" + Math.floor(Math.random() * 1000000),
-        subtasks: subtasks
+        subtasks: subtasks,
       };
-  
+
       setTasks((prev) => ({
         ...prev,
         todo: [...prev.todo, newTaskWithSubtasks],
       }));
-  
+
       setNewTask({
         title: "",
         description: "",
@@ -707,7 +787,7 @@ export default function ProjectList() {
       setNewSubtaskText("");
       setShowPopup(false);
     };
-  
+
     return (
       <>
         <div className="add-task-btn">
@@ -716,17 +796,20 @@ export default function ProjectList() {
             <span>Add New Task</span>
           </button>
         </div>
-  
+
         {showPopup && (
           <div className="popup-overlay">
             <div className="schedule-task-container">
               <div className="popup-header">
                 <h2>Add New Task</h2>
-                <button className="close-popup-btn" onClick={() => setShowPopup(false)}>
+                <button
+                  className="close-popup-btn"
+                  onClick={() => setShowPopup(false)}
+                >
                   ×
                 </button>
               </div>
-  
+
               <div className="form-group">
                 <label>Task Title :</label>
                 <input
@@ -737,7 +820,7 @@ export default function ProjectList() {
                   placeholder="Enter main task title"
                 />
               </div>
-  
+
               <div className="form-group">
                 <label>Description:</label>
                 <textarea
@@ -749,10 +832,10 @@ export default function ProjectList() {
                   className="task-textarea"
                 />
               </div>
-  
+
               <div className="subtasks-container">
                 <h3>Subtasks</h3>
-                
+
                 <div className="add-subtask-container">
                   <input
                     type="text"
@@ -761,14 +844,14 @@ export default function ProjectList() {
                     placeholder="Enter subtask"
                     className="subtask-input"
                   />
-                  <button 
+                  <button
                     className="add-subtask-btn"
                     onClick={handleAddSubtask}
                   >
                     Add Subtask
                   </button>
                 </div>
-  
+
                 {subtasks.map((task) => (
                   <div key={task.id} className="subtask-item">
                     <div className="subtask-title">
@@ -777,9 +860,13 @@ export default function ProjectList() {
                         className="subtask-checkbox"
                         checked={task.checked}
                         onChange={() => {
-                          setSubtasks(subtasks.map((t) => 
-                            t.id === task.id ? { ...t, checked: !t.checked } : t
-                          ));
+                          setSubtasks(
+                            subtasks.map((t) =>
+                              t.id === task.id
+                                ? { ...t, checked: !t.checked }
+                                : t
+                            )
+                          );
                         }}
                       />
                       <span>{task.text}</span>
@@ -787,7 +874,7 @@ export default function ProjectList() {
                   </div>
                 ))}
               </div>
-  
+
               <div className="form-group">
                 <label>Due Date:</label>
                 <div className="date-input-container">
@@ -800,9 +887,12 @@ export default function ProjectList() {
                   <span className="calendar-icon">📅</span>
                 </div>
               </div>
-  
+
               <div className="buttons">
-                <button className="cancel-button" onClick={() => setShowPopup(false)}>
+                <button
+                  className="cancel-button"
+                  onClick={() => setShowPopup(false)}
+                >
                   Cancel
                 </button>
                 <button className="save-button" onClick={handleTaskSubmit}>
@@ -833,7 +923,10 @@ export default function ProjectList() {
         <div className="project-list-container mobile">
           <div className="error-container">
             <p>Error: {error}</p>
-            <button onClick={() => window.location.reload()} className="retry-btn">
+            <button
+              onClick={() => window.location.reload()}
+              className="retry-btn"
+            >
               <FiRefreshCw /> Retry
             </button>
           </div>
@@ -850,12 +943,12 @@ export default function ProjectList() {
             Projects
           </h1>
           <div className="mobile-actions">
-            <button 
+            <button
               onClick={fetchProjects}
               className="action-btn refresh-btn"
               disabled={refreshing}
             >
-              <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+              <FiRefreshCw className={refreshing ? "spinning" : ""} />
             </button>
           </div>
         </div>
@@ -886,7 +979,7 @@ export default function ProjectList() {
             <option value="completed">Completed</option>
             <option value="on-hold">On Hold</option>
           </select>
-          
+
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
@@ -907,13 +1000,21 @@ export default function ProjectList() {
           </div>
           <div className="stat-item">
             <span className="stat-number">
-              {filteredProjects.filter(p => p.status?.toLowerCase() === 'active').length}
+              {
+                filteredProjects.filter(
+                  (p) => p.status?.toLowerCase() === "active"
+                ).length
+              }
             </span>
             <span className="stat-label">Active</span>
           </div>
           <div className="stat-item">
             <span className="stat-number">
-              {filteredProjects.filter(p => p.status?.toLowerCase() === 'completed').length}
+              {
+                filteredProjects.filter(
+                  (p) => p.status?.toLowerCase() === "completed"
+                ).length
+              }
             </span>
             <span className="stat-label">Done</span>
           </div>
@@ -932,27 +1033,39 @@ export default function ProjectList() {
               <div key={project._id || index} className="mobile-project-card">
                 <div className="mobile-card-header">
                   <div className="project-title-section">
-                    <h3 className="project-title">{project.title || 'Untitled'}</h3>
-                    <span className="project-id">#{project.projectId || 'N/A'}</span>
+                    <h3 className="project-title">
+                      {project.title || "Untitled"}
+                    </h3>
+                    <span className="project-id">
+                      #{project.projectId || "N/A"}
+                    </span>
                   </div>
-                  <span className={`status-badge ${project.status?.toLowerCase() || 'unknown'}`}>
-                    {project.status || 'Unknown'}
+                  <span
+                    className={`status-badge ${
+                      project.status?.toLowerCase() || "unknown"
+                    }`}
+                  >
+                    {project.status || "Unknown"}
                   </span>
                 </div>
 
                 <div className="mobile-card-body">
                   <p className="project-description">
-                    {project.description || 'No description'}
+                    {project.description || "No description"}
                   </p>
-                  
+
                   <div className="mobile-details">
                     <div className="detail-row">
                       <FiUser className="detail-icon" />
-                      <span>{project.clientName || 'No client'}</span>
+                      <span>{project.clientName || "No client"}</span>
                     </div>
                     <div className="detail-row">
                       <FiCalendar className="detail-icon" />
-                      <span>{project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No due date'}</span>
+                      <span>
+                        {project.dueDate
+                          ? new Date(project.dueDate).toLocaleDateString()
+                          : "No due date"}
+                      </span>
                     </div>
                   </div>
 
@@ -962,8 +1075,8 @@ export default function ProjectList() {
                       <span>{project.progress || 0}%</span>
                     </div>
                     <div className="progress-bar">
-                      <div 
-                        className="progress-fill" 
+                      <div
+                        className="progress-fill"
                         style={{ width: `${project.progress || 0}%` }}
                       ></div>
                     </div>
@@ -979,7 +1092,7 @@ export default function ProjectList() {
                       <FiClock /> {project.pendingTasks || 0}
                     </span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSelectedProject(project)}
                     className="view-btn"
                   >
@@ -993,11 +1106,17 @@ export default function ProjectList() {
 
         {/* Mobile Project Details Modal - Same as desktop */}
         {selectedProject && (
-          <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
-            <div className="modal-content mobile" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={() => setSelectedProject(null)}
+          >
+            <div
+              className="modal-content mobile"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
-                <button 
+                <button
                   onClick={() => setSelectedProject(null)}
                   className="close-btn"
                 >
@@ -1011,16 +1130,18 @@ export default function ProjectList() {
                     <div className="info-list">
                       <div className="info-item">
                         <label>Project ID:</label>
-                        <span>{selectedProject.projectId || 'N/A'}</span>
+                        <span>{selectedProject.projectId || "N/A"}</span>
                       </div>
                       <div className="info-item">
                         <label>Client:</label>
-                        <span>{selectedProject.clientName || 'N/A'}</span>
+                        <span>{selectedProject.clientName || "N/A"}</span>
                       </div>
                       <div className="info-item">
                         <label>Status:</label>
-                        <span className={`status-badge ${selectedProject.status?.toLowerCase()}`}>
-                          {selectedProject.status || 'Unknown'}
+                        <span
+                          className={`status-badge ${selectedProject.status?.toLowerCase()}`}
+                        >
+                          {selectedProject.status || "Unknown"}
                         </span>
                       </div>
                       <div className="info-item">
@@ -1029,18 +1150,23 @@ export default function ProjectList() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="overview-section">
                     <h3>Description</h3>
-                    <p>{selectedProject.description || 'No description available'}</p>
+                    <p>
+                      {selectedProject.description ||
+                        "No description available"}
+                    </p>
                   </div>
-                  
+
                   <div className="overview-section">
                     <h3>Tasks</h3>
                     <div className="mobile-task-summary">
                       <div className="summary-item">
                         <FiCheckCircle className="completed" />
-                        <span>{selectedProject.completedTasks || 0} Completed</span>
+                        <span>
+                          {selectedProject.completedTasks || 0} Completed
+                        </span>
                       </div>
                       <div className="summary-item">
                         <FiClock className="pending" />
@@ -1055,7 +1181,10 @@ export default function ProjectList() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setSelectedProject(null)}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setSelectedProject(null)}
+                >
                   Close
                 </button>
                 <button className="btn btn-primary">
@@ -1110,24 +1239,37 @@ export default function ProjectList() {
                     <input type="checkbox" className="mobile-task-checkbox" />
                     <p className="mobile-card-text">{project.title}</p>
                   </div>
-                  <div className="mobile-card-footer" onClick={() => toggleCardExpanded(index)}>
+                  <div
+                    className="mobile-card-footer"
+                    onClick={() => toggleCardExpanded(index)}
+                  >
                     <span className="mobile-card-date">{project.dueDate}</span>
-                    {expandedCards[index] ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
+                    {expandedCards[index] ? (
+                      <FiChevronUp size={18} />
+                    ) : (
+                      <FiChevronDown size={18} />
+                    )}
                   </div>
                   {expandedCards[index] && (
                     <div className="mobile-card-expanded">
                       <div className="meeting-details-grid">
                         <div className="meeting-detail-item">
                           <span className="detail-label">Description</span>
-                          <span className="detail-value">{project.description}</span>
+                          <span className="detail-value">
+                            {project.description}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Project ID</span>
-                          <span className="detail-value">{project.projectId}</span>
+                          <span className="detail-value">
+                            {project.projectId}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Password</span>
-                          <span className="detail-value">{project.projectPassword}</span>
+                          <span className="detail-value">
+                            {project.projectPassword}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Status</span>
@@ -1135,20 +1277,28 @@ export default function ProjectList() {
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Amount</span>
-                          <span className="detail-value">₹{project.amount}</span>
+                          <span className="detail-value">
+                            ₹{project.amount}
+                          </span>
                         </div>
                         <div className="meeting-detail-item">
                           <span className="detail-label">Created At</span>
                           <span className="detail-value">
-                            {new Date(project.createdAt).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            })}
+                            {new Date(project.createdAt).toLocaleDateString(
+                              "en-GB",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              }
+                            )}
                           </span>
                         </div>
                       </div>
-                      <button className="view-details-btn" onClick={handleViewDetails}>
+                      <button
+                        className="view-details-btn"
+                        onClick={handleViewDetails}
+                      >
                         View Details
                       </button>
                     </div>
@@ -1157,7 +1307,9 @@ export default function ProjectList() {
               ))
             ) : (
               <div className="no-projects-message">
-                {searchTerm ? "No projects match your search" : "No projects found"}
+                {searchTerm
+                  ? "No projects match your search"
+                  : "No projects found"}
               </div>
             )}
           </div>
@@ -1183,7 +1335,10 @@ export default function ProjectList() {
         <div className="project-list-container">
           <div className="error-container">
             <p>Error: {error}</p>
-            <button onClick={() => window.location.reload()} className="retry-btn">
+            <button
+              onClick={() => window.location.reload()}
+              className="retry-btn"
+            >
               <FiRefreshCw /> Retry
             </button>
           </div>
@@ -1201,24 +1356,28 @@ export default function ProjectList() {
                 <FiFolder className="title-icon" />
                 Project Dashboard
               </h1>
-              <p className="page-subtitle">Manage and monitor your projects in real-time</p>
+              <p className="page-subtitle">
+                Manage and monitor your projects in real-time
+              </p>
             </div>
             <div className="header-actions">
-              <button 
+              <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`action-btn ${autoRefresh ? 'active' : ''}`}
-                title={autoRefresh ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+                className={`action-btn ${autoRefresh ? "active" : ""}`}
+                title={
+                  autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"
+                }
               >
-                <FiRefreshCw className={refreshing ? 'spinning' : ''} />
-                {autoRefresh ? 'Auto-refresh ON' : 'Auto-refresh OFF'}
+                <FiRefreshCw className={refreshing ? "spinning" : ""} />
+                {autoRefresh ? "Auto-refresh ON" : "Auto-refresh OFF"}
               </button>
-              <button 
+              <button
                 onClick={fetchProjects}
                 className="action-btn refresh-btn"
                 disabled={refreshing}
                 title="Refresh projects"
               >
-                <FiRefreshCw className={refreshing ? 'spinning' : ''} />
+                <FiRefreshCw className={refreshing ? "spinning" : ""} />
                 Refresh
               </button>
             </div>
@@ -1237,7 +1396,7 @@ export default function ProjectList() {
               className="search-input"
             />
           </div>
-          
+
           <div className="filter-container">
             <div className="filter-group">
               <FiFilter className="filter-icon" />
@@ -1253,7 +1412,7 @@ export default function ProjectList() {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            
+
             <div className="filter-group">
               <select
                 value={priorityFilter}
@@ -1269,15 +1428,15 @@ export default function ProjectList() {
 
             <div className="view-toggle">
               <button
-                onClick={() => setViewMode('grid')}
-                className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                onClick={() => setViewMode("grid")}
+                className={`view-btn ${viewMode === "grid" ? "active" : ""}`}
                 title="Grid view"
               >
                 <FiGrid />
               </button>
               <button
-                onClick={() => setViewMode('list')}
-                className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                onClick={() => setViewMode("list")}
+                className={`view-btn ${viewMode === "list" ? "active" : ""}`}
                 title="List view"
               >
                 <FiList />
@@ -1297,38 +1456,52 @@ export default function ProjectList() {
               <div className="stat-label">Total Projects</div>
             </div>
           </div>
-          
+
           <div className="stat-card">
             <div className="stat-icon active">
               <FiPlay />
             </div>
             <div className="stat-content">
               <div className="stat-number">
-                {filteredProjects.filter(p => p.status?.toLowerCase() === 'active').length}
+                {
+                  filteredProjects.filter(
+                    (p) => p.status?.toLowerCase() === "active"
+                  ).length
+                }
               </div>
               <div className="stat-label">Active</div>
             </div>
           </div>
-          
+
           <div className="stat-card">
             <div className="stat-icon completed">
               <FiCheckCircle />
             </div>
             <div className="stat-content">
               <div className="stat-number">
-                {filteredProjects.filter(p => p.status?.toLowerCase() === 'completed').length}
+                {
+                  filteredProjects.filter(
+                    (p) => p.status?.toLowerCase() === "completed"
+                  ).length
+                }
               </div>
               <div className="stat-label">Completed</div>
             </div>
           </div>
-          
+
           <div className="stat-card">
             <div className="stat-icon progress">
               <FiClock />
             </div>
             <div className="stat-content">
               <div className="stat-number">
-                {Math.round(filteredProjects.reduce((acc, p) => acc + (p.progress || 0), 0) / filteredProjects.length) || 0}%
+                {Math.round(
+                  filteredProjects.reduce(
+                    (acc, p) => acc + (p.progress || 0),
+                    0
+                  ) / filteredProjects.length
+                ) || 0}
+                %
               </div>
               <div className="stat-label">Avg Progress</div>
             </div>
@@ -1348,15 +1521,25 @@ export default function ProjectList() {
               <div key={project._id || index} className="project-card">
                 <div className="project-card-header">
                   <div className="project-title-section">
-                    <h3 className="project-title">{project.title || 'Untitled Project'}</h3>
-                    <span className="project-id">#{project.projectId || 'N/A'}</span>
+                    <h3 className="project-title">
+                      {project.title || "Untitled Project"}
+                    </h3>
+                    <span className="project-id">
+                      #{project.projectId || "N/A"}
+                    </span>
                   </div>
                   <div className="project-status-section">
-                    <span className={`status-badge ${project.status?.toLowerCase() || 'unknown'}`}>
-                      {project.status || 'Unknown'}
+                    <span
+                      className={`status-badge ${
+                        project.status?.toLowerCase() || "unknown"
+                      }`}
+                    >
+                      {project.status || "Unknown"}
                     </span>
                     {project.priority && (
-                      <span className={`priority-badge ${project.priority.toLowerCase()}`}>
+                      <span
+                        className={`priority-badge ${project.priority.toLowerCase()}`}
+                      >
                         {project.priority}
                       </span>
                     )}
@@ -1365,17 +1548,22 @@ export default function ProjectList() {
 
                 <div className="project-card-body">
                   <p className="project-description">
-                    {project.description || 'No description available'}
+                    {project.description || "No description available"}
                   </p>
-                  
+
                   <div className="project-details">
                     <div className="detail-item">
                       <FiUser className="detail-icon" />
-                      <span>Client: {project.clientName || 'N/A'}</span>
+                      <span>Client: {project.clientName || "N/A"}</span>
                     </div>
                     <div className="detail-item">
                       <FiCalendar className="detail-icon" />
-                      <span>Due: {project.dueDate ? new Date(project.dueDate).toLocaleDateString() : 'No due date'}</span>
+                      <span>
+                        Due:{" "}
+                        {project.dueDate
+                          ? new Date(project.dueDate).toLocaleDateString()
+                          : "No due date"}
+                      </span>
                     </div>
                     <div className="detail-item">
                       <FiDollarSign className="detail-icon" />
@@ -1387,11 +1575,13 @@ export default function ProjectList() {
                   <div className="progress-section">
                     <div className="progress-header">
                       <span className="progress-label">Progress</span>
-                      <span className="progress-percentage">{project.progress || 0}%</span>
+                      <span className="progress-percentage">
+                        {project.progress || 0}%
+                      </span>
                     </div>
                     <div className="progress-bar">
-                      <div 
-                        className="progress-fill" 
+                      <div
+                        className="progress-fill"
                         style={{ width: `${project.progress || 0}%` }}
                       ></div>
                     </div>
@@ -1417,24 +1607,27 @@ export default function ProjectList() {
                 <div className="project-card-footer">
                   <div className="project-meta">
                     <span className="last-updated">
-                      Updated {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : 'N/A'}
+                      Updated{" "}
+                      {project.updatedAt
+                        ? new Date(project.updatedAt).toLocaleDateString()
+                        : "N/A"}
                     </span>
                   </div>
                   <div className="project-actions">
-                    <button 
+                    <button
                       onClick={() => setSelectedProject(project)}
                       className="action-btn view-btn"
                       title="View Details"
                     >
                       <FiEye />
                     </button>
-                    <button 
+                    <button
                       className="action-btn edit-btn"
                       title="Edit Project"
                     >
                       <FiEdit2 />
                     </button>
-                    <button 
+                    <button
                       className="action-btn more-btn"
                       title="More Actions"
                     >
@@ -1449,11 +1642,14 @@ export default function ProjectList() {
 
         {/* Project Details Modal */}
         {selectedProject && (
-          <div className="modal-overlay" onClick={() => setSelectedProject(null)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setSelectedProject(null)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>{selectedProject.title}</h2>
-                <button 
+                <button
                   onClick={() => setSelectedProject(null)}
                   className="close-btn"
                 >
@@ -1467,31 +1663,47 @@ export default function ProjectList() {
                     <div className="info-grid">
                       <div className="info-item">
                         <label>Project ID:</label>
-                        <span>{selectedProject.projectId || 'N/A'}</span>
+                        <span>{selectedProject.projectId || "N/A"}</span>
                       </div>
                       <div className="info-item">
                         <label>Client:</label>
-                        <span>{selectedProject.clientName || 'N/A'}</span>
+                        <span>{selectedProject.clientName || "N/A"}</span>
                       </div>
                       <div className="info-item">
                         <label>Status:</label>
-                        <span className={`status-badge ${selectedProject.status?.toLowerCase()}`}>
-                          {selectedProject.status || 'Unknown'}
+                        <span
+                          className={`status-badge ${selectedProject.status?.toLowerCase()}`}
+                        >
+                          {selectedProject.status || "Unknown"}
                         </span>
                       </div>
                       <div className="info-item">
                         <label>Priority:</label>
-                        <span className={`priority-badge ${selectedProject.priority?.toLowerCase()}`}>
-                          {selectedProject.priority || 'N/A'}
+                        <span
+                          className={`priority-badge ${selectedProject.priority?.toLowerCase()}`}
+                        >
+                          {selectedProject.priority || "N/A"}
                         </span>
                       </div>
                       <div className="info-item">
                         <label>Start Date:</label>
-                        <span>{selectedProject.startDate ? new Date(selectedProject.startDate).toLocaleDateString() : 'N/A'}</span>
+                        <span>
+                          {selectedProject.startDate
+                            ? new Date(
+                                selectedProject.startDate
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </span>
                       </div>
                       <div className="info-item">
                         <label>Due Date:</label>
-                        <span>{selectedProject.dueDate ? new Date(selectedProject.dueDate).toLocaleDateString() : 'N/A'}</span>
+                        <span>
+                          {selectedProject.dueDate
+                            ? new Date(
+                                selectedProject.dueDate
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </span>
                       </div>
                       <div className="info-item">
                         <label>Budget:</label>
@@ -1503,33 +1715,42 @@ export default function ProjectList() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="overview-section">
                     <h3>Description</h3>
-                    <p>{selectedProject.description || 'No description available'}</p>
+                    <p>
+                      {selectedProject.description ||
+                        "No description available"}
+                    </p>
                   </div>
-                  
+
                   <div className="overview-section">
                     <h3>Task Summary</h3>
                     <div className="task-summary-grid">
                       <div className="summary-item completed">
                         <FiCheckCircle />
                         <div>
-                          <span className="summary-number">{selectedProject.completedTasks || 0}</span>
+                          <span className="summary-number">
+                            {selectedProject.completedTasks || 0}
+                          </span>
                           <span className="summary-label">Completed</span>
                         </div>
                       </div>
                       <div className="summary-item pending">
                         <FiClock />
                         <div>
-                          <span className="summary-number">{selectedProject.pendingTasks || 0}</span>
+                          <span className="summary-number">
+                            {selectedProject.pendingTasks || 0}
+                          </span>
                           <span className="summary-label">Pending</span>
                         </div>
                       </div>
                       <div className="summary-item overdue">
                         <FiAlertCircle />
                         <div>
-                          <span className="summary-number">{selectedProject.overdueTasks || 0}</span>
+                          <span className="summary-number">
+                            {selectedProject.overdueTasks || 0}
+                          </span>
                           <span className="summary-label">Overdue</span>
                         </div>
                       </div>
@@ -1538,7 +1759,10 @@ export default function ProjectList() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setSelectedProject(null)}>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setSelectedProject(null)}
+                >
                   Close
                 </button>
                 <button className="btn btn-primary">
@@ -1560,9 +1784,6 @@ export default function ProjectList() {
   );
 }
 
-
-
-
 // import "./ProjectList.css";
 // import { Calendar } from "lucide-react";
 // import React, { useState, useEffect } from "react";
@@ -1580,15 +1801,15 @@ export default function ProjectList() {
 //         const checkScreenSize = () => {
 //             const newIsMobile = window.innerWidth <= 768;
 //             console.log("Window width:", window.innerWidth, "isMobile:", newIsMobile);
-//             setIsMobile(newIsMobile); 
+//             setIsMobile(newIsMobile);
 //         };
-        
+
 //         // Initial check
 //         checkScreenSize();
-        
+
 //         // Add listener for window resize
 //         window.addEventListener('resize', checkScreenSize);
-        
+
 //         // Cleanup
 //         return () => window.removeEventListener('resize', checkScreenSize);
 //     }, []);
@@ -1611,7 +1832,7 @@ export default function ProjectList() {
 //         ppt: null,
 //         coveringLetter: null,
 //     });
-  
+
 //     // Handle input change
 //     const handleChange = (e) => {
 //         const { name, value } = e.target;
@@ -1620,7 +1841,7 @@ export default function ProjectList() {
 //             [name]: value,
 //         }));
 //     };
-  
+
 //     // Handle file input change
 //     const handleFileChange = (e) => {
 //         const { name, files } = e.target;
@@ -1629,17 +1850,17 @@ export default function ProjectList() {
 //             [name]: files[0],
 //         }));
 //     };
-  
+
 //     // Show modal when Add Project button is clicked
 //     const handleAddProject = () => {
 //         setShowModal(true);
 //     };
-  
+
 //     // Close modal
 //     const closeModal = () => {
 //         setShowModal(false);
 //     };
-  
+
 //     // Submit form data
 //     const handleSubmit = (e) => {
 //         e.preventDefault();
@@ -1708,17 +1929,17 @@ export default function ProjectList() {
 //                             <p className="mobile-card-text">
 //                                 {meeting.title}
 //                             </p>
-//                             <div 
-//                                 className="mobile-card-footer" 
+//                             <div
+//                                 className="mobile-card-footer"
 //                                 onClick={() => toggleCardExpanded(index)}
 //                             >
 //                                 <span className="mobile-card-date">{meeting.date}</span>
-//                                 {expandedCards[index] ? 
-//                                     <FiChevronUp size={18} /> : 
+//                                 {expandedCards[index] ?
+//                                     <FiChevronUp size={18} /> :
 //                                     <FiChevronDown size={18} />
 //                                 }
 //                             </div>
-                            
+
 //                             {/* Expanded details section */}
 //                             {expandedCards[index] && (
 //                                 <div className="mobile-card-expanded">
@@ -1756,7 +1977,7 @@ export default function ProjectList() {
 //             <Navbar />
 //             <div className="project-container" style={{width:"80%"}}>
 //                 <SearchBar/>
-                
+
 //                 {/* Outer container with border radius */}
 //                 <div className="border-radius-container">
 //                     {/* New container with Projects heading and Add Project button */}
@@ -1776,7 +1997,7 @@ export default function ProjectList() {
 //                             07 Aug, 2024
 //                         </button>
 //                     </div>
-                
+
 //                     <div className="table-container">
 //                         <table className="project-table">
 //                             <thead className="table-header">
@@ -1813,7 +2034,7 @@ export default function ProjectList() {
 //                             </tbody>
 //                         </table>
 //                     </div>
-                
+
 //                     <div className="pagination-container">
 //                         <div className="pagination-text">
 //                             Page 1 of 100
@@ -1925,8 +2146,6 @@ export default function ProjectList() {
 //     );
 // }
 
-
-
 // import "./ProjectList.css";
 // import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 // import React, { useState, useEffect } from "react";
@@ -1949,13 +2168,13 @@ export default function ProjectList() {
 //             console.log("Window width:", window.innerWidth, "isMobile:", newIsMobile);
 //             setIsMobile(newIsMobile);
 //         };
-        
+
 //         // Initial check
 //         checkScreenSize();
-        
+
 //         // Add listener for window resize
 //         window.addEventListener('resize', checkScreenSize);
-        
+
 //         // Cleanup
 //         return () => window.removeEventListener('resize', checkScreenSize);
 //     }, []);
@@ -1978,7 +2197,7 @@ export default function ProjectList() {
 //         ppt: null,
 //         coveringLetter: null,
 //     });
-  
+
 //     // Handle input change
 //     const handleChange = (e) => {
 //         const { name, value } = e.target;
@@ -1987,7 +2206,7 @@ export default function ProjectList() {
 //             [name]: value,
 //         }));
 //     };
-  
+
 //     // Handle file input change
 //     const handleFileChange = (e) => {
 //         const { name, files } = e.target;
@@ -1996,17 +2215,17 @@ export default function ProjectList() {
 //             [name]: files[0],
 //         }));
 //     };
-  
+
 //     // Show modal when Add Project button is clicked
 //     const handleAddProject = () => {
 //         setShowModal(true);
 //     };
-  
+
 //     // Close modal
 //     const closeModal = () => {
 //         setShowModal(false);
 //     };
-  
+
 //     // Submit form data
 //     const handleSubmit = (e) => {
 //         e.preventDefault();
@@ -2127,13 +2346,13 @@ export default function ProjectList() {
 //             <div className="task-card">
 //                 <div className="task-title">TASK</div>
 //                 <div className="task-content">{task.title}</div>
-                
+
 //                 <div className="task-meta">
 //                     <div className="meta-item">
 //                         <span className="meta-label">Due Date:</span>
 //                         <span className="meta-value">{task.dueDate}</span>
 //                     </div>
-                    
+
 //                     <div className="meta-item">
 //                         <span className="meta-label">Assigned To:</span>
 //                         <div className="assignee">
@@ -2156,7 +2375,7 @@ export default function ProjectList() {
 //                     <h2>Task Management</h2>
 //                     <button className="close-kanban-btn" onClick={handleCloseKanban}>×</button>
 //                 </div>
-                
+
 //                 <div className="app-header">
 //                     <div className="title-section">
 //                         <h2>TO DO List</h2>
@@ -2266,17 +2485,17 @@ export default function ProjectList() {
 //                             <p className="mobile-card-text">
 //                                 {meeting.title}
 //                             </p>
-//                             <div 
-//                                 className="mobile-card-footer" 
+//                             <div
+//                                 className="mobile-card-footer"
 //                                 onClick={() => toggleCardExpanded(index)}
 //                             >
 //                                 <span className="mobile-card-date">{meeting.date}</span>
-//                                 {expandedCards[index] ? 
-//                                     <FiChevronUp size={18} /> : 
+//                                 {expandedCards[index] ?
+//                                     <FiChevronUp size={18} /> :
 //                                     <FiChevronDown size={18} />
 //                                 }
 //                             </div>
-                            
+
 //                             {/* Expanded details section */}
 //                             {expandedCards[index] && (
 //                                 <div className="mobile-card-expanded">
@@ -2314,7 +2533,7 @@ export default function ProjectList() {
 //             <Navbar />
 //             <div className="project-container" style={{width:"80%"}}>
 //                 <SearchBar/>
-                
+
 //                 {/* Outer container with border radius */}
 //                 <div className="border-radius-container">
 //                     {/* New container with Projects heading and Add Project button */}
@@ -2334,7 +2553,7 @@ export default function ProjectList() {
 //                             07 Aug, 2024
 //                         </button>
 //                     </div>
-                
+
 //                     <div className="table-container">
 //                         <table className="project-table">
 //                             <thead className="table-header">
@@ -2371,7 +2590,7 @@ export default function ProjectList() {
 //                             </tbody>
 //                         </table>
 //                     </div>
-                
+
 //                     <div className="pagination-container">
 //                         <div className="pagination-text">
 //                             Page 1 of 100
@@ -2488,8 +2707,6 @@ export default function ProjectList() {
 //     );
 // }
 
-
-
 // import "./ProjectList.css"
 // import { Calendar, ChevronLeft, ChevronRight, Plus } from "lucide-react"
 // import { useState, useEffect } from "react"
@@ -2566,13 +2783,13 @@ export default function ProjectList() {
 
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
-  
+
 //     // Basic form validation
 //     if (!formData.title || !formData.description || !formData.startDate || !formData.dueDate) {
 //       alert("Please fill out all required fields.");
 //       return;
 //     }
-  
+
 //     // Format dates for display
 //     const startDateFormatted = formData.startDate
 //       ? new Date(formData.startDate).toLocaleDateString("en-GB", {
@@ -2581,7 +2798,7 @@ export default function ProjectList() {
 //           year: "numeric",
 //         })
 //       : "Not set";
-  
+
 //     const dueDateFormatted = formData.dueDate
 //       ? new Date(formData.dueDate).toLocaleDateString("en-GB", {
 //           day: "2-digit",
@@ -2589,7 +2806,7 @@ export default function ProjectList() {
 //           year: "numeric",
 //         })
 //       : "Not set";
-  
+
 //     // Create a new project object
 //     const newProject = {
 //       id: Date.now(), // Generate a unique ID
@@ -2604,7 +2821,7 @@ export default function ProjectList() {
 //       ppt: formData.ppt,
 //       coveringLetter: formData.coveringLetter,
 //     };
-  
+
 //     try {
 //       // Send the project data to the API
 //       const response = await fetch("http://localhost:5001/api/projects", {
@@ -2612,11 +2829,11 @@ export default function ProjectList() {
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newProject),
 //       });
-  
+
 //       if (response.ok) {
 //         // Add the new project to the projects array
 //         setProjects([...projects, newProject]);
-  
+
 //         // Reset form data
 //         setFormData({
 //           title: "",
@@ -2627,13 +2844,13 @@ export default function ProjectList() {
 //           ppt: null,
 //           coveringLetter: null,
 //         });
-  
+
 //         // Reset selected employees
 //         setSelectedEmployees([]);
-  
+
 //         // Close the modal
 //         closeModal();
-  
+
 //         console.log("Project added:", newProject);
 //         alert("Project added successfully!");
 //       } else {
@@ -2642,29 +2859,28 @@ export default function ProjectList() {
 //         console.error("Failed to add project:", errorData);
 //       }
 //     } catch (error) {
-    
+
 //       // alert("Error adding project. Please try again.");
-  
+
 //       // If API call fails, still update local state for demo purposes
 //       setProjects([...projects, newProject]);
-  
+
 //       // Reset form data
 //       setFormData({
 //         title: "",
 //         description: "",
 //         startDate: null,
 //         dueDate: null,
-        
+
 //       });
-  
+
 //       // Reset selected employees
 //       setSelectedEmployees([]);
-  
+
 //       // Close the modal
 //       closeModal();
 //     }
 //   };
-
 
 //   const handleViewDetails = () => setShowKanban(true)
 //   const handleCloseKanban = () => setShowKanban(false)

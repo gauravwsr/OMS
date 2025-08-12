@@ -53,7 +53,7 @@ const Calender = () => {
         request.headers = {
           ...request.headers,
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         };
         console.log("✅ CustomAdaptor - Injected Authorization header");
       } else {
@@ -67,13 +67,16 @@ const Calender = () => {
   // Create DataManager with custom configuration
   const dataManager = React.useMemo(() => {
     const token = localStorage.getItem("token");
-    console.log('Calendar DataManager - Token available:', !!token);
-    console.log('Calendar DataManager - Token preview:', token ? token.substring(0, 20) + '...' : 'null');
-    console.log('Calendar DataManager - Is Super Admin:', isSuperAdmin);
-    console.log('Calendar DataManager - Is Admin:', isAdmin);
-    console.log('Calendar DataManager - Is HR Manager:', isHRManager);
-    console.log('Calendar DataManager - User object:', user);
-    console.log('Calendar DataManager - Using URL:', baseUrl);
+    console.log("Calendar DataManager - Token available:", !!token);
+    console.log(
+      "Calendar DataManager - Token preview:",
+      token ? token.substring(0, 20) + "..." : "null"
+    );
+    console.log("Calendar DataManager - Is Super Admin:", isSuperAdmin);
+    console.log("Calendar DataManager - Is Admin:", isAdmin);
+    console.log("Calendar DataManager - Is HR Manager:", isHRManager);
+    console.log("Calendar DataManager - User object:", user);
+    console.log("Calendar DataManager - Using URL:", baseUrl);
 
     if (!token) {
       console.error(
@@ -88,23 +91,37 @@ const Calender = () => {
       adaptor: new CustomAuthAdaptor(),
 
       crossDomain: true,
-      requestType: 'POST',
+      requestType: "POST",
 
       beforeSend: (dm, request) => {
-        console.log('Calendar beforeSend - Operation:', request.httpRequest.requestType);
-        console.log('Calendar beforeSend - User Role:', user?.role, 'SubRole:', user?.subRole);
-        console.log('Calendar beforeSend - URL:', request.url);
+        console.log(
+          "Calendar beforeSend - Operation:",
+          request.httpRequest.requestType
+        );
+        console.log(
+          "Calendar beforeSend - User Role:",
+          user?.role,
+          "SubRole:",
+          user?.subRole
+        );
+        console.log("Calendar beforeSend - URL:", request.url);
 
         const currentToken = localStorage.getItem("token");
-        console.log('Calendar beforeSend - Token available:', !!currentToken);
+        console.log("Calendar beforeSend - Token available:", !!currentToken);
 
         if (currentToken) {
-          request.httpRequest.setRequestHeader("Authorization", `Bearer ${currentToken}`);
-          request.httpRequest.setRequestHeader("Content-Type", "application/json");
+          request.httpRequest.setRequestHeader(
+            "Authorization",
+            `Bearer ${currentToken}`
+          );
+          request.httpRequest.setRequestHeader(
+            "Content-Type",
+            "application/json"
+          );
 
-          console.log('✅ Authorization header set for DataManager request.');
+          console.log("✅ Authorization header set for DataManager request.");
         } else {
-          console.error('❌ No token found in localStorage during beforeSend!');
+          console.error("❌ No token found in localStorage during beforeSend!");
         }
 
         // Log all headers being sent

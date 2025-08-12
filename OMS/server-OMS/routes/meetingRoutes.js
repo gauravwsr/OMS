@@ -10,6 +10,12 @@ const {
   leaveMeeting,
   getMeetingDetails,
   inviteUsersToMeeting,
+  getDetailedAnalytics,
+  exportAnalytics,
+  scheduleMeeting,
+  getUpcomingMeetings,
+  startScheduledMeeting,
+  getAnalyticsOverview,
 } = require("../controllers/meetingController");
 
 // Apply authentication middleware to all routes
@@ -67,6 +73,58 @@ router.put("/:roomId/leave", leaveMeeting);
  */
 router.post("/:roomId/invite", inviteUsersToMeeting);
 
+/**
+ * @route   GET /api/meetings/analytics/detailed
+ * @desc    Get detailed analytics with charts and metrics
+ * @access  Private (Super_Admin or HR Manager only)
+ * @query   { range, team }
+ */
+router.get("/analytics/detailed", getDetailedAnalytics);
+
+/**
+ * @route   GET /api/meetings/analytics/export
+ * @desc    Export analytics data to Excel
+ * @access  Private (Super_Admin or HR Manager only)
+ * @query   { range, team, format }
+ */
+router.get("/analytics/export", exportAnalytics);
+
+/**
+ * @route   POST /api/meetings/schedule
+ * @desc    Schedule a meeting for future date/time
+ * @access  Private (All except Intern)
+ * @body    { meetingName, roomType, teamName, description, scheduledAt, duration, emailReminder, reminderMinutes, meetingSettings }
+ */
+router.post("/schedule", scheduleMeeting);
+
+/**
+ * @route   GET /api/meetings/upcoming
+ * @desc    Get upcoming scheduled meetings
+ * @access  Private (Role-based filtering)
+ */
+router.get("/upcoming", getUpcomingMeetings);
+
+/**
+ * @route   GET /api/meetings/scheduled
+ * @desc    Get all scheduled meetings (alias for upcoming)
+ * @access  Private (Role-based filtering)
+ */
+router.get("/scheduled", getUpcomingMeetings);
+
+/**
+ * @route   POST /api/meetings/start-scheduled/:scheduleId
+ * @desc    Start a scheduled meeting
+ * @access  Private (Creator or Admin only)
+ */
+router.post("/start-scheduled/:scheduleId", startScheduledMeeting);
+
+/**
+ * @route   GET /api/meetings/analytics/overview
+ * @desc    Get basic analytics overview for dashboard
+ * @access  Private (Super_Admin or HR Manager only)
+ */
+router.get("/analytics/overview", getAnalyticsOverview);
+
 // Additional utility routes
 
 /**
@@ -114,107 +172,6 @@ router.get("/validate/token/:token", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to validate token",
-      error: error.message,
-    });
-  }
-});
-
-/**
- * @route   GET /api/meetings/analytics/overview
- * @desc    Get meeting analytics overview (Admin only)
- * @access  Private (Admin only)
- */
-router.get("/analytics/overview", async (req, res) => {
-  try {
-    const userRole = req.user.role;
-    const userSubRole = req.user.subRole;
-
-    // Only allow admins to access analytics
-    if (
-      userRole !== "Super_Admin" &&
-      !(userRole === "Admin" && userSubRole === "HR Manager")
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Admin privileges required.",
-      });
-    }
-
-    const MeetingRoom = require("../models/meetingRoomModel");
-
-    // Get analytics data
-    const totalMeetings = await MeetingRoom.countDocuments();
-    const activeMeetings = await MeetingRoom.countDocuments({
-      meetingStatus: "active",
-    });
-    const endedMeetings = await MeetingRoom.countDocuments({
-      meetingStatus: "ended",
-    });
-
-    // Get meetings by room type
-    const globalMeetings = await MeetingRoom.countDocuments({
-      roomType: "global",
-    });
-    const teamMeetings = await MeetingRoom.countDocuments({ roomType: "team" });
-
-    // Get today's meetings
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todaysMeetings = await MeetingRoom.countDocuments({
-      createdAt: { $gte: today, $lt: tomorrow },
-    });
-
-    // Get average meeting duration
-    const completedMeetings = await MeetingRoom.find({
-      meetingStatus: "ended",
-      duration: { $exists: true },
-    }).select("duration");
-
-    const avgDuration =
-      completedMeetings.length > 0
-        ? completedMeetings.reduce(
-            (sum, meeting) => sum + meeting.duration,
-            0
-          ) / completedMeetings.length
-        : 0;
-
-    // Get most active teams
-    const teamActivity = await MeetingRoom.aggregate([
-      { $match: { roomType: "team", teamName: { $exists: true } } },
-      { $group: { _id: "$teamName", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-    ]);
-
-    res.status(200).json({
-      success: true,
-      message: "Analytics retrieved successfully",
-      data: {
-        overview: {
-          totalMeetings,
-          activeMeetings,
-          endedMeetings,
-          todaysMeetings,
-          avgDurationMinutes: Math.round(avgDuration),
-        },
-        distribution: {
-          globalMeetings,
-          teamMeetings,
-        },
-        topTeams: teamActivity.map((team) => ({
-          teamName: team._id,
-          meetingCount: team.count,
-        })),
-      },
-    });
-  } catch (error) {
-    console.error("Error getting analytics:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to retrieve analytics",
       error: error.message,
     });
   }

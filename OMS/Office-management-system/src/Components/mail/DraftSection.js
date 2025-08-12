@@ -51,11 +51,11 @@ const DraftSection = ({ drafts: propDrafts }) => {
             }
           });
           // Remove the draft from the list
-          setDrafts(drafts.filter(d => d._id !== draft._id));
+          setDrafts(drafts.filter((d) => d._id !== draft._id));
         } catch (deleteError) {
           console.error("Error deleting draft:", deleteError);
           // Still remove from UI even if delete fails
-          setDrafts(drafts.filter(d => d._id !== draft._id));
+          setDrafts(drafts.filter((d) => d._id !== draft._id));
         }
       } else {
         alert(`Failed to send email: ${data.message}`);
@@ -82,16 +82,14 @@ const DraftSection = ({ drafts: propDrafts }) => {
         <p className="error-message">{error}</p>
       ) : drafts.length > 0 ? (
         drafts.map((draft, index) => (
-          <div key={draft._id || index} className="email-row draft-row">
+          <div key={draft._id || draft.id || `draft-${index}`} className="email-row draft-row">
             <div className="email-name">
               <input
                 type="checkbox"
-                id={`draft-${draft._id || index}`}
+                id={`draft-${draft._id || draft.id || index}`}
                 className="email-checkbox"
               />
-            
-              <label htmlFor={`draft-${draft._id || index}`} className="email-label draft-label">
-
+              <label htmlFor={`draft-${draft._id || draft.id || index}`} className="email-label draft-label">
                 {draft.to || "No recipient"}
               </label>
             </div>

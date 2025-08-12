@@ -1,5 +1,12 @@
 @echo off
-cd /d "d:\OMS\OMS\OMS\server-OMS"
-echo Starting OMS Backend Server...
-echo Current directory: %CD%
-node server.js
+echo Starting OMS Server...
+echo.
+echo Checking Node.js installation...
+node --version
+echo.
+echo Installing/Updating dependencies...
+npm install
+echo.
+echo Starting server...
+npm start
+pause

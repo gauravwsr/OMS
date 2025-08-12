@@ -392,6 +392,12 @@ const Employee = () => {
       const response = await axios.get("http://localhost:5001/api/health", {
         timeout: 3000,
       });
+      // const response = await axios.get(
+      //   "http://146.190.165.62:5001/api/health",
+      //   {
+      //     timeout: 3000,
+      //   }
+      // );
       console.log("✅ Server is running and accessible");
       return true;
     } catch (error) {

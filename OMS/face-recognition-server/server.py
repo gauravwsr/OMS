@@ -967,4 +967,4 @@ if __name__ == '__main__':
     print("- GET /get_attendance_stats/<name> - Get user attendance statistics")
     print("- GET /get_all_attendance - Get today's attendance list")
     print("- GET /api/test-recognition - Test face recognition system")
-    app.run(host='0.0.0.0', port=5002, debug=True)
+    app.run(host='localhost', port=5002, debug=True)
