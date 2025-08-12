@@ -1,29 +1,917 @@
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-// import 'bootstrap/dist/css/bootstrap.min.css';
+import { Reply, Forward, ArrowLeft, Send, Paperclip, X, ChevronDown, ChevronUp } from 'lucide-react';
+import './EmailDetails.css';
 
 const EmailDetails = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { email } = location.state || {};
+  
+  // State for reply functionality
+  const [isReplying, setIsReplying] = useState(false);
+  const [isForwarding, setIsForwarding] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [forwardTo, setForwardTo] = useState('');
+  const [forwardCc, setForwardCc] = useState('');
+  const [forwardText, setForwardText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [showCc, setShowCc] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(true);
+  const [showPreviousMessage, setShowPreviousMessage] = useState(false);
+  const [expandedMessages, setExpandedMessages] = useState(new Set([0])); // First message expanded by default
+  const [threadEmails, setThreadEmails] = useState([]);
+  const [loadingThread, setLoadingThread] = useState(false);
+  
+  const replyTextareaRef = useRef(null);
+  const forwardTextareaRef = useRef(null);
+
+  // Auto-focus reply textarea when opened
+  useEffect(() => {
+    if (isReplying && replyTextareaRef.current) {
+      replyTextareaRef.current.focus();
+    }
+  }, [isReplying]);
+
+  useEffect(() => {
+    if (isForwarding && forwardTextareaRef.current) {
+      forwardTextareaRef.current.focus();
+    }
+  }, [isForwarding]);
+
+  // Fetch thread emails when component mounts
+  useEffect(() => {
+    if (email && email.subject) {
+      fetchThreadEmails();
+    }
+  }, [email]);
+
+  // Function to fetch actual thread emails from server
+  const fetchThreadEmails = async () => {
+    if (!email || !email.subject) return;
+    
+    setLoadingThread(true);
+    try {
+      const params = new URLSearchParams({
+        subject: email.subject,
+        ...(email.messageId && { messageId: email.messageId }),
+        ...(email.from && { sender: email.from }),
+        ...(email.to && { recipient: email.to })
+      });
+
+      console.log('🔍 Fetching thread emails with params:', {
+        subject: email.subject,
+        messageId: email.messageId,
+        sender: email.from,
+        recipient: email.to
+      });
+
+      const response = await fetch(`http://localhost:5001/api/emails/search-thread?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        console.log(`📧 Fetched ${data.emails.length} thread emails from server`);
+        console.log('📊 Email breakdown by folder:', data.breakdown);
+        setThreadEmails(data.emails || []);
+        
+        // Set expanded messages - expand the latest message by default
+        if (data.emails && data.emails.length > 0) {
+          setExpandedMessages(new Set([data.emails.length - 1]));
+        }
+      } else {
+        console.error('Failed to fetch thread emails:', data.message);
+        setThreadEmails([]);
+      }
+    } catch (error) {
+      console.error('Error fetching thread emails:', error);
+      setThreadEmails([]);
+    } finally {
+      setLoadingThread(false);
+    }
+  };
 
   if (!email) {
     return <p className="text-center mt-5">No email details available.</p>;
   }
 
+  // Handle reply action
+  const handleReplyClick = () => {
+    setIsForwarding(false);
+    setIsReplying(!isReplying);
+    setReplyText('');
+  };
+
+  // Handle forward action
+  const handleForwardClick = () => {
+    setIsReplying(false);
+    setIsForwarding(!isForwarding);
+    setForwardTo('');
+    setForwardCc('');
+    setForwardText('');
+  };
+
+  // Send reply
+  const handleSendReply = async () => {
+    if (!replyText.trim()) {
+      alert('Please enter a reply message.');
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const replyBody = `${replyText}\n\n--- Original Message ---\nFrom: ${email.from || email.sender}\nDate: ${new Date(email.date).toLocaleString()}\nSubject: ${email.subject || 'No Subject'}\n\n${email.body || ''}`;
+      
+      const response = await fetch('http://localhost:5001/api/emails/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          to: email.from || email.sender,
+          subject: email.subject?.startsWith('Re: ') ? email.subject : `Re: ${email.subject || 'No Subject'}`,
+          body: replyBody,
+          isReply: true,
+          originalMessageId: email.messageId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}`);
+        setReplyText('');
+        setIsReplying(false);
+      } else {
+        alert(`❌ Failed to send reply: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+      alert('❌ An error occurred while sending the reply.');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Send forward
+  const handleSendForward = async () => {
+    if (!forwardTo.trim() || !forwardText.trim()) {
+      alert('Please enter recipient and message.');
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      const forwardBody = `${forwardText}\n\n--- Forwarded Message ---\nFrom: ${email.from || email.sender}\nDate: ${new Date(email.date).toLocaleString()}\nTo: ${email.to || ''}\nSubject: ${email.subject || 'No Subject'}\n\n${email.body || ''}`;
+      
+      const response = await fetch('http://localhost:5001/api/emails/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          to: forwardTo,
+          cc: forwardCc || '',
+          subject: email.subject?.startsWith('Fwd: ') ? email.subject : `Fwd: ${email.subject || 'No Subject'}`,
+          body: forwardBody,
+          isForward: true,
+          originalMessageId: email.messageId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        alert(`✅ ${data.message}`);
+        setForwardTo('');
+        setForwardCc('');
+        setForwardText('');
+        setIsForwarding(false);
+      } else {
+        alert(`❌ Failed to forward email: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error forwarding email:', error);
+      alert('❌ An error occurred while forwarding the email.');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Function to strip HTML tags for better display
+  const stripHtmlTags = (html) => {
+    if (!html) return '';
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
+
+  // Function to parse reply/forward content and extract original message
+  const parseEmailContent = (body, depth = 0, maxDepth = 3) => {
+    if (!body || depth > maxDepth) return { currentMessage: '', originalMessage: null, allMessages: [] };
+
+    // More comprehensive markers for different email clients
+    const originalMessageMarkers = [
+      '--- Original Message ---',
+      '--- Forwarded Message ---',
+      '---------- Original Message ----------',
+      '---------- Forwarded message ----------',
+      'From:',  // Simple from header
+      'On ', // Gmail style "On Mon, Aug 11, 2025 at..."
+      '________________________________', // Outlook separator
+      '> ', // Quote marker
+      'Begin forwarded message:',
+      'Original Message',
+      'Forwarded Message'
+    ];
+
+    // Find the best split point by checking multiple patterns
+    let bestSplitPoint = -1;
+    let messageType = 'original';
+    let usedMarker = '';
+
+    for (const marker of originalMessageMarkers) {
+      const index = body.indexOf(marker);
+      if (index !== -1 && (bestSplitPoint === -1 || index < bestSplitPoint)) {
+        bestSplitPoint = index;
+        usedMarker = marker;
+        
+        if (marker.includes('Forwarded') || marker.includes('forwarded')) {
+          messageType = 'forwarded';
+        } else {
+          messageType = 'reply';
+        }
+      }
+    }
+
+    // Also check for quoted content (lines starting with >)
+    const lines = body.split('\n');
+    let quotedStartIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim().startsWith('>')) {
+        quotedStartIndex = i;
+        break;
+      }
+    }
+
+    if (quotedStartIndex !== -1) {
+      const quotedPosition = lines.slice(0, quotedStartIndex).join('\n').length;
+      if (bestSplitPoint === -1 || quotedPosition < bestSplitPoint) {
+        bestSplitPoint = quotedPosition;
+        messageType = 'reply';
+        usedMarker = 'quoted';
+      }
+    }
+
+    // If no markers found, treat as single message
+    if (bestSplitPoint === -1) {
+      return { 
+        currentMessage: body, 
+        originalMessage: null, 
+        allMessages: [{
+          type: 'current',
+          from: email.from || email.sender,
+          to: email.to || 'me',
+          date: email.date,
+          subject: email.subject,
+          content: body,
+          isExpanded: true,
+          id: depth
+        }]
+      };
+    }
+
+    // Split the content
+    const currentMessage = body.substring(0, bestSplitPoint).trim();
+    const originalContent = body.substring(bestSplitPoint).trim();
+
+    // Prevent infinite loops by checking if we're parsing the same content
+    if (currentMessage.length === 0 && originalContent.length < 50) {
+      return {
+        currentMessage: body,
+        originalMessage: null,
+        allMessages: [{
+          type: 'current',
+          from: email.from || email.sender,
+          to: email.to || 'me',
+          date: email.date,
+          subject: email.subject,
+          content: body,
+          isExpanded: true,
+          id: depth
+        }]
+      };
+    }
+
+    // Extract original message details with more flexible patterns
+    let fromMatch, dateMatch, toMatch, subjectMatch;
+    
+    if (usedMarker === 'quoted') {
+      // Handle quoted content (remove > from each line)
+      const cleanContent = originalContent
+        .split('\n')
+        .map(line => line.replace(/^>\s*/, ''))
+        .join('\n');
+      
+      return {
+        currentMessage,
+        originalMessage: {
+          type: messageType,
+          from: null,
+          to: null,
+          date: null,
+          subject: null,
+          content: cleanContent
+        },
+        allMessages: [
+          {
+            type: 'current',
+            from: email.from || email.sender,
+            to: email.to || 'me',
+            date: email.date,
+            subject: email.subject,
+            content: currentMessage,
+            isExpanded: true,
+            id: depth
+          },
+          {
+            type: messageType,
+            from: 'Previous sender',
+            to: email.from || email.sender,
+            date: null,
+            subject: email.subject ? email.subject.replace(/^(Re:|Fwd:)\s*/, '') : null,
+            content: cleanContent,
+            isExpanded: false,
+            id: depth + 1
+          }
+        ]
+      };
+    }
+
+    // More flexible regex patterns
+    fromMatch = originalContent.match(/From:\s*(.+?)(?:\n|\r|$)/i) ||
+               originalContent.match(/from:\s*(.+?)(?:\n|\r|$)/i);
+    
+    dateMatch = originalContent.match(/Date:\s*(.+?)(?:\n|\r|$)/i) ||
+               originalContent.match(/date:\s*(.+?)(?:\n|\r|$)/i) ||
+               originalContent.match(/Sent:\s*(.+?)(?:\n|\r|$)/i) ||
+               originalContent.match(/On\s+(.+?)\s+at\s+(.+?)(?:\n|\r|,)/i);
+    
+    toMatch = originalContent.match(/To:\s*(.+?)(?:\n|\r|$)/i) ||
+             originalContent.match(/to:\s*(.+?)(?:\n|\r|$)/i);
+    
+    subjectMatch = originalContent.match(/Subject:\s*(.+?)(?:\n|\r|$)/i) ||
+                  originalContent.match(/subject:\s*(.+?)(?:\n|\r|$)/i);
+
+    // Find the actual message content with more flexible approach
+    let messageContent = originalContent;
+    
+    // Try to find content after headers
+    const headerEndPatterns = [
+      /\n\s*\n/,  // Double newline
+      /\r\n\s*\r\n/,  // Windows double newline
+      /Subject:.*?(\n|\r\n)/i  // After subject line
+    ];
+    
+    for (const pattern of headerEndPatterns) {
+      const match = originalContent.search(pattern);
+      if (match !== -1) {
+        const afterMatch = originalContent.substring(match).replace(/^\s*/, '');
+        if (afterMatch.length > 0) {
+          messageContent = afterMatch;
+          break;
+        }
+      }
+    }
+
+    // If still no good content, try to extract from first non-header line
+    if (messageContent === originalContent) {
+      const lines = originalContent.split(/\n|\r\n/);
+      let contentStartIndex = 0;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line && 
+            !line.match(/^(From|To|Date|Subject|Sent|CC|BCC):/i) &&
+            !line.match(/^-+/) &&
+            !line.length < 3) {
+          contentStartIndex = i;
+          break;
+        }
+      }
+      
+      if (contentStartIndex > 0) {
+        messageContent = lines.slice(contentStartIndex).join('\n').trim();
+      }
+    }
+
+    // Clean up date format if it's a Gmail-style "On ... at ..." format
+    let cleanDate = null;
+    if (dateMatch) {
+      if (dateMatch[0].includes('On ') && dateMatch[0].includes(' at ')) {
+        // Handle "On Mon, Aug 11, 2025 at 3:28 PM" format
+        cleanDate = dateMatch[0].replace(/^On\s+/, '').replace(/\s+wrote:?.*$/i, '');
+      } else {
+        cleanDate = dateMatch[1] ? dateMatch[1].trim() : dateMatch[0].trim();
+      }
+    }
+
+    const allMessages = [
+      {
+        type: 'current',
+        from: email.from || email.sender,
+        to: email.to || 'me',
+        date: email.date,
+        subject: email.subject,
+        content: currentMessage,
+        isExpanded: true,
+        id: depth
+      },
+      {
+        type: messageType,
+        from: fromMatch ? fromMatch[1].trim() : 'Previous sender',
+        to: toMatch ? toMatch[1].trim() : (email.from || email.sender),
+        date: cleanDate,
+        subject: subjectMatch ? subjectMatch[1].trim() : (email.subject ? email.subject.replace(/^(Re:|Fwd:)\s*/, '') : null),
+        content: messageContent,
+        isExpanded: false,
+        id: depth + 1
+      }
+    ];
+
+    // Try to parse nested messages recursively if there's enough content and we haven't hit max depth
+    if (messageContent && messageContent.length > 100 && depth < maxDepth) {
+      try {
+        // Only recurse if the content is significantly different from what we already have
+        if (messageContent !== currentMessage && messageContent !== originalContent) {
+          const nestedParse = parseEmailContent(messageContent, depth + 1, maxDepth);
+          if (nestedParse.allMessages.length > 1) {
+            // Add nested messages with updated IDs
+            allMessages.push(...nestedParse.allMessages.slice(1).map((msg, index) => ({
+              ...msg,
+              id: depth + 2 + index
+            })));
+          }
+        }
+      } catch (error) {
+        console.log('Error parsing nested content:', error);
+      }
+    }
+
+    return {
+      currentMessage,
+      originalMessage: {
+        type: messageType,
+        from: fromMatch ? fromMatch[1].trim() : null,
+        to: toMatch ? toMatch[1].trim() : null,
+        date: cleanDate,
+        subject: subjectMatch ? subjectMatch[1].trim() : null,
+        content: messageContent
+      },
+      allMessages
+    };
+  };
+
+  const toggleMessageExpansion = (messageId) => {
+    const newExpanded = new Set(expandedMessages);
+    if (newExpanded.has(messageId)) {
+      newExpanded.delete(messageId);
+    } else {
+      newExpanded.add(messageId);
+    }
+    setExpandedMessages(newExpanded);
+  };
+
+  // Use server-fetched emails if available, otherwise parse body content
+  const displayEmails = threadEmails.length > 0 ? threadEmails : [email];
+  const { currentMessage, originalMessage, allMessages } = parseEmailContent(email.body);
+  
+  // Determine final messages to display
+  let finalMessages = [];
+  if (threadEmails.length > 1) {
+    // Use server-fetched thread emails
+    finalMessages = threadEmails.map((threadEmail, index) => ({
+      type: index === threadEmails.length - 1 ? 'current' : 'previous',
+      from: threadEmail.from,
+      to: threadEmail.to,
+      date: threadEmail.date,
+      subject: threadEmail.subject,
+      content: threadEmail.body,
+      messageId: threadEmail.messageId,
+      folder: threadEmail.folder,
+      isExpanded: index === threadEmails.length - 1, // Latest message expanded
+      id: index
+    }));
+  } else if (allMessages.length > 1) {
+    // Use parsed messages from email body
+    finalMessages = allMessages;
+  } else {
+    // Single message
+    finalMessages = [{
+      type: 'current',
+      from: email.from || email.sender,
+      to: email.to || 'me',
+      date: email.date,
+      subject: email.subject,
+      content: email.body,
+      messageId: email.messageId,
+      isExpanded: true,
+      id: 0
+    }];
+  }
+  
+  // Debug log
+  if (threadEmails.length > 0) {
+    console.log(`📧 Displaying ${finalMessages.length} emails from server thread`);
+  } else if (allMessages.length > 1) {
+    console.log(`📧 Displaying ${finalMessages.length} parsed messages from email body`);
+  }
+  
+  const formatDate = (dateStr) => {
+    try {
+      const date = new Date(dateStr);
+      return {
+        date: date.toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        }),
+        time: date.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        })
+      };
+    } catch (error) {
+      return { date: dateStr, time: '' };
+    }
+  };
+
+  const emailDate = formatDate(email.date);
+
   return (
-    <div className="container mt-5">
-      <div className="card shadow-lg">
-        <div className="card-header bg-primary text-white">
-          <h2>Email Details</h2>
+    <div className="email-details-container">
+      <div className="email-details-header">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          <ArrowLeft size={16} />
+          Back
+        </button>
+        <h2>{email.subject || 'No Subject'}</h2>
+      </div>
+
+      <div className="email-details-card">
+        {/* Gmail-style Email Header */}
+        <div className="gmail-header">
+          <div className="email-subject">
+            <h3>{email.subject || 'No Subject'}</h3>
+            {(email.subject?.startsWith('Re:') || email.subject?.startsWith('Fwd:')) && (
+              <span className="thread-indicator">
+                {email.subject?.startsWith('Re:') ? '↩️ Reply' : '➡️ Forward'}
+              </span>
+            )}
+          </div>
+
+          <div className="sender-info-section">
+            <div className="sender-main">
+              <div className="sender-avatar">
+                {(email.from || email.sender)?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+              <div className="sender-details">
+                <div className="sender-name">
+                  <strong>{email.from || email.sender}</strong>
+                </div>
+                <div className="email-metadata">
+                  <span className="to-info">
+                    to {email.to || 'me'}
+                  </span>
+                  {email.cc && (
+                    <span className="cc-info">
+                      , cc: {email.cc}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="timestamp">
+                <div className="date">{emailDate.date}</div>
+                <div className="time">{emailDate.time}</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="card-body">
-          <p><strong>From:</strong> {email.from}</p>
-          <p><strong>Subject:</strong> {email.subject}</p>
-          <p><strong>Date:</strong> {new Date(email.date).toLocaleString()}</p>
-          <p><strong>Body:</strong></p>
-          <p className="border p-3 bg-light">{email.body}</p>
-          <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>Back to Inbox</button>
+
+        {/* Main Email Body */}
+        <div className="email-content-section">
+          {loadingThread && (
+            <div className="loading-thread">
+              <div className="loading-spinner"></div>
+              <span>Loading email thread...</span>
+            </div>
+          )}
+
+          {/* Thread View - Multiple Messages */}
+          {finalMessages.length > 1 ? (
+            <div className="email-thread">
+              {finalMessages.map((message, index) => {
+                const messageDate = formatDate(message.date);
+                const isExpanded = expandedMessages.has(index);
+                const isLatest = index === finalMessages.length - 1;
+                
+                return (
+                  <div key={message.messageId || index} className={`thread-message ${isLatest ? 'latest-message' : 'previous-message'} ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                    <div className="message-header" onClick={() => !isLatest && toggleMessageExpansion(index)}>
+                      <div className="message-sender-info">
+                        <div className="message-avatar">
+                          {message.from?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <div className="message-meta">
+                          <div className="sender-name">
+                            <strong>{message.from || 'Unknown'}</strong>
+                            {message.folder && (
+                              <span className={`folder-indicator ${message.isSent || message.isFromUser ? 'sent' : 'received'}`}>
+                                {message.isSent || message.isFromUser ? '📤 Sent' : '� Received'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="message-details">
+                            <span className="message-to">to {message.to || 'me'}</span>
+                            <span className="message-date">{messageDate.date} {messageDate.time}</span>
+                            {message.folder && (
+                              <span className="folder-name">• {message.folder}</span>
+                            )}
+                          </div>
+                          {message.subject && message.subject !== email.subject && (
+                            <div className="message-subject">
+                              Subject: {message.subject}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {!isLatest && (
+                        <div className="expand-toggle">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                      )}
+                      {!isLatest && !isExpanded && (
+                        <div className="message-preview">
+                          {message.content && (
+                            stripHtmlTags(message.content).substring(0, 80) + (stripHtmlTags(message.content).length > 80 ? '...' : '')
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {(isLatest || isExpanded) && (
+                      <div className="message-body">
+                        <div className="message-content">
+                          {message.content ? (
+                            // Check if content contains HTML
+                            message.content.includes('<') && message.content.includes('>') ? (
+                              <div dangerouslySetInnerHTML={{ __html: message.content }} />
+                            ) : (
+                              // Handle plain text with proper formatting
+                              <div className="plain-text-content">
+                                {message.content.split('\n').map((line, lineIndex) => (
+                                  <div key={lineIndex} className="text-line">
+                                    {line || '\u00A0'} {/* Non-breaking space for empty lines */}
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          ) : (
+                            <div className="no-content">No content available.</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {index < finalMessages.length - 1 && <div className="message-separator"></div>}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* Single Message View */
+            <div className="single-message">
+              <div className="message-content">
+                {email.body && email.body.includes('<') ? (
+                  <div dangerouslySetInnerHTML={{ __html: email.body }} />
+                ) : (
+                  <pre className="plain-text-body">{email.body || 'No content available.'}</pre>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Action Buttons */}
+        <div className="email-actions">
+          <button 
+            className={`action-button reply-button ${isReplying ? 'active' : ''}`} 
+            onClick={handleReplyClick}
+          >
+            <Reply size={16} />
+            Reply
+          </button>
+          <button 
+            className={`action-button forward-button ${isForwarding ? 'active' : ''}`} 
+            onClick={handleForwardClick}
+          >
+            <Forward size={16} />
+            Forward
+          </button>
+        </div>
+
+        {/* Reply Box */}
+        {isReplying && (
+          <div className="reply-forward-box">
+            <div className="reply-header">
+              <div className="reply-title">
+                <Reply size={16} />
+                <span>Reply to {email.from || email.sender}</span>
+              </div>
+              <button className="close-reply" onClick={() => setIsReplying(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="reply-form">
+              <div className="reply-to-info">
+                <strong>To:</strong> {email.from || email.sender}
+              </div>
+              
+              <textarea
+                ref={replyTextareaRef}
+                className="reply-textarea"
+                placeholder="Type your reply here..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                rows={6}
+              />
+              
+              <div className="reply-actions">
+                <button
+                  className="send-reply-btn"
+                  onClick={handleSendReply}
+                  disabled={isSending || !replyText.trim()}
+                >
+                  {isSending ? (
+                    <span>Sending...</span>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      Send Reply
+                    </>
+                  )}
+                </button>
+                <button className="cancel-reply" onClick={() => setIsReplying(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Original Message Toggle */}
+            <div className="original-message-toggle">
+              <button onClick={() => setShowOriginal(!showOriginal)}>
+                {showOriginal ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {showOriginal ? 'Hide' : 'Show'} original message
+              </button>
+            </div>
+
+            {showOriginal && (
+              <div className="original-message-preview">
+                <div className="original-header">--- Original Message ---</div>
+                <div className="original-info">
+                  <div><strong>From:</strong> {email.from || email.sender}</div>
+                  <div><strong>Date:</strong> {new Date(email.date).toLocaleString()}</div>
+                  <div><strong>Subject:</strong> {email.subject || 'No Subject'}</div>
+                </div>
+                <div className="original-body">
+                  {email.body ? (
+                    email.body.length > 200 ? 
+                      `${stripHtmlTags(email.body).substring(0, 200)}...` : 
+                      stripHtmlTags(email.body)
+                  ) : 'No content'}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Forward Box */}
+        {isForwarding && (
+          <div className="reply-forward-box">
+            <div className="reply-header">
+              <div className="reply-title">
+                <Forward size={16} />
+                <span>Forward email</span>
+              </div>
+              <button className="close-reply" onClick={() => setIsForwarding(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="reply-form">
+              <div className="forward-recipients">
+                <input
+                  type="email"
+                  className="forward-input"
+                  placeholder="To: Enter recipient email"
+                  value={forwardTo}
+                  onChange={(e) => setForwardTo(e.target.value)}
+                />
+                
+                {!showCc && (
+                  <button
+                    type="button"
+                    className="add-cc-button"
+                    onClick={() => setShowCc(true)}
+                  >
+                    + Cc
+                  </button>
+                )}
+
+                {showCc && (
+                  <div className="cc-input-container">
+                    <input
+                      type="email"
+                      className="forward-input"
+                      placeholder="Cc: Carbon copy"
+                      value={forwardCc}
+                      onChange={(e) => setForwardCc(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="remove-cc-button"
+                      onClick={() => {
+                        setShowCc(false);
+                        setForwardCc('');
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <textarea
+                ref={forwardTextareaRef}
+                className="reply-textarea"
+                placeholder="Add your message here..."
+                value={forwardText}
+                onChange={(e) => setForwardText(e.target.value)}
+                rows={4}
+              />
+              
+              <div className="reply-actions">
+                <button
+                  className="send-reply-btn"
+                  onClick={handleSendForward}
+                  disabled={isSending || !forwardTo.trim() || !forwardText.trim()}
+                >
+                  {isSending ? (
+                    <span>Sending...</span>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      Forward Email
+                    </>
+                  )}
+                </button>
+                <button className="cancel-reply" onClick={() => setIsForwarding(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Original Message Preview for Forward */}
+            <div className="original-message-preview">
+              <div className="original-header">--- Forwarded Message ---</div>
+              <div className="original-info">
+                <div><strong>From:</strong> {email.from || email.sender}</div>
+                <div><strong>Date:</strong> {new Date(email.date).toLocaleString()}</div>
+                <div><strong>To:</strong> {email.to || ''}</div>
+                <div><strong>Subject:</strong> {email.subject || 'No Subject'}</div>
+              </div>
+              <div className="original-body">
+                {email.body ? (
+                  email.body.length > 200 ? 
+                    `${stripHtmlTags(email.body).substring(0, 200)}...` : 
+                    stripHtmlTags(email.body)
+                ) : 'No content'}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

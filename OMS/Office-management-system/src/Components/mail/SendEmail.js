@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import "./SendEmail.css";
 
 const SendEmail = () => {
+  const location = useLocation();
+  const { emailData, action } = location.state || {};
+
   const [email, setEmail] = useState('');
   const [cc, setCc] = useState('');
   const [bcc, setBcc] = useState('');
@@ -13,6 +17,21 @@ const SendEmail = () => {
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
+
+  // Pre-fill form when coming from reply or forward
+  useEffect(() => {
+    if (emailData) {
+      if (emailData.to) setEmail(emailData.to);
+      if (emailData.cc) setCc(emailData.cc);
+      if (emailData.bcc) setBcc(emailData.bcc);
+      if (emailData.subject) setSubject(emailData.subject);
+      if (emailData.body) setBody(emailData.body);
+      
+      // Show CC/BCC fields if they have values
+      if (emailData.cc) setShowCc(true);
+      if (emailData.bcc) setShowBcc(true);
+    }
+  }, [emailData]);
 
   // Function to handle going back to the previous page
   const handleBack = () => {
@@ -91,7 +110,10 @@ const SendEmail = () => {
           cc: cc,
           bcc: bcc,
           subject: subject,
-          body: body
+          body: body,
+          isReply: action === 'reply',
+          isForward: action === 'forward',
+          originalMessageId: emailData?.messageId
         })
       });
 
@@ -130,7 +152,11 @@ const SendEmail = () => {
       </button>
 
       <form className="compose-form" onSubmit={sendEmail}>
-        <h2 className="compose-header">Compose Email</h2>
+        <h2 className="compose-header">
+          {action === 'reply' ? 'Reply to Email' : 
+           action === 'forward' ? 'Forward Email' : 
+           'Compose Email'}
+        </h2>
 
         <div className="form-group">
           <input
