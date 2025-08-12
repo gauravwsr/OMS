@@ -28,13 +28,9 @@ const SendEmail = () => {
     setIsSaving(true);
 
     try {
-<<<<<<< HEAD
-      const response = await fetch('http://localhost:5001/api/emails/save-draft', {
-=======
       console.log('Saving draft with data:', { to: email, cc, bcc, subject, body });
       
-      const response = await fetch('http://146.190.165.62:5001/api/emails/save-draft', {
->>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
+      const response = await fetch('http://localhost:5001/api/emails/save-draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,13 +78,9 @@ const SendEmail = () => {
     setIsSending(true);
 
     try {
-<<<<<<< HEAD
-      const response = await fetch('http://localhost:5001/api/emails/send', {
-=======
       console.log('Sending email with data:', { to: email, cc, bcc, subject, body: body.substring(0, 100) + '...' });
       
-      const response = await fetch('http://146.190.165.62:5001/api/emails/send', {
->>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
+      const response = await fetch('http://localhost:5001/api/emails/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

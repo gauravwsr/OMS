@@ -63,27 +63,14 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem('token');
-      console.log('Checking email config with token:', token ? 'Present' : 'Missing');
-      
-      const response = await fetch('http://localhost:5001/api/emails/check-config', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-=======
       const token = localStorage.getItem("token");
       console.log(
         "Checking email config with token:",
         token ? "Present" : "Missing"
       );
->>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/check-config",
+        "http://localhost:5001/api/emails/check-config",
         {
           method: "GET",
           headers: {
@@ -147,23 +134,9 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
     setTestStatus({ type: "info", message: "Testing connection..." });
 
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/emails/configure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...emailConfig,
-          testOnly: true
-        })
-      });
-=======
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/configure",
+        "http://localhost:5001/api/emails/configure",
         {
           method: "POST",
           headers: {
@@ -176,7 +149,6 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
           }),
         }
       );
->>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const data = await response.json();
 
@@ -207,20 +179,9 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
     setTestStatus({ type: "info", message: "Saving configuration..." });
 
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/emails/configure', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(emailConfig)
-      });
-=======
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/configure",
+        "http://localhost:5001/api/emails/configure",
         {
           method: "POST",
           headers: {
@@ -230,7 +191,6 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
           body: JSON.stringify(emailConfig),
         }
       );
->>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const data = await response.json();
 
@@ -277,24 +237,15 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
     setTestStatus({ type: "info", message: "Removing configuration..." });
 
     try {
-<<<<<<< HEAD
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5001/api/emails/remove-config', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-=======
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/remove-config",
+        "http://localhost:5001/api/emails/remove-config",
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
->>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
         }
       );
 
@@ -350,7 +301,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 
   if (isConfigured && !isModal) {
     return (
-      <div className="success">
+      <div className="email-config-success">
         <CheckCircle className="success-icon" />
         <h3>Email Configured Successfully!</h3>
         <p>Your email ({emailConfig.email}) is ready to use.</p>
