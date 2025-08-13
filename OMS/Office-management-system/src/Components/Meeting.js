@@ -708,25 +708,25 @@ const Meeting = () => {
   }
 
   return (
-    <div className="meeting-container">
-      <div className="meeting-header">
-        <h1>Video Conference System</h1>
-        <div className="user-info">
-          <span className="user-role">{user.role}</span>
-          {user.subRole && (
-            <span className="user-subrole">({user.subRole})</span>
-          )}
-          {user.team && <span className="user-team">Team: {user.team}</span>}
-        </div>
-        {isMeetingStarted && (
-          <div className="meeting-info">
-            <span className="participant-count">
-              <FaUserPlus /> {participants} participant
-              {participants !== 1 ? "s" : ""}
-            </span>
+      <div className="meeting-container responsive">
+        <div className="meeting-header responsive-header">
+          <h1>Video Conference System</h1>
+          <div className="user-info">
+            <span className="user-role">{user.role}</span>
+            {user.subRole && (
+              <span className="user-subrole">({user.subRole})</span>
+            )}
+            {user.team && <span className="user-team">Team: {user.team}</span>}
           </div>
-        )}
-      </div>
+          {isMeetingStarted && (
+            <div className="meeting-info">
+              <span className="participant-count">
+                <FaUserPlus /> {participants} participant
+                {participants !== 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
+        </div>
 
       {/* Quick Stats Bar */}
       {!isMeetingStarted && (
@@ -752,7 +752,7 @@ const Meeting = () => {
             )}
           </div>
 
-          <div className="quick-buttons">
+          {/* <div className="quick-buttons">
             {canCreateMeeting() && (
               <button
                 className="quick-action-btn schedule"
@@ -778,7 +778,7 @@ const Meeting = () => {
                 <FaChartBar /> Analytics
               </button>
             )}
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -801,8 +801,8 @@ const Meeting = () => {
       )}
 
       <div className="meeting-content">
-        {!isMeetingStarted ? (
-          <div className="meeting-dashboard">
+          {!isMeetingStarted ? (
+            <div className="meeting-dashboard responsive-dashboard">
             {/* Tab Navigation */}
             <div className="tab-navigation">
               <button
@@ -854,9 +854,9 @@ const Meeting = () => {
 
             {/* Tab Content */}
             <div className="tab-content">
-              {/* Available Meetings Tab */}
-              {activeTab === "meetings" && (
-                <div className="meetings-list">
+                {/* Available Meetings Tab */}
+                {activeTab === "meetings" && (
+                  <div className="meetings-list responsive-list">
                   <div className="section-header">
                     <h2>Available Meetings</h2>
                     <button
@@ -884,8 +884,8 @@ const Meeting = () => {
                     </div>
                   ) : (
                     <div className="meetings-grid">
-                      {availableMeetings.map((meeting) => (
-                        <div key={meeting.roomId} className="meeting-card">
+                        {availableMeetings.map((meeting) => (
+                          <div key={meeting.roomId} className="meeting-card responsive-card">
                           <div className="meeting-card-header">
                             <div className="meeting-type">
                               {getMeetingTypeIcon(meeting.roomType)}
@@ -961,13 +961,13 @@ const Meeting = () => {
 
               {/* Create Meeting Tab */}
               {activeTab === "create" && canCreateMeeting() && (
-                <div className="create-meeting">
+                  <div className="create-meeting responsive-create">
                   <div className="section-header">
                     <h2>Create New Meeting</h2>
                   </div>
 
                   <div className="create-form">
-                    <div className="form-section">
+                      <div className="form-section responsive-form-section">
                       <h3>Meeting Details</h3>
 
                       <div className="input-group">
@@ -1041,7 +1041,7 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-section">
-                      <h3>Media Settings</h3>
+                        <h3>Media Settings</h3>
 
                       <div className="media-toggles">
                         <button
@@ -1069,7 +1069,7 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-section">
-                      <h3>Advanced Settings</h3>
+                        <h3>Advanced Settings</h3>
 
                       <div className="checkbox-group">
                         <label>
@@ -1124,14 +1124,14 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-actions">
-                      <button
-                        type="button"
-                        className="create-button"
-                        onClick={createRoom}
-                        disabled={loading || !userName.trim()}
-                      >
-                        <FaVideo /> {loading ? "Creating..." : "Create Meeting"}
-                      </button>
+                        <button
+                          type="button"
+                          className="create-button responsive-btn"
+                          onClick={createRoom}
+                          disabled={loading || !userName.trim()}
+                        >
+                          <FaVideo /> {loading ? "Creating..." : "Create Meeting"}
+                        </button>
                     </div>
                   </div>
                 </div>
@@ -1139,13 +1139,13 @@ const Meeting = () => {
 
               {/* Join Meeting Tab */}
               {activeTab === "join" && (
-                <div className="join-meeting">
+                  <div className="join-meeting responsive-join">
                   <div className="section-header">
                     <h2>Join Meeting</h2>
                   </div>
 
                   <div className="join-form">
-                    <div className="input-group">
+                      <div className="input-group responsive-input-group">
                       <label htmlFor="userName2">Your Name *</label>
                       <input
                         id="userName2"
@@ -1189,16 +1189,16 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-actions">
-                      <button
-                        type="button"
-                        className="join-button"
-                        onClick={() => joinMeeting()}
-                        disabled={
-                          loading || !userName.trim() || !joinLink.trim()
-                        }
-                      >
-                        <FaLink /> {loading ? "Joining..." : "Join Meeting"}
-                      </button>
+                        <button
+                          type="button"
+                          className="join-button responsive-btn"
+                          onClick={() => joinMeeting()}
+                          disabled={
+                            loading || !userName.trim() || !joinLink.trim()
+                          }
+                        >
+                          <FaLink /> {loading ? "Joining..." : "Join Meeting"}
+                        </button>
                     </div>
                   </div>
                 </div>
@@ -1208,7 +1208,7 @@ const Meeting = () => {
               {activeTab === "analytics" &&
                 (user.role === "Super_Admin" ||
                   (user.role === "Admin" && user.subRole === "HR Manager")) && (
-                  <div className="analytics-dashboard">
+                    <div className="analytics-dashboard responsive-analytics">
                     <div className="section-header">
                       <h2>Meeting Analytics</h2>
                       <button
@@ -1268,13 +1268,13 @@ const Meeting = () => {
 
               {/* Schedule Meeting Tab */}
               {activeTab === "schedule" && canCreateMeeting() && (
-                <div className="schedule-meeting">
+                  <div className="schedule-meeting responsive-schedule">
                   <div className="section-header">
                     <h2>Schedule Meeting</h2>
                   </div>
 
                   <div className="schedule-form">
-                    <div className="form-section">
+                      <div className="form-section responsive-form-section">
                       <h3>Meeting Information</h3>
 
                       <div className="input-group">
@@ -1356,7 +1356,7 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-section">
-                      <h3>Date & Time</h3>
+                        <h3>Date & Time</h3>
 
                       <div className="input-group">
                         <label htmlFor="scheduleDate">Date *</label>
@@ -1413,7 +1413,7 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-section">
-                      <h3>Notification Settings</h3>
+                        <h3>Notification Settings</h3>
 
                       <div className="checkbox-group">
                         <label>
@@ -1456,25 +1456,25 @@ const Meeting = () => {
                     </div>
 
                     <div className="form-actions">
-                      <button
-                        type="button"
-                        className="cancel-button"
-                        onClick={resetScheduleForm}
-                      >
-                        Reset
-                      </button>
-                      <button
-                        type="submit"
-                        className="schedule-button"
-                        onClick={scheduleMeeting}
-                        disabled={
-                          !scheduleForm.meetingName ||
-                          !scheduleForm.date ||
-                          !scheduleForm.time
-                        }
-                      >
-                        <FaCalendarPlus /> Schedule Meeting
-                      </button>
+                        <button
+                          type="button"
+                          className="cancel-button responsive-btn"
+                          onClick={resetScheduleForm}
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="submit"
+                          className="schedule-button responsive-btn"
+                          onClick={scheduleMeeting}
+                          disabled={
+                            !scheduleForm.meetingName ||
+                            !scheduleForm.date ||
+                            !scheduleForm.time
+                          }
+                        >
+                          <FaCalendarPlus /> Schedule Meeting
+                        </button>
                     </div>
                   </div>
 
@@ -1497,11 +1497,11 @@ const Meeting = () => {
                       </div>
                     ) : (
                       <div className="scheduled-meetings-list">
-                        {upcomingMeetings.map((meeting) => (
-                          <div
-                            key={meeting._id}
-                            className="scheduled-meeting-card"
-                          >
+                          {upcomingMeetings.map((meeting) => (
+                            <div
+                              key={meeting._id}
+                              className="scheduled-meeting-card responsive-card"
+                            >
                             <div className="meeting-header">
                               <h4>{meeting.meetingName}</h4>
                               <span
@@ -1570,41 +1570,41 @@ const Meeting = () => {
           </div>
         ) : (
           <div className="meeting-active">
-            <div className="video-container" ref={containerRef}></div>
+              <div className="video-container responsive-video" ref={containerRef}></div>
 
-            <div className="meeting-controls">
-              <div className="control-group">
-                <button
-                  className={`control-button ${isVideoOn ? "active" : ""}`}
-                  onClick={toggleVideo}
-                >
-                  {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
-                </button>
-                <button
-                  className={`control-button ${isAudioOn ? "active" : ""}`}
-                  onClick={toggleAudio}
-                >
-                  {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
-                </button>
-              </div>
+              <div className="meeting-controls responsive-controls">
+                <div className="control-group responsive-control-group">
+                  <button
+                    className={`control-button responsive-btn ${isVideoOn ? "active" : ""}`}
+                    onClick={toggleVideo}
+                  >
+                    {isVideoOn ? <FaVideo /> : <FaVideoSlash />}
+                  </button>
+                  <button
+                    className={`control-button responsive-btn ${isAudioOn ? "active" : ""}`}
+                    onClick={toggleAudio}
+                  >
+                    {isAudioOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+                  </button>
+                </div>
 
-              <div className="meeting-info-bar">
-                <span className="room-name">{roomName}</span>
-                <span className="participant-count">
-                  <FaUserPlus /> {participants} participant
-                  {participants !== 1 ? "s" : ""}
-                </span>
-              </div>
+                <div className="meeting-info-bar responsive-info-bar">
+                  <span className="room-name">{roomName}</span>
+                  <span className="participant-count">
+                    <FaUserPlus /> {participants} participant
+                    {participants !== 1 ? "s" : ""}
+                  </span>
+                </div>
 
-              <div className="control-group">
-                <button className="share-button" onClick={copyToClipboard}>
-                  <FaCopy /> {isLinkCopied ? "Copied!" : "Copy Link"}
-                </button>
-                <button className="end-button" onClick={handleLeaveMeeting}>
-                  <FaSignOutAlt /> Leave Meeting
-                </button>
+                <div className="control-group responsive-control-group">
+                  <button className="share-button responsive-btn" onClick={copyToClipboard}>
+                    <FaCopy /> {isLinkCopied ? "Copied!" : "Copy Link"}
+                  </button>
+                  <button className="end-button responsive-btn" onClick={handleLeaveMeeting}>
+                    <FaSignOutAlt /> Leave Meeting
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
         )}
       </div>

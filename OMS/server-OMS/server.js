@@ -39,6 +39,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const noteRoutes = require("./routes/noteRoutes");
 const attendanceTimeValidationRoutes = require("./routes/attendanceTimeValidationRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
@@ -137,6 +138,7 @@ app.use("/api/client-projects", clientProjectRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/hr-leave", hrLeaveRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api", noteRoutes);
 app.use("/api/attendance", attendanceRoutes);
 
 // Attendance time validation testing routes

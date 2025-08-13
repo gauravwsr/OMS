@@ -83,7 +83,7 @@ const Todo = () => {
           ) || [];
 
         // Fetch from users as backup
-        const usersResponse = await axios.get(`${API_BASE_URL}/api/users`, {
+        const usersResponse = await axios.get(`${API_BASE_URL}/users`, {
           headers,
         });
         const userEmails = usersResponse.data?.map((user) => user.email) || [];

@@ -1168,14 +1168,14 @@
   font-size: 0.9rem;
 }
 
-.refresh-btn {
+/* .refresh-btn {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-}
+} */
 
 .refresh-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  /* box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); */
 }
 
 .refresh-btn:disabled {
@@ -1183,16 +1183,16 @@
   cursor: not-allowed;
 }
 
-.reset-btn,
+/* .reset-btn,
 .retry-btn {
   background: linear-gradient(135deg, #f093fb, #f5576c);
   color: white;
-}
+} */
 
 .reset-btn:hover,
 .retry-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+  /* box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4); */
 }
 
 /* Enhanced Stat Cards */
