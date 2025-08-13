@@ -32,6 +32,16 @@ const InboxSection = ({ emails }) => {
             </div>
             <div className="email-content">
               {email.subject}
+              {email.attachments && email.attachments.length > 0 && (
+                <div style={{fontSize: '11px', color: '#007bff', marginTop: '2px'}}>
+                  📎 {email.attachments.length} attachment{email.attachments.length > 1 ? 's' : ''}
+                  {email.attachments.length <= 3 && (
+                    <span style={{color: '#666', marginLeft: '5px'}}>
+                      ({email.attachments.map(att => att.filename || att.originalname || 'file').join(', ')})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="email-time">
               {new Date(email.date).toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' })}

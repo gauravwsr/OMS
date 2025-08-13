@@ -875,11 +875,21 @@ router.post('/send', authenticate, uploadAttachments, emailRateLimit, validateEm
   }
 });
 
-// Save draft
-router.post('/save-draft', authenticate, async (req, res) => {
+// Save draft with file attachments
+router.post('/save-draft', authenticate, uploadAttachments, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body } = req.body;
+    const attachmentFiles = req.files || [];
     const Draft = require('../models/Draft');
+    
+    // Process attachments
+    const attachments = attachmentFiles.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype,
+      path: file.path
+    }));
     
     const newDraft = new Draft({
       userId: req.user.id || req.user._id,
@@ -888,41 +898,15 @@ router.post('/save-draft', authenticate, async (req, res) => {
       bcc: bcc,
       subject: subject,
       body: body,
+      attachments: attachments,
       date: new Date()
     });
 
     await newDraft.save();
-    res.json({ success: true, message: 'Draft saved successfully!', draft: newDraft });
-  } catch (error) {
-    console.error('Error saving draft:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Test route for saving draft without authentication (for testing only)
-router.post('/test-save-draft', async (req, res) => {
-  try {
-    const { to, cc, bcc, subject, body } = req.body;
-    const Draft = require('../models/Draft');
-    
-    // Use a test user ID for drafts when not authenticated
-    const testUserId = new require('mongoose').Types.ObjectId('000000000000000000000000');
-    
-    const newDraft = new Draft({
-      userId: testUserId,
-      to: to || '',
-      cc: cc || '',
-      bcc: bcc || '',
-      subject: subject || '',
-      body: body || '',
-      date: new Date()
-    });
-
-    await newDraft.save();
-    console.log('📝 Test draft saved:', { 
-      to: to, 
-      subject: subject, 
-      bodyLength: body ? body.length : 0 
+    console.log('📝 Draft saved with attachments:', { 
+      to, 
+      subject, 
+      attachmentCount: attachments.length 
     });
     
     res.json({ 
@@ -935,6 +919,65 @@ router.post('/test-save-draft', async (req, res) => {
         bcc: newDraft.bcc,
         subject: newDraft.subject,
         body: newDraft.body,
+        attachments: newDraft.attachments,
+        date: newDraft.date
+      }
+    });
+  } catch (error) {
+    console.error('Error saving draft:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Test route for saving draft with attachments without authentication (for testing only)
+router.post('/test-save-draft', uploadAttachments, async (req, res) => {
+  try {
+    const { to, cc, bcc, subject, body } = req.body;
+    const attachmentFiles = req.files || [];
+    const Draft = require('../models/Draft');
+    
+    // Use a test user ID for drafts when not authenticated
+    const testUserId = new require('mongoose').Types.ObjectId('000000000000000000000000');
+    
+    // Process attachments
+    const attachments = attachmentFiles.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype,
+      path: file.path
+    }));
+    
+    const newDraft = new Draft({
+      userId: testUserId,
+      to: to || '',
+      cc: cc || '',
+      bcc: bcc || '',
+      subject: subject || '',
+      body: body || '',
+      attachments: attachments,
+      date: new Date()
+    });
+
+    await newDraft.save();
+    console.log('📝 Test draft saved with attachments:', { 
+      to: to, 
+      subject: subject, 
+      bodyLength: body ? body.length : 0,
+      attachmentCount: attachments.length
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Draft saved successfully!', 
+      draft: {
+        _id: newDraft._id,
+        to: newDraft.to,
+        cc: newDraft.cc,
+        bcc: newDraft.bcc,
+        subject: newDraft.subject,
+        body: newDraft.body,
+        attachments: newDraft.attachments,
         date: newDraft.date
       }
     });
@@ -1039,14 +1082,34 @@ async function fetchImapEmails(email, password, folder = 'INBOX', limit = 50) {
           msg.on('body', (stream, info) => {
             simpleParser(stream)
               .then(parsed => {
+                // Process attachments
+                const attachments = [];
+                if (parsed.attachments && parsed.attachments.length > 0) {
+                  parsed.attachments.forEach((attachment, index) => {
+                    attachments.push({
+                      filename: attachment.filename || `attachment_${index + 1}`,
+                      contentType: attachment.contentType || 'application/octet-stream',
+                      size: attachment.content ? attachment.content.length : 0,
+                      contentId: attachment.contentId,
+                      contentDisposition: attachment.contentDisposition,
+                      // We don't store the actual content for performance reasons
+                      hasContent: !!attachment.content
+                    });
+                  });
+                }
+                
                 emails.push({
                   from: parsed.from?.text || parsed.from?.value?.[0]?.address || 'Unknown',
                   to: parsed.to?.text || parsed.to?.value?.[0]?.address || 'Unknown',
+                  cc: parsed.cc?.text || '',
+                  bcc: parsed.bcc?.text || '',
                   subject: parsed.subject || 'No Subject',
                   date: parsed.date || new Date(),
                   body: parsed.html || parsed.textAsHtml || parsed.text || '',
                   messageId: parsed.messageId,
-                  seqno: seqno
+                  seqno: seqno,
+                  attachments: attachments, // Add attachments array
+                  hasAttachments: attachments.length > 0 // Add flag for quick checking
                 });
                 processedCount++;
                 resolveMsg();

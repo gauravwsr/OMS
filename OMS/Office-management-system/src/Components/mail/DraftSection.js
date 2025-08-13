@@ -198,6 +198,16 @@ const DraftSection = ({ drafts: propDrafts }) => {
                   {draft.body.length > 50 ? `${draft.body.substring(0, 50)}...` : draft.body}
                 </div>
               )}
+              {draft.attachments && draft.attachments.length > 0 && (
+                <div style={{fontSize: '11px', color: '#007bff', marginTop: '2px'}}>
+                  📎 {draft.attachments.length} attachment{draft.attachments.length > 1 ? 's' : ''}
+                  {draft.attachments.length <= 3 && (
+                    <span style={{color: '#666', marginLeft: '5px'}}>
+                      ({draft.attachments.map(att => att.originalname || att.filename).join(', ')})
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div className="email-time-actions">
               <span className="email-time">
