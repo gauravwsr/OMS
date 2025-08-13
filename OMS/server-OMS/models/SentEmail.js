@@ -35,7 +35,17 @@ const sentEmailSchema = new mongoose.Schema({
     originalname: String,
     size: Number,
     mimetype: String,
-    path: String
+    path: String,
+    // Cloudinary specific fields
+    cloudinary: {
+      public_id: String,
+      secure_url: String,
+      url: String,
+      format: String,
+      bytes: Number,
+      created_at: String,
+      resource_type: String
+    }
   }],
   messageId: {
     type: String,

@@ -1047,3 +1047,143 @@
     border: 1px solid #ccc;
   }
 }
+
+/* Attachments Section Styles */
+.email-attachments-section {
+  background-color: #f8f9fa;
+  border: 1px solid #e3e6ea;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+.attachments-title {
+  margin: 0 0 12px 0;
+  color: #5f6368;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.attachment-item:hover {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-color: #4285f4;
+}
+
+.attachment-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.attachment-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.attachment-name {
+  font-weight: 500;
+  color: #202124;
+  font-size: 14px;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+
+.attachment-details {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: #5f6368;
+  flex-wrap: wrap;
+}
+
+.file-size, .file-format, .cloud-badge {
+  white-space: nowrap;
+}
+
+.cloud-badge {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.attachment-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.attachment-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-button {
+  background-color: #4285f4;
+  color: white;
+}
+
+.view-button:hover {
+  background-color: #3367d6;
+  color: white;
+  text-decoration: none;
+}
+
+.download-button {
+  background-color: #34a853;
+  color: white;
+}
+
+.download-button:hover {
+  background-color: #2d8f47;
+  color: white;
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .attachment-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .attachment-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .attachment-button {
+    flex: 1;
+    justify-content: center;
+  }
+}

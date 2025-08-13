@@ -41,6 +41,45 @@ const EmailDetails = () => {
     return <p className="text-center mt-5">No email details available.</p>;
   }
 
+  // Function to download file from Cloudinary or local server
+  const downloadAttachment = async (attachment) => {
+    try {
+      console.log('📥 Downloading attachment:', attachment);
+      
+      let downloadUrl;
+      let filename = attachment.originalname || attachment.filename || attachment.name || 'attachment';
+      
+      // Determine the download URL
+      if (attachment.cloudinary?.secure_url || attachment.secure_url) {
+        // For Cloudinary files, use server proxy to avoid CORS issues
+        const fileUrl = attachment.cloudinary?.secure_url || attachment.secure_url;
+        downloadUrl = `http://localhost:5001/api/emails/download-attachment?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(filename)}`;
+      } else if (attachment.path) {
+        // For local files
+        downloadUrl = `http://localhost:5001/uploads/${attachment.path}`;
+      } else {
+        alert('❌ No download URL available for this file');
+        return;
+      }
+
+      console.log('📥 Download URL:', downloadUrl);
+      
+      // Create a temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('✅ Download initiated for:', filename);
+    } catch (error) {
+      console.error('❌ Download failed:', error);
+      alert(`❌ Failed to download file: ${error.message}`);
+    }
+  };
+
   // Handle reply action
   const handleReplyClick = () => {
     setIsForwarding(false);
@@ -594,6 +633,82 @@ const EmailDetails = () => {
             </div>
           )}
         </div>
+
+        {/* Attachments Section */}
+        {email.attachments && email.attachments.length > 0 && (
+          <div className="email-attachments-section">
+            <h4 className="attachments-title">
+              📎 Attachments ({email.attachments.length})
+            </h4>
+            <div className="attachments-list">
+              {email.attachments.map((attachment, index) => {
+                // Check if it's a Cloudinary attachment
+                const isCloudinaryFile = attachment.cloudinary || attachment.secure_url;
+                
+                return (
+                  <div key={index} className="attachment-item">
+                    <div className="attachment-icon">
+                      {isCloudinaryFile ? '☁️' : '📄'}
+                    </div>
+                    <div className="attachment-info">
+                      <div className="attachment-name">
+                        {attachment.originalname || attachment.filename || attachment.name || `Attachment ${index + 1}`}
+                      </div>
+                      <div className="attachment-details">
+                        {attachment.size && (
+                          <span className="file-size">
+                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        )}
+                        {attachment.cloudinary?.format && (
+                          <span className="file-format">
+                            • {attachment.cloudinary.format.toUpperCase()}
+                          </span>
+                        )}
+                        {isCloudinaryFile && (
+                          <span className="cloud-badge">
+                            • ☁️ Cloud Stored
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="attachment-actions">
+                      {isCloudinaryFile && (attachment.cloudinary?.secure_url || attachment.secure_url) && (
+                        <>
+                          <a
+                            href={attachment.cloudinary?.secure_url || attachment.secure_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="attachment-button view-button"
+                            title="View in new tab"
+                          >
+                            👁️ View
+                          </a>
+                          <button
+                            onClick={() => downloadAttachment(attachment)}
+                            className="attachment-button download-button"
+                            title="Download file"
+                          >
+                            💾 Download
+                          </button>
+                        </>
+                      )}
+                      {!isCloudinaryFile && attachment.path && (
+                        <button
+                          onClick={() => downloadAttachment(attachment)}
+                          className="attachment-button download-button"
+                          title="Download file"
+                        >
+                          💾 Download
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="email-actions">

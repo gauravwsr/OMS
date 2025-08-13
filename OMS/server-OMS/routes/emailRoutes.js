@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const Imap = require('node-imap');
 const { simpleParser } = require('mailparser');
 const EmailCredentialService = require('../services/emailCredentialService');
 const { authenticate } = require('../middlewares/authMiddleware');
-const { uploadAttachments, validateEmailData, emailRateLimit } = require('../middlewares/emailMiddleware');
+const { uploadAttachments, uploadToCloudinary, validateEmailData, emailRateLimit, processAttachments, sanitizeEmailContent, logEmailActivity } = require('../middlewares/emailMiddleware');
 const SentEmail = require('../models/SentEmail');
 
 // Connection pool to reuse IMAP connections
@@ -198,12 +199,18 @@ router.get('/test', authenticate, async (req, res) => {
 });
 
 // Test route for sending emails without authentication (for testing only)
-router.post('/test-send', uploadAttachments, async (req, res) => {
+router.post('/test-send', uploadAttachments, uploadToCloudinary, processAttachments, sanitizeEmailContent, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body, isReply, isForward, originalMessageId } = req.body;
     const attachmentFiles = req.files || [];
     
-    console.log('📧 Test sending email:', { to, subject, attachmentCount: attachmentFiles.length });
+    console.log('📧 Test sending email:', { 
+      to, 
+      subject, 
+      attachmentCount: attachmentFiles.length,
+      totalAttachmentSize: req.totalAttachmentSize ? `${Math.round(req.totalAttachmentSize / 1024)} KB` : '0 KB',
+      cloudinaryEnabled: !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY)
+    });
 
     // Use test SMTP credentials from environment variables
     const testSmtpEmail = process.env.SMTP_USER;
@@ -237,11 +244,20 @@ router.post('/test-send', uploadAttachments, async (req, res) => {
     };
 
     // Prepare attachments for nodemailer
-    const emailAttachments = attachmentFiles.map(file => ({
-      filename: file.originalname,
-      content: file.buffer,
-      contentType: file.mimetype
-    }));
+    const emailAttachments = attachmentFiles.map(file => {
+      const attachment = {
+        filename: file.originalname,
+        content: file.buffer,
+        contentType: file.mimetype
+      };
+      
+      // Log Cloudinary upload if successful
+      if (file.cloudinary && file.cloudinary.secure_url) {
+        console.log(`📎 Attachment "${file.originalname}" uploaded to Cloudinary: ${file.cloudinary.secure_url}`);
+      }
+      
+      return attachment;
+    });
 
     const mailOptions = {
       from: testSmtpEmail,
@@ -271,14 +287,55 @@ router.post('/test-send', uploadAttachments, async (req, res) => {
     const actionType = isReply ? 'Reply' : isForward ? 'Forward' : 'New Email';
     console.log(`✅ Test ${actionType} sent successfully:`, info.messageId);
     
-    res.json({ 
+    // Save sent email to database
+    try {
+      const attachmentData = req.cloudinaryFiles ? req.cloudinaryFiles.map(file => ({
+        filename: file.originalname,
+        originalname: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+        cloudinary: file.cloudinary
+      })) : req.attachmentInfo || [];
+
+      const sentEmail = new SentEmail({
+        userId: new mongoose.Types.ObjectId(), // Temporary user ID for test
+        from: testSmtpEmail,
+        to: to,
+        cc: cc || '',
+        bcc: bcc || '',
+        subject: subject,
+        body: body,
+        attachments: attachmentData,
+        messageId: info.messageId,
+        isReply: isReply === 'true',
+        isForward: isForward === 'true',
+        originalMessageId: originalMessageId || null,
+        status: 'sent'
+      });
+
+      await sentEmail.save();
+      console.log('💾 Sent email saved to database');
+    } catch (dbError) {
+      console.warn('⚠️ Failed to save sent email to database:', dbError.message);
+    }
+    
+    // Prepare response with Cloudinary info if available
+    const responseData = {
       success: true, 
       message: `Test ${actionType} sent successfully!`,
       messageId: info.messageId,
       actionType: actionType.toLowerCase(),
       attachmentCount: attachmentFiles.length,
       from: testSmtpEmail
-    });
+    };
+    
+    // Add Cloudinary file information to response
+    if (req.cloudinaryFiles && req.cloudinaryFiles.length > 0) {
+      responseData.cloudinaryFiles = req.cloudinaryFiles;
+      console.log(`☁️ ${req.cloudinaryFiles.length} files stored in Cloudinary`);
+    }
+    
+    res.json(responseData);
   } catch (error) {
     console.error('Error sending test email:', error);
     res.status(500).json({ 
@@ -758,7 +815,7 @@ router.delete('/test-delete-draft/:id', async (req, res) => {
 });
 
 // Send email using user's credentials with file attachments and local storage
-router.post('/send', authenticate, uploadAttachments, emailRateLimit, validateEmailData, async (req, res) => {
+router.post('/send', authenticate, uploadAttachments, uploadToCloudinary, emailRateLimit, validateEmailData, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body, isReply, isForward, originalMessageId } = req.body;
     const attachmentFiles = req.files || [];
@@ -876,7 +933,7 @@ router.post('/send', authenticate, uploadAttachments, emailRateLimit, validateEm
 });
 
 // Save draft with file attachments
-router.post('/save-draft', authenticate, uploadAttachments, async (req, res) => {
+router.post('/save-draft', authenticate, uploadAttachments, uploadToCloudinary, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body } = req.body;
     const attachmentFiles = req.files || [];
@@ -930,7 +987,7 @@ router.post('/save-draft', authenticate, uploadAttachments, async (req, res) => 
 });
 
 // Test route for saving draft with attachments without authentication (for testing only)
-router.post('/test-save-draft', uploadAttachments, async (req, res) => {
+router.post('/test-save-draft', uploadAttachments, uploadToCloudinary, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body } = req.body;
     const attachmentFiles = req.files || [];
@@ -991,7 +1048,7 @@ router.post('/test-save-draft', uploadAttachments, async (req, res) => {
 });
 
 // Update existing draft with file attachments
-router.put('/update-draft/:id', authenticate, uploadAttachments, async (req, res) => {
+router.put('/update-draft/:id', authenticate, uploadAttachments, uploadToCloudinary, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body } = req.body;
     const attachmentFiles = req.files || [];
@@ -1048,7 +1105,7 @@ router.put('/update-draft/:id', authenticate, uploadAttachments, async (req, res
 });
 
 // Test route for updating draft without authentication (for testing only)
-router.put('/test-update-draft/:id', uploadAttachments, async (req, res) => {
+router.put('/test-update-draft/:id', uploadAttachments, uploadToCloudinary, async (req, res) => {
   try {
     const { to, cc, bcc, subject, body } = req.body;
     const attachmentFiles = req.files || [];
@@ -1274,5 +1331,43 @@ async function fetchImapEmails(email, password, folder = 'INBOX', limit = 50) {
     });
   });
 }
+
+// Proxy route for downloading attachments (handles CORS issues)
+router.get('/download-attachment', async (req, res) => {
+  try {
+    const { url, filename } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'URL parameter is required' });
+    }
+
+    console.log('📥 Proxying download for:', filename || 'unnamed file');
+    
+    // Fetch the file from the URL (Cloudinary or other)
+    const axios = require('axios');
+    const response = await axios.get(url, { responseType: 'stream' });
+    
+    // Set appropriate headers
+    const contentType = response.headers['content-type'] || 'application/octet-stream';
+    const contentLength = response.headers['content-length'];
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename || 'attachment'}"`);
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+    
+    // Pipe the file stream to response
+    response.data.pipe(res);
+    
+  } catch (error) {
+    console.error('Download proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to download file',
+      error: error.message 
+    });
+  }
+});
 
 module.exports = router;

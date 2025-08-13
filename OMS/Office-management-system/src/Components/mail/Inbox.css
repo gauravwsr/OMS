@@ -1061,3 +1061,41 @@
     padding: 6px;
   }
 }
+
+/* Cloudinary Integration Styles */
+.cloud-indicator {
+  font-size: 10px;
+  margin-left: 2px;
+  color: #10b981;
+  opacity: 0.8;
+}
+
+.attachment-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.cloudinary-info {
+  margin-top: 4px;
+}
+
+.cloudinary-info small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.cloudinary-summary {
+  padding: 8px 12px;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+.upload-status small {
+  color: #f59e0b !important;
+  display: block;
+  margin-top: 4px;
+}

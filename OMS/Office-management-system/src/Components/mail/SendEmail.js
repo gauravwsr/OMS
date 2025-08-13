@@ -13,6 +13,8 @@ const SendEmail = () => {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [attachments, setAttachments] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [cloudinaryFiles, setCloudinaryFiles] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(false);
@@ -96,8 +98,13 @@ const SendEmail = () => {
   };
   
   const removeAttachment = (index) => {
+    const removedFile = attachments[index];
     setAttachments(prev => prev.filter((_, i) => i !== index));
-    console.log('🗑️ File removed at index:', index);
+    
+    // Also remove corresponding Cloudinary file if it exists
+    setCloudinaryFiles(prev => prev.filter(cf => cf.originalname !== removedFile.name));
+    
+    console.log('🗑️ File removed at index:', index, '- File:', removedFile.name);
   };
   
   const formatFileSize = (bytes) => {
@@ -245,7 +252,21 @@ const SendEmail = () => {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        alert(`✅ ${data.message}${data.attachmentCount > 0 ? ` (${data.attachmentCount} attachment${data.attachmentCount > 1 ? 's' : ''})` : ''}`);
+        // Handle Cloudinary attachment information
+        if (data.cloudinaryFiles && data.cloudinaryFiles.length > 0) {
+          console.log('☁️ Cloudinary Files:', data.cloudinaryFiles);
+          setCloudinaryFiles(data.cloudinaryFiles);
+          
+          // Show detailed success message with Cloudinary info
+          const attachmentInfo = data.cloudinaryFiles.map(file => 
+            `📁 ${file.originalname} (${(file.cloudinary.bytes / 1024 / 1024).toFixed(2)} MB)`
+          ).join('\n');
+          
+          alert(`✅ ${data.message}\n\n📎 Attachments uploaded to cloud:\n${attachmentInfo}\n\n🔗 Files are now accessible via secure URLs`);
+        } else {
+          alert(`✅ ${data.message}${data.attachmentCount > 0 ? ` (${data.attachmentCount} attachment${data.attachmentCount > 1 ? 's' : ''})` : ''}`);
+        }
+        
         console.log('Email sent successfully:', data.messageId);
         
         // If we were editing a draft, delete it after successful send
@@ -273,6 +294,8 @@ const SendEmail = () => {
         setSubject('');
         setBody('');
         setAttachments([]);
+        setCloudinaryFiles([]);
+        setUploadProgress([]);
         setShowCc(false);
         setShowBcc(false);
         setIsEditingDraft(false);
@@ -431,24 +454,60 @@ const SendEmail = () => {
           <div className="attachments-preview">
             <h4>📎 Attached Files ({attachments.length}/10):</h4>
             <div className="attachments-list">
-              {attachments.map((file, index) => (
-                <div key={index} className="attachment-item">
-                  <span className="file-icon">📄</span>
-                  <div className="file-info">
-                    <span className="file-name">{file.name}</span>
-                    <span className="file-size">({formatFileSize(file.size)})</span>
+              {attachments.map((file, index) => {
+                const cloudFile = cloudinaryFiles.find(cf => cf.originalname === file.name);
+                return (
+                  <div key={index} className="attachment-item">
+                    <span className="file-icon">
+                      {cloudFile ? '☁️' : '📄'}
+                    </span>
+                    <div className="file-info">
+                      <span className="file-name">{file.name}</span>
+                      <span className="file-size">({formatFileSize(file.size)})</span>
+                      {cloudFile && (
+                        <div className="cloudinary-info">
+                          <small style={{color: '#10b981'}}>
+                            ✅ Uploaded to cloud ({cloudFile.cloudinary.format.toUpperCase()})
+                          </small>
+                          <br />
+                          <small style={{color: '#6b7280'}}>
+                            🔗 <a 
+                              href={cloudFile.cloudinary.secure_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{color: '#3b82f6'}}
+                            >
+                              View in Cloud
+                            </a>
+                          </small>
+                        </div>
+                      )}
+                      {isSending && !cloudFile && (
+                        <div className="upload-status">
+                          <small style={{color: '#f59e0b'}}>⏳ Uploading to cloud...</small>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="remove-attachment-btn"
+                      onClick={() => removeAttachment(index)}
+                      title="Remove file"
+                      disabled={isSending}
+                    >
+                      🗑️
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="remove-attachment-btn"
-                    onClick={() => removeAttachment(index)}
-                    title="Remove file"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            {cloudinaryFiles.length > 0 && (
+              <div className="cloudinary-summary">
+                <small style={{color: '#10b981', display: 'block', marginTop: '10px'}}>
+                  ☁️ {cloudinaryFiles.length} file{cloudinaryFiles.length > 1 ? 's' : ''} successfully uploaded to Cloudinary
+                </small>
+              </div>
+            )}
           </div>
         )}
 

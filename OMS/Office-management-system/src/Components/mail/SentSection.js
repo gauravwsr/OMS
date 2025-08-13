@@ -25,7 +25,13 @@ const SentSection = ({ emails }) => {
   };
 
   const getEmailIcon = (email) => {
-    if (email.attachments && email.attachments.length > 0) return '📎';
+    if (email.attachments && email.attachments.length > 0) {
+      // Check if any attachment is from Cloudinary
+      const hasCloudinaryAttachment = email.attachments.some(att => 
+        att.cloudinary || att.secure_url || att.public_id
+      );
+      return hasCloudinaryAttachment ? '☁️📎' : '📎';
+    }
     if (email.isReply) return '↩️';
     if (email.isForward) return '↪️';
     return '📧';
@@ -66,7 +72,13 @@ const SentSection = ({ emails }) => {
                 <span className="source-badge" title={email.source === 'local' ? 'Stored locally' : 'From email server'}>{getSourceBadge(email)}</span>
                 <span className="email-subject">{email.subject || 'No Subject'}</span>
                 {email.attachments && email.attachments.length > 0 && (
-                  <span className="attachment-count">({email.attachments.length})</span>
+                  <span className="attachment-count" title={`${email.attachments.length} attachment${email.attachments.length > 1 ? 's' : ''}`}>
+                    ({email.attachments.length}
+                    {email.attachments.some(att => att.cloudinary || att.secure_url || att.public_id) && (
+                      <span className="cloud-indicator" title="Stored in Cloudinary">☁️</span>
+                    )}
+                    )
+                  </span>
                 )}
               </div>
             </div>
