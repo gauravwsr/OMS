@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import "./Inbox.css";
 
 const DraftSection = ({ drafts: propDrafts }) => {
   const [drafts, setDrafts] = useState(propDrafts || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (propDrafts && propDrafts.length > 0) {
@@ -14,6 +16,16 @@ const DraftSection = ({ drafts: propDrafts }) => {
       fetchDrafts();
     }
   }, [propDrafts]);
+
+  const handleDraftClick = (draft) => {
+    // Navigate to email details page with draft data
+    navigate('email-details', { state: { email: draft, isDraft: true } });
+  };
+
+  const handleEditDraft = (draft) => {
+    // Navigate to compose page with draft data for editing
+    navigate('send-email', { state: { draftData: draft } });
+  };
 
   const fetchDrafts = async () => {
     setLoading(true);
@@ -153,15 +165,6 @@ const DraftSection = ({ drafts: propDrafts }) => {
             className="refresh-button" 
             onClick={fetchDrafts}
             disabled={loading}
-            style={{
-              marginLeft: '10px',
-              padding: '4px 8px',
-              fontSize: '12px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              background: '#f8f9fa',
-              cursor: loading ? 'not-allowed' : 'pointer'
-            }}
           >
             {loading ? '🔄' : '↻'} Refresh
           </button>
@@ -179,14 +182,9 @@ const DraftSection = ({ drafts: propDrafts }) => {
         </div>
       ) : drafts.length > 0 ? (
         drafts.map((draft, index) => (
-          <div key={draft._id || draft.id || `draft-${index}`} className="email-row draft-row">
+          <div key={draft._id || draft.id || `draft-${index}`} className="email-row draft-row" onClick={() => handleDraftClick(draft)} style={{cursor: 'pointer'}}>
             <div className="email-name">
-              <input
-                type="checkbox"
-                id={`draft-${draft._id || draft.id || index}`}
-                className="email-checkbox"
-              />
-              <label htmlFor={`draft-${draft._id || draft.id || index}`} className="email-label draft-label">
+              <label className="email-label draft-label">
                 📝 {draft.to || "No recipient"}
                 {draft.cc && <span style={{fontSize: '11px', color: '#666'}}> (CC: {draft.cc})</span>}
               </label>
@@ -222,26 +220,32 @@ const DraftSection = ({ drafts: propDrafts }) => {
               </span>
               <div className="draft-actions">
                 <button 
-                  className="send-button" 
-                  onClick={() => sendMail(draft)}
+                  className="edit-button" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditDraft(draft);
+                  }}
                   disabled={loading}
-                  style={{marginRight: '5px'}}
+                >
+                  ✏️ Edit
+                </button>
+                <button 
+                  className="send-button" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sendMail(draft);
+                  }}
+                  disabled={loading}
                 >
                   📤 Send
                 </button>
                 <button 
                   className="delete-button" 
-                  onClick={() => deleteDraft(draft._id)}
-                  disabled={loading}
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '12px',
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '3px',
-                    cursor: loading ? 'not-allowed' : 'pointer'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteDraft(draft._id);
                   }}
+                  disabled={loading}
                 >
                   🗑️
                 </button>
@@ -252,7 +256,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
       ) : (
         <div className="no-emails-message">
           📝 No drafts available. 
-          <button onClick={fetchDrafts} style={{marginLeft: '10px'}}>
+          <button onClick={fetchDrafts} className="refresh-button">
             🔄 Refresh
           </button>
         </div>

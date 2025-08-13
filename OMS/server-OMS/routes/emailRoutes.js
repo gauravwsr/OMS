@@ -990,6 +990,124 @@ router.post('/test-save-draft', uploadAttachments, async (req, res) => {
   }
 });
 
+// Update existing draft with file attachments
+router.put('/update-draft/:id', authenticate, uploadAttachments, async (req, res) => {
+  try {
+    const { to, cc, bcc, subject, body } = req.body;
+    const attachmentFiles = req.files || [];
+    const Draft = require('../models/Draft');
+    
+    const draftId = req.params.id;
+    const userId = req.user.id || req.user._id;
+    
+    // Find the existing draft
+    const existingDraft = await Draft.findOne({ _id: draftId, userId: userId });
+    
+    if (!existingDraft) {
+      return res.status(404).json({ success: false, message: 'Draft not found' });
+    }
+    
+    // Process new attachments
+    const newAttachments = attachmentFiles.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype,
+      path: file.path
+    }));
+    
+    // Update the draft
+    existingDraft.to = to;
+    existingDraft.cc = cc;
+    existingDraft.bcc = bcc;
+    existingDraft.subject = subject;
+    existingDraft.body = body;
+    existingDraft.attachments = [...(existingDraft.attachments || []), ...newAttachments];
+    existingDraft.date = new Date();
+    
+    await existingDraft.save();
+    
+    res.json({ 
+      success: true, 
+      message: 'Draft updated successfully!', 
+      draft: {
+        _id: existingDraft._id,
+        to: existingDraft.to,
+        cc: existingDraft.cc,
+        bcc: existingDraft.bcc,
+        subject: existingDraft.subject,
+        body: existingDraft.body,
+        attachments: existingDraft.attachments,
+        date: existingDraft.date
+      }
+    });
+  } catch (error) {
+    console.error('Error updating draft:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Test route for updating draft without authentication (for testing only)
+router.put('/test-update-draft/:id', uploadAttachments, async (req, res) => {
+  try {
+    const { to, cc, bcc, subject, body } = req.body;
+    const attachmentFiles = req.files || [];
+    const Draft = require('../models/Draft');
+    
+    const draftId = req.params.id;
+    // Use a test user ID for drafts when not authenticated
+    const testUserId = new require('mongoose').Types.ObjectId('000000000000000000000000');
+    
+    // Find the existing draft
+    const existingDraft = await Draft.findOne({ _id: draftId, userId: testUserId });
+    
+    if (!existingDraft) {
+      return res.status(404).json({ success: false, message: 'Draft not found' });
+    }
+    
+    // Process new attachments
+    const newAttachments = attachmentFiles.map(file => ({
+      filename: file.filename,
+      originalname: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype,
+      path: file.path
+    }));
+    
+    // Update the draft
+    existingDraft.to = to;
+    existingDraft.cc = cc;
+    existingDraft.bcc = bcc;
+    existingDraft.subject = subject;
+    existingDraft.body = body;
+    existingDraft.attachments = [...(existingDraft.attachments || []), ...newAttachments];
+    existingDraft.date = new Date();
+    
+    await existingDraft.save();
+    
+    res.json({ 
+      success: true, 
+      message: 'Draft updated successfully!', 
+      draft: {
+        _id: existingDraft._id,
+        to: existingDraft.to,
+        cc: existingDraft.cc,
+        bcc: existingDraft.bcc,
+        subject: existingDraft.subject,
+        body: existingDraft.body,
+        attachments: existingDraft.attachments,
+        date: existingDraft.date
+      }
+    });
+  } catch (error) {
+    console.error('Error updating test draft:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+});
+
 // Helper function to test IMAP connection
 function testImapConnection(email, password) {
   return new Promise(async (resolve, reject) => {
