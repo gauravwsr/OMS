@@ -565,5 +565,4 @@ const NewDashboard = () => {
     </>
   );
 };
-
 export default NewDashboard;

@@ -6,13 +6,14 @@
   flex-direction: row;
   height: calc(100vh - 56px);
   min-height: 0;
+  background: transparent;
 }
 .sidebar {
   min-width: 300px;
   max-width: 400px;
   flex: 0 0 33.3333%;
-  background: #fff !important;
-  border-right: none;
+  background: #fff;
+  border-right: 1px solid #e2e8f0;
   box-shadow: none;
   height: 100vh;
   overflow-y: auto;
@@ -24,6 +25,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  box-shadow: none;
 }
 
 /* Tablet: Slightly smaller sidebar, more space for chat */
@@ -169,9 +171,12 @@
 }
  .chat-container {
   height: calc(100vh - 56px);
-  color: black; /* Adjust based on your navbar height */
+  color: black;
   display: flex;
   flex-direction: row;
+  background: transparent;
+  padding: 0;
+  margin: 0;
 }
 @media (max-width: 768px) {
   .chat-container {
@@ -313,19 +318,24 @@
     height: calc(100vh - 56px);
     display: flex;
     flex-direction: row;
+    background: transparent;
+    padding: 0;
+    margin: 0;
   }
   
   .sidebar {
     min-width: 300px;
     max-width: 400px;
     flex: 0 0 33.333333%;
-    background: #fff !important;
-    border-right: none;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
     box-shadow: none;
   }
   
   .chat-area {
     flex: 1;
+    background: #f8fafc;
+    box-shadow: none;
   }
 }
 
@@ -627,23 +637,35 @@
 /* Style for send button if you have one */
 .send-button {
   position: absolute;
-  right: 25px;
-  bottom: 22px; /* Adjust as needed to vertically center */
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  right: 18px;
+  bottom: 18px;
+  /* background: linear-gradient(90deg, #22c55e 0%, #2563eb 100%); */
+  /* color: #fff; */
+  /* border: none;
+  border-radius: 50%; */
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 8px rgba(60,72,120,0.10);
+  font-size: 1.4rem;
+  /* transition: background 0.2s, box-shadow 0.2s; */
+}
+.send-button:hover {
+  background: linear-gradient(90deg, #2563eb 0%, #22c55e 100%);
+  box-shadow: 0 4px 12px rgba(60,72,120,0.15);
 }
 
-.send-button:hover {
-  background-color: #3a80d2;
+@media (max-width: 768px) {
+  .send-button {
+    right: 12px;
+    bottom: 12px;
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
 }
 
 /* Custom scrollbar */
@@ -679,13 +701,15 @@
     min-width: 280px;
     max-width: 350px;
     flex: 0 0 30%;
-    background: #fff !important;
-    border-right: none;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
     box-shadow: none;
   }
   
   .chat-area {
     flex: 1;
+    background: #f8fafc;
+    box-shadow: none;
   }
   
   .message {
@@ -710,13 +734,15 @@
     min-width: 250px;
     max-width: 300px;
     flex: 0 0 35%;
-    background: #fff !important;
-    border-right: none;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
     box-shadow: none;
   }
   
   .chat-area {
     flex: 1;
+    background: #f8fafc;
+    box-shadow: none;
   }
   
   .message {
@@ -737,6 +763,9 @@
 @media (max-width: 1024px) {
   .chat-container {
     height: calc(100vh - 50px);
+    background: transparent;
+    padding: 0;
+    margin: 0;
   }
 
   .message {
@@ -769,6 +798,9 @@
   .chat-container {
     flex-direction: column;
     height: calc(100vh - 50px);
+    background: transparent;
+    padding: 0;
+    margin: 0;
   }
 
   .sidebar {
@@ -779,8 +811,9 @@
     min-width: 100%;
     max-width: 100%;
     flex: none;
-    background: #fff !important;
+    background: #fff;
     border-right: none;
+    border-bottom: 1px solid #e2e8f0;
     box-shadow: none;
   }
 

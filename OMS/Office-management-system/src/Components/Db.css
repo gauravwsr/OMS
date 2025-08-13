@@ -83,11 +83,11 @@
   margin: 0;
 }
 
-.header-actions {
+/* .header-actions {
   display: flex;
   align-items: center;
   gap: 15px;
-}
+} */
 
 .department-filter,
 .export-btn {

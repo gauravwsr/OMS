@@ -1360,7 +1360,7 @@ export default function ProjectList() {
                 Manage and monitor your projects in real-time
               </p>
             </div>
-            <div className="header-actions">
+            {/* <div className="header-actions">
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
                 className={`action-btn ${autoRefresh ? "active" : ""}`}
@@ -1380,7 +1380,7 @@ export default function ProjectList() {
                 <FiRefreshCw className={refreshing ? "spinning" : ""} />
                 Refresh
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
 

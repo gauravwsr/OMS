@@ -90,11 +90,11 @@
   cursor: pointer;
 }
 
-.header-actions {
+/* .header-actions {
   display: flex;
   gap: 1rem;
   align-items: center;
-}
+} */
 
 /* ========== Buttons ========== */
 .btn-primary, .btn-secondary {
@@ -481,7 +481,7 @@
   align-items: flex-start;
 }
 
-.action-btn {
+/* .action-btn {
   width: 2.25rem;
   height: 2.25rem;
   border: none;
@@ -493,13 +493,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-}
+} */
 
-.action-btn:hover {
+/* .action-btn:hover {
   background: var(--surface-hover);
   color: var(--primary-color);
   transform: scale(1.05);
-}
+} */
 
 .project-status-row {
   display: flex;
