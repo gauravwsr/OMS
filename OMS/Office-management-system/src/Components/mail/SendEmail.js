@@ -96,12 +96,19 @@ const SendEmail = () => {
     try {
       console.log('Saving draft with data:', { to: email, cc, bcc, subject, body });
       
-      const response = await fetch('http://localhost:5001/api/emails/save-draft', {
+      // Check if user has a token, if not use test endpoint
+      const token = localStorage.getItem('token');
+      const endpoint = token ? '/api/emails/save-draft' : '/api/emails/test-save-draft';
+      const headers = token ? {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      } : {
+        'Content-Type': 'application/json'
+      };
+      
+      const response = await fetch(`http://localhost:5001${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers: headers,
         body: JSON.stringify({
           to: email,
           cc: cc,

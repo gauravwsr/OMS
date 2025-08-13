@@ -138,7 +138,9 @@ const Inbox = () => {
       url = token ? "http://localhost:5001/api/emails/sent" : "http://localhost:5001/api/emails/test-sent";
       useAuth = !!token;
     } else if (activeTab === "drafts") {
-      url = token ? "http://localhost:5001/api/emails/drafts" : "http://localhost:5001/api/emails/drafts";
+      // Use test endpoint if no token available
+      url = token ? "http://localhost:5001/api/emails/drafts" : "http://localhost:5001/api/emails/test-drafts";
+      useAuth = !!token;
     }
 
     try {
