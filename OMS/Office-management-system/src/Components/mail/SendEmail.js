@@ -5,7 +5,7 @@ import "./SendEmail.css";
 
 const SendEmail = () => {
   const location = useLocation();
-  const { emailData, action } = location.state || {};
+  const { emailData, action, draftData } = location.state || {};
 
   const [email, setEmail] = useState('');
   const [cc, setCc] = useState('');
@@ -17,10 +17,33 @@ const SendEmail = () => {
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
+  const [isEditingDraft, setIsEditingDraft] = useState(false);
+  const [draftId, setDraftId] = useState(null);
 
-  // Pre-fill form when coming from reply or forward
+  // Pre-fill form when coming from reply, forward, or editing draft
   useEffect(() => {
-    if (emailData) {
+    // Handle draft editing
+    if (draftData) {
+      console.log('📝 Editing draft:', draftData);
+      setEmail(draftData.to || '');
+      setCc(draftData.cc || '');
+      setBcc(draftData.bcc || '');
+      setSubject(draftData.subject || '');
+      setBody(draftData.body || '');
+      setIsEditingDraft(true);
+      setDraftId(draftData._id);
+      
+      // Show CC/BCC fields if they have values
+      if (draftData.cc) setShowCc(true);
+      if (draftData.bcc) setShowBcc(true);
+      
+      // Handle attachments if they exist
+      if (draftData.attachments && draftData.attachments.length > 0) {
+        setAttachments(draftData.attachments);
+      }
+    }
+    // Handle reply/forward
+    else if (emailData) {
       if (emailData.to) setEmail(emailData.to);
       if (emailData.cc) setCc(emailData.cc);
       if (emailData.bcc) setBcc(emailData.bcc);
@@ -31,7 +54,7 @@ const SendEmail = () => {
       if (emailData.cc) setShowCc(true);
       if (emailData.bcc) setShowBcc(true);
     }
-  }, [emailData]);
+  }, [emailData, draftData]);
 
   // Function to handle going back to the previous page
   const handleBack = () => {
@@ -98,7 +121,19 @@ const SendEmail = () => {
       
       // Check if user has a token, if not use test endpoint
       const token = localStorage.getItem('token');
-      const endpoint = token ? '/api/emails/save-draft' : '/api/emails/test-save-draft';
+      
+      // Determine if we're updating an existing draft or creating a new one
+      let endpoint, method;
+      if (isEditingDraft && draftId) {
+        console.log('📝 Updating existing draft:', draftId);
+        endpoint = token ? `/api/emails/update-draft/${draftId}` : `/api/emails/test-update-draft/${draftId}`;
+        method = 'PUT';
+      } else {
+        console.log('📝 Creating new draft');
+        endpoint = token ? '/api/emails/save-draft' : '/api/emails/test-save-draft';
+        method = 'POST';
+      }
+      
       const headers = token ? {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
@@ -107,7 +142,7 @@ const SendEmail = () => {
       };
       
       const response = await fetch(`http://localhost:5001${endpoint}`, {
-        method: 'POST',
+        method: method,
         headers: headers,
         body: JSON.stringify({
           to: email,
@@ -123,6 +158,13 @@ const SendEmail = () => {
       if (response.ok && data.success) {
         alert(`✅ ${data.message}`);
         console.log('Draft saved successfully:', data.draft);
+        
+        // If we were creating a new draft, now we're editing it
+        if (!isEditingDraft && data.draft && data.draft._id) {
+          setIsEditingDraft(true);
+          setDraftId(data.draft._id);
+          console.log('📝 Now editing draft:', data.draft._id);
+        }
       } else {
         alert(`❌ Failed to save draft: ${data.message}`);
         console.error('Draft save failed:', data);
@@ -206,6 +248,24 @@ const SendEmail = () => {
         alert(`✅ ${data.message}${data.attachmentCount > 0 ? ` (${data.attachmentCount} attachment${data.attachmentCount > 1 ? 's' : ''})` : ''}`);
         console.log('Email sent successfully:', data.messageId);
         
+        // If we were editing a draft, delete it after successful send
+        if (isEditingDraft && draftId) {
+          try {
+            console.log('🗑️ Deleting draft after send:', draftId);
+            const token = localStorage.getItem('token');
+            const deleteEndpoint = token ? `/api/emails/delete-draft/${draftId}` : `/api/emails/test-delete-draft/${draftId}`;
+            const deleteHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
+            await fetch(`http://localhost:5001${deleteEndpoint}`, {
+              method: 'DELETE',
+              headers: deleteHeaders
+            });
+            console.log('✅ Draft deleted after send');
+          } catch (deleteError) {
+            console.warn('⚠️ Failed to delete draft after send:', deleteError);
+          }
+        }
+        
         // Clear form after successful send
         setEmail('');
         setCc('');
@@ -215,6 +275,8 @@ const SendEmail = () => {
         setAttachments([]);
         setShowCc(false);
         setShowBcc(false);
+        setIsEditingDraft(false);
+        setDraftId(null);
       } else {
         alert(`❌ Failed to send email: ${data.message}`);
         console.error('Email send failed:', data);
@@ -229,17 +291,25 @@ const SendEmail = () => {
 
   return (
     <div className="compose-container">
-      <button className="back-button" onClick={handleBack}>
-        <ArrowLeft size={16} />
-        Back
-      </button>
+      {/* Fixed Header Section */}
+      <div className="compose-header-section">
+        <div className="header-left">
+          <button className="back-button" onClick={handleBack}>
+            <ArrowLeft size={16} />
+            Back
+          </button>
+          <h1 className="compose-title">
+            {action === 'reply' ? 'Reply to Email' : 
+             action === 'forward' ? 'Forward Email' : 
+             'Compose Email'}
+            {isEditingDraft && (
+              <span className="draft-indicator">Editing Draft</span>
+            )}
+          </h1>
+        </div>
+      </div>
 
       <form className="compose-form" onSubmit={sendEmail}>
-        <h2 className="compose-header">
-          {action === 'reply' ? 'Reply to Email' : 
-           action === 'forward' ? 'Forward Email' : 
-           'Compose Email'}
-        </h2>
 
         <div className="form-group">
           <input
