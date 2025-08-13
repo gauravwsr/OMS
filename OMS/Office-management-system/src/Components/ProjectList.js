@@ -1371,7 +1371,7 @@ export default function ProjectList() {
                 <FiRefreshCw className={refreshing ? "spinning" : ""} />
                 {autoRefresh ? "Auto-refresh ON" : "Auto-refresh OFF"}
               </button>
-              <button
+              {/* <button
                 onClick={fetchProjects}
                 className="action-btn refresh-btn"
                 disabled={refreshing}
@@ -1379,7 +1379,7 @@ export default function ProjectList() {
               >
                 <FiRefreshCw className={refreshing ? "spinning" : ""} />
                 Refresh
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -1567,7 +1567,7 @@ export default function ProjectList() {
                     </div>
                     <div className="detail-item">
                       <FiDollarSign className="detail-icon" />
-                      <span>Budget: ${project.budget || 0}</span>
+                      <span>Budget: ₹{project.budget || 0}</span>
                     </div>
                   </div>
 
