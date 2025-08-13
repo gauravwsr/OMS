@@ -1282,7 +1282,7 @@ body {
   justify-content: center;
   font-size: 32px;
   font-weight: 700;
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  /* border: 4px solid rgba(255, 255, 255, 0.3); */
   backdrop-filter: blur(10px);
 }
 

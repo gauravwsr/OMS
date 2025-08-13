@@ -783,7 +783,7 @@ const Meeting = () => {
       )}
 
       {/* Error and Success Messages */}
-      {error && (
+      {/* {error && (
         <div className="alert alert-error">
           <span>{error}</span>
           <button onClick={() => setError("")} className="alert-close">
@@ -798,7 +798,7 @@ const Meeting = () => {
             ×
           </button>
         </div>
-      )}
+      )} */}
 
       <div className="meeting-content">
           {!isMeetingStarted ? (
