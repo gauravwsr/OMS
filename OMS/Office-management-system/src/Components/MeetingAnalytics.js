@@ -26,7 +26,7 @@ const MeetingAnalytics = ({ user }) => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5001/api/meetings/analytics/detailed`,
+        `http://146.190.165.62:5001/api/meetings/analytics/detailed`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { range: dateRange, team: teamFilter },
@@ -44,7 +44,7 @@ const MeetingAnalytics = ({ user }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:5001/api/meetings/analytics/export`,
+        `http://146.190.165.62:5001/api/meetings/analytics/export`,
         {
           headers: { Authorization: `Bearer ${token}` },
           params: { range: dateRange, team: teamFilter, format: "excel" },

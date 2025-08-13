@@ -25,6 +25,7 @@ import { useAuth } from "./Components/AuthProvider/AuthContext.js";
 
 // Components
 import Homepage from "./Components/Homepage";
+import axios from "axios";
 import Db from "./Components/Db";
 import Employee from "./Components/Employee";
 import Meeting from "./Components/Meeting";
@@ -265,6 +266,26 @@ const MainContent = ({ nav }) => {
     return finalMenuItems;
   };
 
+  const [leaveNotification, setLeaveNotification] = useState(false);
+  const [chatNotification, setChatNotification] = useState(false);
+
+  useEffect(() => {
+    // Fetch pending leave applications for notification
+    axios.get("http://localhost:5001/api/leave/recent")
+      .then(res => setLeaveNotification(Array.isArray(res.data) && res.data.length > 0))
+      .catch(() => setLeaveNotification(false));
+
+    // Listen for chat unread event from chat.js (window event or global state)
+    const handleChatUnread = (e) => {
+      if (e.detail && Array.isArray(e.detail.chats)) {
+        const hasUnread = e.detail.chats.some(chat => chat.unreadCount > 0 || chat.notification);
+        setChatNotification(hasUnread);
+      }
+    };
+    window.addEventListener("chat-unread-status", handleChatUnread);
+    return () => window.removeEventListener("chat-unread-status", handleChatUnread);
+  }, []);
+
   const menuItems = getMenuItems();
 
   const handleLinkClick = () => {
@@ -304,17 +325,21 @@ const MainContent = ({ nav }) => {
         {`
         /* ========== Base Variables ========== */
         :root {
-          --primary-color: #4f46e5;
-          --primary-light: #6366f1;
-          --primary-dark: #4338ca;
+          --primary-color: #6366f1;
+          --primary-light: #8b5cf6;
+          --primary-dark: #4f46e5;
           --background: #ffffff;
-          --sidebar-bg: #f8fafc;
-          --text-color: #1e293b;
-          --text-light: #64748b;
-          --border-color: #e2e8f0;
-          --hover-bg: #f1f5f9;
-          --active-bg: #e0e7ff;
+          --sidebar-bg: #1e293b;
+          --sidebar-bg-light: #334155;
+          --text-color: #ffffff;
+          --text-light: #94a3b8;
+          --text-muted: #64748b;
+          --border-color: #374151;
+          --hover-bg: #374151;
+          --active-bg: #4f46e5;
+          --active-bg-light: rgba(79, 70, 229, 0.1);
           --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          --shadow-dark: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
           --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           --sidebar-width: 280px;
           --sidebar-collapsed: 80px;
@@ -330,7 +355,7 @@ const MainContent = ({ nav }) => {
           width: var(--sidebar-width);
           background: var(--sidebar-bg);
           border-right: 1px solid var(--border-color);
-          box-shadow: var(--shadow);
+          box-shadow: var(--shadow-dark);
           z-index: var(--mobile-z-index);
           transition: var(--transition);
           transform: translateX(-100%);
@@ -363,6 +388,24 @@ const MainContent = ({ nav }) => {
           overflow-y: auto;
         }
 
+        /* Custom scrollbar for sidebar */
+        .sidebar-content::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-track {
+          background: var(--sidebar-bg-light);
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb {
+          background: var(--text-muted);
+          border-radius: 3px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+          background: var(--text-light);
+        }
+
         /* ========== Mobile Toggle ========== */
         .mobile-menu-toggle {
           position: fixed;
@@ -392,7 +435,7 @@ const MainContent = ({ nav }) => {
           position: absolute;
           top: 1rem;
           right: -0.75rem;
-          background: white;
+          background: var(--sidebar-bg);
           border: 1px solid var(--border-color);
           border-radius: 50%;
           width: 1.5rem;
@@ -404,10 +447,12 @@ const MainContent = ({ nav }) => {
           box-shadow: var(--shadow);
           z-index: 10;
           transition: var(--transition);
+          color: var(--text-light);
         }
 
         .collapse-toggle:hover {
           background: var(--hover-bg);
+          color: var(--text-color);
           transform: translateX(2px);
         }
 
@@ -425,14 +470,16 @@ const MainContent = ({ nav }) => {
           height: 2.5rem;
           object-fit: contain;
           margin-right: 0.75rem;
+          filter: brightness(0) invert(1);
         }
 
         .logo-text {
-          font-size: 1.25rem;
-          font-weight: 600;
+          font-size: 1.5rem;
+          font-weight: 700;
           color: var(--text-color);
           white-space: nowrap;
           transition: opacity 0.2s ease;
+          letter-spacing: -0.02em;
         }
 
         /* ========== Menu Sections ========== */
@@ -445,7 +492,7 @@ const MainContent = ({ nav }) => {
         .section-title {
           font-size: 0.75rem;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.1em;
           color: var(--text-light);
           margin-bottom: 0.75rem;
           padding: 0 0.75rem;
@@ -465,23 +512,39 @@ const MainContent = ({ nav }) => {
         .menu-item {
           display: flex;
           align-items: center;
-          padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
-          color: var(--text-color);
+          padding: 0.875rem 1rem;
+          border-radius: 0.75rem;
+          color: var(--text-light);
           text-decoration: none;
           transition: var(--transition);
           position: relative;
+          margin: 0 0.75rem;
+          font-weight: 500;
         }
 
         .menu-item:hover {
           background: var(--hover-bg);
-          color: var(--primary-color);
+          color: var(--text-color);
+          transform: translateX(4px);
         }
 
         .menu-item.active {
           background: var(--active-bg);
-          color: var(--primary-color);
-          font-weight: 500;
+          color: white;
+          font-weight: 600;
+          box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .menu-item.active::before {
+          content: '';
+          position: absolute;
+          left: -0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 1.5rem;
+          background: var(--primary-light);
+          border-radius: 0 2px 2px 0;
         }
 
         .menu-icon {
@@ -490,13 +553,33 @@ const MainContent = ({ nav }) => {
           justify-content: center;
           width: 1.5rem;
           height: 1.5rem;
-          margin-right: 0.75rem;
+          margin-right: 0.875rem;
           flex-shrink: 0;
+          font-size: 1.125rem;
+        }
+
+        /* Colorful icons */
+        .menu-item:nth-child(1) .menu-icon { color: #3b82f6; } /* Dashboard - Blue */
+        .menu-item:nth-child(2) .menu-icon { color: #10b981; } /* Projects - Green */
+        .menu-item:nth-child(3) .menu-icon { color: #f59e0b; } /* Meeting - Orange */
+        .menu-item:nth-child(4) .menu-icon { color: #ef4444; } /* Calendar - Red */
+        .menu-item:nth-child(5) .menu-icon { color: #8b5cf6; } /* Chat - Purple */
+        .menu-item:nth-child(6) .menu-icon { color: #06b6d4; } /* Todo - Cyan */
+        .menu-item:nth-child(7) .menu-icon { color: #f97316; } /* Mailbox - Orange */
+        .menu-item:nth-child(8) .menu-icon { color: #84cc16; } /* Employees - Lime */
+        .menu-item:nth-child(9) .menu-icon { color: #ec4899; } /* Certificate - Pink */
+        .menu-item:nth-child(10) .menu-icon { color: #6366f1; } /* Attendance - Indigo */
+        .menu-item:nth-child(11) .menu-icon { color: #14b8a6; } /* Leave - Teal */
+        .menu-item:nth-child(12) .menu-icon { color: #f43f5e; } /* Analytics - Rose */
+
+        .menu-item.active .menu-icon {
+          color: white;
         }
 
         .menu-text {
           white-space: nowrap;
           transition: opacity 0.2s ease;
+          font-size: 0.9rem;
         }
 
         .active-indicator {
@@ -504,8 +587,9 @@ const MainContent = ({ nav }) => {
           right: 1rem;
           width: 0.5rem;
           height: 0.5rem;
-          background: var(--primary-color);
+          background: white;
           border-radius: 50%;
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
         }
 
         /* ========== Support Links ========== */
@@ -522,15 +606,16 @@ const MainContent = ({ nav }) => {
           display: flex;
           align-items: center;
           padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
-          color: var(--text-color);
+          border-radius: 0.75rem;
+          color: var(--text-light);
           text-decoration: none;
           transition: var(--transition);
+          margin: 0 0.75rem;
         }
 
         .support-link:hover {
           background: var(--hover-bg);
-          color: var(--primary-color);
+          color: var(--text-color);
         }
 
         .support-link svg {
@@ -538,6 +623,11 @@ const MainContent = ({ nav }) => {
           width: 1.5rem;
           height: 1.5rem;
           flex-shrink: 0;
+          color: var(--text-muted);
+        }
+
+        .support-link:hover svg {
+          color: var(--primary-color);
         }
 
         /* ========== User Section ========== */
@@ -551,16 +641,18 @@ const MainContent = ({ nav }) => {
         }
 
         .user-avatar {
-          width: 2.5rem;
-          height: 2.5rem;
+          width: 2.75rem;
+          height: 2.75rem;
           border-radius: 50%;
-          background: var(--primary-color);
+          background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 600;
+          font-weight: 700;
           flex-shrink: 0;
+          font-size: 1.1rem;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
 
         .user-info {
@@ -569,22 +661,24 @@ const MainContent = ({ nav }) => {
         }
 
         .user-name {
-          font-weight: 500;
+          font-weight: 600;
           color: var(--text-color);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          font-size: 0.95rem;
         }
 
         .user-role {
           font-size: 0.75rem;
           color: var(--text-light);
           text-transform: capitalize;
+          margin-top: 0.125rem;
         }
 
         .user-subrole {
           font-size: 0.7rem;
-          color: var(--primary-color);
+          color: var(--primary-light);
           font-weight: 500;
           text-transform: capitalize;
           margin-top: 2px;
@@ -604,8 +698,8 @@ const MainContent = ({ nav }) => {
         }
 
         .logout-button:hover {
-          color: var(--primary-color);
-          background: var(--hover-bg);
+          color: #ef4444;
+          background: rgba(239, 68, 68, 0.1);
         }
 
         .logout-button svg {
@@ -729,31 +823,58 @@ const MainContent = ({ nav }) => {
             <h2 className="section-title">Menu</h2>
             <nav aria-label="Main navigation">
               <ul className="sidebar-menu">
-                {menuItems.map((item, index) => (
-                  <li key={index}>
-                    <NavLink
-                      to={`${safeNav}${item.path}`}
-                      className={`menu-item ${
-                        isLinkActive(item.path) ? "active" : ""
-                      }`}
-                      onClick={handleLinkClick}
-                      end={item.path === "/"}
-                      aria-current={
-                        isLinkActive(item.path) ? "page" : undefined
-                      }
-                    >
-                      <div className="menu-icon" aria-hidden="true">
-                        {item.icon}
-                      </div>
-                      {!isCollapsed && (
-                        <span className="menu-text">{item.label}</span>
-                      )}
-                      {isLinkActive(item.path) && !isCollapsed && (
-                        <div className="active-indicator" aria-hidden="true" />
-                      )}
-                    </NavLink>
-                  </li>
-                ))}
+                {menuItems.map((item, index) => {
+                  // Notification logic
+                  let showNotif = false;
+                  const label = item.label.trim().toLowerCase();
+                  const path = item.path.trim().toLowerCase();
+                  // Only show leave notification for Leave Management, not Apply Leave
+                  if (label.includes("leave management")) {
+                    showNotif = leaveNotification;
+                  }
+                  // Show chat notification for Chat menu item (by label or path)
+                  if (label === "chat" || path === "/chat") {
+                    showNotif = chatNotification;
+                  }
+                  return (
+                    <li key={index}>
+                      <NavLink
+                        to={`${safeNav}${item.path}`}
+                        className={`menu-item ${
+                          isLinkActive(item.path) ? "active" : ""
+                        }`}
+                        onClick={handleLinkClick}
+                        end={item.path === "/"}
+                        aria-current={
+                          isLinkActive(item.path) ? "page" : undefined
+                        }
+                      >
+                        <div className="menu-icon" aria-hidden="true" style={{ position: "relative" }}>
+                          {item.icon}
+                          {showNotif && (
+                            <span style={{
+                              position: "absolute",
+                              top: 0,
+                              right: -2,
+                              width: 10,
+                              height: 10,
+                              background: "#ef4444",
+                              borderRadius: "50%",
+                              display: "inline-block",
+                              border: "2px solid #1e293b"
+                            }} />
+                          )}
+                        </div>
+                        {!isCollapsed && (
+                          <span className="menu-text">{item.label}</span>
+                        )}
+                        {isLinkActive(item.path) && !isCollapsed && (
+                          <div className="active-indicator" aria-hidden="true" />
+                        )}
+                      </NavLink>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
           </div>

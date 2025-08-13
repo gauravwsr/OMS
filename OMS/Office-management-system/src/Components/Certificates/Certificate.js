@@ -27,16 +27,13 @@ const Certificate = () => {
       }
 
       console.log("Checking existing certificates...");
-      const response = await fetch(
-        "http://localhost:5001/api/certificates",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("http://localhost:5001/api/certificates", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -273,26 +270,23 @@ const Certificate = () => {
       );
 
       // Save to database via API
-      const response = await fetch(
-        "http://localhost:5001/api/certificates",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            candidateName: certificateData.candidateName,
-            collegeName: certificateData.collegeName,
-            internshipType: certificateData.internshipType,
-            companyName: certificateData.companyName,
-            startDate: certificateData.startDate,
-            endDate: certificateData.endDate,
-            certID: certificateData.certID,
-            issueDate: certificateData.issueDate,
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:5001/api/certificates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          candidateName: certificateData.candidateName,
+          collegeName: certificateData.collegeName,
+          internshipType: certificateData.internshipType,
+          companyName: certificateData.companyName,
+          startDate: certificateData.startDate,
+          endDate: certificateData.endDate,
+          certID: certificateData.certID,
+          issueDate: certificateData.issueDate,
+        }),
+      });
 
       console.log("Server response status:", response.status);
 
@@ -353,16 +347,13 @@ const Certificate = () => {
       }
 
       // Fetch all certificates from database
-      const response = await fetch(
-        "http://localhost:5001/api/certificates",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("http://localhost:5001/api/certificates", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -688,26 +679,23 @@ const Certificate = () => {
       }
 
       // Save to database via API - FIXED
-      const response = await fetch(
-        "http://localhost:5001/api/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            candidateName: completionData.candidateName,
-            courseType: completionData.courseType,
-            organizationName: completionData.organizationName,
-            startDate: completionData.startDate,
-            endDate: completionData.endDate,
-            certID: completionData.certID,
-            issueDate: completionData.issueDate,
-            duration: completionData.duration,
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:5001/api/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          candidateName: completionData.candidateName,
+          courseType: completionData.courseType,
+          organizationName: completionData.organizationName,
+          startDate: completionData.startDate,
+          endDate: completionData.endDate,
+          certID: completionData.certID,
+          issueDate: completionData.issueDate,
+          duration: completionData.duration,
+        }),
+      });
 
       // FIXED - Only read response once
       const result = await response.json();
@@ -767,16 +755,13 @@ const Certificate = () => {
       }
 
       // Fetch all completions from database
-      const response = await fetch(
-        "http://localhost:5001/api/completions",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("http://localhost:5001/api/completions", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -1439,24 +1424,20 @@ const Certificate = () => {
 
         if (token) {
           console.log("Attempting to save offer to database...");
-          const response = await fetch(
-            "http://localhost:5001/api/offers",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                candidateName: offerData.candidateName,
-                position: offerData.position,
-                joiningDate: offerData.joiningDate,
-                offerID: offerData.offerID,
-                issueDate:
-                  offerData.issueDate || new Date().toLocaleDateString(),
-              }),
-            }
-          );
+          const response = await fetch("http://localhost:5001/api/offers", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              candidateName: offerData.candidateName,
+              position: offerData.position,
+              joiningDate: offerData.joiningDate,
+              offerID: offerData.offerID,
+              issueDate: offerData.issueDate || new Date().toLocaleDateString(),
+            }),
+          });
 
           console.log("Download save response status:", response.status);
 

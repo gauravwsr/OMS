@@ -750,7 +750,6 @@ const ProjectManagerDashboard = () => {
         setProjects(projectsData);
         setFilteredProjects(projectsData);
 
-        setShowAssignModal(false);
         setSelectedProject(null);
         setSelectedTeamLead("");
         alert(
@@ -959,7 +958,6 @@ const ProjectManagerDashboard = () => {
     setProjects(projectsData);
     setFilteredProjects(projectsData);
 
-    setShowAssignModal(false);
     setSelectedProject(null);
     setSelectedTeamLead("");
     setAssignedEmployees([]);
@@ -1320,17 +1318,14 @@ const ProjectManagerDashboard = () => {
         totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
       const token = localStorage.getItem("token");
-      await fetch(
-        `http://localhost:5001/api/client-projects/${projectId}/progress`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ progress }),
-        }
-      );
+      await fetch(`http://localhost:5001/api/client-projects/${projectId}/progress`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ progress }),
+      });
     } catch (error) {
       console.error("Error updating project progress:", error);
     }
@@ -1340,15 +1335,12 @@ const ProjectManagerDashboard = () => {
   const fetchAssignedProjects = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5001/api/client-projects",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("http://localhost:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const result = await response.json();
       const projectsData = Array.isArray(result)
         ? result
@@ -1544,17 +1536,14 @@ const ProjectManagerDashboard = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5001/tasks/${editTask._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(newTask),
-        }
-      );
+      const response = await fetch(`http://localhost:5001/tasks/${editTask._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newTask),
+      });
 
       const result = await response.json();
       if (result.success) {
@@ -1675,19 +1664,16 @@ const ProjectManagerDashboard = () => {
       console.log("Sending assignment data:", validatedAssignments);
 
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:5001/api/team-lead/tasks/${editTask._id}/assignment`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            assignedTo: validatedAssignments,
-          }),
-        }
-      );
+      const response = await fetch(`http://localhost:5001/api/team-lead/tasks/${editTask._id}/assignment`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          assignedTo: validatedAssignments
+        }),
+      });
 
       const result = await response.json();
       if (result.success) {
@@ -1726,7 +1712,7 @@ const ProjectManagerDashboard = () => {
       if (!employeeId) {
         throw new Error("Employee ID not found");
       }
-
+      
       let url = `http://localhost:5001/api/team-lead/employees/${employeeId}/tasks`;
       if (projectId) {
         url += `?projectId=${projectId}`;

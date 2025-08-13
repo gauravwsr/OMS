@@ -8,7 +8,7 @@
   }
   
   .profile-header {
-    background-image: url('../../public/Images/hii.png');
+    /* background-image: url('../../public/Images/hii.png'); */
     padding: 15px;
     position: relative;
     display: flex;

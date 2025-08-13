@@ -102,16 +102,13 @@ export default function ProjectList() {
       }
 
       // Fetch projects from local database
-      const response = await fetch(
-        "http://localhost:5001/api/client-projects",
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await fetch("http://localhost:5001/api/client-projects", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -3043,7 +3040,7 @@ export default function ProjectList() {
 //           <button className="month-nav" onClick={nextMonth}>
 //             <ChevronRight size={16} />
 //           </button>
-//         </div>
+//         </div>localhost:5001
 //         <div className="kanban-board">
 //           <div className="kanban-column todo-column">
 //             <div className="column-header">TO DO List</div>

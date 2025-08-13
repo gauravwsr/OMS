@@ -39,6 +39,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const hrLeaveRoutes = require("./routes/hrLeaveRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
+const noteRoutes = require("./routes/noteRoutes");
 const attendanceTimeValidationRoutes = require("./routes/attendanceTimeValidationRoutes");
 const teamLeadTaskRoutes = require("./routes/teamLeadTaskRoutes");
 const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
@@ -73,8 +74,9 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:5002",
+      "http://localhost:3001", 
+      "http://134.199.170.166:3000",
+      "http://146.190.165.62:5002",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -136,6 +138,7 @@ app.use("/api/client-projects", clientProjectRoutes);
 app.use("/api/leave", leaveRoutes);
 app.use("/api/hr-leave", hrLeaveRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api", noteRoutes);
 app.use("/api/attendance", attendanceRoutes);
 
 // Attendance time validation testing routes
@@ -208,9 +211,9 @@ server.listen(port, '0.0.0.0', (err) => {
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(
     `✅ CORS enabled for origins: ${JSON.stringify([
-      "http://localhost:3000",
+      "http://http://134.199.170.166:3000",
       "http://localhost:3001",
-      "http://localhost:5002",
+      "http://146.190.165.62:5002",
     ])}`
   );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);

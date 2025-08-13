@@ -70,7 +70,7 @@ app.use((req, res, next) => {
 // Apply CORS middleware BEFORE routes
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: ["http://134.199.170.166:3000", "http://localhost:3001"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -188,7 +188,7 @@ const port = process.env.PORT || 5000;
 
 server.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://localhost:3000", "http://localhost:3001"])}`);
+  console.log(`✅ CORS enabled for origins: ${JSON.stringify(["http://134.199.170.166:3000", "http://localhost:3001"])}`);
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
 });
 

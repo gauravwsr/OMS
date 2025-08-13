@@ -68,26 +68,26 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.stat-card:hover {
+/* .stat-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
+} */
 
-.stat-card.total {
+/* .stat-card.total {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
+} */
 
-.stat-card.pending {
+/* .stat-card.pending {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
+} */
 
-.stat-card.approved {
+/* .stat-card.approved {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
+} */
 
-.stat-card.rejected {
+/* .stat-card.rejected {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
+} */
 
 .stat-card h3 {
   font-size: 1rem;
