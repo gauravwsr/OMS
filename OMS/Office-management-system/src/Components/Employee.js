@@ -758,7 +758,7 @@ const Employee = () => {
             )}
 
             {/* Server Status Info */}
-            <div
+            {/* <div
               style={{
                 backgroundColor: "#f8f9fa",
                 border: "1px solid #dee2e6",
@@ -789,7 +789,7 @@ const Employee = () => {
                 </li>
                 <li>Large file uploads may take longer - please be patient</li>
               </ul>
-            </div>
+            </div> */}
 
             <form onSubmit={handleSave}>
               {/* Upload Photo Section */}

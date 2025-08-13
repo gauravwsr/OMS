@@ -406,9 +406,9 @@
   transition: transform 0.3s ease;
 }
 
-.stat-card:hover .stat-icon {
+/* .stat-card:hover .stat-icon {
   transform: scale(1.1) rotate(5deg);
-}
+} */
 
 .stat-icon.total { 
   background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);

@@ -69,12 +69,12 @@
   margin-bottom: 25px;
   font-size: 1.8rem;
   font-weight: 700;
-  border-bottom: 3px solid #3498db;
+  /* border-bottom: 3px solid #3498db; */
   padding-bottom: 15px;
   position: relative;
 }
 
-.form-card h2::after, .status-card h2::after {
+/* .form-card h2::after, .status-card h2::after {
   content: '';
   position: absolute;
   bottom: -3px;
@@ -83,7 +83,7 @@
   height: 3px;
   background: linear-gradient(90deg, #3498db, #2980b9);
   border-radius: 2px;
-}
+} */
 
 .form-group {
   margin-bottom: 20px;
