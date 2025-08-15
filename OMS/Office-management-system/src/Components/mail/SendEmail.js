@@ -6,7 +6,6 @@ import "./SendEmail.css";
 const SendEmail = () => {
   const location = useLocation();
   const { emailData, action, draftData } = location.state || {};
-
   const [email, setEmail] = useState('');
   const [cc, setCc] = useState('');
   const [bcc, setBcc] = useState('');

@@ -658,3 +658,437 @@ exports.getAllAttendanceRecords = async (req, res) => {
     });
   }
 };
+
+// Download CV/Resume function
+exports.downloadCV = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('📄 Downloading CV for candidate:', id);
+    
+    // Find the candidate
+    const candidate = await Candidate.findById(id);
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found'
+      });
+    }
+    
+    if (!candidate.cvPath) {
+      return res.status(404).json({
+        success: false,
+        message: 'CV not found for this candidate'
+      });
+    }
+    
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Check if CV file is a URL (Cloudinary) or local path
+    if (candidate.cvPath.startsWith('http')) {
+      // Cloudinary URL - redirect or proxy
+      console.log('☁️ CV is stored in Cloudinary:', candidate.cvPath);
+      
+      // For Cloudinary files, we can redirect or use our proxy
+      const axios = require('axios');
+      
+      try {
+        const response = await axios.get(candidate.cvPath, { responseType: 'stream' });
+        
+        // Set appropriate headers
+        const contentType = response.headers['content-type'] || 'application/pdf';
+        const filename = `${candidate.fullName}_CV.${contentType.includes('pdf') ? 'pdf' : 'doc'}`;
+        
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        
+        // Pipe the file stream to response
+        response.data.pipe(res);
+        
+      } catch (cloudinaryError) {
+        console.error('Error downloading from Cloudinary:', cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to download CV from cloud storage',
+          error: cloudinaryError.message
+        });
+      }
+      
+    } else {
+      // Local file path
+      const fullPath = path.resolve(candidate.cvPath);
+      
+      // Check if file exists
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({
+          success: false,
+          message: 'CV file not found on server'
+        });
+      }
+      
+      // Get file info
+      const filename = path.basename(fullPath);
+      const ext = path.extname(filename).toLowerCase();
+      
+      let contentType = 'application/octet-stream';
+      if (ext === '.pdf') contentType = 'application/pdf';
+      else if (ext === '.doc') contentType = 'application/msword';
+      else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      
+      // Set headers and send file
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${candidate.fullName}_CV${ext}"`);
+      res.sendFile(fullPath);
+    }
+    
+  } catch (error) {
+    console.error('Error downloading CV:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error downloading CV',
+      error: error.message
+    });
+  }
+};
+
+// Download any document function
+exports.downloadDocument = async (req, res) => {
+  try {
+    const { id, documentType } = req.params;
+    
+    console.log(`📄 Downloading ${documentType} for candidate:`, id);
+    
+    // Find the candidate
+    const candidate = await Candidate.findById(id);
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found'
+      });
+    }
+    
+    // Map document types to candidate fields
+    const documentMap = {
+      'cv': 'cvPath',
+      'resume': 'cvPath',
+      'photo': 'photoPath',
+      'governmentId': 'document_governmentId',
+      'panCard': 'document_panCard',
+      'passportPhoto': 'document_passportPhoto',
+      'signedOfferLetter': 'document_signedOfferLetter',
+      'nda': 'document_nda',
+      'addressProof': 'document_addressProof',
+      'educationalCertificates': 'document_educationalCertificates',
+      'experienceCertificates': 'document_experienceCertificates',
+      'salarySlips': 'document_salarySlips',
+      'bankDetails': 'document_bankDetails',
+      'joiningForm': 'document_joiningForm',
+      'medicalCertificate': 'document_medicalCertificate',
+      'collegeId': 'document_collegeId',
+      'bonafideCertificate': 'document_bonafideCertificate',
+      'letterOfRecommendation': 'document_letterOfRecommendation',
+      'transcripts': 'document_transcripts',
+      'portfolioSamples': 'document_portfolioSamples'
+    };
+    
+    const fieldName = documentMap[documentType];
+    
+    if (!fieldName || !candidate[fieldName]) {
+      return res.status(404).json({
+        success: false,
+        message: `${documentType} not found for this candidate`
+      });
+    }
+    
+    const documentPath = candidate[fieldName];
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Check if document file is a URL (Cloudinary) or local path
+    if (documentPath.startsWith('http')) {
+      // Cloudinary URL - proxy download
+      console.log(`☁️ ${documentType} is stored in Cloudinary:`, documentPath);
+      
+      const axios = require('axios');
+      
+      try {
+        const response = await axios.get(documentPath, { responseType: 'stream' });
+        
+        // Set appropriate headers
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+        const filename = `${candidate.fullName}_${documentType}.${contentType.includes('pdf') ? 'pdf' : contentType.includes('image') ? 'jpg' : 'doc'}`;
+        
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        
+        // Pipe the file stream to response
+        response.data.pipe(res);
+        
+      } catch (cloudinaryError) {
+        console.error(`Error downloading ${documentType} from Cloudinary:`, cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to download ${documentType} from cloud storage`,
+          error: cloudinaryError.message
+        });
+      }
+      
+    } else {
+      // Local file path
+      const fullPath = path.resolve(documentPath);
+      
+      // Check if file exists
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({
+          success: false,
+          message: `${documentType} file not found on server`
+        });
+      }
+      
+      // Get file info
+      const filename = path.basename(fullPath);
+      const ext = path.extname(filename).toLowerCase();
+      
+      let contentType = 'application/octet-stream';
+      if (ext === '.pdf') contentType = 'application/pdf';
+      else if (ext === '.doc') contentType = 'application/msword';
+      else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) contentType = `image/${ext.substring(1)}`;
+      
+      // Set headers and send file
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${candidate.fullName}_${documentType}${ext}"`);
+      res.sendFile(fullPath);
+    }
+    
+  } catch (error) {
+    console.error(`Error downloading ${documentType}:`, error);
+    res.status(500).json({
+      success: false,
+      message: `Error downloading ${documentType}`,
+      error: error.message
+    });
+  }
+};
+
+// Download CV/Resume function
+exports.downloadCV = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log('📄 Downloading CV for candidate:', id);
+    
+    // Find the candidate
+    const candidate = await Candidate.findById(id);
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found'
+      });
+    }
+    
+    if (!candidate.cvPath) {
+      return res.status(404).json({
+        success: false,
+        message: 'CV not found for this candidate'
+      });
+    }
+    
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Check if CV file is a URL (Cloudinary) or local path
+    if (candidate.cvPath.startsWith('http')) {
+      // Cloudinary URL - redirect or proxy
+      console.log('☁️ CV is stored in Cloudinary:', candidate.cvPath);
+      
+      // For Cloudinary files, we can redirect or use our proxy
+      const axios = require('axios');
+      
+      try {
+        const response = await axios.get(candidate.cvPath, { responseType: 'stream' });
+        
+        // Set appropriate headers
+        const contentType = response.headers['content-type'] || 'application/pdf';
+        const filename = `${candidate.fullName}_CV.${contentType.includes('pdf') ? 'pdf' : 'doc'}`;
+        
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        
+        // Pipe the file stream to response
+        response.data.pipe(res);
+        
+      } catch (cloudinaryError) {
+        console.error('Error downloading from Cloudinary:', cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to download CV from cloud storage',
+          error: cloudinaryError.message
+        });
+      }
+      
+    } else {
+      // Local file path
+      const fullPath = path.resolve(candidate.cvPath);
+      
+      // Check if file exists
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({
+          success: false,
+          message: 'CV file not found on server'
+        });
+      }
+      
+      // Get file info
+      const filename = path.basename(fullPath);
+      const ext = path.extname(filename).toLowerCase();
+      
+      let contentType = 'application/octet-stream';
+      if (ext === '.pdf') contentType = 'application/pdf';
+      else if (ext === '.doc') contentType = 'application/msword';
+      else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      
+      // Set headers and send file
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${candidate.fullName}_CV${ext}"`);
+      res.sendFile(fullPath);
+    }
+    
+  } catch (error) {
+    console.error('Error downloading CV:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error downloading CV',
+      error: error.message
+    });
+  }
+};
+
+// Download any document function
+exports.downloadDocument = async (req, res) => {
+  try {
+    const { id, documentType } = req.params;
+    
+    console.log(`📄 Downloading ${documentType} for candidate:`, id);
+    
+    // Find the candidate
+    const candidate = await Candidate.findById(id);
+    
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: 'Candidate not found'
+      });
+    }
+    
+    // Map document types to candidate fields
+    const documentMap = {
+      'cv': 'cvPath',
+      'resume': 'cvPath',
+      'photo': 'photoPath',
+      'governmentId': 'document_governmentId',
+      'panCard': 'document_panCard',
+      'passportPhoto': 'document_passportPhoto',
+      'signedOfferLetter': 'document_signedOfferLetter',
+      'nda': 'document_nda',
+      'addressProof': 'document_addressProof',
+      'educationalCertificates': 'document_educationalCertificates',
+      'experienceCertificates': 'document_experienceCertificates',
+      'salarySlips': 'document_salarySlips',
+      'bankDetails': 'document_bankDetails',
+      'joiningForm': 'document_joiningForm',
+      'medicalCertificate': 'document_medicalCertificate',
+      'collegeId': 'document_collegeId',
+      'bonafideCertificate': 'document_bonafideCertificate',
+      'letterOfRecommendation': 'document_letterOfRecommendation',
+      'transcripts': 'document_transcripts',
+      'portfolioSamples': 'document_portfolioSamples'
+    };
+    
+    const fieldName = documentMap[documentType];
+    
+    if (!fieldName || !candidate[fieldName]) {
+      return res.status(404).json({
+        success: false,
+        message: `${documentType} not found for this candidate`
+      });
+    }
+    
+    const documentPath = candidate[fieldName];
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Check if document file is a URL (Cloudinary) or local path
+    if (documentPath.startsWith('http')) {
+      // Cloudinary URL - proxy download
+      console.log(`☁️ ${documentType} is stored in Cloudinary:`, documentPath);
+      
+      const axios = require('axios');
+      
+      try {
+        const response = await axios.get(documentPath, { responseType: 'stream' });
+        
+        // Set appropriate headers
+        const contentType = response.headers['content-type'] || 'application/octet-stream';
+        const filename = `${candidate.fullName}_${documentType}.${contentType.includes('pdf') ? 'pdf' : contentType.includes('image') ? 'jpg' : 'doc'}`;
+        
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        
+        // Pipe the file stream to response
+        response.data.pipe(res);
+        
+      } catch (cloudinaryError) {
+        console.error(`Error downloading ${documentType} from Cloudinary:`, cloudinaryError);
+        return res.status(500).json({
+          success: false,
+          message: `Failed to download ${documentType} from cloud storage`,
+          error: cloudinaryError.message
+        });
+      }
+      
+    } else {
+      // Local file path
+      const fullPath = path.resolve(documentPath);
+      
+      // Check if file exists
+      if (!fs.existsSync(fullPath)) {
+        return res.status(404).json({
+          success: false,
+          message: `${documentType} file not found on server`
+        });
+      }
+      
+      // Get file info
+      const filename = path.basename(fullPath);
+      const ext = path.extname(filename).toLowerCase();
+      
+      let contentType = 'application/octet-stream';
+      if (ext === '.pdf') contentType = 'application/pdf';
+      else if (ext === '.doc') contentType = 'application/msword';
+      else if (ext === '.docx') contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) contentType = `image/${ext.substring(1)}`;
+      
+      // Set headers and send file
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${candidate.fullName}_${documentType}${ext}"`);
+      res.sendFile(fullPath);
+    }
+    
+  } catch (error) {
+    console.error(`Error downloading ${documentType}:`, error);
+    res.status(500).json({
+      success: false,
+      message: `Error downloading ${documentType}`,
+      error: error.message
+    });
+  }
+};

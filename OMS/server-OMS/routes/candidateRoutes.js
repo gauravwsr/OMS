@@ -71,6 +71,10 @@ router.delete(
 );
 router.post("/login", candidateController.loginCandidate);
 
+// Resume/CV Download Routes
+router.get("/download/cv/:id", authMiddleware.authenticate, candidateController.downloadCV);
+router.get("/download/document/:id/:documentType", authMiddleware.authenticate, candidateController.downloadDocument);
+
 // Face Recognition and Attendance routes
 router.post("/attendance/mark", candidateController.markAttendance);
 router.get(

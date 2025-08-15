@@ -42,41 +42,151 @@ const EmailDetails = () => {
   }
 
   // Function to download file from Cloudinary or local server
-  const downloadAttachment = async (attachment) => {
+  const downloadAttachment = async (attachment, attachmentIndex) => {
     try {
       console.log('📥 Downloading attachment:', attachment);
       
       let downloadUrl;
       let filename = attachment.originalname || attachment.filename || attachment.name || 'attachment';
       
-      // Determine the download URL
+      // Determine the download URL based on attachment type
       if (attachment.cloudinary?.secure_url || attachment.secure_url) {
-        // For Cloudinary files, use server proxy to avoid CORS issues
+        // For Cloudinary files, use server proxy to fetch the actual file
         const fileUrl = attachment.cloudinary?.secure_url || attachment.secure_url;
         downloadUrl = `http://localhost:5001/api/emails/download-attachment?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(filename)}`;
+        console.log('☁️ Fetching Cloudinary file via proxy:', fileUrl);
+        
+        // Use fetch to get the file as a blob for proper download
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+        }
+        
+        // Get the file as a blob
+        const blob = await response.blob();
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL object
+        window.URL.revokeObjectURL(url);
+        
+        console.log('✅ Cloudinary file downloaded successfully:', filename);
+        return;
+        
+      } else if (attachment.hasContent && email.seqno) {
+        // IMAP attachments - use new endpoint
+        console.log('📧 Downloading IMAP attachment from email server');
+        
+        const folder = email.folder || 'INBOX';
+        
+        downloadUrl = `http://localhost:5001/api/emails/download-imap-attachment?` +
+          `folder=${encodeURIComponent(folder)}&` +
+          `seqno=${email.seqno}&` +
+          `attachmentIndex=${attachmentIndex}&` +
+          `filename=${encodeURIComponent(filename)}`;
+          
+        console.log('📧 IMAP download URL:', downloadUrl);
+        
+        // For IMAP downloads, we need to use fetch with auth headers
+        const response = await fetch(downloadUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`IMAP download failed: ${response.status} - ${errorText}`);
+        }
+        
+        // Create blob from response
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up blob URL
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        
+        console.log('✅ IMAP attachment downloaded successfully:', filename);
+        return;
+        
       } else if (attachment.path) {
-        // For local files
-        downloadUrl = `http://localhost:5001/uploads/${attachment.path}`;
+        // For local files stored on server
+        const localFileUrl = attachment.path.startsWith('/') ? 
+          `http://localhost:5001${attachment.path}` : 
+          `http://localhost:5001/uploads/${attachment.path}`;
+        downloadUrl = `http://localhost:5001/api/emails/download-attachment?url=${encodeURIComponent(localFileUrl)}&filename=${encodeURIComponent(filename)}`;
+        console.log('📁 Fetching local file via proxy:', localFileUrl);
+        
+        // Use fetch to get the file as a blob
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('✅ Local file downloaded successfully:', filename);
+        return;
+        
+      } else if (attachment.url) {
+        // For files with direct URL
+        downloadUrl = `http://localhost:5001/api/emails/download-attachment?url=${encodeURIComponent(attachment.url)}&filename=${encodeURIComponent(filename)}`;
+        console.log('🔗 Fetching direct URL file via proxy:', attachment.url);
+        
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('✅ Direct URL file downloaded successfully:', filename);
+        return;
+        
       } else {
-        alert('❌ No download URL available for this file');
+        console.warn('⚠️ Unknown attachment type:', attachment);
+        alert('Unable to determine download method for this attachment');
         return;
       }
-
-      console.log('📥 Download URL:', downloadUrl);
       
-      // Create a temporary link and trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = filename;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      console.log('✅ Download initiated for:', filename);
     } catch (error) {
-      console.error('❌ Download failed:', error);
-      alert(`❌ Failed to download file: ${error.message}`);
+      console.error('Download error:', error);
+      alert('Failed to download attachment: ' + error.message);
     }
   };
 
@@ -618,8 +728,9 @@ const EmailDetails = () => {
                     {index < allMessages.length - 1 && <div className="message-separator"></div>}
                   </div>
                 );
-              })}
-            </div>
+                })}
+              </div>
+
           ) : (
             /* Single Message View */
             <div className="single-message">
@@ -631,7 +742,7 @@ const EmailDetails = () => {
                 )}
               </div>
             </div>
-          )}
+          )   }
         </div>
 
         {/* Attachments Section */}
@@ -642,13 +753,39 @@ const EmailDetails = () => {
             </h4>
             <div className="attachments-list">
               {email.attachments.map((attachment, index) => {
-                // Check if it's a Cloudinary attachment
+                // Determine attachment type and source
                 const isCloudinaryFile = attachment.cloudinary || attachment.secure_url;
+                const isLocalFile = attachment.path;
+                const isDirectUrl = attachment.url;
+                const isImapFile = attachment.hasContent;
+                
+                let attachmentIcon = '📄'; // Default
+                let attachmentSource = 'Unknown';
+                let canDownload = false;
+                
+                if (isCloudinaryFile) {
+                  attachmentIcon = '☁️';
+                  attachmentSource = 'Cloudinary Cloud Storage';
+                  canDownload = true;
+                } else if (isLocalFile) {
+                  attachmentIcon = '📁';
+                  attachmentSource = 'Local Server';
+                  canDownload = true;
+                } else if (isDirectUrl) {
+                  attachmentIcon = '🔗';
+                  attachmentSource = 'Direct URL';
+                  canDownload = true;
+                  if (isImapFile) {
+                    attachmentIcon = '📧';
+                    attachmentSource = 'Email Server (IMAP)';
+                    canDownload = true; // Now supported!
+                  }
+                }
                 
                 return (
                   <div key={index} className="attachment-item">
                     <div className="attachment-icon">
-                      {isCloudinaryFile ? '☁️' : '📄'}
+                      {attachmentIcon}
                     </div>
                     <div className="attachment-info">
                       <div className="attachment-name">
@@ -657,7 +794,9 @@ const EmailDetails = () => {
                       <div className="attachment-details">
                         {attachment.size && (
                           <span className="file-size">
-                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                            {attachment.size > 1024 * 1024 ? 
+                              `${(attachment.size / 1024 / 1024).toFixed(2)} MB` : 
+                              `${(attachment.size / 1024).toFixed(1)} KB`}
                           </span>
                         )}
                         {attachment.cloudinary?.format && (
@@ -665,14 +804,28 @@ const EmailDetails = () => {
                             • {attachment.cloudinary.format.toUpperCase()}
                           </span>
                         )}
-                        {isCloudinaryFile && (
-                          <span className="cloud-badge">
-                            • ☁️ Cloud Stored
+                        {attachment.contentType && (
+                          <span className="file-format">
+                            • {attachment.contentType.split('/')[1]?.toUpperCase() || 'FILE'}
                           </span>
                         )}
+                        <span className="attachment-source" style={{color: '#666', fontSize: '11px'}}>
+                          • Source: {attachmentSource}
+                        </span>
+                        {/* Show Cloudinary URL for debugging */}
+                        {isCloudinaryFile && (
+                          <div style={{fontSize: '10px', color: '#888', marginTop: '2px'}}>
+                            🔗 {(attachment.cloudinary?.secure_url || attachment.secure_url)?.substring(0, 50)}...
+                          </div>
+                        )}
+                        {/* Show download availability */}
+                        <span className={`download-status ${canDownload ? 'available' : 'unavailable'}`} style={{fontSize: '10px', display: 'block'}}>
+                          {canDownload ? '✅ Can download' : '❌ Download not available'}
+                        </span>
                       </div>
                     </div>
                     <div className="attachment-actions">
+                      {/* Cloudinary files - View and Download */}
                       {isCloudinaryFile && (attachment.cloudinary?.secure_url || attachment.secure_url) && (
                         <>
                           <a
@@ -685,22 +838,29 @@ const EmailDetails = () => {
                             👁️ View
                           </a>
                           <button
-                            onClick={() => downloadAttachment(attachment)}
+                            onClick={() => downloadAttachment(attachment, index)}
                             className="attachment-button download-button"
-                            title="Download file"
+                            title="Download file from Cloudinary"
                           >
-                            💾 Download
+                            📥 Download
                           </button>
                         </>
                       )}
-                      {!isCloudinaryFile && attachment.path && (
+                      {/* Local, Direct URL, and IMAP files */}
+                      {(isLocalFile || isDirectUrl || isImapFile) && !isCloudinaryFile && (
                         <button
-                          onClick={() => downloadAttachment(attachment)}
+                          onClick={() => downloadAttachment(attachment, index)}
                           className="attachment-button download-button"
-                          title="Download file"
+                          title={`Download ${attachmentSource} file`}
                         >
-                          💾 Download
+                          📥 Download
                         </button>
+                      )}
+                      {/* Unknown files */}
+                      {!canDownload && (
+                        <span className="attachment-button disabled-button" title="No download method available">
+                          ❓ Unknown Source
+                        </span>
                       )}
                     </div>
                   </div>

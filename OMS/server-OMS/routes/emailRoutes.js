@@ -1283,6 +1283,7 @@ async function fetchImapEmails(email, password, folder = 'INBOX', limit = 50) {
                   body: parsed.html || parsed.textAsHtml || parsed.text || '',
                   messageId: parsed.messageId,
                   seqno: seqno,
+                  folder: folder, // Add folder information
                   attachments: attachments, // Add attachments array
                   hasAttachments: attachments.length > 0 // Add flag for quick checking
                 });
@@ -1332,6 +1333,203 @@ async function fetchImapEmails(email, password, folder = 'INBOX', limit = 50) {
   });
 }
 
+// Fetch Cloudinary files for a specific email
+router.post('/fetch-cloudinary-files', authenticate, async (req, res) => {
+  try {
+    const { emailId, messageId } = req.body;
+    
+    if (!emailId && !messageId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email ID or Message ID is required' 
+      });
+    }
+
+    console.log('☁️ Fetching Cloudinary files for email:', emailId || messageId);
+
+    // Find the email in SentEmail collection
+    let email;
+    if (emailId) {
+      email = await SentEmail.findById(emailId);
+    } else if (messageId) {
+      email = await SentEmail.findOne({ messageId: messageId });
+    }
+
+    if (!email) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Email not found' 
+      });
+    }
+
+    // Extract Cloudinary files from attachments
+    const cloudinaryFiles = [];
+    
+    if (email.attachments && email.attachments.length > 0) {
+      email.attachments.forEach((attachment, index) => {
+        if (attachment.cloudinary && attachment.cloudinary.secure_url) {
+          cloudinaryFiles.push({
+            id: `cloudinary_${index}`,
+            filename: attachment.originalname || attachment.filename || `file_${index + 1}`,
+            secure_url: attachment.cloudinary.secure_url,
+            public_id: attachment.cloudinary.public_id,
+            format: attachment.cloudinary.format,
+            bytes: attachment.cloudinary.bytes,
+            size: attachment.size,
+            mimetype: attachment.mimetype,
+            created_at: attachment.cloudinary.created_at,
+            // Generate download and view URLs
+            downloadUrl: `http://localhost:5001/api/emails/download-attachment?url=${encodeURIComponent(attachment.cloudinary.secure_url)}&filename=${encodeURIComponent(attachment.originalname || attachment.filename)}`,
+            viewUrl: attachment.cloudinary.secure_url
+          });
+        }
+      });
+    }
+
+    console.log(`📁 Found ${cloudinaryFiles.length} Cloudinary files in email`);
+
+    res.json({
+      success: true,
+      emailId: email._id,
+      messageId: email.messageId,
+      cloudinaryFiles: cloudinaryFiles,
+      totalFiles: cloudinaryFiles.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching Cloudinary files:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+});
+
+// Test route for fetching Cloudinary files without authentication (for testing)
+router.post('/test-fetch-cloudinary-files', async (req, res) => {
+  try {
+    const { emailId, messageId } = req.body;
+    
+    if (!emailId && !messageId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email ID or Message ID is required' 
+      });
+    }
+
+    console.log('☁️ Test fetching Cloudinary files for email:', emailId || messageId);
+
+    // Find the email in SentEmail collection
+    let email;
+    if (emailId) {
+      email = await SentEmail.findById(emailId);
+    } else if (messageId) {
+      email = await SentEmail.findOne({ messageId: messageId });
+    }
+
+    if (!email) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Email not found' 
+      });
+    }
+
+    // Extract Cloudinary files from attachments
+    const cloudinaryFiles = [];
+    
+    if (email.attachments && email.attachments.length > 0) {
+      email.attachments.forEach((attachment, index) => {
+        if (attachment.cloudinary && attachment.cloudinary.secure_url) {
+          cloudinaryFiles.push({
+            id: `cloudinary_${index}`,
+            filename: attachment.originalname || attachment.filename || `file_${index + 1}`,
+            secure_url: attachment.cloudinary.secure_url,
+            public_id: attachment.cloudinary.public_id,
+            format: attachment.cloudinary.format,
+            bytes: attachment.cloudinary.bytes,
+            size: attachment.size,
+            mimetype: attachment.mimetype,
+            created_at: attachment.cloudinary.created_at,
+            // Generate download and view URLs
+            downloadUrl: `http://localhost:5001/api/emails/download-attachment?url=${encodeURIComponent(attachment.cloudinary.secure_url)}&filename=${encodeURIComponent(attachment.originalname || attachment.filename)}`,
+            viewUrl: attachment.cloudinary.secure_url
+          });
+        }
+      });
+    }
+
+    console.log(`📁 Test found ${cloudinaryFiles.length} Cloudinary files in email`);
+
+    res.json({
+      success: true,
+      emailId: email._id,
+      messageId: email.messageId,
+      cloudinaryFiles: cloudinaryFiles,
+      totalFiles: cloudinaryFiles.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching test Cloudinary files:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+});
+
+// Generic file download endpoint for resumes, CVs, and other documents
+router.get('/download-file', async (req, res) => {
+  try {
+    const { url, filename, type } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ success: false, message: 'URL parameter is required' });
+    }
+
+    const displayName = filename || type || 'download';
+    console.log('📥 Proxying file download for:', displayName);
+    
+    // Fetch the file from the URL (Cloudinary or other)
+    const axios = require('axios');
+    const response = await axios.get(url, { responseType: 'stream' });
+    
+    // Set appropriate headers for download
+    const contentType = response.headers['content-type'] || 'application/octet-stream';
+    const contentLength = response.headers['content-length'];
+    
+    // Determine file extension based on content type
+    let extension = '';
+    if (contentType.includes('pdf')) extension = '.pdf';
+    else if (contentType.includes('msword')) extension = '.doc';
+    else if (contentType.includes('wordprocessingml')) extension = '.docx';
+    else if (contentType.includes('image/jpeg')) extension = '.jpg';
+    else if (contentType.includes('image/png')) extension = '.png';
+    else if (contentType.includes('image/gif')) extension = '.gif';
+    else if (contentType.includes('text/plain')) extension = '.txt';
+    
+    const downloadFilename = filename || `${type || 'file'}${extension}`;
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+    
+    // Pipe the file stream to response
+    response.data.pipe(res);
+    
+  } catch (error) {
+    console.error('File download proxy error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to download file',
+      error: error.message 
+    });
+  }
+});
+
 // Proxy route for downloading attachments (handles CORS issues)
 router.get('/download-attachment', async (req, res) => {
   try {
@@ -1347,12 +1545,14 @@ router.get('/download-attachment', async (req, res) => {
     const axios = require('axios');
     const response = await axios.get(url, { responseType: 'stream' });
     
-    // Set appropriate headers
+    // Set appropriate headers for download
     const contentType = response.headers['content-type'] || 'application/octet-stream';
     const contentLength = response.headers['content-length'];
     
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename || 'attachment'}"`);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     if (contentLength) {
       res.setHeader('Content-Length', contentLength);
     }
@@ -1369,5 +1569,135 @@ router.get('/download-attachment', async (req, res) => {
     });
   }
 });
+
+// IMAP Attachment Download endpoint
+router.get('/download-imap-attachment', authenticate, async (req, res) => {
+  try {
+    const { folder = 'INBOX', seqno, attachmentIndex, filename } = req.query;
+    
+    if (!seqno || attachmentIndex === undefined) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'seqno and attachmentIndex are required' 
+      });
+    }
+
+    console.log(`📎 Downloading IMAP attachment: ${filename || 'unnamed'} from message ${seqno}`);
+    
+    // Use server-side SMTP credentials instead of requiring them from client
+    const smtpEmail = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASS;
+    
+    if (!smtpEmail || !smtpPassword) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'SMTP credentials not configured on server' 
+      });
+    }
+    
+    const attachmentData = await fetchImapAttachment(smtpEmail, smtpPassword, folder, parseInt(seqno), parseInt(attachmentIndex));
+    
+    if (!attachmentData) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Attachment not found' 
+      });
+    }
+    
+    // Set appropriate headers for download
+    res.setHeader('Content-Type', attachmentData.contentType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename || attachmentData.filename || 'attachment'}"`);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.setHeader('Content-Length', attachmentData.content.length);
+    
+    // Send the attachment content
+    res.send(attachmentData.content);
+    
+  } catch (error) {
+    console.error('IMAP attachment download error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to download attachment', 
+      error: error.message 
+    });
+  }
+});
+
+// Function to fetch a specific attachment from IMAP
+async function fetchImapAttachment(email, password, folder, seqno, attachmentIndex) {
+  return new Promise(async (resolve, reject) => {
+    let imap;
+    
+    try {
+      // Get or create IMAP connection
+      imap = await getImapConnection(email, password);
+    } catch (connectionError) {
+      console.error('Failed to get IMAP connection:', connectionError.message);
+      return reject(connectionError);
+    }
+
+    // Set up operation timeout
+    const operationTimeout = setTimeout(() => {
+      console.log('IMAP attachment fetch timeout');
+      resolve(null);
+    }, 30000);
+
+    imap.openBox(folder, true, (err, box) => {
+      if (err) {
+        clearTimeout(operationTimeout);
+        console.error(`Error opening ${folder}:`, err.message);
+        return reject(new Error(`Failed to open ${folder}: ${err.message}`));
+      }
+
+      console.log(`📂 Opened ${folder} for attachment fetch`);
+      
+      // Fetch the specific message with full body
+      const fetch = imap.seq.fetch(seqno, {
+        bodies: '',
+        struct: true
+      });
+
+      fetch.on('message', (msg, msgSeqno) => {
+        if (msgSeqno !== seqno) return;
+        
+        msg.on('body', (stream, info) => {
+          simpleParser(stream)
+            .then(parsed => {
+              clearTimeout(operationTimeout);
+              
+              if (!parsed.attachments || !parsed.attachments[attachmentIndex]) {
+                return resolve(null);
+              }
+              
+              const attachment = parsed.attachments[attachmentIndex];
+              
+              resolve({
+                filename: attachment.filename || `attachment_${attachmentIndex}`,
+                contentType: attachment.contentType || 'application/octet-stream',
+                content: attachment.content,
+                size: attachment.content ? attachment.content.length : 0
+              });
+            })
+            .catch(err => {
+              clearTimeout(operationTimeout);
+              console.error('Attachment parse error:', err.message);
+              reject(err);
+            });
+        });
+      });
+
+      fetch.once('error', (err) => {
+        clearTimeout(operationTimeout);
+        console.error('Attachment fetch error:', err.message);
+        reject(new Error('Failed to fetch attachment: ' + err.message));
+      });
+
+      fetch.once('end', () => {
+        // Fetch completed
+      });
+    });
+  });
+}
 
 module.exports = router;
