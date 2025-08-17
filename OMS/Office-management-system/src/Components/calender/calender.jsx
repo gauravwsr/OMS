@@ -17,11 +17,26 @@ import {
 } from "@syncfusion/ej2-react-schedule";
 import axios from "axios";
 import { useAuth } from "../AuthProvider/AuthContext";
+import "./calender.css"; // Import responsive CSS
 
 const Calender = () => {
   const scheduleObj = useRef(null);
   const [users, setUsers] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth(); // Get user info to check role
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
 
   // Role logic for calendar permissions
@@ -221,10 +236,13 @@ const Calender = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
+        setIsLoading(true);
         const response = await axios.get("http://localhost:5001/users");
         setUsers(response.data); // Set the room data to state
       } catch (error) {
         console.error("Error fetching room data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -232,68 +250,72 @@ const Calender = () => {
   }, []);
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
-      {!dataManager ? (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          fontSize: '18px',
-          color: '#666'
-        }}>localhost:5001
-          Please login to access the calendar
-        </div>
-      ) : (
-        <ScheduleComponent
-          width={"100%"}
-          height={"calc(100% - 60px)"}
-          id="schedule"
-          ref={scheduleObj}
-          currentView="Week"
-          group={{ allowGroupEdit: canEditCalendar }} // Only allow group edit for allowed users
-          allowDragAndDrop={canEditCalendar} // Only allow drag and drop for allowed users
-          readonly={!canEditCalendar} // Make entire schedule readonly for others
-          eventSettings={{
-            dataSource: dataManager,
-            fields: {
-              id: "_id",
-              subject: { name: "Subject" },
-              startTime: { name: "StartTime" },
-              endTime: { name: "EndTime" },
-              description: { name: "Description" },
-              location: { name: "Location" },
-              isAllDay: { name: "IsAllDay" },
-              resourceFields: "Users",
-            },
-          }} // Event data source
-          actionBegin={onActionBegin} // Handle action restrictions
-          cellClick={onCellClick} // Handle cell click restrictions
-          eventClick={onEventClick} // Handle event click restrictions
-        >
-          <ResourcesDirective>
-            <ResourceDirective
-              field="Users"
-              title="Users"
-              name="Users"
-              idField="_id"
-              textField="name"
-              allowMultiple={true}
-              dataSource={users}
+    <div className="calendar-container">
+      <div className="calendar-wrapper">
+        {!dataManager ? (
+          <div className="calendar-login-message">
+            <div className="icon">🔒</div>
+            <h3>Authentication Required</h3>
+            <p>Please login to access the calendar and manage your events</p>
+          </div>
+        ) : isLoading ? (
+          <div className="calendar-loading">
+            <div className="spinner"></div>
+          </div>
+        ) : (
+          <ScheduleComponent
+            width={"100%"}
+            height={isMobile ? "calc(100vh - 120px)" : "calc(100vh - 140px)"}
+            id="schedule"
+            ref={scheduleObj}
+            currentView={isMobile ? "Day" : "Week"}
+            group={{ allowGroupEdit: canEditCalendar }} // Only allow group edit for allowed users
+            allowDragAndDrop={canEditCalendar} // Only allow drag and drop for allowed users
+            readonly={!canEditCalendar} // Make entire schedule readonly for others
+            showQuickInfo={isMobile ? false : true} // Disable quick info on mobile for better UX
+            enablePersistence={true} // Remember view state
+            enableRtl={false}
+            eventSettings={{
+              dataSource: dataManager,
+              fields: {
+                id: "_id",
+                subject: { name: "Subject" },
+                startTime: { name: "StartTime" },
+                endTime: { name: "EndTime" },
+                description: { name: "Description" },
+                location: { name: "Location" },
+                isAllDay: { name: "IsAllDay" },
+                resourceFields: "Users",
+              },
+            }} // Event data source
+            actionBegin={onActionBegin} // Handle action restrictions
+            cellClick={onCellClick} // Handle cell click restrictions
+            eventClick={onEventClick} // Handle event click restrictions
+          >
+            <ResourcesDirective>
+              <ResourceDirective
+                field="Users"
+                title="Users"
+                name="Users"
+                idField="_id"
+                textField="name"
+                allowMultiple={true}
+                dataSource={users}
+              />
+            </ResourcesDirective>
+            <ViewsDirective>
+              <ViewDirective option="Day" />
+              <ViewDirective option="Week" />
+              {!isMobile && <ViewDirective option="WorkWeek" />}
+              <ViewDirective option="Month" />
+              <ViewDirective option="Agenda" />
+            </ViewsDirective>
+            <Inject
+              services={[Day, Week, WorkWeek, Month, Agenda, DragAndDrop]}
             />
-          </ResourcesDirective>
-          <ViewsDirective>
-            <ViewDirective option="Day" />
-            <ViewDirective option="Week" />
-            <ViewDirective option="WorkWeek" />
-            <ViewDirective option="Month" />
-            <ViewDirective option="Agenda" />
-          </ViewsDirective>
-          <Inject
-            services={[Day, Week, WorkWeek, Month, Agenda, DragAndDrop]}
-          />
-        </ScheduleComponent>
-      )}
+          </ScheduleComponent>
+        )}
+      </div>
     </div>
   );
 };

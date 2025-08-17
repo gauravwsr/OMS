@@ -9,11 +9,24 @@ const NewDashboard = () => {
   const [error, setError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [recentLeaves, setRecentLeaves] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Upcoming Events states
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState(null);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Fetch recent leave applications for dashboard
@@ -55,8 +68,7 @@ const NewDashboard = () => {
         const token = localStorage.getItem("token");
 
         // Check if current user is HR Manager (Admin with HR Manager subRole)
-        const isHRManager =
-          user?.role === "Admin" && user?.subRole === "HR Manager";
+        // const isHRManager = user?.role === "Admin" && user?.subRole === "HR Manager";
 
         // Use GetData for all users (backend will handle HR Manager permissions)
         const apiUrl = "http://localhost:5001/GetData";
@@ -108,13 +120,15 @@ const NewDashboard = () => {
       clearInterval(clockInterval);
       clearInterval(eventsInterval);
     };
-  }, []);
+  }, [user?.role, user?.subRole]); // Added dependencies to fix the warning
 
-  const getGreeting = () => {
-    const hour = currentTime.getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon";
-    return "Good Evening";
+  const getPersonalizedGreeting = () => {
+    const firstName = user?.name?.split(' ')[0] || 'User';
+    
+    if (isMobile && firstName.length > 8) {
+      return "Welcome to Dashboard";
+    }
+    return `Welcome, ${firstName}!`;
   };
 
   // Helper function to format date for events
@@ -261,6 +275,42 @@ const NewDashboard = () => {
       <div className="dashboard-wrapper">
         <div className="dashboard-container-new">
           <div className="dashboard-main">
+            {/* Mobile-friendly greeting header */}
+            {/* {isMobile && (
+              <div className="dashboard-header-modern">
+                <div className="header-content">
+                  <div className="greeting-section">
+                    <div className="greeting-content">
+                      <h1 className="main-greeting">
+                        {getPersonalizedGreeting()}
+                      </h1>
+                      <p className="welcome-subtitle">
+                        {user?.name?.split(' ')[0] ? 
+                          `Welcome back to your dashboard, ${user.name.split(' ')[0]}!` : 
+                          'Welcome back to your dashboard'
+                        }
+                      </p>
+                    </div>
+                    <div className="header-stats">
+                      <div className="current-time">
+                        <span className="time-icon">🕐</span>
+                        <div className="time-info">
+                          <span className="time-label">Current Time</span>
+                          <span className="time-value">{formatTime()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="date-section">
+                    <div className="date-card">
+                      <span className="date-icon">📅</span>
+                      <span className="date-value">{formatDate()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )} */}
+
             {/* Enhanced User Profile Card */}
             <div className="profile-section">
               <h2 className="section-title">
@@ -346,10 +396,11 @@ const NewDashboard = () => {
                       </div>
                     </div>
                     <div className="stat-content">
-                      <h3>Join Date</h3>
+                      <h3>{isMobile ? "Joined" : "Join Date"}</h3>
                       <p className="stat-value-modern">
                         {user
-                          ? new Date(user.date).toLocaleDateString("en-GB")
+                          ? new Date(user.date).toLocaleDateString(isMobile ? "en-US" : "en-GB", 
+                              isMobile ? { month: "short", day: "numeric", year: "2-digit" } : {})
                           : "N/A"}
                       </p>
                       <span className="stat-subtitle">Member since</span>
@@ -372,49 +423,51 @@ const NewDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="stat-card-modern quaternary">
-                    <div className="stat-visual">
-                      <div className="stat-icon-modern">🎯</div>
-                      <div className="stat-pattern">
-                        <div className="pattern-lines">
-                          <span></span>
-                          <span></span>
-                          <span></span>
+                  {!isMobile && (
+                    <div className="stat-card-modern quaternary">
+                      <div className="stat-visual">
+                        <div className="stat-icon-modern">🎯</div>
+                        <div className="stat-pattern">
+                          <div className="pattern-lines">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                          </div>
                         </div>
                       </div>
+                      <div className="stat-content">
+                        <h3>Sub Role</h3>
+                        <p className="stat-value-modern">
+                          {user?.subRole || "N/A"}
+                        </p>
+                        <span className="stat-subtitle">Specialization</span>
+                      </div>
                     </div>
-                    <div className="stat-content">
-                      <h3>Sub Role</h3>
-                      <p className="stat-value-modern">
-                        {user?.subRole || "N/A"}
-                      </p>
-                      <span className="stat-subtitle">Specialization</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
               {/* Enhanced Activity Section */}
               <div className="activity-section-modern">
                 <h2 className="section-title">
-                  <span className="title-icon">📈</span>
-                  Recent Activity
+                  <span className="title-icon">�</span>
+                  Professional Activity Dashboard
                 </h2>
                 <div className="activity-container">
                   <div className="activity-timeline-modern">
                     <div className="timeline-item-modern login">
                       <div className="timeline-marker">
-                        <div className="marker-icon">📥</div>
+                        <div className="marker-icon">�</div>
                         <div className="marker-line"></div>
                       </div>
                       <div className="timeline-content-modern">
                         <div className="activity-header">
-                          <h4>System Login</h4>
-                          <span className="activity-badge success">Active</span>
+                          <h4>Session Authenticated</h4>
+                          <span className="activity-badge success">Verified</span>
                         </div>
-                        <p>You logged into the system successfully</p>
+                        <p>Secure authentication completed successfully</p>
                         <span className="activity-time">
-                          <span className="time-icon">🕐</span>
+                          <span className="time-icon">⏰</span>
                           Today,{" "}
                           {new Date().toLocaleTimeString("en-US", {
                             hour: "2-digit",
@@ -428,18 +481,18 @@ const NewDashboard = () => {
                     {recentLeaves.length === 0 ? (
                       <div className="timeline-item-modern update">
                         <div className="timeline-marker">
-                          <div className="marker-icon">📝</div>
+                          <div className="marker-icon">�</div>
                           <div className="marker-line"></div>
                         </div>
                         <div className="timeline-content-modern">
                           <div className="activity-header">
-                            <h4>Leave Application</h4>
-                            <span className="activity-badge info">Leave</span>
+                            <h4>Leave Management</h4>
+                            <span className="activity-badge info">HR</span>
                           </div>
-                          <p>No recent leave applications.</p>
+                          <p>No pending leave requests requiring attention</p>
                           <span className="activity-time">
-                            <span className="time-icon">🕐</span>
-                            --
+                            <span className="time-icon">⏰</span>
+                            All clear
                           </span>
                         </div>
                       </div>
@@ -447,20 +500,20 @@ const NewDashboard = () => {
                       recentLeaves.map((leave, idx) => (
                         <div className="timeline-item-modern update" key={idx}>
                           <div className="timeline-marker">
-                            <div className="marker-icon">📝</div>
+                            <div className="marker-icon">�</div>
                             <div className="marker-line"></div>
                           </div>
                           <div className="timeline-content-modern">
                             <div className="activity-header">
-                              <h4>Leave Application</h4>
-                              <span className="activity-badge info">Leave</span>
+                              <h4>Leave Request Submitted</h4>
+                              <span className="activity-badge info">Pending</span>
                             </div>
                             <p>
-                              {leave.name} ({leave.role}) applied for leave.
+                              Request by {leave.name} ({leave.role}) - Under Review
                             </p>
                             <span className="activity-time">
-                              <span className="time-icon">🕐</span>
-                              {leave.appliedAt ? new Date(leave.appliedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "--"}
+                              <span className="time-icon">⏰</span>
+                              {leave.appliedAt ? new Date(leave.appliedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "Recently"}
                             </span>
                           </div>
                         </div>
@@ -471,36 +524,36 @@ const NewDashboard = () => {
                     {eventsLoading ? (
                       <div className="timeline-item-modern notification">
                         <div className="timeline-marker">
-                          <div className="marker-icon">⏳</div>
+                          <div className="marker-icon">🔄</div>
                           <div className="marker-line"></div>
                         </div>
                         <div className="timeline-content-modern">
                           <div className="activity-header">
-                            <h4>Loading Calendar Events</h4>
-                            <span className="activity-badge info">Loading</span>
+                            <h4>Calendar Synchronization</h4>
+                            <span className="activity-badge info">Processing</span>
                           </div>
-                          <p>Fetching your upcoming calendar events...</p>
+                          <p>Synchronizing your upcoming events and meetings...</p>
                           <span className="activity-time">
-                            <span className="time-icon">🕐</span>
-                            Just now
+                            <span className="time-icon">⏰</span>
+                            In progress
                           </span>
                         </div>
                       </div>
                     ) : eventsError ? (
                       <div className="timeline-item-modern notification">
                         <div className="timeline-marker">
-                          <div className="marker-icon">❌</div>
+                          <div className="marker-icon">⚠️</div>
                           <div className="marker-line"></div>
                         </div>
                         <div className="timeline-content-modern">
                           <div className="activity-header">
-                            <h4>Calendar Error</h4>
-                            <span className="activity-badge error">Error</span>
+                            <h4>Calendar Service Unavailable</h4>
+                            <span className="activity-badge warning">Alert</span>
                           </div>
-                          <p>Unable to load calendar events</p>
+                          <p>Unable to sync calendar events - Service temporarily unavailable</p>
                           <span className="activity-time">
-                            <span className="time-icon">🕐</span>
-                            Just now
+                            <span className="time-icon">⏰</span>
+                            System notification
                           </span>
                         </div>
                       </div>
@@ -516,13 +569,14 @@ const NewDashboard = () => {
                           </div>
                           <div className="timeline-content-modern">
                             <div className="activity-header">
-                              <h4>{event.Subject}</h4>
+                              <h4>Scheduled Meeting: {event.Subject}</h4>
+                              <span className="activity-badge success">Confirmed</span>
                             </div>
                             <p>
-                              {event.Description || "Scheduled calendar event"}
+                              {event.Description || "Professional calendar appointment"}
                             </p>
                             <span className="activity-time">
-                              <span className="time-icon">🕐</span>
+                              <span className="time-icon">⏰</span>
                               {formatEventDate(event.StartTime, event.EndTime)}
                             </span>
                           </div>
@@ -531,19 +585,19 @@ const NewDashboard = () => {
                     ) : (
                       <div className="timeline-item-modern notification">
                         <div className="timeline-marker">
-                          <div className="marker-icon">📅</div>
+                          <div className="marker-icon">✅</div>
                           <div className="marker-line"></div>
                         </div>
                         <div className="timeline-content-modern">
                           <div className="activity-header">
-                            <h4>No Upcoming Events</h4>
+                            <h4>Schedule Status: Clear</h4>
                             <span className="activity-badge success">
-                              Clear
+                              Available
                             </span>
                           </div>
-                          <p>No event for today</p>
+                          <p>No scheduled meetings or events for today</p>
                           <span className="activity-time">
-                            <span className="time-icon">🕐</span>
+                            <span className="time-icon">⏰</span>
                             {new Date().toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
