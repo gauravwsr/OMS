@@ -271,7 +271,7 @@ const MainContent = ({ nav }) => {
 
   useEffect(() => {
     // Fetch pending leave applications for notification
-    axios.get("http://146.190.165.62:5001/api/leave/recent")
+    axios.get("http://localhost:5001/api/leave/recent")
       .then(res => setLeaveNotification(Array.isArray(res.data) && res.data.length > 0))
       .catch(() => setLeaveNotification(false));
 

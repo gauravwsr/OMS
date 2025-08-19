@@ -120,8 +120,8 @@ const Employee = () => {
       if (formData.candidateId) {
         try {
           const faceEncodingsResponse = await axios.put(
-            `http://146.190.165.62:5001/api/candidates/${formData.candidateId}/face-encodings`,
-            `http://146.190.165.62:5001/api/candidates/${formData.candidateId}/face-encodings`,
+            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
+            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
             {
               faceEncodings: capturedImages, // Store captured images as face data
               faceImagePaths: [`face_images/${formData.fullName}`], // Store image path
@@ -390,11 +390,11 @@ const Employee = () => {
   const checkServerStatus = async () => {
     try {
       console.log("🔍 Checking server status...");
-      const response = await axios.get("http://146.190.165.62:5001/api/health", {
+      const response = await axios.get("http://localhost:5001/api/health", {
         timeout: 3000,
       });
       // const response = await axios.get(
-      //   "http://146.190.165.62:5001/api/health",
+      //   "http://localhost:5001/api/health",
       //   {
       //     timeout: 3000,
       //   }
@@ -443,7 +443,7 @@ const Employee = () => {
       const serverOnline = await checkServerStatus();
       if (!serverOnline) {
         alert(
-          "❌ Backend server is not accessible. Please ensure the server is running on http://146.190.165.62:5001"
+          "❌ Backend server is not accessible. Please ensure the server is running on http://localhost:5001"
         );
         setLoading(false);
         setLoadingMessage("");
@@ -558,7 +558,7 @@ const Employee = () => {
       console.log("🌐 Sending registration request to server...");
       setLoadingMessage("Submitting registration...");
       const response = await axios.post(
-        "http://146.190.165.62:5001/api/candidates",
+        "http://localhost:5001/api/candidates",
         data,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -607,7 +607,7 @@ const Employee = () => {
           "Request timeout! The server is taking too long to respond. Please try again or check your internet connection.";
       } else if (error.code === "ERR_NETWORK") {
         errorMessage =
-          "Unable to connect to server. Please check if the backend server is running on http://146.190.165.62:5001";
+          "Unable to connect to server. Please check if the backend server is running on http://localhost:5001";
       } else if (error.response) {
         const status = error.response.status;
         if (status === 400) {
@@ -783,7 +783,7 @@ const Employee = () => {
                 </li>
                 <li>
                   Ensure the backend server is running on{" "}
-                  <code>http://146.190.165.62:5001</code>
+                  <code>http://localhost:5001</code>
                 </li>
                 <li>
                   Check that MongoDB is connected properly for the backend

@@ -308,7 +308,7 @@ font-weight: bold;
 
 .header-left {
   flex: 1;
-  background-color: #FFD770;
+  /* background-color: #FFD770; */
   display: flex;
   align-items: center;
   padding: 20px;

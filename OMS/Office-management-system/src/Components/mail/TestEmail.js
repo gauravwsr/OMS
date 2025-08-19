@@ -9,7 +9,7 @@ const TestEmail = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const BASE_URL = 'http://146.190.165.62:5001/api/emails';
+  const BASE_URL = 'http://localhost:5001/api/emails';
 
   const getAuthHeaders = () => ({
     'Authorization': `Bearer ${localStorage.getItem('token')}`,

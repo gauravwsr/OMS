@@ -102,7 +102,7 @@ export default function ProjectList() {
       }
 
       // Fetch projects from local database
-      const response = await fetch("http://146.190.165.62:5001/api/client-projects", {
+      const response = await fetch("http://localhost:5001/api/client-projects", {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -125,7 +125,7 @@ export default function ProjectList() {
         projectsData.map(async (project) => {
           try {
             const taskCountsResponse = await fetch(
-              `http://146.190.165.62:5001/api/team-lead/projects/${project._id}/tasks`,
+              `http://localhost:5001/api/team-lead/projects/${project._id}/tasks`,
               {
                 headers: {
                   "Content-Type": "application/json",
@@ -2824,7 +2824,7 @@ export default function ProjectList() {
 
 //     try {
 //       // Send the project data to the API
-//       const response = await fetch("http://146.190.165.62:5001/api/projects", {
+//       const response = await fetch("http://localhost:5001/api/projects", {
 //         method: "POST",
 //         headers: { "Content-Type": "application/json" },
 //         body: JSON.stringify(newProject),

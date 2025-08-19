@@ -50,7 +50,7 @@ const MeetingScheduler = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://146.190.165.62:5001/api/meetings/scheduled",
+        "http://localhost:5001/api/meetings/scheduled",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -80,7 +80,7 @@ const MeetingScheduler = () => {
 
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://146.190.165.62:5001/api/meetings/schedule",
+        "http://localhost:5001/api/meetings/schedule",
         {
           ...scheduleForm,
           scheduledAt: scheduledDateTime.toISOString(),
@@ -108,7 +108,7 @@ const MeetingScheduler = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `http://146.190.165.62:5001/api/meetings/start-scheduled/${scheduleId}`,
+        `http://localhost:5001/api/meetings/start-scheduled/${scheduleId}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -139,7 +139,7 @@ const MeetingScheduler = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       await axios.delete(
-        `http://146.190.165.62:5001/api/meetings/scheduled/${scheduleId}`,
+        `http://localhost:5001/api/meetings/scheduled/${scheduleId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -161,7 +161,7 @@ const MeetingScheduler = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       await axios.post(
-        `http://146.190.165.62:5001/api/meetings/send-reminder/${scheduleId}`,
+        `http://localhost:5001/api/meetings/send-reminder/${scheduleId}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
