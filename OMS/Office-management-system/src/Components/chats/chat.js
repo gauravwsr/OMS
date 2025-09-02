@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Container,
@@ -16,8 +15,7 @@ import {
 } from "react-bootstrap";
 import axios from "axios";
 import { io } from "socket.io-client";
-import "./chat.css";
-import "./chat-header.css";
+import "./chat-new.css";
 import { useAuth } from "../AuthProvider/AuthContext"; // Assuming you have an auth context
 
 // Helper to format date as WhatsApp style (Today, Yesterday, or date)
@@ -64,15 +62,127 @@ const Chat = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [chatsLoading, setChatsLoading] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [inAppNotifications, setInAppNotifications] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
   const typingTimeout = useRef(null);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
+
+  // Responsive hook to detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 768 || 
+                    window.matchMedia("(max-width: 768px)").matches ||
+                    'ontouchstart' in window ||
+                    navigator.maxTouchPoints > 0;
+      setIsMobile(mobile);
+      
+      // Remove mobile-chat-open class when switching to desktop
+      if (!mobile) {
+        const chatContainer = document.querySelector(".chat-container");
+        if (chatContainer) {
+          chatContainer.classList.remove("mobile-chat-open");
+        }
+        // Detect navbar state for desktop
+        detectNavbarState();
+      }
+    };
+
+    // Function to detect navbar state and apply responsive classes
+    const detectNavbarState = () => {
+      const chatContainer = document.querySelector('.chat-container.container-fluid');
+      if (!chatContainer) return;
+
+      // Remove all navbar state classes first
+      chatContainer.classList.remove('navbar-expanded', 'navbar-collapsed', 'navbar-hidden');
+
+      // Check for sidebar container and its state
+      const sidebarContainer = document.querySelector('.sidebar-container');
+      if (!sidebarContainer) {
+        // No sidebar found - navbar hidden
+        chatContainer.classList.add('navbar-hidden');
+        return;
+      }
+
+      // Check if sidebar is open (desktop: always open, mobile: check open class)
+      const isDesktop = window.innerWidth > 768;
+      const isOpen = isDesktop || sidebarContainer.classList.contains('open');
+      
+      if (!isOpen) {
+        chatContainer.classList.add('navbar-hidden');
+        return;
+      }
+
+      // Check if sidebar is collapsed
+      const isCollapsed = sidebarContainer.classList.contains('collapsed');
+      if (isCollapsed) {
+        chatContainer.classList.add('navbar-collapsed');
+      } else {
+        chatContainer.classList.add('navbar-expanded');
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+
+    // Set up observers for navbar state changes with a delay to ensure DOM is ready
+    const setupNavbarObserver = () => {
+      const sidebarContainer = document.querySelector('.sidebar-container');
+      if (sidebarContainer && window.innerWidth > 768) {
+        const observer = new MutationObserver(() => {
+          detectNavbarState();
+        });
+        
+        observer.observe(sidebarContainer, {
+          attributes: true,
+          attributeFilter: ['class']
+        });
+        
+        return observer;
+      }
+      return null;
+    };
+
+    const timeoutId = setTimeout(() => {
+      const observer = setupNavbarObserver();
+      
+      // Store observer for cleanup
+      if (observer) {
+        window.navbarObserver = observer;
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (window.navbarObserver) {
+        window.navbarObserver.disconnect();
+        delete window.navbarObserver;
+      }
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
+
+  // Reset textarea height when message is cleared
+  useEffect(() => {
+    if (!newMessage) {
+      const textarea = document.querySelector('.message-input .form-control');
+      if (textarea) {
+        textarea.style.height = '44px';
+        textarea.style.overflowY = 'hidden';
+      }
+    }
+  }, [newMessage]);
 
   // Request notification permission on component mount
   useEffect(() => {
@@ -347,7 +457,8 @@ const Chat = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        setInitialLoading(true);
+        setChatsLoading(true);
         setError(null);
 
         const token = localStorage.getItem("token");
@@ -410,10 +521,14 @@ const Chat = () => {
         console.error("Error fetching candidates:", candidateError);
         setCandidates([]);
       }
-      setLoading(false);
+      setInitialLoading(false);
+      setChatsLoading(false);
     };
 
     fetchData();
+    
+    // Set initial loading to false after first load attempt
+    setTimeout(() => setInitialLoading(false), 1000);
   }, [API_BASE_URL]);
 
   // Poll for chats, users, candidates every 2 seconds
@@ -518,7 +633,7 @@ useEffect(() => {
     const fetchMessages = async () => {
       if (!selectedChat) return;
       try {
-        setLoading(true);
+        setMessagesLoading(true);
         const token = localStorage.getItem("token");
         const response = await axios.get(
           `${API_BASE_URL}/api/message/${selectedChat._id}`,
@@ -541,7 +656,7 @@ useEffect(() => {
       } catch (err) {
         setError("Failed to load messages");
       } finally {
-        setLoading(false);
+        setMessagesLoading(false);
       }
     };
     fetchMessages();
@@ -881,10 +996,13 @@ window.testRealtimeConnection = testRealtimeConnection;
   }, [socket]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat) {
-      console.log("Cannot send message: missing message or chat");
+    if (!newMessage.trim() || !selectedChat || sendingMessage) {
+      console.log("Cannot send message: missing message or chat or already sending");
       return;
     }
+
+    // Set sending state
+    setSendingMessage(true);
 
     // Create a unique ID for this message attempt
     const tempId = `temp-${Date.now()}-${Math.random()
@@ -1009,6 +1127,9 @@ window.testRealtimeConnection = testRealtimeConnection;
         id: socket?.id
       });
     }
+
+    // Reset sending state on success
+    setSendingMessage(false);
   } catch (err) {
     networkError = true;
     console.error("Error sending message:", err);
@@ -1035,7 +1156,10 @@ window.testRealtimeConnection = testRealtimeConnection;
 
       // Add a retry button to the message
       // This implementation depends on your UI, but you can add a retry button next to failed messages
-    }
+    
+    // Reset sending state on error
+    setSendingMessage(false);
+  }
   };
 
   const handleAddFriend = async (userId) => {
@@ -1327,30 +1451,42 @@ const clearChatNotifications = (chatId) => {
   });
 };
 
-  // Enhanced chat selection handler
-  const handleChatSelect = (chat) => {
+  // Enhanced chat selection handler with improved mobile responsiveness
+  const handleChatSelect = (chat, event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     setSelectedChat(chat);
     clearChatNotifications(chat._id);
 
-    // Add mobile chat open class for mobile view with better detection
+    // Use state-based mobile detection
     const chatContainer = document.querySelector(".chat-container");
-    if (
-      chatContainer &&
-      (window.innerWidth <= 768 ||
-        window.matchMedia("(max-width: 768px)").matches)
-    ) {
+    if (chatContainer && isMobile) {
       chatContainer.classList.add("mobile-chat-open");
-      console.log("Mobile chat opened for:", chat.chatName || "Chat");
+      console.log("Mobile chat opened for:", chat.chatName || chat.participants?.find(p => p._id !== user._id)?.name || "Chat");
+      
+      // Scroll to top of chat area on mobile
+      const chatArea = document.querySelector(".chat-area");
+      if (chatArea) {
+        chatArea.scrollTop = 0;
+      }
     }
   };
 
-  // Function to handle mobile back button
+  // Enhanced mobile back button handler
   const handleMobileBack = () => {
     const chatContainer = document.querySelector(".chat-container");
     if (chatContainer) {
       chatContainer.classList.remove("mobile-chat-open");
-      setSelectedChat(null); // Clear selected chat to show the chat list
+      // Keep selected chat but hide chat area on mobile
       console.log("Mobile chat closed, returning to chat list");
+      
+      // Scroll to top of sidebar on mobile
+      const sidebar = document.querySelector(".sidebar");
+      if (sidebar) {
+        sidebar.scrollTop = 0;
+      }
     }
   };
 
@@ -1445,6 +1581,39 @@ const clearChatNotifications = (chatId) => {
     }
   };
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    const scrollToBottom = () => {
+      const messagesContainer = document.querySelector('.messages-container');
+      if (messagesContainer) {
+        // Use requestAnimationFrame for smooth scrolling
+        requestAnimationFrame(() => {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+      }
+    };
+
+    // Small delay to ensure DOM is updated
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [messages, selectedChat]);
+
+  // Auto-scroll when textarea height changes
+  useEffect(() => {
+    if (newMessage) {
+      const messagesContainer = document.querySelector('.messages-container');
+      if (messagesContainer) {
+        const isScrolledToBottom = messagesContainer.scrollHeight - messagesContainer.clientHeight <= messagesContainer.scrollTop + 50;
+        if (isScrolledToBottom) {
+          requestAnimationFrame(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          });
+        }
+      }
+    }
+  }, [newMessage]);
+
   // Final cleanup effect for the component
   useEffect(() => {
     return () => {
@@ -1473,7 +1642,7 @@ const clearChatNotifications = (chatId) => {
     );
   };
 
-  if (loading) {
+  if (initialLoading && !user) {
     return (
       <Container
         className="d-flex justify-content-center align-items-center"
@@ -1550,6 +1719,7 @@ return (
     <div className="sidebar">
       {/* Mobile Office Chat Header */}
       <div className="office-chat-header">
+        <i className="fas fa-comments me-2"></i>
         Office Chat
       </div>
       
@@ -1560,12 +1730,14 @@ return (
             className="sidebar-button"
             onClick={() => setShowAddFriendModal(true)}
           >
+            <i className="fas fa-user-plus me-1"></i>
             Add Friend
           </button>
           <button 
             className="sidebar-button"
             onClick={() => setShowNewGroupModal(true)}
           >
+            <i className="fas fa-users me-1"></i>
             New Group
           </button>
         </div>
@@ -1573,21 +1745,26 @@ return (
         
         {/* Desktop Header */}
         <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
-          <h5 className="mb-0 text-black">Office Chat</h5>
+          <h5 className="mb-0 text-white d-flex align-items-center">
+            <i className="fas fa-comments me-2"></i>
+            Office Chat
+          </h5>
           <div className="btn-cont">
             <Button
-              variant="primary"
+              variant="light"
               size="sm"
               onClick={() => setShowAddFriendModal(true)}
               className="me-2"
             >
+              <i className="fas fa-user-plus me-1"></i>
               Add Friend
             </Button>
             <Button
-              variant="secondary"
+              variant="outline-light"
               size="sm"
               onClick={() => setShowNewGroupModal(true)}
             >
+              <i className="fas fa-users me-1"></i>
               New Group
             </Button>
           </div>
@@ -1617,7 +1794,30 @@ return (
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <ListGroup variant="flush">
-                {chats
+                {chatsLoading ? (
+                  <div className="d-flex justify-content-center align-items-center py-4">
+                    <div className="text-center">
+                      <Spinner animation="border" variant="primary" size="sm" />
+                      <p className="text-muted mt-2 mb-0 small">Loading chats...</p>
+                    </div>
+                  </div>
+                ) : chats
+                  .filter((chat) => !chat.isGroupChat)
+                  .filter(
+                    (chat) =>
+                      chat.chatName
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      chat.participants?.some((p) =>
+                        p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                      )
+                  ).length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-muted mb-0 small">
+                      {searchTerm ? `No chats found matching "${searchTerm}"` : "No personal chats yet"}
+                    </p>
+                  </div>
+                ) : chats
                   .filter((chat) => !chat.isGroupChat)
                   .filter(
                     (chat) =>
@@ -1633,7 +1833,7 @@ return (
                       key={chat._id}
                       action
                       active={selectedChat?._id === chat._id}
-                      onClick={() => handleChatSelect(chat)}
+                      onClick={(e) => handleChatSelect(chat, e)}
                       className="d-flex align-items-center"
                     >
                       <div
@@ -1653,24 +1853,7 @@ return (
                             : "?"
                         )}
                         {(chat.unreadCount > 0 || chat.notification) && (
-                          <span
-                            style={{
-                              position: "absolute",
-                              top: "-4px",
-                              right: "-4px",
-                              background: "#dc3545",
-                              color: "white",
-                              borderRadius: "50%",
-                              fontSize: "0.7rem",
-                              minWidth: chat.unreadCount > 0 ? "18px" : "10px",
-                              height: chat.unreadCount > 0 ? "18px" : "10px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: chat.unreadCount > 0 ? "0 4px" : 0,
-                              zIndex: 2,
-                            }}
-                          >
+                          <span className="badge">
                             {chat.unreadCount > 0
                               ? chat.unreadCount > 9
                                 ? "9+"
@@ -1708,7 +1891,26 @@ return (
 
               <Tab.Pane eventKey="groups">
                 <ListGroup variant="flush">
-                  {chats
+                  {chatsLoading ? (
+                    <div className="d-flex justify-content-center align-items-center py-4">
+                      <div className="text-center">
+                        <Spinner animation="border" variant="primary" size="sm" />
+                        <p className="text-muted mt-2 mb-0 small">Loading groups...</p>
+                      </div>
+                    </div>
+                  ) : chats
+                    .filter((chat) => chat.isGroupChat)
+                    .filter((chat) =>
+                      chat.chatName
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase())
+                    ).length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-muted mb-0 small">
+                        {searchTerm ? `No groups found matching "${searchTerm}"` : "No group chats yet"}
+                      </p>
+                    </div>
+                  ) : chats
                     .filter((chat) => chat.isGroupChat)
                     .filter((chat) =>
                       chat.chatName
@@ -1720,7 +1922,7 @@ return (
                         key={chat._id}
                         action
                         active={selectedChat?._id === chat._id}
-                        onClick={() => handleChatSelect(chat)}
+                        onClick={(e) => handleChatSelect(chat, e)}
                         className="d-flex align-items-center"
                       >
                         <div
@@ -1729,25 +1931,7 @@ return (
                         >
                           {getAvatarText(chat.chatName)}
                           {(chat.unreadCount > 0 || chat.notification) && (
-                            <span
-                              style={{
-                                position: "absolute",
-                                top: "-4px",
-                                right: "-4px",
-                                background: "#dc3545",
-                                color: "white",
-                                borderRadius: "50%",
-                                fontSize: "0.7rem",
-                                minWidth:
-                                  chat.unreadCount > 0 ? "18px" : "10px",
-                                height: chat.unreadCount > 0 ? "18px" : "10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: chat.unreadCount > 0 ? "0 4px" : 0,
-                                zIndex: 2,
-                              }}
-                            >
+                            <span className="badge">
                               {chat.unreadCount > 0
                                 ? chat.unreadCount > 9
                                   ? "9+"
@@ -1786,7 +1970,7 @@ return (
                   onClick={handleMobileBack}
                   aria-label="Back to chat list"
                 >
-                  ←
+                  <i className="fas fa-arrow-left"></i>
                 </button>
                 <div className="mobile-chat-title">
                   {selectedChat.isGroupChat
@@ -1799,6 +1983,17 @@ return (
                         (p) => p && p._id && p._id !== user._id
                       )?.name || "Chat"
                     : "Chat"}
+                </div>
+                <div className="mobile-chat-actions">
+                  {selectedChat.isGroupChat && (
+                    <button
+                      className="mobile-action-button"
+                      title="Group Info"
+                      onClick={() => setShowGroupInfoModal(true)}
+                    >
+                      <i className="fas fa-info-circle"></i>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1832,7 +2027,12 @@ return (
                       : "Chat"}
                   </div>
                   <div className="chat-header-status">
-                    {selectedChat.isGroupChat
+                    {messagesLoading ? (
+                      <span className="text-muted small">
+                        <Spinner animation="border" size="sm" className="me-1" style={{width: '12px', height: '12px'}} />
+                        Loading messages...
+                      </span>
+                    ) : selectedChat.isGroupChat
                       ? `${
                           selectedChat.participants &&
                           Array.isArray(selectedChat.participants)
@@ -1874,7 +2074,14 @@ return (
               </div>
 
             <div className="messages-container">
-              {messages.length === 0 ? (
+              {messagesLoading ? (
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  <div className="text-center">
+                    <Spinner animation="border" variant="primary" size="sm" />
+                    <p className="text-muted mt-2 mb-0">Loading messages...</p>
+                  </div>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="d-flex justify-content-center align-items-center h-100">
                   <p className="text-muted">
                     No messages yet. Start the conversation!
@@ -1886,24 +2093,13 @@ return (
                     return (
                       <div
                         key={"date-" + item.date + idx}
-                        className="chat-date-separator d-flex justify-content-center align-items-center my-3"
-                        style={{ position: 'relative', zIndex: 1 }}
+                        className="date-separator"
                       >
-                        <span
-                          style={{
-                            background: '#e0e7ff',
-                            color: '#374151',
-                            fontWeight: 600,
-                            fontSize: '0.95rem',
-                            borderRadius: '16px',
-                            padding: '4px 18px',
-                            boxShadow: '0 2px 8px rgba(60,72,120,0.07)',
-                            letterSpacing: '0.01em',
-                            border: '1px solid #c7d2fe',
-                          }}
-                        >
+                        <div className="date-separator-line"></div>
+                        <div className="date-separator-text">
                           {getDateLabel(item.date)}
-                        </span>
+                        </div>
+                        <div className="date-separator-line"></div>
                       </div>
                     );
                   }
@@ -2010,87 +2206,136 @@ return (
               )}
 
               <div className="message-input">
-                <Form.Group className="d-flex position-relative">
-                  <Form.Control
-                    as="textarea"
-                    rows={1}
-                    placeholder={`Message : ${
-                      selectedChat.isGroupChat
-                        ? selectedChat.chatName || "Group"
-                        : selectedChat.participants &&
-                          Array.isArray(selectedChat.participants) &&
-                          user &&
-                          user._id
-                        ? selectedChat.participants.find(
-                            (p) => p && p._id && p._id !== user._id
-                          )?.name || "Chat"
-                        : "Chat"
-                    }`}
-                    value={newMessage}
-                    onChange={(e) => {
-                      setNewMessage(e.target.value);
-                      // Handle typing indicators
-                      if (socket && socket.connected && selectedChat) {
-                        // Emit 'typing' event only if not already typing
-                        if (!typingTimeout.current) {
-                          socket.emit("typing", {
-                            chatId: selectedChat._id,
-                            userId: user._id,
-                          });
+                <Form onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}>
+                  <Form.Group className="d-flex position-relative">
+                    <Form.Control
+                      as="textarea"
+                      rows={1}
+                      placeholder={`Message : ${
+                        selectedChat.isGroupChat
+                          ? selectedChat.chatName || "Group"
+                          : selectedChat.participants &&
+                            Array.isArray(selectedChat.participants) &&
+                            user &&
+                            user._id
+                          ? selectedChat.participants.find(
+                              (p) => p && p._id && p._id !== user._id
+                            )?.name || "Chat"
+                          : "Chat"
+                      }`}
+                      value={newMessage}
+                      onChange={(e) => {
+                        setNewMessage(e.target.value);
+                        
+                        // Auto-resize textarea
+                        const textarea = e.target;
+                        textarea.style.height = 'auto';
+                        const scrollHeight = textarea.scrollHeight;
+                        const maxHeight = 120; // 120px max height
+                        const minHeight = 44; // 44px min height
+                        
+                        if (scrollHeight <= maxHeight) {
+                          textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+                          textarea.style.overflowY = 'hidden';
                         } else {
-                          clearTimeout(typingTimeout.current);
+                          textarea.style.height = maxHeight + 'px';
+                          textarea.style.overflowY = 'auto';
                         }
-                        // Always reset the timeout
-                        typingTimeout.current = setTimeout(() => {
-                          socket.emit("stop typing", {
-                            chatId: selectedChat._id,
-                            userId: user._id,
-                          });
-                          typingTimeout.current = null;
-                        }, 1500); // 1.5s after last keypress
-                      }
-                    }}
-                    onKeyPress={(e) =>
-                      e.key === "Enter" && !e.shiftKey && handleSendMessage()
-                    }
-                  />
-                  <Button
-                    variant="link"
-                    className="send-button"
-                    onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || loading}
-                  >
-                    {loading ? (
-                      <Spinner size="sm" animation="border" />
-                    ) : (
-                      <i className="fas fa-paper-plane"></i>
-                    )}
-                  </Button>
-                </Form.Group>
+                        
+                        // Handle typing indicators
+                        if (socket && socket.connected && selectedChat) {
+                          // Emit 'typing' event only if not already typing
+                          if (!typingTimeout.current) {
+                            socket.emit("typing", {
+                              chatId: selectedChat._id,
+                              userId: user._id,
+                            });
+                          } else {
+                            clearTimeout(typingTimeout.current);
+                          }
+                          // Always reset the timeout
+                          typingTimeout.current = setTimeout(() => {
+                            socket.emit("stop typing", {
+                              chatId: selectedChat._id,
+                              userId: user._id,
+                            });
+                            typingTimeout.current = null;
+                          }, 1500); // 1.5s after last keypress
+                        }
+                      }}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      onInput={(e) => {
+                        // Additional auto-resize on input
+                        const textarea = e.target;
+                        textarea.style.height = 'auto';
+                        const scrollHeight = textarea.scrollHeight;
+                        const maxHeight = 120;
+                        const minHeight = 44;
+                        
+                        if (scrollHeight <= maxHeight) {
+                          textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+                          textarea.style.overflowY = 'hidden';
+                        } else {
+                          textarea.style.height = maxHeight + 'px';
+                          textarea.style.overflowY = 'auto';
+                        }
+                      }}
+                      style={{
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      variant="link"
+                      className={`send-button ${newMessage.trim() ? 'active' : ''} ${sendingMessage ? 'sending' : ''}`}
+                      disabled={sendingMessage}
+                    >
+                      {sendingMessage ? (
+                        <div className="sending-indicator">
+                          <i className="fas fa-circle-notch fa-spin"></i>
+                        </div>
+                      ) : (
+                        <i className="fas fa-paper-plane"></i>
+                      )}
+                    </Button>
+                  </Form.Group>
+                </Form>
               </div>
             </>
           ) : (
-            <div className="d-flex flex-column align-items-center justify-content-center h-100">
-              <div className="text-center p-5 ">
-                <h4>Welcome to Office Chat</h4>
-                <p className="text-muted">
+            <div className="welcome-screen">
+              <div className="text-center">
+                <div className="welcome-icon" style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>💬</div>
+                <h4 className="welcome-title">Welcome to Office Chat</h4>
+                <p className="welcome-description">
                   {chats.length === 0
-                    ? "Start by adding a friend or creating a group"
+                    ? "Start connecting with your colleagues by adding friends or creating group chats"
                     : "Select a conversation to start chatting"}
                 </p>
-                <div className="flex gap-6">
+                <div className="welcome-actions d-flex gap-3 justify-content-center flex-wrap">
                   <Button
                     variant="primary"
                     onClick={() => setShowAddFriendModal(true)}
-                    className="me-2"
+                    className="d-flex align-items-center gap-2 welcome-btn"
                   >
+                    <span>👥</span>
                     Add Friend
                   </Button>
                   <Button
                     variant="secondary"
                     onClick={() => setShowNewGroupModal(true)}
-                    className="me-2"
+                    className="d-flex align-items-center gap-2 welcome-btn"
                   >
+                    <span>🏢</span>
                     Create Group
                   </Button>
                 </div>
@@ -2122,58 +2367,76 @@ return (
         </div>
         <Modal.Body
           className="pt-2"
-          style={{ maxHeight: "60vh", overflowY: "auto" }}
         >
-          <ListGroup variant="flush">
-            {getAvailableUsers()
-              .filter(
+          <div className="scrollable-user-list">
+            <ListGroup variant="flush">
+              {getAvailableUsers()
+                .filter(
+                  (person) =>
+                    person.name
+                      ?.toLowerCase()
+                      .includes(searchTerm.toLowerCase()) ||
+                    person.email?.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((person) => (
+                  <ListGroup.Item
+                    key={person._id}
+                    className="d-flex justify-content-between align-items-center"
+                  >
+                    <div className="d-flex align-items-center">
+                      <div
+                        className={`avatar me-3 ${
+                          getStatusText(person) === "online" ? "online" : ""
+                        }`}
+                      >
+                        {getAvatarText(person.name)}
+                      </div>
+                      <div>
+                        <strong>{person.name}</strong>
+                        <div className="text-muted small">
+                          {person.email || person.personalMail}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => handleAddFriend(person._id)}
+                      disabled={chats.some(
+                        (chat) =>
+                          !chat.isGroupChat &&
+                          chat.participants?.some((p) => p._id === person._id)
+                      )}
+                    >
+                      {chats.some(
+                        (chat) =>
+                          !chat.isGroupChat &&
+                          chat.participants?.some((p) => p._id === person._id)
+                      )
+                        ? "Already connected"
+                        : "Add"}
+                    </Button>
+                  </ListGroup.Item>
+                ))}
+              {getAvailableUsers().filter(
                 (person) =>
                   person.name
                     ?.toLowerCase()
                     .includes(searchTerm.toLowerCase()) ||
                   person.email?.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((person) => (
-                <ListGroup.Item
-                  key={person._id}
-                  className="d-flex justify-content-between align-items-center"
-                >
-                  <div className="d-flex align-items-center">
-                    <div
-                      className={`avatar me-3 ${
-                        getStatusText(person) === "online" ? "online" : ""
-                      }`}
-                    >
-                      {getAvatarText(person.name)}
-                    </div>
-                    <div>
-                      <strong>{person.name}</strong>
-                      <div className="text-muted small">
-                        {person.email || person.personalMail}
-                      </div>
-                    </div>
+              ).length === 0 && (
+                <div className="text-center py-4">
+                  <div className="text-muted">
+                    <i className="fas fa-users fa-2x mb-3 d-block"></i>
+                    {searchTerm ? 
+                      `No users found matching "${searchTerm}"` : 
+                      "No users available to add"
+                    }
                   </div>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => handleAddFriend(person._id)}
-                    disabled={chats.some(
-                      (chat) =>
-                        !chat.isGroupChat &&
-                        chat.participants?.some((p) => p._id === person._id)
-                    )}
-                  >
-                    {chats.some(
-                      (chat) =>
-                        !chat.isGroupChat &&
-                        chat.participants?.some((p) => p._id === person._id)
-                    )
-                      ? "Already connected"
-                      : "Add"}
-                  </Button>
-                </ListGroup.Item>
-              ))}
-          </ListGroup>
+                </div>
+              )}
+            </ListGroup>
+          </div>
         </Modal.Body>
       </Modal>
 
@@ -2254,10 +2517,7 @@ return (
               </div>
             )}
 
-            <div
-              style={{ maxHeight: "200px", overflowY: "auto" }}
-              className="border rounded p-2"
-            >
+            <div className="scrollable-user-list border rounded p-2">
               {getAvailableUsers()
                 .filter(
                   (person) =>
@@ -2448,7 +2708,7 @@ return (
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="mb-2"
                     />
-                    <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+                    <div className="scrollable-user-list">
                       {getAvailableUsers()
                         .filter(
                           (u) =>

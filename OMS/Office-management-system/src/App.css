@@ -70,13 +70,13 @@ body {
 }
 
 .chat-area {
-  height: 100vh;
+  /* height: 100vh; */
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: var(--backdrop-blur);
   border-radius: var(--border-radius);
-  margin: 1rem;
+  /* margin: 1rem; */
   box-shadow: var(--shadow-modern);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
