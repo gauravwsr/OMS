@@ -1,4 +1,4 @@
-import "./ProjectListNew.css";
+import "./ProjectList.css";
 import {
   Calendar,
   ChevronLeft,

@@ -39,6 +39,7 @@ const NewDashboard = () => {
 
       try {
         const response = await fetch("http://localhost:5001/users/me", {
+        // const response = await fetch("http://localhost:5001/users/me", {
           method: "GET",
           credentials: "include",
           headers: {
@@ -72,6 +73,7 @@ const NewDashboard = () => {
 
         // Use GetData for all users (backend will handle HR Manager permissions)
         const apiUrl = "http://localhost:5001/GetData";
+        // const apiUrl = "http://localhost:5001/GetData";
 
         const response = await axios.post(
           apiUrl,

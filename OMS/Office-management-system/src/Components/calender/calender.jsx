@@ -236,7 +236,6 @@ const Calender = () => {
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
-        setIsLoading(true);
         const response = await axios.get("http://localhost:5001/users");
         setUsers(response.data); // Set the room data to state
       } catch (error) {

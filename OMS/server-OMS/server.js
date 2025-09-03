@@ -78,6 +78,7 @@ app.use(
       "http://localhost:3001", 
       "http://134.199.170.166:3000",
       "http://146.190.165.62:5002",
+      "http://localhost:5002"
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -88,17 +89,9 @@ app.use(
   })
 );
 
-// Additional CORS headers for extra security
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin);
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  next();
-});
+// ...existing code...
 
-// Pre-flight requests handling
-app.options("*", cors());
+// ...existing code...
 
 // Apply body parsing middleware BEFORE routes
 app.use(express.json({ limit: '10mb' }));
@@ -216,6 +209,7 @@ server.listen(port, '0.0.0.0', (err) => {
       "http://http://134.199.170.166:3000",
       "http://localhost:3001",
       "http://146.190.165.62:5002",
+      "http://localhost:5002",
     ])}`
   );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);

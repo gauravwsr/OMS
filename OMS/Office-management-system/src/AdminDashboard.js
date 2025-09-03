@@ -116,7 +116,6 @@ const AdminDashboard = () => {
     try {
       await axios.delete(
         "http://localhost:5001/api/notifications/cleanup-test",
-        // localhost:5001/api/notifications/cleanup-test",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -372,13 +371,16 @@ const AdminDashboard = () => {
   const fetchProjectSummary = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5001/api/client-projects", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
+      const response = await fetch(
+        "http://localhost:5001/api/client-projects",
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       if (response.ok) {
         const result = await response.json();
         const projects = result.data || [];

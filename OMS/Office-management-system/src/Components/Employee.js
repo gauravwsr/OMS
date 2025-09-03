@@ -121,6 +121,7 @@ const Employee = () => {
         try {
           const faceEncodingsResponse = await axios.put(
             `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
+            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
             {
               faceEncodings: capturedImages, // Store captured images as face data
               faceImagePaths: [`face_images/${formData.fullName}`], // Store image path
@@ -393,7 +394,7 @@ const Employee = () => {
         timeout: 3000,
       });
       // const response = await axios.get(
-      //   "http://146.190.165.62:5001/api/health",
+      //   "http://localhost:5001/api/health",
       //   {
       //     timeout: 3000,
       //   }

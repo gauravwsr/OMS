@@ -11,6 +11,7 @@ const ScrollTracker = () => {
           100
         ).toFixed(2);
         await fetch(localhost:5001/api/scroll-data", {
+        await fetch("http://localhost:5001/api/scroll-data", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ scrollPercentage }),
@@ -25,6 +26,7 @@ const ScrollTracker = () => {
             try {
                 const scrollPercentage = ((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100).toFixed(2);
                 await fetch(localhost:5001/api/scroll-data", {
+                await fetch("http://localhost:5001/api/scroll-data", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ scrollPercentage }),

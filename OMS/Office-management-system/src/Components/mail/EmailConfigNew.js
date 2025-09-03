@@ -83,7 +83,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 >>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/check-config",
+        "http://localhost:5001/api/emails/check-config",
         {
           method: "GET",
           headers: {
@@ -167,7 +167,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 =======
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/configure",
+        "http://localhost:5001/api/emails/configure",
         {
           method: "POST",
           headers: {
@@ -230,7 +230,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
 =======
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/configure",
+        "http://localhost:5001/api/emails/configure",
         {
           method: "POST",
           headers: {
@@ -295,7 +295,7 @@ localhost:5001
 =======
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/emails/remove-config",
+        "http://localhost:5001/api/emails/remove-config",
         {
           method: "DELETE",
           headers: {
