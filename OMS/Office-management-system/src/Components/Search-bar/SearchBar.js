@@ -31,14 +31,14 @@ const SearchBar = ({ onSearch }) => {
                   <FiSearch size={16} />
                 </button>
               </div>
-              <div className="top-bar-icons">
+              {/* <div className="top-bar-icons">
                 <button className="notification-button">
                   <FiBell size={20} />
                 </button>
                 <button className="profile-button">
                   <FiUser size={20} />
                 </button>
-                </div>
+                </div> */}
               </div>
             </div>
     )

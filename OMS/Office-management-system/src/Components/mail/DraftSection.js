@@ -17,6 +17,57 @@ const DraftSection = ({ drafts: propDrafts }) => {
     }
   }, [propDrafts]);
 
+  const formatDate = (dateString) => {
+    if (!dateString || isNaN(new Date(dateString))) {
+      return "No date";
+    }
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays < 7) {
+      return date.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    } else {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+  };
+
+  const getDraftStatus = (draft) => {
+    if (!draft.to) return 'incomplete';
+    if (!draft.subject) return 'missing-subject';
+    if (!draft.body) return 'missing-content';
+    return 'ready';
+  };
+
+  const getDraftStatusIcon = (status) => {
+    switch (status) {
+      case 'incomplete': return '⚠️';
+      case 'missing-subject': return '📝';
+      case 'missing-content': return '✏️';
+      case 'ready': return '✅';
+      default: return '📄';
+    }
+  };
+
+  const getDraftStatusText = (status) => {
+    switch (status) {
+      case 'incomplete': return 'Incomplete';
+      case 'missing-subject': return 'No Subject';
+      case 'missing-content': return 'No Content';
+      case 'ready': return 'Ready to Send';
+      default: return 'Draft';
+    }
+  };
+
+  const truncateText = (text, maxLength = 50) => {
+    if (!text) return '';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  };
+
   const handleDraftClick = (draft) => {
     // Navigate to email details page with draft data
     navigate('email-details', { state: { email: draft, isDraft: true } });
@@ -181,82 +232,102 @@ const DraftSection = ({ drafts: propDrafts }) => {
           </button>
         </div>
       ) : drafts.length > 0 ? (
-        drafts.map((draft, index) => (
-          <div key={draft._id || draft.id || `draft-${index}`} className="email-row draft-row" onClick={() => handleDraftClick(draft)} style={{cursor: 'pointer'}}>
-            <div className="email-name">
-              <label className="email-label draft-label">
-                📝 {draft.to || "No recipient"}
-                {draft.cc && <span style={{fontSize: '11px', color: '#666'}}> (CC: {draft.cc})</span>}
-              </label>
-            </div>
-            <div className="email-content">
-              {draft.subject || "(No subject)"}
-              {draft.body && (
-                <div style={{fontSize: '11px', color: '#666', marginTop: '2px'}}>
-                  {draft.body.length > 50 ? `${draft.body.substring(0, 50)}...` : draft.body}
+        drafts.map((draft, index) => {
+          const status = getDraftStatus(draft);
+          return (
+            <div 
+              key={draft._id || draft.id || `draft-${index}`} 
+              className={`email-row draft-row draft-status-${status}`} 
+              onClick={() => handleDraftClick(draft)} 
+              style={{cursor: 'pointer'}}
+            >
+              <div className="email-name">
+                <div className="draft-info">
+                  <span className="draft-status-icon">{getDraftStatusIcon(status)}</span>
+                  <label className="email-label draft-label">
+                    {draft.to || "No recipient"}
+                    {draft.cc && <span className="cc-info"> (CC: {truncateText(draft.cc, 20)})</span>}
+                  </label>
+                  <span className="draft-status-badge">{getDraftStatusText(status)}</span>
                 </div>
-              )}
-              {draft.attachments && draft.attachments.length > 0 && (
-                <div style={{fontSize: '11px', color: '#007bff', marginTop: '2px'}}>
-                  📎 {draft.attachments.length} attachment{draft.attachments.length > 1 ? 's' : ''}
-                  {draft.attachments.length <= 3 && (
-                    <span style={{color: '#666', marginLeft: '5px'}}>
-                      ({draft.attachments.map(att => att.originalname || att.filename).join(', ')})
-                    </span>
+              </div>
+              <div className="email-content">
+                <div className="draft-subject-line">
+                  <span className="draft-subject">{draft.subject || "(No subject)"}</span>
+                  {draft.body && (
+                    <div className="draft-preview">
+                      {truncateText(draft.body, 60)}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-            <div className="email-time-actions">
-              <span className="email-time">
-                {draft.date && !isNaN(new Date(draft.date))
-                  ? new Date(draft.date).toLocaleString([], {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "No date"}
-              </span>
-              <div className="draft-actions">
-                <button 
-                  className="edit-button" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditDraft(draft);
-                  }}
-                  disabled={loading}
-                >
-                  ✏️ Edit
-                </button>
-                <button 
-                  className="send-button" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    sendMail(draft);
-                  }}
-                  disabled={loading}
-                >
-                  📤 Send
-                </button>
-                <button 
-                  className="delete-button" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteDraft(draft._id);
-                  }}
-                  disabled={loading}
-                >
-                  🗑️
-                </button>
+                {draft.attachments && draft.attachments.length > 0 && (
+                  <div className="draft-attachments">
+                    <span className="attachment-icon">📎</span>
+                    <span className="attachment-count">
+                      {draft.attachments.length} file{draft.attachments.length > 1 ? 's' : ''}
+                    </span>
+                    {draft.attachments.length <= 3 && (
+                      <span className="attachment-list">
+                        ({draft.attachments.map(att => att.originalname || att.filename).join(', ')})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="email-time-actions">
+                <span className="email-time">
+                  {formatDate(draft.date)}
+                </span>
+                <div className="draft-actions">
+                  <button 
+                    className="edit-button" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditDraft(draft);
+                    }}
+                    disabled={loading}
+                    title="Edit Draft"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button 
+                    className={`send-button ${status !== 'ready' ? 'disabled' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (status === 'ready') {
+                        sendMail(draft);
+                      } else {
+                        alert(`Cannot send: ${getDraftStatusText(status)}`);
+                      }
+                    }}
+                    disabled={loading || status !== 'ready'}
+                    title={status === 'ready' ? "Send Email" : `Cannot send: ${getDraftStatusText(status)}`}
+                  >
+                    📤 Send
+                  </button>
+                  <button 
+                    className="delete-button" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm('Are you sure you want to delete this draft?')) {
+                        deleteDraft(draft._id);
+                      }
+                    }}
+                    disabled={loading}
+                    title="Delete Draft"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))
+          );
+        })
       ) : (
         <div className="no-emails-message">
-          📝 No drafts available. 
-          <button onClick={fetchDrafts} className="refresh-button">
+          <div>📝 No drafts available</div> 
+          <small>Your draft emails will appear here</small>
+          <button onClick={fetchDrafts} className="refresh-button" style={{marginTop: '12px'}}>
             🔄 Refresh
           </button>
         </div>

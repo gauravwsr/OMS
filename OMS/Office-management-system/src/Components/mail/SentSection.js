@@ -101,12 +101,12 @@ const SentSection = ({ emails }) => {
         emails.map((email, index) => (
           <div key={email._id || email.id || `sent-email-${index}`} className="email-row" onClick={() => handleEmailClick(email)}>
             <div className="email-name">
-              <input
+              {/* <input
                 type="checkbox"
                 id={`email-${email._id || email.id || index}`}
                 className="email-checkbox"
                 onClick={(e) => e.stopPropagation()}
-              />
+              /> */}
               <label htmlFor={`email-${email._id || email.id || index}`} className="email-label">
                 {email.to || email.recipient || 'Unknown'}
                 {email.cc && <span className="cc-indicator"> (+CC)</span>}

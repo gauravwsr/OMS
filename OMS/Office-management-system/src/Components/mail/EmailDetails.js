@@ -20,9 +20,98 @@ const EmailDetails = () => {
   const [showOriginal, setShowOriginal] = useState(true);
   const [showPreviousMessage, setShowPreviousMessage] = useState(false);
   const [expandedMessages, setExpandedMessages] = useState(new Set([0])); // First message expanded by default
+  const [isMobile, setIsMobile] = useState(false);
   
   const replyTextareaRef = useRef(null);
   const forwardTextareaRef = useRef(null);
+
+  // Responsive hook to detect mobile screen size and navbar state
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth <= 768 ||
+                    window.matchMedia("(max-width: 768px)").matches ||
+                    'ontouchstart' in window ||
+                    navigator.maxTouchPoints > 0;
+      setIsMobile(mobile);
+      
+      // Only detect navbar state on desktop
+      if (!mobile) {
+        detectNavbarState();
+      }
+    };
+
+    // Function to detect navbar state and apply responsive classes
+    const detectNavbarState = () => {
+      const emailContainer = document.querySelector('.email-details-container');
+      if (!emailContainer) return;
+
+      // Remove all navbar state classes first
+      emailContainer.classList.remove('navbar-expanded', 'navbar-collapsed', 'navbar-hidden');
+
+      // Check for sidebar container and its state
+      const sidebarContainer = document.querySelector('.sidebar-container');
+      if (!sidebarContainer) {
+        // No sidebar found - navbar hidden
+        emailContainer.classList.add('navbar-hidden');
+        return;
+      }
+
+      // Check if sidebar is open (desktop: always open, mobile: check open class)
+      const isDesktop = window.innerWidth > 768;
+      const isOpen = isDesktop || sidebarContainer.classList.contains('open');
+      
+      if (!isOpen) {
+        emailContainer.classList.add('navbar-hidden');
+        return;
+      }
+
+      // Check if sidebar is collapsed
+      const isCollapsed = sidebarContainer.classList.contains('collapsed');
+      if (isCollapsed) {
+        emailContainer.classList.add('navbar-collapsed');
+      } else {
+        emailContainer.classList.add('navbar-expanded');
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+
+    // Set up observers for navbar state changes with a delay to ensure DOM is ready
+    const setupNavbarObserver = () => {
+      const sidebarContainer = document.querySelector('.sidebar-container');
+      if (sidebarContainer && window.innerWidth > 768) {
+        const observer = new MutationObserver(() => {
+          detectNavbarState();
+        });
+        observer.observe(sidebarContainer, {
+          attributes: true,
+          attributeFilter: ['class']
+        });
+        return observer;
+      }
+      return null;
+    };
+
+    const timeoutId = setTimeout(() => {
+      const observer = setupNavbarObserver();
+      // Store observer for cleanup
+      if (observer) {
+        window.emailNavbarObserver = observer;
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (window.emailNavbarObserver) {
+        window.emailNavbarObserver.disconnect();
+        delete window.emailNavbarObserver;
+      }
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
 
   // Auto-focus reply textarea when opened
   useEffect(() => {
@@ -613,11 +702,10 @@ const EmailDetails = () => {
   return (
     <div className="email-details-container">
       <div className="email-details-header">
-        <button className="back-button" onClick={() => navigate(-1)}>
+        <button className="back-button" onClick={() => navigate(-1)} style={{"top":"0px"}}>
           <ArrowLeft size={16} />
           Back
         </button>
-        <h2>{email.subject || 'No Subject'}</h2>
       </div>
 
       <div className="email-details-card">

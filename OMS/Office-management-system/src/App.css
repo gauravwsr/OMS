@@ -74,7 +74,7 @@ body {
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: var(--backdrop-blur);
+  /* backdrop-filter: var(--backdrop-blur); */
   border-radius: var(--border-radius);
   /* margin: 1rem; */
   box-shadow: var(--shadow-modern);
@@ -90,7 +90,7 @@ body {
   align-items: center;
   gap: 1rem;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
-  backdrop-filter: var(--backdrop-blur);
+  /* backdrop-filter: var(--backdrop-blur); */
 }
 
 .chat-header-avatar {
@@ -139,7 +139,7 @@ body {
   padding: 0.75rem;
   border-radius: 12px;
   transition: var(--transition);
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -154,7 +154,7 @@ body {
   overflow-y: auto;
   padding: 1.5rem;
   background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(240, 245, 251, 0.8) 100%);
-  backdrop-filter: blur(8px);
+  /* backdrop-filter: blur(8px); */
 }
 
 .message-input {
@@ -163,7 +163,7 @@ body {
   background: rgba(255, 255, 255, 0.9);
   border-top: 1px solid rgba(226, 232, 240, 0.5);
   border-radius: 0 0 var(--border-radius) var(--border-radius);
-  backdrop-filter: var(--backdrop-blur);
+  /* backdrop-filter: var(--backdrop-blur); */
 }
 
 .typing-indicator {
@@ -177,7 +177,7 @@ body {
 .p-0.border-end {
   height: 100vh;
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px) saturate(180%);
+  /* backdrop-filter: blur(16px) saturate(180%); */
   border-right: 1px solid rgba(226, 232, 240, 0.3) !important;
   box-shadow: 4px 0 16px rgba(0, 0, 0, 0.05);
 }

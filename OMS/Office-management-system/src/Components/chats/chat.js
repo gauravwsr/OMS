@@ -2244,27 +2244,6 @@ return (
                           textarea.style.height = maxHeight + 'px';
                           textarea.style.overflowY = 'auto';
                         }
-                        
-                        // Handle typing indicators
-                        if (socket && socket.connected && selectedChat) {
-                          // Emit 'typing' event only if not already typing
-                          if (!typingTimeout.current) {
-                            socket.emit("typing", {
-                              chatId: selectedChat._id,
-                              userId: user._id,
-                            });
-                          } else {
-                            clearTimeout(typingTimeout.current);
-                          }
-                          // Always reset the timeout
-                          typingTimeout.current = setTimeout(() => {
-                            socket.emit("stop typing", {
-                              chatId: selectedChat._id,
-                              userId: user._id,
-                            });
-                            typingTimeout.current = null;
-                          }, 1500); // 1.5s after last keypress
-                        }
                       }}
                       onKeyPress={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
@@ -2296,8 +2275,8 @@ return (
                     <Button
                       type="submit"
                       variant="link"
-                      className={`send-button ${newMessage.trim() ? 'active' : ''} ${sendingMessage ? 'sending' : ''}`}
-                      disabled={sendingMessage}
+                      className={`send-button ${newMessage.trim() ? 'active' : 'inactive'} ${sendingMessage ? 'sending' : ''}`}
+                      disabled={!newMessage.trim() && !sendingMessage}
                     >
                       {sendingMessage ? (
                         <div className="sending-indicator">

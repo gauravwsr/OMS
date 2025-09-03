@@ -932,27 +932,17 @@ body {
   outline: none !important;
 }
 
-/* Enhanced state when textarea has content */
+/* Enhanced state when textarea has content - removed glowing effect */
 .message-input .form-control:not(:placeholder-shown) {
   border-color: #2563eb !important;
   background-color: #ffffff !important;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1) !important;
   transition: all 0.3s ease !important;
-  animation: content-glow 2s ease-in-out infinite alternate !important;
 }
 
 .message-input .form-control:not(:placeholder-shown):focus {
   border-color: #1d4ed8 !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
-}
-
-@keyframes content-glow {
-  0% {
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
-  }
-  100% {
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
-  }
 }
 
 /* Ensure placeholder text is visible and styled */
@@ -983,7 +973,7 @@ body {
   min-width: 40px !important;
   min-height: 40px !important;
   z-index: 10 !important;
-  opacity: 0.7 !important;
+  opacity: 1 !important;
   border: 2px solid #e5e7eb !important;
 }
 
@@ -991,18 +981,24 @@ body {
   transform: translateY(-50%) scale(1.05) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   background: #e5e7eb !important;
-  opacity: 0.9 !important;
 }
 
-.send-button:disabled {
-  opacity: 0.3 !important;
+/* Inactive state when no text */
+.send-button.inactive {
+  opacity: 0.5 !important;
   cursor: not-allowed !important;
-  transform: translateY(-50%) !important;
   background: #f9fafb !important;
   color: #d1d5db !important;
   border-color: #f3f4f6 !important;
 }
 
+.send-button.inactive:hover {
+  transform: translateY(-50%) !important;
+  background: #f9fafb !important;
+  box-shadow: none !important;
+}
+
+/* Active typing state - show send button when user types */
 .send-button.active {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
   color: white !important;
