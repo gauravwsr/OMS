@@ -334,79 +334,87 @@ const SendEmail = () => {
       <form className="compose-form" onSubmit={sendEmail}>
 
         <div className="form-group">
-          <input
-            type="email"
-            id="to"
-            className="input-field"
-            placeholder="Recipient"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <div className="cc-bcc-toggle">
-            {!showCc && (
-              <button
-                type="button"
-                className="toggle-button"
-                onClick={() => setShowCc(true)}
-              >
-                + Cc
-              </button>
-            )}
-            {!showBcc && (
-              <button
-                type="button"
-                className="toggle-button"
-                onClick={() => setShowBcc(true)}
-              >
-                + Bcc
-              </button>
-            )}
+          <div className="input-wrapper">
+            <input
+              type="email"
+              id="to"
+              className="input-field"
+              placeholder="📧 To: Recipient email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <div className="cc-bcc-toggle">
+              {!showCc && (
+                <button
+                  type="button"
+                  className="toggle-button"
+                  onClick={() => setShowCc(true)}
+                >
+                  + Cc
+                </button>
+              )}
+              {!showBcc && (
+                <button
+                  type="button"
+                  className="toggle-button"
+                  onClick={() => setShowBcc(true)}
+                >
+                  + Bcc
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {showCc && (
           <div className="form-group">
-            <input
-              type="email"
-              id="cc"
-              className="input-field"
-              placeholder="Cc (Carbon Copy)"
-              value={cc}
-              onChange={(e) => setCc(e.target.value)}
-            />
-            <button
-              type="button"
-              className="remove-field-button"
-              onClick={() => {
-                setCc('');
-                setShowCc(false);
-              }}
-            >
-              ×
-            </button>
+            <div className="input-wrapper">
+              <input
+                type="email"
+                id="cc"
+                className="input-field"
+                placeholder="📋 Cc: Carbon copy recipients"
+                value={cc}
+                onChange={(e) => setCc(e.target.value)}
+              />
+              <button
+                type="button"
+                className="remove-field-button"
+                onClick={() => {
+                  setCc('');
+                  setShowCc(false);
+                }}
+                title="Remove Cc field"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 
         {showBcc && (
           <div className="form-group">
-            <input
-              type="email"
-              id="bcc"
-              className="input-field"
-              placeholder="Bcc (Blind Carbon Copy)"
-              value={bcc}
-              onChange={(e) => setBcc(e.target.value)}
-            />
-            <button
-              type="button"
-              className="remove-field-button"
-              onClick={() => {
-                setBcc('');
-                setShowBcc(false);
-              }}
-            >
-              ×
-            </button>
+            <div className="input-wrapper">
+              <input
+                type="email"
+                id="bcc"
+                className="input-field"
+                placeholder="🔒 Bcc: Blind carbon copy recipients"
+                value={bcc}
+                onChange={(e) => setBcc(e.target.value)}
+              />
+              <button
+                type="button"
+                className="remove-field-button"
+                onClick={() => {
+                  setBcc('');
+                  setShowBcc(false);
+                }}
+                title="Remove Bcc field"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
 
@@ -415,7 +423,7 @@ const SendEmail = () => {
             type="text"
             id="subject"
             className="input-field"
-            placeholder="Subject"
+            placeholder="✉️ Subject: What's this email about?"
             required
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -426,17 +434,26 @@ const SendEmail = () => {
           <textarea
             id="body"
             className="textarea-field"
-            rows="10"
-            placeholder="Compose your email"
+            rows="12"
+            placeholder="✍️ Compose your message here... 
+
+💡 Tips:
+• Be clear and concise
+• Use a professional tone
+• Include all necessary details
+• Proofread before sending"
             required
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
         </div>
 
-        <div className="form-group">
+        <div className="form-group attachment-section">
           <label className="attachment-label" htmlFor="attachment">
-            📎 Attach Files (Max 10 files, 25MB each)
+            📎 Attach Files
+            <div style={{fontSize: '14px', color: '#64748b', marginTop: '4px', fontWeight: 'normal'}}>
+              Drag & drop files here or click to browse (Max 10 files, 25MB each)
+            </div>
           </label>
           <input
             type="file"
@@ -511,21 +528,34 @@ const SendEmail = () => {
         )}
 
         <div className="form-actions">
+           <button
+            type="submit"
+             className="draft-button"
+            disabled={isSaving || isSending || (!email && !cc && !bcc) || !subject || !body}
+            title={(!email && !cc && !bcc) || !subject || !body ? 
+              "Please fill in recipient, subject, and message" : 
+              "Send email now"}
+          >
+            <span className="button-icon">🚀</span>
+            <span className="button-text">
+              {isSending ? 'Sending...' : 'Send Email'}
+            </span>
+            {isSending && <div className="loading-spinner"></div>}
+          </button>
           <button
             type="button"
-            className="draft-button"
+            className="send-button"
             onClick={saveDraft}
             disabled={isSaving || isSending}
+            title="Save as draft for later editing"
           >
-            {isSaving ? "Saving..." : "Save Draft"}
+            <span className="button-icon">💾</span>
+            <span className="button-text">
+              {isSaving ? 'Saving...' : 'Save Draft'}
+            </span>
+            {isSaving && <div className="loading-spinner"></div>}
           </button>
-          <button
-            type="submit"
-            className="send-button"
-            disabled={isSaving || isSending}
-          >
-            {isSending ? "Sending..." : "Send"}
-          </button>
+
         </div>
       </form>
     </div>
