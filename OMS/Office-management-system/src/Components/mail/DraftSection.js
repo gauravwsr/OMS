@@ -212,23 +212,22 @@ const DraftSection = ({ drafts: propDrafts }) => {
         <div className="column-content">Subject</div>
         <div className="column-time">
           Date
-          <button 
-            className="refresh-button" 
-            onClick={fetchDrafts}
-            disabled={loading}
-          >
-            {loading ? '🔄' : '↻'} Refresh
-          </button>
         </div>
       </div>
 
       {loading ? (
-        <p className="loading-message">🔄 Loading drafts...</p>
+        <div className="loading-container">
+          <div className="loading-spinner-large"></div>
+          <p className="loading-message">🔄 Loading drafts...</p>
+          <small className="loading-subtitle">Please wait while we fetch your draft emails</small>
+        </div>
       ) : error ? (
         <div className="error-message">
-          <p>❌ {error}</p>
+          <div className="error-icon">❌</div>
+          <p className="error-text">{error}</p>
           <button onClick={fetchDrafts} className="retry-button">
-            🔄 Retry
+            <span className="retry-icon">🔄</span>
+            <span className="retry-text">Retry</span>
           </button>
         </div>
       ) : drafts.length > 0 ? (
@@ -280,7 +279,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 </span>
                 <div className="draft-actions">
                   <button 
-                    className="edit-button" 
+                    className="draft-edit-btn" 
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditDraft(draft);
@@ -288,10 +287,11 @@ const DraftSection = ({ drafts: propDrafts }) => {
                     disabled={loading}
                     title="Edit Draft"
                   >
-                    ✏️ Edit
+                    <span className="btn-icon">✏️</span>
+                    <span className="btn-text">Edit</span>
                   </button>
                   <button 
-                    className={`send-button ${status !== 'ready' ? 'disabled' : ''}`}
+                    className={`draft-send-btn ${status !== 'ready' ? 'disabled' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (status === 'ready') {
@@ -303,10 +303,11 @@ const DraftSection = ({ drafts: propDrafts }) => {
                     disabled={loading || status !== 'ready'}
                     title={status === 'ready' ? "Send Email" : `Cannot send: ${getDraftStatusText(status)}`}
                   >
-                    📤 Send
+                    <span className="btn-icon">📤</span>
+                    <span className="btn-text">Send</span>
                   </button>
                   <button 
-                    className="delete-button" 
+                    className="draft-delete-btn" 
                     onClick={(e) => {
                       e.stopPropagation();
                       if (window.confirm('Are you sure you want to delete this draft?')) {
@@ -316,7 +317,8 @@ const DraftSection = ({ drafts: propDrafts }) => {
                     disabled={loading}
                     title="Delete Draft"
                   >
-                    🗑️
+                    <span className="btn-icon">🗑️</span>
+                    <span className="btn-text">Delete</span>
                   </button>
                 </div>
               </div>
@@ -325,10 +327,12 @@ const DraftSection = ({ drafts: propDrafts }) => {
         })
       ) : (
         <div className="no-emails-message">
-          <div>📝 No drafts available</div> 
-          <small>Your draft emails will appear here</small>
-          <button onClick={fetchDrafts} className="refresh-button" style={{marginTop: '12px'}}>
-            🔄 Refresh
+          <div className="no-emails-icon">📝</div>
+          <div className="no-emails-title">No drafts available</div> 
+          <small className="no-emails-subtitle">Your draft emails will appear here</small>
+          <button onClick={fetchDrafts} className="refresh-button">
+            <span className="refresh-icon">🔄</span>
+            <span className="refresh-text">Refresh</span>
           </button>
         </div>
       )}

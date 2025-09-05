@@ -386,6 +386,7 @@ const MainContent = ({ nav }) => {
           height: 100%;
           padding: 1.5rem 0;
           overflow-y: auto;
+          overflow-x: hidden;
         }
 
         /* Custom scrollbar for sidebar */
@@ -404,6 +405,12 @@ const MainContent = ({ nav }) => {
 
         .sidebar-content::-webkit-scrollbar-thumb:hover {
           background: var(--text-light);
+        }
+
+        /* Hide horizontal scrollbar but keep vertical scrollbar when sidebar is collapsed */
+        .sidebar-container.collapsed .sidebar-content {
+          overflow-x: hidden;
+          overflow-y: auto;
         }
 
         /* ========== Mobile Toggle ========== */
@@ -489,6 +496,11 @@ const MainContent = ({ nav }) => {
           margin-bottom: 1.5rem;
         }
 
+        .sidebar-container.collapsed .menu-section,
+        .sidebar-container.collapsed .support-section {
+          padding: 0 0.5rem;
+        }
+
         .section-title {
           font-size: 0.75rem;
           text-transform: uppercase;
@@ -497,6 +509,11 @@ const MainContent = ({ nav }) => {
           margin-bottom: 0.75rem;
           padding: 0 0.75rem;
           font-weight: 600;
+        }
+
+        .sidebar-container.collapsed .section-title {
+          padding: 0;
+          text-align: center;
         }
 
         /* ========== Menu Items ========== */
@@ -558,6 +575,94 @@ const MainContent = ({ nav }) => {
           font-size: 1.125rem;
         }
 
+        /* Collapsed state adjustments */
+        .sidebar-container.collapsed .menu-item {
+          padding: 0.875rem 0.5rem;
+          margin: 0 0.5rem;
+          justify-content: center;
+        }
+
+        .sidebar-container.collapsed .menu-icon {
+          margin-right: 0;
+          width: 1.75rem;
+          height: 1.75rem;
+          font-size: 1.25rem;
+        }
+
+        .sidebar-container.collapsed .menu-item:hover {
+          transform: none;
+        }
+
+        .sidebar-container.collapsed .menu-item.active::before {
+          left: -0.5rem;
+          width: 3px;
+        }
+
+        /* Tooltip for collapsed sidebar */
+        .sidebar-container.collapsed .menu-item {
+          position: relative;
+        }
+
+        .sidebar-container.collapsed .menu-item::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          left: calc(100% + 15px);
+          top: 50%;
+          transform: translateY(-50%);
+          background: var(--sidebar-bg);
+          color: var(--text-color);
+          padding: 0.5rem 0.75rem;
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          white-space: nowrap;
+          box-shadow: var(--shadow-dark);
+          border: 1px solid var(--border-color);
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s ease;
+          z-index: 1000;
+          pointer-events: none;
+        }
+
+        .sidebar-container.collapsed .menu-item:hover::after {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .sidebar-container.collapsed .menu-item::before {
+          content: '';
+          position: absolute;
+          left: calc(100% + 10px);
+          top: 50%;
+          transform: translateY(-50%);
+          width: 0;
+          height: 0;
+          border-style: solid;
+          border-width: 5px 5px 5px 0;
+          border-color: transparent var(--sidebar-bg) transparent transparent;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s ease;
+          z-index: 999;
+        }
+
+        .sidebar-container.collapsed .menu-item:hover::before {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .sidebar-container.collapsed .menu-item.active::before {
+          left: -0.5rem;
+          width: 3px;
+          height: 1.5rem;
+          background: var(--primary-light);
+          border-radius: 0 2px 2px 0;
+          border: none;
+          transform: translateY(-50%);
+          opacity: 1;
+          visibility: visible;
+        }
+
         /* Colorful icons */
         .menu-item:nth-child(1) .menu-icon { color: #3b82f6; } /* Dashboard - Blue */
         .menu-item:nth-child(2) .menu-icon { color: #10b981; } /* Projects - Green */
@@ -590,6 +695,12 @@ const MainContent = ({ nav }) => {
           background: white;
           border-radius: 50%;
           box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        }
+
+        .sidebar-container.collapsed .active-indicator {
+          right: 0.5rem;
+          width: 0.4rem;
+          height: 0.4rem;
         }
 
         /* ========== Support Links ========== */
@@ -640,6 +751,13 @@ const MainContent = ({ nav }) => {
           gap: 0.75rem;
         }
 
+        .sidebar-container.collapsed .user-section {
+          padding: 1.5rem 0.5rem 0;
+          justify-content: center;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
         .user-avatar {
           width: 2.75rem;
           height: 2.75rem;
@@ -653,6 +771,12 @@ const MainContent = ({ nav }) => {
           flex-shrink: 0;
           font-size: 1.1rem;
           box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .sidebar-container.collapsed .user-avatar {
+          width: 2.25rem;
+          height: 2.25rem;
+          font-size: 1rem;
         }
 
         .user-info {
@@ -710,6 +834,10 @@ const MainContent = ({ nav }) => {
         .logout-button span {
           margin-left: 0.5rem;
           white-space: nowrap;
+        }
+
+        .sidebar-container.collapsed .logout-button {
+          padding: 0.75rem;
         }
 
         /* ========== Overlay ========== */
@@ -848,6 +976,7 @@ const MainContent = ({ nav }) => {
                         aria-current={
                           isLinkActive(item.path) ? "page" : undefined
                         }
+                        data-tooltip={item.label}
                       >
                         <div className="menu-icon" aria-hidden="true" style={{ position: "relative" }}>
                           {item.icon}
@@ -868,7 +997,7 @@ const MainContent = ({ nav }) => {
                         {!isCollapsed && (
                           <span className="menu-text">{item.label}</span>
                         )}
-                        {isLinkActive(item.path) && !isCollapsed && (
+                        {isLinkActive(item.path) && (
                           <div className="active-indicator" aria-hidden="true" />
                         )}
                       </NavLink>
@@ -879,26 +1008,6 @@ const MainContent = ({ nav }) => {
             </nav>
           </div>
 
-          {/* Support section */}
-          {/* <div className="support-section">
-            <h2 className="section-title">Support</h2>
-            <nav aria-label="Support navigation">
-              <ul className="support-links">
-                <li>
-                  <a href="#" className="support-link">
-                    <FiHelpCircle />
-                    {!isCollapsed && <span>Help</span>}
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="support-link">
-                    <FiPhoneCall />
-                    {!isCollapsed && <span>Contact</span>}
-                  </a>
-                </li>
-              </ul>
-            </nav>
-          </div> */}
 
           {/* User section */}
           <div className="user-section">

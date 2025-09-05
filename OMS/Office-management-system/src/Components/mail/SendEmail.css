@@ -490,6 +490,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+  gap: 32px;
   margin-top: 32px;
   padding: 28px;
   background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
@@ -555,6 +556,7 @@
   font-size: 14px;
   min-width: 140px;
   min-height: 48px;
+  margin-right: 16px;
   background: linear-gradient(135deg, #64748b 0%, #475569 100%);
   color: white;
   border: 2px solid rgba(100, 116, 139, 0.3);
@@ -581,6 +583,7 @@
   font-size: 17px;
   min-width: 200px;
   min-height: 58px;
+  margin-left: 16px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: 2px solid rgba(16, 185, 129, 0.3);
@@ -698,6 +701,7 @@
   
   .form-actions {
     flex-direction: column;
+    gap: 20px;
     padding: 24px 20px;
     margin-top: 28px;
   }
@@ -705,6 +709,7 @@
   .draft-button, .send-button {
     width: 100%;
     min-width: unset;
+    margin: 0;
     margin-bottom: 16px;
     order: unset;
   }

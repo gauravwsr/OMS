@@ -528,34 +528,34 @@ const SendEmail = () => {
         )}
 
         <div className="form-actions">
-           <button
-            type="submit"
-             className="draft-button"
-            disabled={isSaving || isSending || (!email && !cc && !bcc) || !subject || !body}
-            title={(!email && !cc && !bcc) || !subject || !body ? 
-              "Please fill in recipient, subject, and message" : 
-              "Send email now"}
-          >
-            <span className="button-icon">🚀</span>
-            <span className="button-text">
-              {isSending ? 'Sending...' : 'Send Email'}
-            </span>
-            {isSending && <div className="loading-spinner"></div>}
-          </button>
           <button
             type="button"
-            className="send-button"
+            className="draft-button"
             onClick={saveDraft}
             disabled={isSaving || isSending}
             title="Save as draft for later editing"
           >
-            <span className="button-icon">💾</span>
+            <span className="button-icon">�</span>
             <span className="button-text">
               {isSaving ? 'Saving...' : 'Save Draft'}
             </span>
             {isSaving && <div className="loading-spinner"></div>}
           </button>
-
+          
+          <button
+            type="submit"
+            className="send-button"
+            disabled={isSaving || isSending || (!email && !cc && !bcc) || !subject || !body}
+            title={(!email && !cc && !bcc) || !subject || !body ? 
+              "Please fill in recipient, subject, and message" : 
+              "Send email now"}
+          >
+            <span className="button-icon">�</span>
+            <span className="button-text">
+              {isSending ? 'Sending...' : 'Send Email'}
+            </span>
+            {isSending && <div className="loading-spinner"></div>}
+          </button>
         </div>
       </form>
     </div>
