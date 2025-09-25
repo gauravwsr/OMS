@@ -330,47 +330,43 @@ const AnalyticsManagement = () => {
     <div className="analytics-content">
       <div className="data-table-container">
         <div className="table-header">
-          <h3>Leave Details</h3>
-          <div className="header-actions">
-            <div className="quick-stats">
-              <span className="quick-stat">
-                Most Common:{" "}
-                <strong style={{ color: "#764ba2", fontWeight: 700 }}>
-                  {(() => {
-                    if (leaveData.length === 0) return "N/A";
-                    const counts = leaveData.reduce((acc, leave) => {
-                      acc[leave.leaveType] = (acc[leave.leaveType] || 0) + 1;
-                      return acc;
-                    }, {});
-                    const sorted = Object.entries(counts).sort(
-                      ([, a], [, b]) => b - a
-                    );
-                    return sorted[0]?.[0] || "N/A";
-                  })()}
-                </strong>
-              </span>
-              <span className="quick-stat">
-                Avg Days:{" "}
-                <strong style={{ color: "#48bb78", fontWeight: 700 }}>
-                  {leaveData.length > 0
-                    ? Math.round(
-                        (leaveData.reduce(
-                          (acc, leave) => acc + leave.totalDays,
-                          0
-                        ) /
-                          leaveData.length) *
-                          10
-                      ) / 10
-                    : 0}{" "}
-                  days
-                </strong>
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={downloadExcel} className="download-btn">
-                📊 Download Excel
-              </button>
-            </div>
+          <div className="header-actions single-line">
+            <h3 className="section-title-inline">Leave Details</h3>
+            <span className="quick-stat">
+              Most Common:{" "}
+              <strong style={{ color: "#764ba2", fontWeight: 700 }}>
+                {(() => {
+                  if (leaveData.length === 0) return "N/A";
+                  const counts = leaveData.reduce((acc, leave) => {
+                    acc[leave.leaveType] = (acc[leave.leaveType] || 0) + 1;
+                    return acc;
+                  }, {});
+                  const sorted = Object.entries(counts).sort(
+                    ([, a], [, b]) => b - a
+                  );
+                  return sorted[0]?.[0] || "N/A";
+                })()}
+              </strong>
+            </span>
+            <span className="quick-stat">
+              Avg Days:{" "}
+              <strong style={{ color: "#48bb78", fontWeight: 700 }}>
+                {leaveData.length > 0
+                  ? Math.round(
+                      (leaveData.reduce(
+                        (acc, leave) => acc + leave.totalDays,
+                        0
+                      ) /
+                        leaveData.length) *
+                        10
+                    ) / 10
+                  : 0}{" "}
+                days
+              </strong>
+            </span>
+            <button onClick={downloadExcel} className="download-btn">
+              📊 Download Excel
+            </button>
           </div>
         </div>
         <div className="table-wrapper">
@@ -392,60 +388,100 @@ const AnalyticsManagement = () => {
                 leaveData.map((leave, index) => (
                   <tr key={leave._id || index}>
                     <td className="employee-details-cell">
-                      <div
-                        className="emp-avatar"
-                        title={leave.employeeName || leave.name || "Unknown"}
-                      >
-                        <span>
-                          {(leave.employeeName || leave.name || "U").charAt(0)}
-                        </span>
-                      </div>
-                      <div className="emp-info">
-                        <div className="emp-name">
-                          {leave.employeeName || leave.name || "Unknown"}
+                      <div className="employee-card">
+                        <div className="employee-avatar-section">
+                          <div
+                            className="emp-avatar-modern"
+                            title={leave.employeeName || leave.name || "Unknown"}
+                          >
+                            <span className="avatar-text">
+                              {(leave.employeeName || leave.name || "U").charAt(0).toUpperCase()}
+                            </span>
+                            <div className="avatar-glow"></div>
+                          </div>
+                          <div className="employee-status-indicator">
+                            <span className="status-dot active"></span>
+                          </div>
                         </div>
-                        <div className="emp-meta">
-                          <span className="emp-id">
-                            ID: {leave.employeeId || "N/A"}
+                        <div className="employee-info-modern">
+                          <div className="emp-name-modern">
+                            {leave.employeeName || leave.name || "Unknown"}
+                          </div>
+                          <div className="emp-meta-modern">
+                            <div className="meta-item">
+                              <span className="meta-icon">🆔</span>
+                              <span className="meta-text">{leave.employeeId || "N/A"}</span>
+                            </div>
+                            <div className="meta-item">
+                              <span className="meta-icon">📧</span>
+                              <span className="meta-text">{leave.employeeEmail || leave.email || "N/A"}</span>
+                            </div>
+                            <div className="meta-item">
+                              <span className="meta-icon">🏢</span>
+                              <span className="meta-text">{leave.department || "General"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="leave-type-container">
+                        <span
+                          className={`badge badge-leave-type-modern ${
+                            leave.leaveType
+                              ? leave.leaveType.toLowerCase().replace(/\s+/g, "-")
+                              : ""
+                          }`}
+                        >
+                          <span className="leave-icon">
+                            {leave.leaveType?.toLowerCase().includes('sick') && '🤒'}
+                            {leave.leaveType?.toLowerCase().includes('annual') && '🏖️'}
+                            {leave.leaveType?.toLowerCase().includes('casual') && '☕'}
+                            {leave.leaveType?.toLowerCase().includes('emergency') && '🚨'}
+                            {leave.leaveType?.toLowerCase().includes('maternity') && '👶'}
+                            {leave.leaveType?.toLowerCase().includes('earned') && '💰'}
+                            {!leave.leaveType?.toLowerCase().match(/(sick|annual|casual|emergency|maternity|earned)/) && '📅'}
                           </span>
-                          <span className="emp-email">
-                            {leave.employeeEmail || leave.email || "N/A"}
+                          <span className="leave-text">{leave.leaveType || "N/A"}</span>
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="date-range-modern">
+                        <div className="date-item start-date">
+                          <span className="date-icon">📅</span>
+                          <span className="date-text">
+                            {new Date(leave.startDate).toLocaleDateString("en-IN", {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
                           </span>
-                          <span className="emp-dept">
-                            {leave.department || "General"}
+                        </div>
+                        <div className="date-arrow-container">
+                          <span className="date-arrow">→</span>
+                        </div>
+                        <div className="date-item end-date">
+                          <span className="date-icon">📅</span>
+                          <span className="date-text">
+                            {new Date(leave.endDate).toLocaleDateString("en-IN", {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
                           </span>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span
-                        className={`badge badge-leave-type ${
-                          leave.leaveType
-                            ? leave.leaveType.toLowerCase().replace(/\s+/g, "-")
-                            : ""
-                        }`}
-                      >
-                        {leave.leaveType || "N/A"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="date-range">
-                        <span>
-                          {new Date(leave.startDate).toLocaleDateString(
-                            "en-IN"
-                          )}
-                        </span>
-                        <span className="date-arrow">→</span>
-                        <span>
-                          {new Date(leave.endDate).toLocaleDateString("en-IN")}
-                        </span>
+                      <div className="days-count-modern">
+                        <div className="days-circle">
+                          <span className="days-number">{leave.totalDays}</span>
+                          <span className="days-label">
+                            {leave.totalDays === 1 ? "day" : "days"}
+                          </span>
+                        </div>
                       </div>
-                    </td>
-                    <td>
-                      <span className="days-count">
-                        <strong>{leave.totalDays}</strong>{" "}
-                        <small>{leave.totalDays === 1 ? "day" : "days"}</small>
-                      </span>
                     </td>
                     <td className="reason-cell">
                       <span title={leave.reason}>
@@ -455,18 +491,33 @@ const AnalyticsManagement = () => {
                       </span>
                     </td>
                     <td>
-                      <span
-                        className={`badge badge-status ${leave.status?.toLowerCase()}`}
-                      >
-                        {leave.status}
-                      </span>
+                      <div className="status-container">
+                        <span
+                          className={`badge badge-status-modern ${leave.status?.toLowerCase()}`}
+                        >
+                          <span className="status-icon">
+                            {leave.status?.toLowerCase() === 'approved' && '✅'}
+                            {leave.status?.toLowerCase() === 'pending' && '⏳'}
+                            {leave.status?.toLowerCase() === 'rejected' && '❌'}
+                            {!leave.status?.toLowerCase().match(/(approved|pending|rejected)/) && '❓'}
+                          </span>
+                          <span className="status-text">{leave.status}</span>
+                        </span>
+                      </div>
                     </td>
                     <td>
-                      <span>
-                        {new Date(
-                          leave.appliedDate || leave.createdAt
-                        ).toLocaleDateString("en-IN")}
-                      </span>
+                      <div className="applied-date-modern">
+                        <span className="applied-icon">📝</span>
+                        <span className="applied-text">
+                          {new Date(
+                            leave.appliedDate || leave.createdAt
+                          ).toLocaleDateString("en-IN", {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
                     </td>
                     <td>
                       {leave.status === "Approved" && (
@@ -552,16 +603,19 @@ const AnalyticsManagement = () => {
     <div className="analytics-content">
       <div className="analytics-stats">
         <div className="stat-card">
+          <div className="stat-icon">👥</div>
           <h3>Total Employees</h3>
           <p className="stat-number">{attendanceData.length}</p>
           <span className="stat-subtext">In selected period</span>
         </div>
         <div className="stat-card">
+          <div className="stat-icon">📊</div>
           <h3>Average Attendance</h3>
           <p className="stat-number">{analytics.averageAttendance}%</p>
           <span className="stat-subtext">Overall performance</span>
         </div>
         <div className="stat-card">
+          <div className="stat-icon">🏆</div>
           <h3>High Performers</h3>
           <p className="stat-number">
             {attendanceData.filter((a) => a.attendancePercentage >= 90).length}
@@ -569,6 +623,7 @@ const AnalyticsManagement = () => {
           <span className="stat-subtext">≥90% attendance</span>
         </div>
         <div className="stat-card">
+          <div className="stat-icon">⚠️</div>
           <h3>Low Attendance</h3>
           <p className="stat-number">
             {attendanceData.filter((a) => a.attendancePercentage < 70).length}
@@ -576,6 +631,7 @@ const AnalyticsManagement = () => {
           <span className="stat-subtext">&lt;70% attendance</span>
         </div>
         <div className="stat-card">
+          <div className="stat-icon">✅</div>
           <h3>Complete Work Days</h3>
           <p className="stat-number">
             {attendanceData.reduce(
@@ -586,6 +642,7 @@ const AnalyticsManagement = () => {
           <span className="stat-subtext">Full 8+ hour days</span>
         </div>
         <div className="stat-card">
+          <div className="stat-icon">⏰</div>
           <h3>Total Working Hours</h3>
           <p className="stat-number">
             {Math.round(
@@ -602,10 +659,9 @@ const AnalyticsManagement = () => {
 
       <div className="data-table-container">
         <div className="table-header">
-          <h3>Detailed Attendance Analytics</h3>
-          <div className="header-actions">
-            <div className="quick-stats">
-              <span className="quick-stat">
+          <div className="header-actions single-line">
+            <h3 className="section-title-inline">Detailed Attendance Analytics</h3>
+            <span className="quick-stat">
                 Period:{" "}
                 <strong style={{ color: "#764ba2" }}>
                   {new Date(dateRange.startDate).toLocaleDateString("en-IN")} -{" "}
@@ -628,7 +684,6 @@ const AnalyticsManagement = () => {
                   h/day
                 </strong>
               </span>
-            </div>
             <button onClick={downloadExcel} className="download-btn">
               📊 Download Excel
             </button>
@@ -877,30 +932,28 @@ const AnalyticsManagement = () => {
 
       <div className="data-table-container">
         <div className="table-header">
-          <h3>Check-In/Check-Out Details</h3>
-          <div className="header-actions">
-            <div className="quick-stats">
-              <span className="quick-stat">
-                Period:{" "}
-                <strong style={{ color: "#764ba2" }}>
-                  {new Date(dateRange.startDate).toLocaleDateString("en-IN")} -{" "}
-                  {new Date(dateRange.endDate).toLocaleDateString("en-IN")}
-                </strong>
-              </span>
-              <span className="quick-stat">
-                Punctuality Rate:{" "}
-                <strong style={{ color: "#48bb78" }}>
-                  {analytics.checkInOutStats.totalRecords > 0
-                    ? Math.round(
-                        (analytics.checkInOutStats.onTimeCount /
-                          analytics.checkInOutStats.totalRecords) *
-                          100
-                      )
-                    : 0}
-                  %
-                </strong>
-              </span>
-            </div>
+          <div className="header-actions single-line">
+            <h3 className="section-title-inline">Check-In/Check-Out Details</h3>
+            <span className="quick-stat">
+              Period:{" "}
+              <strong style={{ color: "#764ba2" }}>
+                {new Date(dateRange.startDate).toLocaleDateString("en-IN")} -{" "}
+                {new Date(dateRange.endDate).toLocaleDateString("en-IN")}
+              </strong>
+            </span>
+            <span className="quick-stat">
+              Punctuality Rate:{" "}
+              <strong style={{ color: "#48bb78" }}>
+                {analytics.checkInOutStats.totalRecords > 0
+                  ? Math.round(
+                      (analytics.checkInOutStats.onTimeCount /
+                        analytics.checkInOutStats.totalRecords) *
+                        100
+                    )
+                  : 0}
+                %
+              </strong>
+            </span>
             <button onClick={downloadExcel} className="download-btn">
               📊 Download Excel
             </button>

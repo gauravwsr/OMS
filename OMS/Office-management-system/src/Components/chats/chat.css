@@ -15,33 +15,19 @@
   background: #fff;
   border-right: 1px solid #e2e8f0;
   box-shadow: none;
-  height: 100vh;
+  height: 97%;
   overflow-y: auto;
 }
 .chat-area {
   flex: 1;
   min-width: 0;
-  background: #f8fafc;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  box-shadow: none;
-}
-
-/* Tablet: Slightly smaller sidebar, more space for chat */
-@media (max-width: 1199px) and (min-width: 992px) {
-  .sidebar {
-    min-width: 250px;
-    max-width: 320px;
-    flex: 0 0 28%;
-  }
-}
-@media (max-width: 991px) and (min-width: 769px) {
-  .sidebar {
-    min-width: 200px;
-    max-width: 260px;
-    flex: 0 0 32%;
-  }
+  height: 100%;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  margin-top: -1px;
 }
 
 /* Mobile: WhatsApp-like single view, toggle sidebar/chat-area */
@@ -609,61 +595,107 @@
 }
 
 .message-input {
-  padding: 12px 15px;
-  background-color: #f5f5f5;
-  border-top: 1px solid #e0e0e0;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-top: 1px solid #e1e5e9;
   position: relative;
-  flex-shrink: 0; /* Don't shrink this area */
+  flex-shrink: 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: slideUpInput 0.4s ease-out;
+}
+
+@keyframes slideUpInput {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .message-input textarea {
   resize: none;
-  border-radius: 24px;
-  padding: 12px 50px 12px 15px; /* Space for send button */
+  border-radius: 25px;
+  padding: 14px 60px 14px 20px;
   width: 100%;
-  border: 1px solid #ddd;
+  border: 2px solid #e1e5e9;
   font-size: 1rem;
   line-height: 1.4;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  color: #2c3e50;
+  outline: none;
 }
 
 .message-input textarea:focus {
-  outline: none;
   border-color: #4a90e2;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+  transform: translateY(-1px);
+  background: #ffffff;
+}
+
+.message-input textarea::placeholder {
+  color: #94a3b8;
+  font-style: italic;
 }
 
 /* Style for send button if you have one */
 .send-button {
   position: absolute;
-  right: 18px;
-  bottom: 18px;
-  /* background: linear-gradient(90deg, #22c55e 0%, #2563eb 100%); */
-  /* color: #fff; */
-  /* border: none;
-  border-radius: 50%; */
-  width: 40px;
-  height: 40px;
+  right: 24px;
+  bottom: 22px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(60,72,120,0.10);
-  font-size: 1.4rem;
-  /* transition: background 0.2s, box-shadow 0.2s; */
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  font-size: 1.2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
 }
+
 .send-button:hover {
-  background: linear-gradient(90deg, #2563eb 0%, #22c55e 100%);
-  box-shadow: 0 4px 12px rgba(60,72,120,0.15);
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+  transform: scale(1.05);
+}
+
+.send-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+}
+
+.send-button:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+  transform: scale(1);
+}
+
+.send-button:disabled:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+  transform: scale(1);
 }
 
 @media (max-width: 768px) {
   .send-button {
-    right: 12px;
-    bottom: 12px;
-    width: 34px;
-    height: 34px;
+    right: 20px;
+    bottom: 20px;
+    width: 40px;
+    height: 40px;
     font-size: 1.1rem;
   }
 }
@@ -1020,9 +1052,9 @@
   }
   
   .message-input textarea {
-    padding: 10px 45px 10px 12px;
-    font-size: 0.9rem;
-    border-radius: 20px;
+    padding: 12px 55px 12px 16px;
+    font-size: 0.95rem;
+    border-radius: 22px;
   }
   
   .send-button {
@@ -1061,8 +1093,8 @@
   }
   
   .message-input textarea {
-    padding: 8px 40px 8px 10px;
-    font-size: 0.85rem;
+    padding: 10px 50px 10px 12px;
+    font-size: 0.9rem;
   }
   
   .send-button {
@@ -1209,7 +1241,7 @@
   }
 
   .message-input textarea {
-    padding: 6px 35px 6px 10px;
+    padding: 8px 40px 8px 12px;
     font-size: 0.9rem;
     border-radius: 20px;
   }
@@ -1365,7 +1397,7 @@
   }
 
   .message-input textarea {
-    padding: 5px 30px 5px 8px;
+    padding: 6px 35px 6px 10px;
     font-size: 0.85rem;
     border-radius: 18px;
   }

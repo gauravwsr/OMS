@@ -81,32 +81,3 @@
   background: rgba(30,64,175,0.08);
   color: #fff;
 }
-
-/* Mobile Responsive Styles */
-@media (max-width: 768px) {
-  .chat-header {
-    padding: 10px 8px;
-    min-height: 48px;
-    font-size: 15px;
-    box-shadow: 0 1px 3px rgba(60,72,120,0.05);
-  }
-  .chat-header-avatar {
-    width: 36px;
-    height: 36px;
-    margin-right: 10px;
-    font-size: 1rem;
-  }
-  .chat-header-name {
-    font-size: 15px;
-  }
-  .chat-header-status {
-    font-size: 12px;
-  }
-  .chat-header-actions {
-    gap: 7px;
-  }
-  .chat-header-button {
-    padding: 6px;
-    font-size: 1rem;
-  }
-}
