@@ -114,6 +114,20 @@ const messageSchema = new mongoose.Schema({
   },
   attachments: [{
     type: String // Store file paths
+  }],
+  deletedBy: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: 'deletedByModel'
+    },
+    deletedByModel: {
+      type: String,
+      enum: ['User', 'Candidate']
+    },
+    deletedAt: {
+      type: Date,
+      default: Date.now
+    }
   }]
 }, { timestamps: true });
 

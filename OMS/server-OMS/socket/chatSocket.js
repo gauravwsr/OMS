@@ -118,6 +118,37 @@ exports.init = (server) => {
       }
     });
 
+    // Handle message deletion
+    socket.on("delete message", async (deletionData) => {
+      try {
+        if (!deletionData || !deletionData.messageId || !deletionData.chatId) {
+          console.error("Invalid deletion data:", deletionData);
+          socket.emit("error", { message: "Invalid deletion data" });
+          return;
+        }
+
+        const { messageId, chatId } = deletionData;
+        
+        console.log(
+          `Message deletion request for message ${messageId} in chat ${chatId} from user ${
+            socket.userId || "unknown"
+          }`
+        );
+
+        // Broadcast to all users in the chat room (including sender for consistency)
+        io.to(chatId).emit("message deleted", {
+          messageId,
+          deletedBy: socket.userId,
+          chatId
+        });
+
+        console.log(`Message deletion broadcasted to chat room: ${chatId}`);
+      } catch (error) {
+        console.error("Error handling message deletion:", error);
+        socket.emit("error", { message: "Error processing message deletion" });
+      }
+    });
+
     // Join chat room
     socket.on("join chat", (chatId) => {
       if (!chatId) {

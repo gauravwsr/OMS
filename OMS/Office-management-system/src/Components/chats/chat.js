@@ -591,18 +591,27 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
           ...chat,
           latestMessage: newMessageReceived,
           unreadCount: shouldIncrementUnread ? (chat.unreadCount || 0) + 1 : (chat.unreadCount || 0),
-          notification: shouldIncrementUnread ? true : chat.notification
+          notification: shouldIncrementUnread ? true : chat.notification,
+          lastMessageTime: newMessageReceived.createdAt || Date.now(),
+          hasNewMessage: shouldIncrementUnread
         };
       }
       return chat;
     });
     
+    // Sort chats by latest message time to bring new message chats to top
+    const sortedChats = updated.sort((a, b) => {
+      const timeA = new Date(a.lastMessageTime || a.updatedAt || 0);
+      const timeB = new Date(b.lastMessageTime || b.updatedAt || 0);
+      return timeB - timeA;
+    });
+    
     // Dispatch event for sidebar notification
     window.dispatchEvent(new CustomEvent("chat-unread-status", {
-      detail: { chats: updated }
+      detail: { chats: sortedChats }
     }));
     
-    return updated;
+    return sortedChats;
   });
   
   // Add message to current chat if it's for the selected chat AND from another user
@@ -616,12 +625,29 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
         return prev;
       }
       console.log("✅ Adding new message to current chat - REAL TIME UPDATE");
-      const newMessages = [...prev, newMessageReceived];
+      
+      // Mark message as new for animation
+      const messageWithNewFlag = { ...newMessageReceived, isNewMessage: true };
+      const newMessages = [...prev, messageWithNewFlag];
+      
+      // Remove new message flag after animation
+      setTimeout(() => {
+        setMessages(current => 
+          current.map(msg => 
+            msg._id === newMessageReceived._id 
+              ? { ...msg, isNewMessage: false }
+              : msg
+          )
+        );
+      }, 1000);
       
       // Force a re-render by creating a new array reference
       console.log("🔄 Total messages after adding:", newMessages.length);
       return newMessages;
     });
+    
+    // Enhanced notification for current chat message
+    showNotification(newMessageReceived);
     
     // Also force scroll to bottom after a small delay to ensure DOM update
     setTimeout(() => {
@@ -633,16 +659,30 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
     }, 100);
   } 
   
-  // Show notification for ALL messages from other users in other chats (not the current chat)
-  if (!isFromCurrentUser && !isCurrentChat) {
-    console.log("🔔 Message from another user in a different chat - showing notification");
+  // Show notification for ALL messages from other users (including current chat for sound/visual feedback)
+  if (!isFromCurrentUser) {
+    console.log("🔔 Message from another user - showing notification");
     console.log("🔔 Notification details:", {
       isCurrentChat,
       senderName: newMessageReceived.sender.name,
       chatName: newMessageReceived.chat?.chatName || "Direct Message",
       currentChatName: selectedChat?.chatName || "Direct Message"
     });
+    
+    // Always show notification for messages from others
     showNotification(newMessageReceived);
+    
+    // Add visual highlight to chat item for non-current chats
+    if (!isCurrentChat) {
+      // Highlight the specific chat in the sidebar
+      setTimeout(() => {
+        const chatElements = document.querySelectorAll(`[data-chat-id="${chatId}"]`);
+        chatElements.forEach(element => {
+          element.classList.add('unread-chat');
+          element.style.animation = 'pulseGlow 2s ease-in-out infinite';
+        });
+      }, 100);
+    }
   }
 }, [selectedChat, user._id, setChats, setMessages, showNotification]);
 
@@ -747,6 +787,18 @@ useEffect(() => {
   socket.on("typing", handleTyping);
   socket.on("stop typing", handleStopTyping);
   
+  // Handle message deletion
+  socket.on("message deleted", (data) => {
+    console.log("📨 Message deleted event received:", data);
+    const { messageId, deletedBy, chatId } = data;
+    
+    // Only remove the message from UI if the current user deleted it
+    // (This prevents the message from disappearing from receiver's chat)
+    if (deletedBy === user._id && chatId === selectedChat?._id) {
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+    }
+  });
+  
   // Also listen for alternative event names (just in case)
   socket.on("new message", messageHandler);
   socket.on("messageReceived", messageHandler);
@@ -785,6 +837,7 @@ useEffect(() => {
     socket.off("message received", messageHandler);
     socket.off("new message", messageHandler);
     socket.off("messageReceived", messageHandler);
+    socket.off("message deleted");
     socket.off("typing", handleTyping);
     socket.off("stop typing", handleStopTyping);
     
@@ -1291,6 +1344,43 @@ window.testRealtimeConnection = testRealtimeConnection;
     }
   };
 
+  const handleDeleteMessage = async (messageId) => {
+    if (!messageId) return;
+
+    // Show confirmation dialog
+    if (!window.confirm("Are you sure you want to delete this message? This will only remove it from your view.")) {
+      return;
+    }
+
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/api/message/${messageId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
+      if (response.data.success) {
+        // Remove the message from the UI immediately for better UX
+        setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+        
+        // Emit socket event for real-time updates
+        if (socket && socket.connected) {
+          socket.emit("delete message", {
+            messageId,
+            chatId: selectedChat._id
+          });
+        }
+        
+        // Show success feedback
+        console.log("Message deleted successfully");
+      }
+    } catch (err) {
+      console.error("Failed to delete message:", err);
+      setError("Failed to delete message");
+      
+      // Show error to user
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const toggleUserSelection = (userId) => {
     if (!userId) {
       console.warn("Attempted to toggle selection for undefined userId");
@@ -1313,9 +1403,18 @@ const clearChatNotifications = (chatId) => {
   setChats((prev) => {
     const updated = prev.map((chat) =>
       chat._id === chatId
-        ? { ...chat, unreadCount: 0, notification: false }
+        ? { ...chat, unreadCount: 0, notification: false, hasNewMessage: false }
         : chat
     );
+    
+    // Remove visual highlights from chat elements
+    setTimeout(() => {
+      const chatElements = document.querySelectorAll(`[data-chat-id="${chatId}"]`);
+      chatElements.forEach(element => {
+        element.classList.remove('unread-chat');
+        element.style.animation = '';
+      });
+    }, 100);
     
     // Dispatch event for sidebar notification
     window.dispatchEvent(new CustomEvent("chat-unread-status", {
@@ -1443,6 +1542,24 @@ const clearChatNotifications = (chatId) => {
       return "offline";
     }
   };
+
+  // Close dropdown menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close all open dropdown menus
+      const openMenus = document.querySelectorAll('.message-dropdown-menu.show');
+      openMenus.forEach(menu => {
+        if (!menu.closest('.message-dropdown').contains(event.target)) {
+          menu.classList.remove('show');
+        }
+      });
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
 
   // Final cleanup effect for the component
   useEffect(() => {
@@ -1633,7 +1750,12 @@ return (
                       action
                       active={selectedChat?._id === chat._id}
                       onClick={() => handleChatSelect(chat)}
-                      className="d-flex align-items-center"
+                      className={`d-flex align-items-center ${
+                        (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) 
+                          ? 'unread-chat' 
+                          : ''
+                      }`}
+                      data-chat-id={chat._id}
                     >
                       <div
                         className="avatar me-3"
@@ -1653,22 +1775,9 @@ return (
                         )}
                         {(chat.unreadCount > 0 || chat.notification) && (
                           <span
-                            style={{
-                              position: "absolute",
-                              top: "-4px",
-                              right: "-4px",
-                              background: "#dc3545",
-                              color: "white",
-                              borderRadius: "50%",
-                              fontSize: "0.7rem",
-                              minWidth: chat.unreadCount > 0 ? "18px" : "10px",
-                              height: chat.unreadCount > 0 ? "18px" : "10px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: chat.unreadCount > 0 ? "0 4px" : 0,
-                              zIndex: 2,
-                            }}
+                            className={`notification-badge ${
+                              chat.unreadCount > 0 ? '' : 'dot-only'
+                            }`}
                           >
                             {chat.unreadCount > 0
                               ? chat.unreadCount > 9
@@ -1680,7 +1789,11 @@ return (
                       </div>
                       <div className="flex-grow-1">
                         <div className="d-flex justify-content-between">
-                          <strong>
+                          <strong className={`contact-name ${
+                            (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) 
+                              ? 'text-primary' 
+                              : ''
+                          }`}>
                             {chat.participants &&
                             Array.isArray(chat.participants) &&
                             user &&
@@ -1690,13 +1803,17 @@ return (
                                 )?.name || "Chat"
                               : "Chat"}
                           </strong>
-                          <small className="text-muted">
+                          <small className="text-muted contact-time">
                             {chat.latestMessage && chat.latestMessage.createdAt
                               ? new Date(chat.latestMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                               : "--:--"}
                           </small>
                         </div>
-                        <small className="text-muted">
+                        <small className={`contact-last-message ${
+                          (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) 
+                            ? 'text-dark' 
+                            : 'text-muted'
+                        }`}>
                           {chat.latestMessage?.content || "No messages yet"}
                         </small>
                       </div>
@@ -1720,7 +1837,12 @@ return (
                         action
                         active={selectedChat?._id === chat._id}
                         onClick={() => handleChatSelect(chat)}
-                        className="d-flex align-items-center"
+                        className={`d-flex align-items-center ${
+                          (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) 
+                            ? 'unread-chat' 
+                            : ''
+                        }`}
+                        data-chat-id={chat._id}
                       >
                         <div
                           className="avatar me-3 group-avatar"
@@ -1729,23 +1851,9 @@ return (
                           {getAvatarText(chat.chatName)}
                           {(chat.unreadCount > 0 || chat.notification) && (
                             <span
-                              style={{
-                                position: "absolute",
-                                top: "-4px",
-                                right: "-4px",
-                                background: "#dc3545",
-                                color: "white",
-                                borderRadius: "50%",
-                                fontSize: "0.7rem",
-                                minWidth:
-                                  chat.unreadCount > 0 ? "18px" : "10px",
-                                height: chat.unreadCount > 0 ? "18px" : "10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                padding: chat.unreadCount > 0 ? "0 4px" : 0,
-                                zIndex: 2,
-                              }}
+                              className={`notification-badge ${
+                                chat.unreadCount > 0 ? '' : 'dot-only'
+                              }`}
                             >
                               {chat.unreadCount > 0
                                 ? chat.unreadCount > 9
@@ -1757,12 +1865,20 @@ return (
                         </div>
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between">
-                            <strong>{chat.chatName}</strong>
-                            <small className="text-muted">
+                            <strong className={`contact-name ${
+                              (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) 
+                                ? 'text-primary' 
+                                : ''
+                            }`}>{chat.chatName}</strong>
+                            <small className="text-muted contact-time">
                               {chat.participants?.length || 0} members
                             </small>
                           </div>
-                          <small className="text-muted">
+                          <small className={`contact-last-message ${
+                            (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) 
+                              ? 'text-dark' 
+                              : 'text-muted'
+                          }`}>
                             {chat.latestMessage?.content || "No messages yet"}
                           </small>
                         </div>
@@ -1925,8 +2041,43 @@ return (
                         isSender ? "sent" : "received"
                       } ${isTemp ? "temp" : ""} ${
                         sendFailed ? "send-failed" : ""
-                      }`}
+                      } ${message.isNewMessage ? "new-message" : ""}`}
                     >
+                      {/* Message dropdown for sender's messages */}
+                      {isSender && !isTemp && !sendFailed && (
+                        <div className="message-dropdown">
+                          <button
+                            className="message-dropdown-toggle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const menu = e.target.nextElementSibling;
+                              if (menu) {
+                                menu.classList.toggle('show');
+                              }
+                            }}
+                            title="Message options"
+                          >
+                            ⋮
+                          </button>
+                          <div className="message-dropdown-menu">
+                            <button
+                              className="message-dropdown-item delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Are you sure you want to delete this message? This will only remove it from your view.')) {
+                                  handleDeleteMessage(message._id);
+                                }
+                                // Hide menu after action
+                                e.target.closest('.message-dropdown-menu').classList.remove('show');
+                              }}
+                            >
+                              <i className="fas fa-trash"></i>
+                              Delete Message
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="message-content">
                         {/* Show sender name in group chats for received messages */}
                         {selectedChat.isGroupChat &&
@@ -1947,44 +2098,44 @@ return (
                               )
                             : ""}
                         </div>
-                        {isSender && (
-                          <div
-                            className={`message-status ${
-                              isSending ? "sending" : ""
-                            } ${sendFailed ? "error" : ""} ${
-                              !isTemp && !sendFailed ? "delivered" : ""
-                            }`}
-                          >
-                            {sendFailed && (
-                              <span>
-                                Failed to send
-                                <Button
-                                  variant="link"
-                                  size="sm"
-                                  className="p-0 ms-1"
-                                  onClick={() => {
-                                    // Set the message back to input field to retry
-                                    setNewMessage(message.content);
-                                    // Remove the failed message
-                                    setMessages((prev) =>
-                                      prev.filter((m) => m._id !== message._id)
-                                    );
-                                  }}
-                                >
-                                  Retry
-                                </Button>
-                              </span>
-                            )}
-                            {isSending && (
-                              <span>{slowNetwork ? "Sending..." : "●"}</span>
-                            )}
-                            {!isTemp && !sendFailed && !message.wasTemp && (
-                              <span>✓</span>
-                            )}
-                            {message.wasTemp && <span>✓✓</span>}
-                          </div>
-                        )}
                       </div>
+                      {isSender && (
+                        <div
+                          className={`message-status ${
+                            isSending ? "sending" : ""
+                          } ${sendFailed ? "error" : ""} ${
+                            !isTemp && !sendFailed ? "delivered" : ""
+                          }`}
+                        >
+                          {sendFailed && (
+                            <span>
+                              Failed to send
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0 ms-1"
+                                onClick={() => {
+                                  // Set the message back to input field to retry
+                                  setNewMessage(message.content);
+                                  // Remove the failed message
+                                  setMessages((prev) =>
+                                    prev.filter((m) => m._id !== message._id)
+                                  );
+                                }}
+                              >
+                                Retry
+                              </Button>
+                            </span>
+                          )}
+                          {isSending && (
+                            <span>{slowNetwork ? "Sending..." : "●"}</span>
+                          )}
+                          {!isTemp && !sendFailed && !message.wasTemp && (
+                            <span>✓</span>
+                          )}
+                          {message.wasTemp && <span>✓✓</span>}
+                        </div>
+                      )}
                     </div>
                   );
                 })
@@ -2057,13 +2208,8 @@ return (
                     variant="link"
                     className="send-button"
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || loading}
                   >
-                    {loading ? (
-                      <Spinner size="sm" animation="border" />
-                    ) : (
-                      <i className="fas fa-paper-plane"></i>
-                    )}
+                    <i className="fas fa-paper-plane"></i>
                   </Button>
                 </Form.Group>
               </div>

@@ -144,7 +144,8 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            ...emailConfig,
+            email: emailConfig.email,
+            password: emailConfig.password,
             testOnly: true,
           }),
         }
@@ -188,7 +189,11 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(emailConfig),
+          body: JSON.stringify({
+            email: emailConfig.email,
+            password: emailConfig.password,
+            testOnly: false
+          }),
         }
       );
 

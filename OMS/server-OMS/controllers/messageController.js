@@ -91,15 +91,24 @@ exports.allMessages = catchAsync(async (req, res, next) => {
       });
     }
 
-    // Fetch messages
-    const messages = await Message.find({ chat: req.params.chatId })
+    // Fetch messages and filter out those deleted by current user
+    const allMessages = await Message.find({ chat: req.params.chatId })
       .populate('sender', '-password')
       .populate('chat')
       .sort({ createdAt: 1 }); // Sort from oldest to newest
 
-    console.log(`Found ${messages.length} messages for chat ${req.params.chatId}`);
+    // Filter out messages that have been deleted by the current user
+    const messages = allMessages.filter(message => {
+      // Check if this message has been deleted by the current user
+      const isDeleted = message.deletedBy.some(
+        deleted => deleted.user.toString() === req.user._id.toString()
+      );
+      return !isDeleted; // Return message only if not deleted by current user
+    });
+
+    console.log(`Found ${allMessages.length} total messages, ${messages.length} visible to user for chat ${req.params.chatId}`);
     
-    // Return messages directly in an array as expected by the client
+    // Return filtered messages directly in an array as expected by the client
     res.status(200).json(messages);
     
   } catch (error) {
@@ -162,7 +171,7 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
-// @desc    Delete a message
+// @desc    Delete a message (for sender only - marks as deleted for sender)
 // @route   DELETE /api/message/:messageId
 // @access  Protected
 exports.deleteMessage = async (req, res) => {
@@ -184,13 +193,49 @@ exports.deleteMessage = async (req, res) => {
       });
     }
 
-    await Message.deleteOne({ _id: message._id });
+    // Check if already deleted by this user
+    const alreadyDeleted = message.deletedBy.some(
+      deleted => deleted.user.toString() === req.user._id.toString()
+    );
+
+    if (alreadyDeleted) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Message already deleted' 
+      });
+    }
+
+    // Add user to deletedBy array instead of deleting the message completely
+    await Message.findByIdAndUpdate(
+      req.params.messageId,
+      {
+        $push: {
+          deletedBy: {
+            user: req.user._id,
+            deletedByModel: 'User', // Assuming current user is always User model
+            deletedAt: new Date()
+          }
+        }
+      },
+      { new: true }
+    );
+
+    // Emit socket event to notify about message deletion
+    const io = req.app.get('io');
+    if (io) {
+      io.to(message.chat.toString()).emit('message deleted', {
+        messageId: message._id,
+        deletedBy: req.user._id,
+        chatId: message.chat
+      });
+    }
 
     res.status(200).json({ 
       success: true,
-      message: 'Message deleted successfully' 
+      message: 'Message deleted for you successfully' 
     });
   } catch (error) {
+    console.error('Error deleting message:', error);
     res.status(500).json({ 
       success: false,
       message: 'Error deleting message',
