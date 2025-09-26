@@ -649,18 +649,18 @@
 .send-button {
   position: absolute;
   right: 24px;
-  bottom: 22px;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  bottom: 7px;
+  /* background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); */
   color: #ffffff;
   border: none;
-  border-radius: 50%;
+  border-radius: -1%;
   width: 14px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  /* box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); */
   font-size: 1.2rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: scale(1);

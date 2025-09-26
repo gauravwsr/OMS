@@ -48,7 +48,7 @@ function groupMessagesByDate(messages) {
   return groups;
 }
 
-const Chat = () => {
+const Chat = ({ addInAppNotification }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [chats, setChats] = useState([]);
@@ -68,7 +68,6 @@ const Chat = () => {
   const [candidates, setCandidates] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
-  const [inAppNotifications, setInAppNotifications] = useState([]);
   const typingTimeout = useRef(null);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
@@ -123,12 +122,10 @@ const Chat = () => {
       timestamp: new Date(),
     };
     
-    setInAppNotifications(prev => [...prev, inAppNotification]);
-    
-    // Auto remove in-app notification after 5 seconds
-    setTimeout(() => {
-      setInAppNotifications(prev => prev.filter(notif => notif.id !== inAppNotification.id));
-    }, 5000);
+    // Use the global notification callback
+    if (addInAppNotification) {
+      addInAppNotification(inAppNotification);
+    }
     
     // Check if notifications are supported
     if (!("Notification" in window)) {
@@ -191,7 +188,7 @@ const Chat = () => {
         }
       });
     }
-  }, [setInAppNotifications]); // Dependencies for useCallback
+  }, [addInAppNotification]); // Dependencies for useCallback
 
   // Debug user authentication
   useEffect(() => {
@@ -1642,26 +1639,6 @@ const clearChatNotifications = (chatId) => {
 
 return (
   <Container fluid className="chat-container">
-    {/* In-App Notifications */}
-    <div className="in-app-notifications">
-      {inAppNotifications.map((notification) => (
-        <div key={notification.id} className="in-app-notification">
-          <div className="notification-header">
-            <strong>New message from {notification.senderName}</strong>
-            <button 
-              className="notification-close" 
-              onClick={() => setInAppNotifications(prev => prev.filter(n => n.id !== notification.id))}
-            >
-              ×
-            </button>
-          </div>
-          <div className="notification-body">
-            {notification.content}
-          </div>
-        </div>
-      ))}
-    </div>
-
     {/* Left sidebar - Chats list */}
     <div className="sidebar">
       {/* Mobile Office Chat Header */}

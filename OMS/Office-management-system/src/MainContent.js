@@ -268,6 +268,21 @@ const MainContent = ({ nav }) => {
 
   const [leaveNotification, setLeaveNotification] = useState(false);
   const [chatNotification, setChatNotification] = useState(false);
+  const [inAppNotifications, setInAppNotifications] = useState([]);
+
+  // Function to add in-app notification (called by Chat component)
+  const addInAppNotification = (notification) => {
+    setInAppNotifications(prev => [...prev, notification]);
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      setInAppNotifications(prev => prev.filter(n => n.id !== notification.id));
+    }, 5000);
+  };
+
+  // Function to remove in-app notification
+  const removeInAppNotification = (id) => {
+    setInAppNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   useEffect(() => {
     // Fetch pending leave applications for notification
@@ -760,6 +775,8 @@ const MainContent = ({ nav }) => {
             width: 100%;
           }
         }
+
+        /* Global In-App Notifications */
         `}
       </style>
 
@@ -930,6 +947,26 @@ const MainContent = ({ nav }) => {
         </div>
       </aside>
 
+      {/* Global In-App Notifications */}
+      <div className="global-in-app-notifications">
+        {inAppNotifications.map((notification) => (
+          <div key={notification.id} className="global-in-app-notification">
+            <div className="notification-header">
+              <strong>New message from {notification.senderName}</strong>
+              <button
+                className="notification-close"
+                onClick={() => removeInAppNotification(notification.id)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="notification-body">
+              {notification.content}
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Main content area */}
       <div className="main-cont" style={getMainContentStyle()}>
         <Routes>
@@ -985,7 +1022,7 @@ const MainContent = ({ nav }) => {
           />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat" element={<Chat addInAppNotification={addInAppNotification} />} />
           <Route path="/Inbox" element={<Inbox />} />
           <Route path="/Inbox/send-email" element={<SendEmail />} />
           <Route path="/Inbox/email-details" element={<EmailDetails />} />
