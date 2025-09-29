@@ -35,6 +35,17 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
   
   await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 
+  // Un-hide the chat for all other participants (except sender)
+  // This ensures that when a user sends a message to someone who has hidden the chat,
+  // the recipient will see the chat again
+  if (chat.hiddenBy && chat.hiddenBy.length > 0) {
+    chat.hiddenBy = chat.hiddenBy.filter(hidden => 
+      hidden.user.toString() !== req.user._id.toString()
+    );
+    await chat.save();
+    console.log(`Chat ${chatId} unhidden for other participants after message sent`);
+  }
+
   // Emit socket event to all users in the chat
   const io = req.app.get('io');
   io.to(chatId).emit('message received', message);

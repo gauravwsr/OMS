@@ -1,5 +1,6 @@
 // controllers/candidateController.js
 const Candidate = require("../models/Candidate");
+const { Chat, Message } = require("../models/chatModel");
 
 // Create a new candidate
 exports.createCandidate = async (req, res) => {
@@ -332,17 +333,49 @@ exports.deleteCandidate = async (req, res) => {
       // Continue with deletion even if file deletion fails
     }
 
+    // Delete all chats and messages associated with this candidate
+    let chatsDeletedCount = 0;
+    try {
+      // Find all chats where this candidate is a participant
+      const chatsToDelete = await Chat.find({
+        participants: candidate._id
+      });
+
+      console.log(`Found ${chatsToDelete.length} chats to delete for candidate: ${candidate.fullName}`);
+
+      // Delete all messages in these chats
+      for (const chat of chatsToDelete) {
+        await Message.deleteMany({ chat: chat._id });
+        console.log(`✅ Messages deleted for chat: ${chat._id}`);
+      }
+
+      // Delete the chats themselves
+      const deleteResult = await Chat.deleteMany({
+        participants: candidate._id
+      });
+
+      chatsDeletedCount = deleteResult.deletedCount;
+      console.log(`✅ Deleted ${deleteResult.deletedCount} chats for candidate: ${candidate.fullName}`);
+    } catch (chatError) {
+      console.error(
+        `❌ Error deleting chats for ${candidate.fullName}:`,
+        chatError.message
+      );
+      // Continue with deletion even if chat deletion fails
+    }
+
     // Delete the candidate from database
     await Candidate.findOneAndDelete({ candidateId: req.params.id });
 
     res.status(200).json({
       success: true,
-      message: "Candidate and associated files deleted successfully",
+      message: "Candidate and associated data deleted successfully",
       deletedData: {
         candidateId: candidate.candidateId,
         fullName: candidate.fullName,
         faceImagesDeleted: !!candidate.fullName,
         filesDeleted: !!(candidate.cvPath || candidate.photoPath),
+        chatsDeleted: chatsDeletedCount,
       },
     });
   } catch (error) {

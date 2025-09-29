@@ -159,7 +159,21 @@ const chatSchema = new mongoose.Schema({
   groupAdminModel: {
     type: String,
     enum: ['User', 'Candidate']
-  }
+  },
+  hiddenBy: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: 'hiddenByModel'
+    },
+    hiddenByModel: {
+      type: String,
+      enum: ['User', 'Candidate']
+    },
+    hiddenAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, { timestamps: true });
 
 // Indexes

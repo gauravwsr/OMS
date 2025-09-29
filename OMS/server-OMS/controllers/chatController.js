@@ -67,6 +67,24 @@ exports.accessChat = catchAsync(async (req, res, next) => {
 
     if (existingChat) {
       console.log('Found existing chat:', existingChat._id);
+      
+      // Check if this chat is hidden by the current user
+      const isHiddenByCurrentUser = existingChat.hiddenBy.some(
+        hidden => hidden.user.toString() === req.user._id.toString()
+      );
+      
+      if (isHiddenByCurrentUser) {
+        console.log('Chat was hidden by current user, unhiding it');
+        
+        // Remove the current user from hiddenBy array
+        existingChat.hiddenBy = existingChat.hiddenBy.filter(
+          hidden => hidden.user.toString() !== req.user._id.toString()
+        );
+        
+        await existingChat.save();
+        console.log('Chat unhidden successfully');
+      }
+      
       return res.status(200).json({
         status: 'success',
         data: { chat: existingChat }
@@ -111,9 +129,12 @@ exports.fetchChats = catchAsync(async (req, res, next) => {
   try {
     console.log('Fetching chats for user:', req.user._id);
     
-    // Find all chats where the current user is a participant
+    // Find all chats where the current user is a participant and not hidden by them
     const chats = await Chat.find({
-      participants: { $elemMatch: { $eq: req.user._id } }
+      participants: { $elemMatch: { $eq: req.user._id } },
+      $nor: [
+        { hiddenBy: { $elemMatch: { user: req.user._id } } }
+      ]
     })
     .populate('participants', '-password')
     .populate('groupAdmin', '-password')
@@ -383,5 +404,48 @@ exports.deleteChat = catchAsync(async (req, res, next) => {
   res.status(200).json({ 
     status: 'success',
     message: 'Chat deleted successfully' 
+  });
+});
+
+// @desc    Hide a chat from user's view
+// @route   PUT /api/chat/:chatId/hide
+// @access  Protected
+exports.hideChat = catchAsync(async (req, res, next) => {
+  const chat = await Chat.findById(req.params.chatId);
+  
+  if (!chat) {
+    return next(new AppError('Chat not found', 404));
+  }
+
+  // Check if user is a participant
+  const isParticipant = chat.participants.some(
+    participant => participant.toString() === req.user._id.toString()
+  );
+
+  if (!isParticipant) {
+    return next(new AppError('Not authorized to hide this chat', 403));
+  }
+
+  // Check if chat is already hidden by this user
+  const alreadyHidden = chat.hiddenBy.some(
+    hidden => hidden.user.toString() === req.user._id.toString()
+  );
+
+  if (alreadyHidden) {
+    return next(new AppError('Chat is already hidden', 400));
+  }
+
+  // Add user to hiddenBy array
+  chat.hiddenBy.push({
+    user: req.user._id,
+    hiddenByModel: req.userModel || 'User'
+  });
+
+  await chat.save();
+
+  res.status(200).json({ 
+    status: 'success',
+    message: 'Chat hidden successfully',
+    data: { chat }
   });
 });

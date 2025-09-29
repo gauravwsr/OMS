@@ -579,8 +579,10 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
   
   // Update the chat list with latest message and notification status
   setChats((prev) => {
+    let chatExists = false;
     const updated = prev.map((chat) => {
       if (chat._id === chatId) {
+        chatExists = true;
         // Only increment unread count for messages from other users and not in current chat
         const shouldIncrementUnread = !isFromCurrentUser && !isCurrentChat;
         
@@ -595,6 +597,23 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
       }
       return chat;
     });
+    
+    // If chat doesn't exist in local state (was hidden), add it back
+    if (!chatExists) {
+      console.log("📨 Chat was hidden, adding it back to chat list");
+      const newChat = {
+        _id: chatId,
+        chatName: newMessageReceived.chat?.chatName || "Direct Message",
+        isGroupChat: newMessageReceived.chat?.isGroupChat || false,
+        participants: newMessageReceived.chat?.participants || [],
+        latestMessage: newMessageReceived,
+        unreadCount: !isFromCurrentUser ? 1 : 0,
+        notification: !isFromCurrentUser,
+        lastMessageTime: newMessageReceived.createdAt || Date.now(),
+        hasNewMessage: !isFromCurrentUser
+      };
+      updated.push(newChat);
+    }
     
     // Sort chats by latest message time to bring new message chats to top
     const sortedChats = updated.sort((a, b) => {
@@ -1341,6 +1360,41 @@ window.testRealtimeConnection = testRealtimeConnection;
     }
   };
 
+  const handleRemoveChatFromView = async (chatId) => {
+    if (!chatId) return;
+
+    const confirmRemove = window.confirm(
+      "Are you sure you want to remove this chat from your view? This action cannot be undone."
+    );
+
+    if (!confirmRemove) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${API_BASE_URL}/api/chat/${chatId}/hide`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.status === 'success') {
+        // Remove the chat from local state
+        setChats((prev) => prev.filter((chat) => chat._id !== chatId));
+        setSelectedChat(null);
+        alert("Chat removed from your view successfully!");
+      } else {
+        throw new Error(response.data.message || 'Failed to hide chat');
+      }
+    } catch (error) {
+      console.error("Error removing chat from view:", error);
+      alert("Failed to remove chat from view. Please try again.");
+    }
+  };
+
   const handleDeleteMessage = async (messageId) => {
     if (!messageId) return;
 
@@ -1944,7 +1998,7 @@ return (
                   </div>
                 </div>
                 <div className="chat-header-actions">
-                  {selectedChat.isGroupChat && (
+                  {selectedChat.isGroupChat ? (
                     <>
                       <button
                         className="chat-header-button"
@@ -1961,6 +2015,14 @@ return (
                         <i className="fas fa-sign-out-alt"></i>
                       </button>
                     </>
+                  ) : (
+                    <button
+                      className="chat-header-button"
+                      title="Remove Chat"
+                      onClick={() => handleRemoveChatFromView(selectedChat._id)}
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
                   )}
                 </div>
               </div>

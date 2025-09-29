@@ -98,4 +98,9 @@ router.delete(
   chatController.deleteChat
 );
 
+router.put(
+  '/:chatId/hide',
+  chatController.hideChat
+);
+
 module.exports = router;
