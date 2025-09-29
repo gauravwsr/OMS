@@ -2183,7 +2183,7 @@ return (
                   />
                   <Button
                     variant="link"
-                    className="send-button"
+                    className="send-button-1"
                     onClick={handleSendMessage}
                   >
                     <i className="fas fa-paper-plane"></i>

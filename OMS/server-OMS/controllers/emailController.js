@@ -326,9 +326,23 @@ const fetchEmails = async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching emails:', error);
+
+    // Provide more specific error messages
+    let errorMessage = error.message;
+    if (error.message.includes('Invalid messageset')) {
+      errorMessage = 'Email server returned invalid message data. This may be due to mailbox corruption or synchronization issues. Please try again later.';
+    } else if (error.message.includes('IMAP')) {
+      errorMessage = 'IMAP connection error. Please check your email server settings and internet connection.';
+    } else if (error.message.includes('timeout')) {
+      errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+    } else if (error.message.includes('Authentication failed')) {
+      errorMessage = 'Email authentication failed. Please check your email credentials.';
+    }
+
     res.status(500).json({
       success: false,
-      message: error.message
+      message: errorMessage,
+      originalError: error.message
     });
   }
 };

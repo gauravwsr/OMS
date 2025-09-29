@@ -71,20 +71,32 @@ class HostingerEmailService {
     }
   }
 
-  // Initialize IMAP connection
-  async initializeImap() {
-    return new Promise((resolve, reject) => {
-      this.imapConnection = new Imap(this.imapConfig);
-      
-      this.imapConnection.once('ready', () => {
-        resolve(true);
-      });
+  // Check and ensure IMAP connection is ready
+  async ensureImapConnection() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (!this.imapConnection) {
+          console.log('IMAP connection not initialized, initializing...');
+          await this.initializeImap();
+          resolve();
+          return;
+        }
 
-      this.imapConnection.once('error', (err) => {
-        reject(new Error(`IMAP connection failed: ${err.message}`));
-      });
+        // Check if connection is in a ready state
+        if (this.imapConnection.state === 'authenticated' || this.imapConnection.state === 'selected') {
+          resolve();
+          return;
+        }
 
-      this.imapConnection.connect();
+        // If connection exists but not ready, try to reconnect
+        console.log('IMAP connection exists but not ready, reconnecting...');
+        this.imapConnection.end();
+        this.imapConnection = null;
+        await this.initializeImap();
+        resolve();
+      } catch (error) {
+        reject(new Error(`Failed to ensure IMAP connection: ${error.message}`));
+      }
     });
   }
 
@@ -99,9 +111,8 @@ class HostingerEmailService {
 
     return new Promise(async (resolve, reject) => {
       try {
-        if (!this.imapConnection) {
-          await this.initializeImap();
-        }
+        // Ensure IMAP connection is ready
+        await this.ensureImapConnection();
 
         this.imapConnection.openBox(folder, true, (err, box) => {
           if (err) {
@@ -111,15 +122,33 @@ class HostingerEmailService {
 
           // Calculate range for fetching
           const total = box.messages.total;
-          const start = Math.max(1, total - limit + 1);
-          const end = total;
+          console.log(`Mailbox info - total: ${total}, new: ${box.messages.new}, unseen: ${box.messages.unseen}`);
 
           if (total === 0) {
+            console.log(`No messages in ${folder}`);
             resolve([]);
             return;
           }
 
+          // Additional validation for total count
+          if (total < 0 || !Number.isInteger(total)) {
+            reject(new Error(`Invalid total message count: ${total}`));
+            return;
+          }
+
+          // Ensure we don't request more messages than available
+          const actualLimit = Math.min(limit, total);
+          const start = Math.max(1, total - actualLimit + 1);
+          const end = total;
+
+          // Validate the range
+          if (start > end || start < 1 || end < 1) {
+            reject(new Error(`Invalid message range: ${start}:${end} (total: ${total})`));
+            return;
+          }
+
           const fetchRange = `${start}:${end}`;
+          console.log(`📬 Fetching emails from ${folder}: range ${fetchRange} (total: ${total})`);
           
           const fetch = this.imapConnection.seq.fetch(fetchRange, {
             bodies: ['HEADER.FIELDS (FROM TO CC BCC SUBJECT DATE)', 'TEXT'],
@@ -166,7 +195,69 @@ class HostingerEmailService {
           });
 
           fetch.once('error', (err) => {
-            reject(new Error(`Fetch error: ${err.message}`));
+            console.error('IMAP fetch error:', err.message);
+
+            // Handle specific IMAP errors
+            if (err.message.includes('Invalid messageset')) {
+              console.warn('Invalid messageset detected, attempting to fetch individual messages...');
+
+              // Fallback: try to fetch the most recent message individually
+              if (total > 0) {
+                const singleFetch = this.imapConnection.seq.fetch(total, {
+                  bodies: ['HEADER.FIELDS (FROM TO CC BCC SUBJECT DATE)', 'TEXT'],
+                  struct: true
+                });
+
+                const fallbackEmails = [];
+
+                singleFetch.on('message', (msg, seqno) => {
+                  const email = { uid: seqno, seqno };
+
+                  msg.on('body', (stream, info) => {
+                    let buffer = '';
+                    stream.on('data', (chunk) => {
+                      buffer += chunk.toString('utf8');
+                    });
+                    stream.once('end', () => {
+                      if (info.which === 'TEXT') {
+                        email.text = buffer;
+                      } else {
+                        const header = Imap.parseHeader(buffer);
+                        email.from = header.from?.[0] || '';
+                        email.to = header.to || [];
+                        email.cc = header.cc || [];
+                        email.bcc = header.bcc || [];
+                        email.subject = header.subject?.[0] || '';
+                        email.date = header.date?.[0] || new Date();
+                      }
+                    });
+                  });
+
+                  msg.once('attributes', (attrs) => {
+                    email.uid = attrs.uid;
+                    email.flags = attrs.flags;
+                    email.size = attrs.size;
+                  });
+
+                  msg.once('end', () => {
+                    fallbackEmails.push(email);
+                  });
+                });
+
+                singleFetch.once('error', (fallbackErr) => {
+                  reject(new Error(`IMAP fetch failed even with fallback: ${fallbackErr.message}`));
+                });
+
+                singleFetch.once('end', () => {
+                  console.log(`Fetched ${fallbackEmails.length} email(s) using fallback method`);
+                  resolve(fallbackEmails);
+                });
+              } else {
+                resolve([]);
+              }
+            } else {
+              reject(new Error(`Fetch error: ${err.message}`));
+            }
           });
 
           fetch.once('end', () => {

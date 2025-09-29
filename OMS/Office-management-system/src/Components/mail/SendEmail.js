@@ -294,7 +294,7 @@ const SendEmail = () => {
       {/* Fixed Header Section */}
       <div className="compose-header-section">
         <div className="header-left">
-          <button className="back-button" onClick={handleBack}>
+          <button className="back-button-1" onClick={handleBack}>
             <ArrowLeft size={16} />
             Back
           </button>

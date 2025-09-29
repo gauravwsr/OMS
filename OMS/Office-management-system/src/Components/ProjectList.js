@@ -1399,7 +1399,7 @@ export default function ProjectList() {
 
           <div className="filter-container">
             <div className="filter-group">
-              <FiFilter className="filter-icon" />
+              {/* <FiFilter className="filter-icon" /> */}
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}

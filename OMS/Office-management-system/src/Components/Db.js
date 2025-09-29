@@ -316,14 +316,15 @@ Details:
             </thead>
             <tbody>
               {paginatedEmployees.length > 0 ? (
-                paginatedEmployees.map((employee) => (
+                paginatedEmployees.map((employee) => {
+                  return (
                   <tr key={employee._id}>
                     <td className="employee-info">
                       <img
                         src={
-                          employee.photoPath
+                          employee.photoPath && typeof employee.photoPath === 'string'
                             ? `http://localhost:5001/uploads/photos/${employee.photoPath}`
-                            : `https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.fullName)}&background=4f46e5&color=fff&size=128&font-size=0.6`
                         }
                         alt={employee.fullName}
                         className="employee-avatar"
@@ -375,7 +376,8 @@ Details:
                       </div>
                     </td>
                   </tr>
-                ))
+                );
+                })
               ) : (
                 <tr>
                   <td colSpan="5" className="no-employees">
@@ -492,9 +494,9 @@ Details:
                 <div className="mobile-employee-header">
                   <img
                     src={
-                      employee.photoPath
+                      employee.photoPath && typeof employee.photoPath === 'string'
                         ? `http://localhost:5001/uploads/photos/${employee.photoPath}`
-                        : ` https://api.dicebear.com/8.x/avataaars/svg?seed=${employee.fullName}`
+                        : ` https://ui-avatars.com/api/?name=${encodeURIComponent(employee.fullName)}&background=4f46e5&color=fff&size=128&font-size=0.6`
                     }
                     alt={employee.fullName}
                     className="mobile-employee-avatar"
