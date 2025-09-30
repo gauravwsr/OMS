@@ -210,11 +210,11 @@ const MainContent = ({ nav }) => {
           label: "Analytics Management",
           icon: <FiBarChart />,
         },
-        {
-          path: "/charge-handover",
-          label: "Charge Handover",
-          icon: <FiFileText />,
-        },
+        // {
+        //   path: "/charge-handover",
+        //   label: "Charge Handover",
+        //   icon: <FiFileText />,
+        // },
       ],
       // "Admin_HR Manager": [
       //   { path: "/Db", label: "Employees", icon: <FiUsers /> },
