@@ -94,7 +94,7 @@ const ViewDetails = () => {
         {/* Company Header */}
         <div className="company-header">
           <img
-            src="/images/TARS_Black.png"
+            src="/images/TARS_Black.jpeg"
             alt="TARS Technologies Logo"
             className="company-logo-img"
           />
@@ -130,7 +130,7 @@ const ViewDetails = () => {
         {/* ID Card Frame at Bottom */}
         <div className="card-frame">
           <img
-            src="/images/frame.png"
+            src="/images/frame.jpeg"
             alt="ID Card Frame"
             className="frame-img"
           />
