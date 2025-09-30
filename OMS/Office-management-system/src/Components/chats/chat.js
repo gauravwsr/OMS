@@ -1634,8 +1634,26 @@ const removeInAppNotification = useCallback((notificationId) => {
 const handleChatSelect = (chat) => {
   setSelectedChat(chat);
   clearChatNotifications(chat._id);
-  
-  // Mark all messages in this chat as read
+
+  // Immediately mark messages as read in local state for instant UI feedback
+  setMessages(prevMessages =>
+    prevMessages.map(msg => {
+      if (msg.sender._id !== user._id && !messageReadStatus[msg._id]?.isRead) {
+        // Mark this message as read locally
+        setMessageReadStatus(prev => ({
+          ...prev,
+          [msg._id]: {
+            isRead: true,
+            readBy: [user._id],
+            readAt: new Date()
+          }
+        }));
+      }
+      return msg;
+    })
+  );
+
+  // Mark all messages in this chat as read on server
   markChatAsRead(chat._id);
 
   // Add mobile chat open class for mobile view with better detection
@@ -2180,7 +2198,7 @@ return (
                         )}
                   </div>
                 </div>
-                <div className="chat-header-actions">
+                {/* <div className="chat-header-actions">
                   {selectedChat.isGroupChat ? (
                     <>
                       <button
@@ -2207,7 +2225,7 @@ return (
                       <i className="fas fa-trash-alt"></i>
                     </button>
                   )}
-                </div>
+                </div> */}
               </div>
 
             <div className="messages-container">
@@ -2350,14 +2368,24 @@ return (
                             </span>
                           )}
                           {isSending && (
-                            <span>{slowNetwork ? "Sending..." : "●"}</span>
+                            <span className="status-text sending">
+                              <i className="fas fa-circle-notch fa-spin me-1"></i>
+                              {slowNetwork ? "Sending..." : ""}
+                            </span>
                           )}
                           {!isTemp && !sendFailed && !isSending && (
-                            <span>
-                              {messageReadStatus[message._id]?.isRead || 
-                               (message.readBy && message.readBy.length > 0 && 
-                                message.readBy.some(readerId => readerId !== user._id)) ? 
-                                "✓✓" : "✓"}
+                            <span className={`status-ticks ${
+                              messageReadStatus[message._id]?.isRead ||
+                              (message.readBy && message.readBy.length > 0 &&
+                               message.readBy.some(readerId => readerId !== user._id)) ||
+                              (message.readAt && new Date(message.readAt) < new Date()) ?
+                              "read" : "delivered"
+                            }`}>
+                              {messageReadStatus[message._id]?.isRead ||
+                               (message.readBy && message.readBy.length > 0 &&
+                                message.readBy.some(readerId => readerId !== user._id)) ||
+                               (message.readAt && new Date(message.readAt) < new Date()) ?
+                               "✓✓" : "✓"}
                             </span>
                           )}
                         </div>

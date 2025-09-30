@@ -453,6 +453,41 @@
   color: #5cb85c;
 }
 
+/* Professional Message Status Ticks */
+.status-ticks {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 4px;
+  color: var(--chat-text-muted);
+  transition: var(--chat-transition);
+}
+
+.status-ticks.read {
+  color: var(--chat-primary);
+}
+
+.status-ticks.delivered {
+  color: var(--chat-text-secondary);
+}
+
+.status-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.status-text.sending {
+  color: var(--chat-text-secondary);
+}
+
+.status-text.error {
+  color: #dc2626;
+}
+
+.status-text.success {
+  color: var(--chat-success);
+}
+
 /* Typing indicator styles */
 .typing-indicator {
   display: flex;
@@ -651,10 +686,10 @@
   right: 24px;
   bottom: 7px;
   /* background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); */
-  color: #ffffff;
+  /* color: #ffffff; */
   border: none;
   border-radius: -1%;
-  width: 14px;
+  width: 44px;
   height: 40px;
   display: flex;
   align-items: center;
@@ -662,8 +697,8 @@
   cursor: pointer;
   /* box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); */
   font-size: 1.2rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: scale(1);
+  /* transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1); */
 }
 
 /* .send-button:hover {
@@ -1230,6 +1265,10 @@
     padding: 8px;
   }
 
+  .message {
+    max-width: 98%;
+  }
+  
   .message-content {
     padding: 5px 8px;
     font-size: 0.9rem;
@@ -1409,32 +1448,9 @@
     bottom: 12px;
   }
 
-  .avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
-  }
-
-  .contact-name {
-    font-size: 0.85rem;
-  }
-
-  .contact-last-message {
-    font-size: 0.7rem;
-  }
-
-  .contact-time {
-    font-size: 0.6rem;
-    min-width: 35px;
-  }
-
   .typing-indicator {
     margin: 0 6px 6px;
     padding: 4px 8px;
-  }
-
-  .typing-text {
-    font-size: 0.7rem;
   }
 }
 
@@ -2394,10 +2410,6 @@
   
   .notification-close {
     color: #a0aec0 !important;
-  }
-  
-  .notification-close:hover {
-    background: rgba(160, 174, 192, 0.2) !important;
   }
 }
 
