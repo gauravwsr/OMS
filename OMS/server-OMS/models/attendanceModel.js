@@ -146,15 +146,8 @@ const attendanceSchema = new mongoose.Schema(
       default: "on_time",
     },
     timeValidation: {
-      currentTime: String,
-      currentDateTime: String,
-      isAllowed: Boolean,
-      message: String,
-      type: String,
-      timezone: {
-        type: String,
-        default: "Asia/Kolkata",
-      },
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
 
     // Extended metadata

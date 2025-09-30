@@ -679,6 +679,243 @@ const getTimeValidationStatus = async (req, res) => {
   }
 };
 
+// Get user-specific attendance statistics
+const getUserAttendanceStats = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { months, days, startDate, endDate } = req.query;
+
+    // Calculate date range based on parameters
+    let actualEndDate = new Date();
+    let actualStartDate = new Date();
+
+    if (startDate && endDate) {
+      // Custom date range
+      actualStartDate = new Date(startDate);
+      actualEndDate = new Date(endDate);
+    } else if (days) {
+      // Days-based calculation
+      actualStartDate.setDate(actualStartDate.getDate() - parseInt(days));
+    } else if (months) {
+      // Months-based calculation
+      actualStartDate.setMonth(actualStartDate.getMonth() - parseInt(months));
+    } else {
+      // Default to last 1 month
+      actualStartDate.setMonth(actualStartDate.getMonth() - 1);
+    }
+
+    // Ensure end date is end of day
+    actualEndDate.setHours(23, 59, 59, 999);
+
+    // Get attendance records for the user
+    const attendanceRecords = await Attendance.find({
+      employeeId: userId,
+      timestamp: {
+        $gte: actualStartDate,
+        $lte: actualEndDate,
+      },
+    }).sort({ timestamp: 1 });
+
+    // Calculate working days (excluding weekends)
+    const totalWorkingDays = calculateWorkingDays(
+      actualStartDate,
+      actualEndDate
+    );
+
+    // Group attendance by date
+    const recordsByDate = {};
+    const attendanceDays = new Set();
+    const checkInDays = new Set();
+    const checkOutDays = new Set();
+    let totalWorkingHours = 0;
+    let faceRecognitionCount = 0;
+
+    attendanceRecords.forEach((record) => {
+      const dateStr = record.timestamp.toISOString().split("T")[0];
+      if (!recordsByDate[dateStr]) {
+        recordsByDate[dateStr] = { checkIn: null, checkOut: null };
+      }
+
+      if (record.attendance_type === "check_in") {
+        recordsByDate[dateStr].checkIn = record;
+        checkInDays.add(dateStr);
+      } else if (record.attendance_type === "check_out") {
+        recordsByDate[dateStr].checkOut = record;
+        checkOutDays.add(dateStr);
+      }
+
+      // Count face recognition usage
+      if (record.method === "face_recognition") {
+        faceRecognitionCount++;
+      }
+
+      attendanceDays.add(dateStr);
+    });
+
+    // Calculate working hours
+    Object.values(recordsByDate).forEach((dayRecords) => {
+      if (dayRecords.checkIn && dayRecords.checkOut) {
+        const checkInTime = new Date(dayRecords.checkIn.timestamp);
+        const checkOutTime = new Date(dayRecords.checkOut.timestamp);
+        const hoursWorked = (checkOutTime - checkInTime) / (1000 * 60 * 60);
+        totalWorkingHours += hoursWorked;
+      }
+    });
+
+    const presentDays = attendanceDays.size;
+    const attendanceRate =
+      totalWorkingDays > 0
+        ? Math.round((presentDays / totalWorkingDays) * 100)
+        : 0;
+    const avgWorkingHours =
+      checkInDays.size > 0 ? totalWorkingHours / checkInDays.size : 0;
+    const faceRecognitionPercentage =
+      attendanceRecords.length > 0
+        ? Math.round((faceRecognitionCount / attendanceRecords.length) * 100)
+        : 0;
+
+    // Calculate monthly breakdown
+    const monthlyData = {};
+    const weeklyData = {};
+    const dailyData = {};
+
+    attendanceRecords.forEach((record) => {
+      const dateStr = record.timestamp.toISOString().split("T")[0];
+      const monthKey = record.timestamp.toISOString().substring(0, 7); // YYYY-MM
+
+      // Get week number
+      const date = new Date(record.timestamp);
+      const startOfYear = new Date(date.getFullYear(), 0, 1);
+      const pastDaysOfYear = (date - startOfYear) / 86400000;
+      const weekNum = Math.ceil(
+        (pastDaysOfYear + startOfYear.getDay() + 1) / 7
+      );
+      const weekKey = `${date.getFullYear()}-W${weekNum
+        .toString()
+        .padStart(2, "0")}`;
+
+      // Monthly data
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          month: monthKey,
+          attendanceCount: 0,
+          workingHours: 0,
+          days: new Set(),
+        };
+      }
+      monthlyData[monthKey].attendanceCount++;
+      monthlyData[monthKey].days.add(dateStr);
+
+      // Weekly data
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = {
+          week: weekKey,
+          attendanceCount: 0,
+          days: new Set(),
+        };
+      }
+      weeklyData[weekKey].attendanceCount++;
+      weeklyData[weekKey].days.add(dateStr);
+
+      // Daily data
+      if (!dailyData[dateStr]) {
+        dailyData[dateStr] = {
+          date: dateStr,
+          attendanceCount: 0,
+          records: [],
+        };
+      }
+      dailyData[dateStr].attendanceCount++;
+      dailyData[dateStr].records.push({
+        type: record.attendance_type,
+        time: record.timestamp.toISOString().substring(11, 19),
+        method: record.method,
+      });
+    });
+
+    // Convert data to arrays
+    const monthlyStats = Object.values(monthlyData).map((month) => ({
+      month: month.month,
+      attendanceCount: month.attendanceCount,
+      presentDays: month.days.size,
+    }));
+
+    const weeklyStats = Object.values(weeklyData).map((week) => ({
+      week: week.week,
+      attendanceCount: week.attendanceCount,
+      presentDays: week.days.size,
+    }));
+
+    const dailyStats = Object.values(dailyData).map((day) => ({
+      date: day.date,
+      attendanceCount: day.attendanceCount,
+      records: day.records,
+    }));
+
+    // Calculate period type for frontend
+    let periodType = "custom";
+    let periodValue = 1;
+
+    if (days) {
+      periodValue = parseInt(days);
+      if (periodValue === 1) periodType = "daily";
+      else if (periodValue === 7) periodType = "weekly";
+      else periodType = "custom";
+    } else if (months) {
+      periodValue = parseInt(months);
+      if (periodValue === 1) periodType = "monthly";
+      else if (periodValue === 12) periodType = "yearly";
+      else periodType = "custom";
+    }
+
+    res.status(200).json({
+      message: "User attendance statistics fetched successfully",
+      stats: {
+        totalDays: totalWorkingDays,
+        presentDays: presentDays,
+        attendanceRate: Math.min(100, attendanceRate),
+        averageHours: Math.round(avgWorkingHours * 10) / 10,
+        totalWorkingHours: Math.round(totalWorkingHours * 10) / 10,
+        faceRecognitionUsage: faceRecognitionPercentage,
+        breakdown: {
+          monthly: monthlyStats,
+          weekly: weeklyStats,
+          daily: dailyStats,
+        },
+        period: {
+          startDate: actualStartDate.toISOString().split("T")[0],
+          endDate: actualEndDate.toISOString().split("T")[0],
+          type: periodType,
+          value: periodValue,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user attendance statistics:", error);
+    res.status(500).json({
+      message: "Failed to fetch attendance statistics",
+      error: error.message,
+    });
+  }
+};
+
+// Helper function to calculate working days (excluding weekends)
+const calculateWorkingDays = (startDate, endDate) => {
+  let count = 0;
+  const currentDate = new Date(startDate);
+
+  while (currentDate <= endDate) {
+    const dayOfWeek = currentDate.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      // Not Sunday (0) or Saturday (6)
+      count++;
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return count;
+};
+
 module.exports = {
   markAttendance,
   getAttendanceHistory,
@@ -692,4 +929,5 @@ module.exports = {
   healthCheck,
   getRegisteredUsersAPI,
   getTimeValidationStatus,
+  getUserAttendanceStats,
 };

@@ -25,8 +25,8 @@ const validateCheckInTime = (currentTime = null) => {
 
   // Convert time to minutes for easier comparison
   const currentMinutes = hour * 60 + minute;
-  const checkInCutoff = 10 * 60 + 30; // 10:30 AM
-  const lateCutoff = 11 * 60; // 11:00 AM
+  const checkInCutoff = 13 * 60 + 30; // 10:30 AM
+  const lateCutoff = 14 * 60; // 11:00 AM
 
   let validation = {
     isAllowed: false,

@@ -271,13 +271,10 @@ Details:
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <div className="notification-icons">
-            <div className="notification-bell">🔔</div>
-            <div className="user-profile">👤</div>
-          </div>
+          
         </div>
         <div className="employee-header">
-          <h2>Employee</h2>
+          
           <button className="add-employee-btn" onClick={handleAddEmployee}>
             <span></span>
             Add Employee
