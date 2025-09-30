@@ -51,7 +51,7 @@ router.post("/", uploadFields, candidateController.createCandidate);
 router.get(
   "/",
   authMiddleware.authenticate,
-  candidateController.getAllCandidates
+  candidateController.getAllEmployees
 );
 router.get(
   "/:id",

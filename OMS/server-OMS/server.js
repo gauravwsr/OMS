@@ -46,6 +46,7 @@ const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const completionRoutes = require("./routes/completionRoutes");
 const offerRoutes = require("./routes/offerRoutes");
+const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 
 // Import models for cleanup
 const ScheduleEventData = require("./models/calenderModel");
@@ -140,6 +141,9 @@ app.use("/api/hr-leave", hrLeaveRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api", noteRoutes);
 app.use("/api/attendance", attendanceRoutes);
+
+// Charge handover routes
+app.use("/api/charge-handovers", chargeHandoverRoutes);
 
 // Attendance time validation testing routes
 app.use("/api/attendance-validation", attendanceTimeValidationRoutes);

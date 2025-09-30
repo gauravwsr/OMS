@@ -139,6 +139,7 @@ const MainContent = ({ nav }) => {
         // { path: "/QuotationList", label: "Quotations", icon: <FiFileText /> },
         { path: "/Invoice", label: "Invoice", icon: <FiFileMinus /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
+        // { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
         {
           path: "/super-admin-leave-management",
           label: "Leave Management",
@@ -172,7 +173,11 @@ const MainContent = ({ nav }) => {
       ],
       Admin_HR: [
         { path: "/Db", label: "Employees", icon: <FiUsers /> },
-        // { path: "/hr-leave-application", label: "Apply Leave", icon: <FiFileText /> },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
+        },
         { path: "/certificate", label: "Certificate", icon: <FiFileText /> },
         { path: "/Attendance", label: "Attendance", icon: <FiClipboard /> },
         {
@@ -194,6 +199,11 @@ const MainContent = ({ nav }) => {
           path: "/hr-leave-management",
           label: "Leave Management",
           icon: <FiClipboard />,
+        },
+        {
+          path: "/hr-leave-application",
+          label: "Apply Leave",
+          icon: <FiFileText />,
         },
         {
           path: "/analytics-management",
@@ -272,33 +282,41 @@ const MainContent = ({ nav }) => {
 
   // Function to add in-app notification (called by Chat component)
   const addInAppNotification = (notification) => {
-    setInAppNotifications(prev => [...prev, notification]);
+    setInAppNotifications((prev) => [...prev, notification]);
     // Auto remove after 5 seconds
     setTimeout(() => {
-      setInAppNotifications(prev => prev.filter(n => n.id !== notification.id));
+      setInAppNotifications((prev) =>
+        prev.filter((n) => n.id !== notification.id)
+      );
     }, 5000);
   };
 
   // Function to remove in-app notification
   const removeInAppNotification = (id) => {
-    setInAppNotifications(prev => prev.filter(n => n.id !== id));
+    setInAppNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
   useEffect(() => {
     // Fetch pending leave applications for notification
-    axios.get("http://localhost:5001/api/leave/recent")
-      .then(res => setLeaveNotification(Array.isArray(res.data) && res.data.length > 0))
+    axios
+      .get("http://localhost:5001/api/leave/recent")
+      .then((res) =>
+        setLeaveNotification(Array.isArray(res.data) && res.data.length > 0)
+      )
       .catch(() => setLeaveNotification(false));
 
     // Listen for chat unread event from chat.js (window event or global state)
     const handleChatUnread = (e) => {
       if (e.detail && Array.isArray(e.detail.chats)) {
-        const hasUnread = e.detail.chats.some(chat => chat.unreadCount > 0 || chat.notification);
+        const hasUnread = e.detail.chats.some(
+          (chat) => chat.unreadCount > 0 || chat.notification
+        );
         setChatNotification(hasUnread);
       }
     };
     window.addEventListener("chat-unread-status", handleChatUnread);
-    return () => window.removeEventListener("chat-unread-status", handleChatUnread);
+    return () =>
+      window.removeEventListener("chat-unread-status", handleChatUnread);
   }, []);
 
   const menuItems = getMenuItems();
@@ -866,27 +884,36 @@ const MainContent = ({ nav }) => {
                           isLinkActive(item.path) ? "page" : undefined
                         }
                       >
-                        <div className="menu-icon" aria-hidden="true" style={{ position: "relative" }}>
+                        <div
+                          className="menu-icon"
+                          aria-hidden="true"
+                          style={{ position: "relative" }}
+                        >
                           {item.icon}
                           {showNotif && (
-                            <span style={{
-                              position: "absolute",
-                              top: 0,
-                              right: -2,
-                              width: 10,
-                              height: 10,
-                              background: "#ef4444",
-                              borderRadius: "50%",
-                              display: "inline-block",
-                              border: "2px solid #1e293b"
-                            }} />
+                            <span
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                right: -2,
+                                width: 10,
+                                height: 10,
+                                background: "#ef4444",
+                                borderRadius: "50%",
+                                display: "inline-block",
+                                border: "2px solid #1e293b",
+                              }}
+                            />
                           )}
                         </div>
                         {!isCollapsed && (
                           <span className="menu-text">{item.label}</span>
                         )}
                         {isLinkActive(item.path) && !isCollapsed && (
-                          <div className="active-indicator" aria-hidden="true" />
+                          <div
+                            className="active-indicator"
+                            aria-hidden="true"
+                          />
                         )}
                       </NavLink>
                     </li>
@@ -960,9 +987,7 @@ const MainContent = ({ nav }) => {
                 ×
               </button>
             </div>
-            <div className="notification-body">
-              {notification.content}
-            </div>
+            <div className="notification-body">{notification.content}</div>
           </div>
         ))}
       </div>
@@ -1001,7 +1026,7 @@ const MainContent = ({ nav }) => {
               user?.role === "Super_Admin" ? (
                 <SuperAdminProjectView nav={nav} />
               ) : user?.role === "Employee" &&
-              user?.subRole === "Project Manager" ? (
+                user?.subRole === "Project Manager" ? (
                 <ProjectManagerDashboard nav={nav} />
               ) : user?.role === "Employee" && user?.subRole === "Team Lead" ? (
                 <TeamLeadDashboard nav={nav} />
@@ -1022,7 +1047,10 @@ const MainContent = ({ nav }) => {
           />
           {/* <Route path="/QuotationList" element={<QuotationList />} /> */}
           <Route path="/Todo" element={<Todo />} />
-          <Route path="/chat" element={<Chat addInAppNotification={addInAppNotification} />} />
+          <Route
+            path="/chat"
+            element={<Chat addInAppNotification={addInAppNotification} />}
+          />
           <Route path="/Inbox" element={<Inbox />} />
           <Route path="/Inbox/send-email" element={<SendEmail />} />
           <Route path="/Inbox/email-details" element={<EmailDetails />} />

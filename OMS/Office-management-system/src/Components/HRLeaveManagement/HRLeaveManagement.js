@@ -199,7 +199,7 @@ const HRLeaveManagement = () => {
 
   return (
     <div className="hr-leave-management">
-      <div className="page-header">
+      <div className="page-header-1">
         <h1>Employee Leave Management</h1>
         <p>Review and manage employee leave applications</p>
       </div>
