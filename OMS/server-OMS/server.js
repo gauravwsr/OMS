@@ -47,7 +47,6 @@ const employeeTaskRoutes = require("./routes/employeeTaskRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const completionRoutes = require("./routes/completionRoutes");
 const offerRoutes = require("./routes/offerRoutes");
-const noteRoutes = require("./routes/noteRoutes");
 const chargeHandoverRoutes = require("./routes/chargeHandoverRoutes");
 
 // Import models for cleanup

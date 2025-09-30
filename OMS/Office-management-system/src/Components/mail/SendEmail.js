@@ -119,12 +119,6 @@ const SendEmail = () => {
     try {
       console.log('Saving draft with data:', { to: email, cc, bcc, subject, body });
       
-      const response = await fetch('http://localhost:5001/api/emails/save-draft', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
       // Check if user has a token, if not use test endpoint
       const token = localStorage.getItem('token');
       
@@ -199,9 +193,6 @@ const SendEmail = () => {
     setIsSending(true);
 
     try {
-      console.log('Sending email with data:', { to: email, cc, bcc, subject, body: body.substring(0, 100) + '...' });
-      
-      const response = await fetch('http://localhost:5001/api/emails/send', {
       console.log('Sending email with data:', { 
         to: email, 
         cc, 

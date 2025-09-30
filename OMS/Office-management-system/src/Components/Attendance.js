@@ -125,12 +125,6 @@ const Attendance = () => {
         },
         timeout: 5000,
       });
-      const response = await axios.get("http://localhost:5001/api/health", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        timeout: 5000,
-      });
 
       console.log("MongoDB connection status:", response.data);
 
@@ -222,7 +216,6 @@ const Attendance = () => {
     try {
       const response = await axios.get(
         "http://localhost:5001/api/attendance/history",
-        "http://localhost:5001/api/attendance/history",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -268,7 +261,6 @@ const Attendance = () => {
   const fetchCurrentTimeInfo = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/api/attendance-validation/current-time"
         "http://localhost:5001/api/attendance-validation/current-time"
       );
       if (response.data) {
