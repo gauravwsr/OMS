@@ -48,7 +48,7 @@ function groupMessagesByDate(messages) {
   return groups;
 }
 
-const Chat = ({ addInAppNotification }) => {
+const Chat = ({ addInAppNotification: globalAddInAppNotification }) => {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const [chats, setChats] = useState([]);
@@ -68,6 +68,10 @@ const Chat = ({ addInAppNotification }) => {
   const [candidates, setCandidates] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [messageReadStatus, setMessageReadStatus] = useState({}); // Track read status for messages
+  const [personalChatsUnread, setPersonalChatsUnread] = useState(0); // Count of unread personal chats
+  const [groupChatsUnread, setGroupChatsUnread] = useState(0); // Count of unread group chats
+  const [inAppNotifications, setInAppNotifications] = useState([]); // In-app notifications array
   const typingTimeout = useRef(null);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
@@ -123,8 +127,8 @@ const Chat = ({ addInAppNotification }) => {
     };
     
     // Use the global notification callback
-    if (addInAppNotification) {
-      addInAppNotification(inAppNotification);
+    if (globalAddInAppNotification) {
+      globalAddInAppNotification(inAppNotification);
     }
     
     // Check if notifications are supported
@@ -188,7 +192,7 @@ const Chat = ({ addInAppNotification }) => {
         }
       });
     }
-  }, [addInAppNotification]); // Dependencies for useCallback
+  }, [globalAddInAppNotification]); // Dependencies for useCallback
 
   // Debug user authentication
   useEffect(() => {
@@ -529,8 +533,20 @@ useEffect(() => {
         );
         if (Array.isArray(response.data)) {
           setMessages(response.data);
+          // Emit read receipts for unread messages from other users
+          const unreadFromOthers = response.data.filter(msg => 
+            msg.sender._id !== user._id && 
+            (!msg.readBy || !msg.readBy.includes(user._id))
+          );
+          emitReadReceipts(unreadFromOthers);
         } else if (response.data?.data && Array.isArray(response.data.data)) {
           setMessages(response.data.data);
+          // Emit read receipts for unread messages from other users
+          const unreadFromOthers = response.data.data.filter(msg => 
+            msg.sender._id !== user._id && 
+            (!msg.readBy || !msg.readBy.includes(user._id))
+          );
+          emitReadReceipts(unreadFromOthers);
         } else {
           setMessages([]);
         }
@@ -542,6 +558,29 @@ useEffect(() => {
     };
     fetchMessages();
   }, [selectedChat, API_BASE_URL]);
+
+// Function to add in-app notification
+const addLocalInAppNotification = useCallback((message) => {
+  const notification = {
+    id: Date.now() + Math.random(),
+    senderName: message.sender?.name || "Someone",
+    content: message.content,
+    chatId: message.chat._id || message.chat,
+    chatName: message.chat.chatName || (message.chat.isGroupChat ? "Group Chat" : "Personal Chat"),
+    timestamp: new Date(),
+    isGroupChat: message.chat.isGroupChat || false
+  };
+
+  setInAppNotifications(prev => {
+    const newNotifications = [notification, ...prev.slice(0, 4)]; // Keep only 5 notifications max
+    return newNotifications;
+  });
+
+  // Auto-remove notification after 5 seconds
+  setTimeout(() => {
+    setInAppNotifications(prev => prev.filter(notif => notif.id !== notification.id));
+  }, 5000);
+}, []);
 
 // Define handleMessageReceived with useCallback to prevent unnecessary re-renders
 const handleMessageReceived = useCallback((newMessageReceived) => {
@@ -627,6 +666,9 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
       detail: { chats: sortedChats }
     }));
     
+    // Update tab unread counts
+    calculateTabUnreadCounts(sortedChats);
+    
     return sortedChats;
   });
   
@@ -688,6 +730,9 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
     // Always show notification for messages from others
     showNotification(newMessageReceived);
     
+    // Add in-app notification for all messages from other users
+    addLocalInAppNotification(newMessageReceived);
+    
     // Add visual highlight to chat item for non-current chats
     if (!isCurrentChat) {
       // Highlight the specific chat in the sidebar
@@ -700,7 +745,7 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
       }, 100);
     }
   }
-}, [selectedChat, user._id, setChats, setMessages, showNotification]);
+}, [selectedChat, user._id, setChats, setMessages, showNotification, addLocalInAppNotification]);
 
 // Track joined rooms to prevent duplicate joins
 const [joinedRooms, setJoinedRooms] = useState(new Set());
@@ -815,6 +860,21 @@ useEffect(() => {
     }
   });
   
+  // Handle read receipts
+  socket.on("message read receipt", (data) => {
+    console.log("📨 Read receipt received:", data);
+    if (data && data.messageId) {
+      setMessageReadStatus((prev) => ({
+        ...prev,
+        [data.messageId]: {
+          isRead: true,
+          readBy: data.readBy,
+          readAt: data.readAt
+        }
+      }));
+    }
+  });
+  
   // Also listen for alternative event names (just in case)
   socket.on("new message", messageHandler);
   socket.on("messageReceived", messageHandler);
@@ -854,6 +914,7 @@ useEffect(() => {
     socket.off("new message", messageHandler);
     socket.off("messageReceived", messageHandler);
     socket.off("message deleted");
+    socket.off("message read receipt");
     socket.off("typing", handleTyping);
     socket.off("stop typing", handleStopTyping);
     
@@ -877,6 +938,11 @@ useEffect(() => {
   }
 }, [chats, socket, joinAllChatRooms, joinedRooms]);
 
+// Calculate tab unread counts when chats change
+useEffect(() => {
+  calculateTabUnreadCounts(chats);
+}, [chats]);
+
 // Add a test function to manually trigger notifications (for debugging)
 const testNotification = () => {
   console.log("🧪 Testing notification system...");
@@ -892,6 +958,26 @@ const testNotification = () => {
 
 // Expose test function globally for debugging
 window.testNotification = testNotification;
+
+// Test function for in-app notifications
+const testInAppNotification = () => {
+  console.log("🧪 Testing in-app notification system...");
+  const testMessage = {
+    _id: "test-" + Date.now(),
+    sender: { _id: "test-user", name: "Test User" },
+    content: "This is a test in-app notification message!",
+    chat: { 
+      _id: "test-chat",
+      chatName: "Test Chat",
+      isGroupChat: false
+    },
+    createdAt: new Date()
+  };
+  addLocalInAppNotification(testMessage);
+};
+
+// Expose test function globally for debugging
+window.testInAppNotification = testInAppNotification;
 
 // Add a test function to verify real-time functionality
 const testRealtimeConnection = () => {
@@ -1472,26 +1558,109 @@ const clearChatNotifications = (chatId) => {
       detail: { chats: updated }
     }));
     
+    // Update tab unread counts
+    calculateTabUnreadCounts(updated);
+    
     return updated;
   });
 };
 
-  // Enhanced chat selection handler
-  const handleChatSelect = (chat) => {
-    setSelectedChat(chat);
-    clearChatNotifications(chat._id);
+// Function to mark all messages in a chat as read
+const markChatAsRead = async (chatId) => {
+  if (!chatId || !user) return;
 
-    // Add mobile chat open class for mobile view with better detection
-    const chatContainer = document.querySelector(".chat-container");
-    if (
-      chatContainer &&
-      (window.innerWidth <= 768 ||
-        window.matchMedia("(max-width: 768px)").matches)
-    ) {
-      chatContainer.classList.add("mobile-chat-open");
-      console.log("Mobile chat opened for:", chat.chatName || "Chat");
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE_URL}/api/message/chat/${chatId}/read-all`, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`✅ Marked ${result.markedCount} messages as read in chat ${chatId}`);
+    } else {
+      console.error("Failed to mark messages as read:", response.statusText);
     }
-  };
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+  }
+};
+
+// Function to emit read receipts for visible messages
+const emitReadReceipts = (messagesToRead) => {
+  if (!socket || !socket.connected || !selectedChat || !messagesToRead.length) return;
+
+  messagesToRead.forEach(message => {
+    // Only emit read receipt for messages from other users that haven't been read yet
+    if (message.sender._id !== user._id && !messageReadStatus[message._id]?.isRead) {
+      socket.emit("message read", {
+        messageId: message._id,
+        chatId: selectedChat._id
+      });
+    }
+  });
+};
+
+// Function to calculate unread counts for tab badges
+const calculateTabUnreadCounts = (chatList) => {
+  let personalUnread = 0;
+  let groupUnread = 0;
+
+  chatList.forEach(chat => {
+    if (chat.unreadCount > 0 || chat.notification || chat.hasNewMessage) {
+      if (chat.isGroupChat) {
+        groupUnread++;
+      } else {
+        personalUnread++;
+      }
+    }
+  });
+
+  setPersonalChatsUnread(personalUnread);
+  setGroupChatsUnread(groupUnread);
+};
+
+// Function to add in-app notification
+// Function to remove in-app notification
+const removeInAppNotification = useCallback((notificationId) => {
+  setInAppNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+}, []);
+
+// Enhanced chat selection handler
+const handleChatSelect = (chat) => {
+  setSelectedChat(chat);
+  clearChatNotifications(chat._id);
+  
+  // Mark all messages in this chat as read
+  markChatAsRead(chat._id);
+
+  // Add mobile chat open class for mobile view with better detection
+  const chatContainer = document.querySelector(".chat-container");
+  if (
+    chatContainer &&
+    (window.innerWidth <= 768 ||
+      window.matchMedia("(max-width: 768px)").matches)
+  ) {
+    chatContainer.classList.add("mobile-chat-open");
+    console.log("Mobile chat opened for:", chat.chatName || "Chat");
+  }
+};
+
+// Function to handle notification click
+const handleNotificationClick = useCallback((notification) => {
+  // Find the chat and select it
+  const chat = chats.find(c => c._id === notification.chatId);
+  if (chat) {
+    handleChatSelect(chat);
+  }
+  
+  // Remove the notification
+  removeInAppNotification(notification.id);
+}, [chats, handleChatSelect, removeInAppNotification]);
 
   // Function to handle mobile back button
   const handleMobileBack = () => {
@@ -1747,10 +1916,24 @@ return (
           >
             <Nav variant="tabs" className="px-3 pt-2 flex-shrink-0">
               <Nav.Item>
-                <Nav.Link eventKey="personal">Chats</Nav.Link>
+                <Nav.Link eventKey="personal" className="position-relative">
+                  Chats
+                  {personalChatsUnread > 0 && (
+                    <span className="tab-notification-badge">
+                      {personalChatsUnread > 9 ? "9+" : personalChatsUnread}
+                    </span>
+                  )}
+                </Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link eventKey="groups">Groups</Nav.Link>
+                <Nav.Link eventKey="groups" className="position-relative">
+                  Groups
+                  {groupChatsUnread > 0 && (
+                    <span className="tab-notification-badge">
+                      {groupChatsUnread > 9 ? "9+" : groupChatsUnread}
+                    </span>
+                  )}
+                </Nav.Link>
               </Nav.Item>
             </Nav>
 
@@ -2169,10 +2352,14 @@ return (
                           {isSending && (
                             <span>{slowNetwork ? "Sending..." : "●"}</span>
                           )}
-                          {!isTemp && !sendFailed && !message.wasTemp && (
-                            <span>✓</span>
+                          {!isTemp && !sendFailed && !isSending && (
+                            <span>
+                              {messageReadStatus[message._id]?.isRead || 
+                               (message.readBy && message.readBy.length > 0 && 
+                                message.readBy.some(readerId => readerId !== user._id)) ? 
+                                "✓✓" : "✓"}
+                            </span>
                           )}
-                          {message.wasTemp && <span>✓✓</span>}
                         </div>
                       )}
                     </div>
@@ -2692,6 +2879,54 @@ return (
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* In-App Notifications Container */}
+      <div className="in-app-notifications-container">
+        {inAppNotifications.map((notification, index) => (
+          <div
+            key={notification.id}
+            className="in-app-notification"
+            onClick={() => handleNotificationClick(notification)}
+            style={{ 
+              zIndex: 10000 - index,
+              animationDelay: `${index * 0.1}s`
+            }}
+          >
+            <div className="notification-header">
+              <div>
+                <div className="notification-sender">
+                  {notification.senderName}
+                </div>
+                <div className="notification-time">
+                  {notification.timestamp.toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+              <button
+                className="notification-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeInAppNotification(notification.id);
+                }}
+                aria-label="Close notification"
+              >
+                ×
+              </button>
+            </div>
+            <div className="notification-body">
+              {notification.content}
+            </div>
+            <div className="notification-chat-info">
+              {notification.isGroupChat ? 
+                `📱 ${notification.chatName}` : 
+                "💬 Personal Message"
+              }
+            </div>
+          </div>
+        ))}
+      </div>
     </Container>
   );
 };

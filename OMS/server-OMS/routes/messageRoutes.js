@@ -107,6 +107,12 @@ router.put(
   messageController.markAsRead
 );
 
+router.put(
+  '/chat/:chatId/read-all',
+  validate([param('chatId').isMongoId()]),
+  messageController.markChatAsRead
+);
+
 router.delete(
   '/:messageId',
   validate([param('messageId').isMongoId()]),

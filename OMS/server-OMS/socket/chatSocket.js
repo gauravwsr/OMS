@@ -179,6 +179,41 @@ exports.init = (server) => {
       }
     });
 
+    // Handle message read receipts
+    socket.on("message read", async (data) => {
+      try {
+        if (!data || !data.messageId || !data.chatId) {
+          console.error("Invalid read receipt data:", data);
+          return;
+        }
+
+        const { messageId, chatId } = data;
+        const userId = socket.userId;
+
+        console.log(`Message ${messageId} read by user ${userId} in chat ${chatId}`);
+
+        // Update message read status in database
+        const message = await Message.findById(messageId);
+        if (message && !message.readBy.includes(userId)) {
+          message.readBy.push(userId);
+          await message.save();
+
+          // Notify the sender that their message was read
+          socket.to(chatId).emit("message read receipt", {
+            messageId,
+            readBy: userId,
+            chatId,
+            readAt: new Date()
+          });
+
+          console.log(`Read receipt sent for message ${messageId}`);
+        }
+      } catch (error) {
+        console.error("Error handling message read:", error);
+        socket.emit("error", { message: "Error processing read receipt" });
+      }
+    });
+
     // Handle typing events
     socket.on("typing", (data) => {
       if (!data || !data.chatId) return;

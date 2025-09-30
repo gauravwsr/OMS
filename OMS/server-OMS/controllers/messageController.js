@@ -167,6 +167,17 @@ exports.markAsRead = async (req, res) => {
     if (!alreadyRead) {
       message.readBy.push(req.user._id);
       await message.save();
+
+      // Emit socket event for read receipt
+      const io = req.app.get('io');
+      if (io) {
+        io.to(message.chat.toString()).emit('message read receipt', {
+          messageId: message._id,
+          readBy: req.user._id,
+          chatId: message.chat,
+          readAt: new Date()
+        });
+      }
     }
 
     res.status(200).json({ 
@@ -177,6 +188,84 @@ exports.markAsRead = async (req, res) => {
     res.status(500).json({ 
       success: false,
       message: 'Error marking message as read',
+      error: error.message 
+    });
+  }
+};
+
+// @desc    Mark all chat messages as read
+// @route   PUT /api/message/chat/:chatId/read-all
+// @access  Protected
+exports.markChatAsRead = async (req, res) => {
+  try {
+    const { chatId } = req.params;
+    
+    // Check if chat exists and user is participant
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Chat not found' 
+      });
+    }
+
+    const isParticipant = chat.participants.some(
+      participant => participant.toString() === req.user._id.toString()
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to mark messages in this chat as read' 
+      });
+    }
+
+    // Find all unread messages in this chat for this user
+    const unreadMessages = await Message.find({
+      chat: chatId,
+      sender: { $ne: req.user._id }, // Don't mark own messages as read
+      readBy: { $ne: req.user._id } // Not already read by user
+    });
+
+    if (unreadMessages.length > 0) {
+      // Mark all messages as read
+      await Message.updateMany(
+        {
+          chat: chatId,
+          sender: { $ne: req.user._id },
+          readBy: { $ne: req.user._id }
+        },
+        {
+          $addToSet: { readBy: req.user._id }
+        }
+      );
+
+      // Emit socket events for each message read receipt
+      const io = req.app.get('io');
+      if (io) {
+        unreadMessages.forEach(message => {
+          io.to(chatId).emit('message read receipt', {
+            messageId: message._id,
+            readBy: req.user._id,
+            chatId: chatId,
+            readAt: new Date()
+          });
+        });
+      }
+
+      console.log(`Marked ${unreadMessages.length} messages as read for user ${req.user._id} in chat ${chatId}`);
+    }
+
+    res.status(200).json({ 
+      success: true,
+      message: `${unreadMessages.length} messages marked as read`,
+      markedCount: unreadMessages.length
+    });
+  } catch (error) {
+    console.error('Error marking chat as read:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error marking chat messages as read',
       error: error.message 
     });
   }
