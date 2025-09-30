@@ -1,4 +1,43 @@
 /* Meeting.css */
+/* Modern Spinner for Loading States */
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 120px;
+  background: none;
+}
+
+.spinner {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #e0e7ef 60%, #4f46e5 100%);
+  position: relative;
+  box-shadow: 0 4px 24px rgba(79,70,229,0.08);
+  animation: spinner-rotate 1.2s cubic-bezier(.6,-0.28,.74,.05) infinite;
+}
+
+.spinner::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 6px;
+  background: linear-gradient(90deg, #3b82f6 60%, #a78bfa 100%);
+  border-radius: 8px;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+}
+
+@keyframes spinner-rotate {
+  0% { transform: rotate(-10deg); }
+  100% { transform: rotate(370deg); }
+}
 .meeting-container {
   display: flex;
   flex-direction: column;

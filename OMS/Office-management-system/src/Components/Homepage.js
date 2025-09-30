@@ -18,6 +18,7 @@ const NewDashboard = () => {
   useEffect(() => {
     // Fetch recent leave applications for dashboard
     axios.get("http://localhost:5001/api/leave/recent")
+    axios.get("http://localhost:5001/api/leave/recent")
       .then(res => setRecentLeaves(res.data))
       .catch(() => setRecentLeaves([]));
     const fetchUserData = async () => {
@@ -567,5 +568,4 @@ const NewDashboard = () => {
     </>
   );
 };
-
 export default NewDashboard;

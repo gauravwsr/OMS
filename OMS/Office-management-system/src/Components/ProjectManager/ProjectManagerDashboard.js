@@ -750,7 +750,6 @@ const ProjectManagerDashboard = () => {
         setProjects(projectsData);
         setFilteredProjects(projectsData);
 
-        setShowAssignModal(false);
         setSelectedProject(null);
         setSelectedTeamLead("");
         alert(
@@ -959,7 +958,6 @@ const ProjectManagerDashboard = () => {
     setProjects(projectsData);
     setFilteredProjects(projectsData);
 
-    setShowAssignModal(false);
     setSelectedProject(null);
     setSelectedTeamLead("");
     setAssignedEmployees([]);

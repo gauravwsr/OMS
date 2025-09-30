@@ -83,7 +83,7 @@ const Todo = () => {
           ) || [];
 
         // Fetch from users as backup
-        const usersResponse = await axios.get(`${API_BASE_URL}/api/users`, {
+        const usersResponse = await axios.get(`${API_BASE_URL}/users`, {
           headers,
         });
         const userEmails = usersResponse.data?.map((user) => user.email) || [];
@@ -228,8 +228,10 @@ const Todo = () => {
 
         <div className="todo-card">
           <div className="todo-card-header">
-            <List size={20} />
-            <h2>Task Manager</h2>
+            <div className="todo-card-header-content">
+              <List size={20} />
+              <h2>Task Manager</h2>
+            </div>
           </div>
 
           <div className="todo-input-container">

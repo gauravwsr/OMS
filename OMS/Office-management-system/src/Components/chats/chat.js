@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Container,
@@ -634,9 +633,9 @@ const handleMessageReceived = useCallback((newMessageReceived) => {
     }, 100);
   } 
   
-  // Show notification for ALL messages from other users (only once)
-  if (!isFromCurrentUser) {
-    console.log("🔔 Message from another user - showing notification");
+  // Show notification for ALL messages from other users in other chats (not the current chat)
+  if (!isFromCurrentUser && !isCurrentChat) {
+    console.log("🔔 Message from another user in a different chat - showing notification");
     console.log("🔔 Notification details:", {
       isCurrentChat,
       senderName: newMessageReceived.sender.name,
@@ -1546,35 +1545,34 @@ return (
       ))}
     </div>
 
-    <Row className="h-100 g-0">
-      {/* Left sidebar - Chats list */}
-      <Col xs={12} md={4} className="p-0 border-end sidebar">
-        {/* Mobile Office Chat Header */}
-        <div className="office-chat-header">
-          Office Chat
+    {/* Left sidebar - Chats list */}
+    <div className="sidebar">
+      {/* Mobile Office Chat Header */}
+      <div className="office-chat-header">
+        Office Chat
+      </div>
+      
+      {/* Mobile Buttons Container */}
+      <div className="mobile-buttons-container">
+        <div className="sidebar-buttons">
+          <button 
+            className="sidebar-button"
+            onClick={() => setShowAddFriendModal(true)}
+          >
+            Add Friend
+          </button>
+          <button 
+            className="sidebar-button"
+            onClick={() => setShowNewGroupModal(true)}
+          >
+            New Group
+          </button>
         </div>
-        
-        {/* Mobile Buttons Container */}
-        <div className="mobile-buttons-container">
-          <div className="sidebar-buttons">
-            <button 
-              className="sidebar-button"
-              onClick={() => setShowAddFriendModal(true)}
-            >
-              Add Friend
-            </button>
-            <button 
-              className="sidebar-button"
-              onClick={() => setShowNewGroupModal(true)}
-            >
-              New Group
-            </button>
-          </div>
-        </div>
+      </div>
         
         {/* Desktop Header */}
         <div className="sidebar-header p-3 border-bottom d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Office Chat</h5>
+          <h5 className="mb-0 text-black">Office Chat</h5>
           <div className="btn-cont">
             <Button
               variant="primary"
@@ -1774,10 +1772,10 @@ return (
               </Tab.Pane>
             </Tab.Content>
           </Tab.Container>
-        </Col>
+        </div>
 
         {/* Right side - Chat area */}
-        <Col xs={12} md={8} className="chat-area p-0">
+        <div className="chat-area">
           {selectedChat ? (
             <>
               {/* Mobile Chat Header */}
@@ -2098,8 +2096,7 @@ return (
               </div>
             </div>
           )}
-        </Col>
-      </Row>
+        </div>
 
       {/* Add Friend Modal */}
       <Modal

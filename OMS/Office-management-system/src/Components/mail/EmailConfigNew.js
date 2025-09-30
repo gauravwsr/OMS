@@ -63,11 +63,24 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
     try {
+<<<<<<< HEAD
+      const token = localStorage.getItem('token');
+      console.log('Checking email config with token:', token ? 'Present' : 'Missing');
+      
+      const response = await fetch('http://localhost:5001/api/emails/check-config', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+=======
       const token = localStorage.getItem("token");
       console.log(
         "Checking email config with token:",
         token ? "Present" : "Missing"
       );
+>>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const response = await fetch(
         "http://localhost:5001/api/emails/check-config",
@@ -85,8 +98,13 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
       console.log("Response data:", data);
 
       if (response.ok && data.configured) {
+<<<<<<< HEAD
+        localhost:5001
+        setEmailConfig(prev => ({ ...prev, email: data.email }));
+=======
         setIsConfigured(true);
         setEmailConfig((prev) => ({ ...prev, email: data.email }));
+>>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
         if (onConfigured && !isModal) {
           onConfigured();
         }
@@ -133,6 +151,20 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
     setTestStatus({ type: "info", message: "Testing connection..." });
 
     try {
+<<<<<<< HEAD
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/emails/configure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...emailConfig,
+          testOnly: true
+        })
+      });
+=======
       const token = localStorage.getItem("token");
       const response = await fetch(
         "http://localhost:5001/api/emails/configure",
@@ -148,6 +180,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
           }),
         }
       );
+>>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const data = await response.json();
 
@@ -163,12 +196,18 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
         });
       }
     } catch (error) {
+<<<<<<< HEAD
+      console.error('Test connection error:', error);
+      setTestStatus({ type: 'error', message: 'Network error occurred during test' });
+    } filocalhost:5001
+=======
       console.error("Test connection error:", error);
       setTestStatus({
         type: "error",
         message: "Network error occurred during test",
       });
     } finally {
+>>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
       setLoading(false);
     }
   };
@@ -178,6 +217,17 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
     setTestStatus({ type: "info", message: "Saving configuration..." });
 
     try {
+<<<<<<< HEAD
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/emails/configure', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(emailConfig)
+      });
+=======
       const token = localStorage.getItem("token");
       const response = await fetch(
         "http://localhost:5001/api/emails/configure",
@@ -190,6 +240,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
           body: JSON.stringify(emailConfig),
         }
       );
+>>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
 
       const data = await response.json();
 
@@ -229,11 +280,19 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
     ) {
       return;
     }
-
+localhost:5001
     setLoading(true);
     setTestStatus({ type: "info", message: "Removing configuration..." });
 
     try {
+<<<<<<< HEAD
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5001/api/emails/remove-config', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+=======
       const token = localStorage.getItem("token");
       const response = await fetch(
         "http://localhost:5001/api/emails/remove-config",
@@ -243,6 +302,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+>>>>>>> 8d0a6d6fefb14e8ff3609cf355fd3b67d4187c01
         }
       );
 
@@ -297,7 +357,7 @@ const EmailConfig = ({ onConfigured, isModal = false }) => {
   }
 
   if (isConfigured && !isModal) {
-    return (
+    retulocalhost:5001
       <div className="email-config-success">
         <CheckCircle className="success-icon" />
         <h3>Email Configured Successfully!</h3>

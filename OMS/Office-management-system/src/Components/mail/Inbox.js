@@ -31,6 +31,15 @@ const Inbox = () => {
 
   const checkEmailConfiguration = async () => {
     setCheckingConfig(true);
+    const token = localStorage.getItem("token");
+    
+    // Skip email configuration check if no token (for testing sent emails)
+    if (!token) {
+      setIsEmailConfigured(true);
+      setCheckingConfig(false);
+      return;
+    }
+    
     try {
       const response = await fetch('http://localhost:5001/api/emails/check-config', {
         method: 'GET',
@@ -38,7 +47,7 @@ const Inbox = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      });
+      );
 
       const data = await response.json();
       if (response.ok && data.configured) {
@@ -126,13 +135,19 @@ const Inbox = () => {
     }
 
     try {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      
+      if (useAuth && token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(url, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: headers,
       });
+      
       const data = await res.json();
 
       if (!res.ok) {
@@ -144,24 +159,35 @@ const Inbox = () => {
         setFilteredEmails(data.emails || []);
       } else if (activeTab === "sent") {
         setSentEmails(data.emails || []);
+        console.log(`📬 Loaded ${data.emails?.length || 0} sent emails (${data.summary?.local || 0} local, ${data.summary?.imap || 0} IMAP)`);
       } else if (activeTab === "drafts") {
         setDrafts(data.emails || data || []);
       }
     } catch (err) {
       console.error(`Error fetching ${activeTab} emails:`, err);
-      // More specific error handling
-      if (err.message.includes("Email not configured")) {
-        setIsEmailConfigured(false);
-        setError("Please configure your email settings first");
-      } else if (
-        err.message.includes("timeout") ||
-        err.message.includes("IMAP")
-      ) {
-        setError(
-          `Connection timeout. Please check your internet connection and email server settings.`
-        );
+      
+      // For sent emails without authentication, try to show helpful message
+      if (activeTab === "sent" && !token) {
+        if (err.message.includes("SMTP credentials not configured")) {
+          setError("Email server credentials not configured. Please check environment variables.");
+        } else {
+          setError(`Unable to fetch sent emails: ${err.message}`);
+        }
       } else {
-        setError(`Failed to fetch ${activeTab} emails: ${err.message}`);
+        // More specific error handling
+        if (err.message.includes("Email not configured")) {
+          setIsEmailConfigured(false);
+          setError("Please configure your email settings first");
+        } else if (
+          err.message.includes("timeout") ||
+          err.message.includes("IMAP")
+        ) {
+          setError(
+            `Connection timeout. Please check your internet connection and email server settings.`
+          );
+        } else {
+          setError(`Failed to fetch ${activeTab} emails: ${err.message}`);
+        }
       }
     } finally {
       setLoading(false);

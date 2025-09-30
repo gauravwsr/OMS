@@ -108,7 +108,7 @@ export default function ProjectList() {
           Authorization: `Bearer ${token}`,
         },
       });
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -1360,7 +1360,7 @@ export default function ProjectList() {
                 Manage and monitor your projects in real-time
               </p>
             </div>
-            <div className="header-actions">
+            {/* <div className="header-actions">
               <button
                 onClick={() => setAutoRefresh(!autoRefresh)}
                 className={`action-btn ${autoRefresh ? "active" : ""}`}
@@ -1380,7 +1380,7 @@ export default function ProjectList() {
                 <FiRefreshCw className={refreshing ? "spinning" : ""} />
                 Refresh
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -3040,7 +3040,7 @@ export default function ProjectList() {
 //           <button className="month-nav" onClick={nextMonth}>
 //             <ChevronRight size={16} />
 //           </button>
-//         </div>
+//         </div>localhost:5001
 //         <div className="kanban-board">
 //           <div className="kanban-column todo-column">
 //             <div className="column-header">TO DO List</div>

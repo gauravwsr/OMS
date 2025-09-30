@@ -15,7 +15,7 @@
 //                 alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
 //                 try {
-//                     await fetch("http://localhost:5001/api/idle-warning", {
+//                     await fetch(localhost:5001/api/idle-warning", {
 //                         method: "POST",
 //                         headers: { "Content-Type": "application/json" },
 //                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -68,7 +68,7 @@
 //                 alert(`⚠ Warning ${newWarningCount}/3: You have been idle for 1 minute!`);
 
 //                 try {
-//                     await fetch("http://localhost:5001/api/idle-warning", {
+//                     await fetch(localhost:5001/api/idle-warning", {
 //                         method: "POST",
 //                         headers: { "Content-Type": "application/json" },
 //                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -126,7 +126,7 @@ const IdleTracker = () => {
           );
 
 <<<<<<< HEAD
-          fetch("http://localhost:5001/api/idle-warning", {
+          fetch(localhost:5001/api/idle-warning", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId: localStorage.getItem("userId") }),
@@ -134,7 +134,7 @@ const IdleTracker = () => {
             console.error("Error sending idle warning:", error)
           );
 =======
-                    fetch("http://localhost:5001/api/idle-warning", {
+                    fetch(localhost:5001/api/idle-warning", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ userId: localStorage.getItem("userId") }),

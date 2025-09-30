@@ -150,6 +150,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.put(
         "http://localhost:5001/users/updateRole",
+        "http://localhost:5001/users/updateRole",
         {
           userId: user.email,
           newRole,
