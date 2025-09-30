@@ -38,12 +38,14 @@ const ViewDetails = () => {
   if (!candidate) return <p>Candidate not found</p>;
 
   const handleDownload = () => {
-    const cvUrl = candidate.cvPath
-      ? `http://localhost:5001/uploads/cvs/${candidate.cvPath}`
+    // Extract filename from cvPath (remove directory path)
+    const cvFilename = candidate.cvPath ? candidate.cvPath.split('/').pop() : null;
+    const cvUrl = cvFilename
+      ? `http://localhost:5001/uploads/documents/${cvFilename}`
       : "/default_cv.pdf";
     const link = document.createElement("a");
     link.href = cvUrl;
-    link.setAttribute("download", candidate.cvPath || "default_cv.pdf");
+    link.setAttribute("download", cvFilename || "default_cv.pdf");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

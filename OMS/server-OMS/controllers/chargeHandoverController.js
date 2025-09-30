@@ -35,13 +35,22 @@ const createChargeHandover = async (req, res) => {
       });
     }
 
-    // Verify both candidates exist - check both _id and candidateId
-    const fromEmployee = await Candidate.findOne({
-      $or: [{ candidateId: fromEmployeeId }, { _id: fromEmployeeId }],
-    });
-    const toEmployee = await Candidate.findOne({
-      $or: [{ candidateId: toEmployeeId }, { _id: toEmployeeId }],
-    });
+    // Check if IDs are valid ObjectIds
+    const mongoose = require("mongoose");
+    const fromIsValidObjectId = mongoose.Types.ObjectId.isValid(fromEmployeeId);
+    const toIsValidObjectId = mongoose.Types.ObjectId.isValid(toEmployeeId);
+
+    // Verify both candidates exist
+    const fromEmployee = await Candidate.findOne(
+      fromIsValidObjectId
+        ? { $or: [{ candidateId: fromEmployeeId }, { _id: fromEmployeeId }] }
+        : { candidateId: fromEmployeeId }
+    );
+    const toEmployee = await Candidate.findOne(
+      toIsValidObjectId
+        ? { $or: [{ candidateId: toEmployeeId }, { _id: toEmployeeId }] }
+        : { candidateId: toEmployeeId }
+    );
 
     if (!fromEmployee) {
       return res.status(404).json({ message: "From candidate not found." });
