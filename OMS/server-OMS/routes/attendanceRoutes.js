@@ -14,6 +14,7 @@ const {
   healthCheck,
   getRegisteredUsersAPI,
   getTimeValidationStatus,
+  getUserAttendanceStats,
 } = require("../controllers/attendanceController");
 
 const {
@@ -59,6 +60,9 @@ router.get("/today-summary", protect, getTodayAttendanceSummary);
 
 // Get attendance analytics (Admin only)
 router.get("/analytics", protect, getAttendanceAnalytics);
+
+// Get user-specific attendance statistics
+router.get("/stats", protect, getUserAttendanceStats);
 
 // Get registered users from face recognition server
 router.get("/registered-users", getRegisteredUsersAPI);

@@ -110,7 +110,7 @@ const Employee = () => {
 
     try {
       // Register face with the face recognition server
-      const response = await axios.post("http://146.190.165.62:5002/register_face", {
+      const response = await axios.post("http://localhost:5002/register_face", {
         name: formData.fullName,
         images: capturedImages,
       });
@@ -120,6 +120,7 @@ const Employee = () => {
       if (formData.candidateId) {
         try {
           const faceEncodingsResponse = await axios.put(
+            `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
             `http://localhost:5001/api/candidates/${formData.candidateId}/face-encodings`,
             {
               faceEncodings: capturedImages, // Store captured images as face data
@@ -393,7 +394,7 @@ const Employee = () => {
         timeout: 3000,
       });
       // const response = await axios.get(
-      //   "http://146.190.165.62:5001/api/health",
+      //   "http://localhost:5001/api/health",
       //   {
       //     timeout: 3000,
       //   }
@@ -558,6 +559,7 @@ const Employee = () => {
       setLoadingMessage("Submitting registration...");
       const response = await axios.post(
         "http://localhost:5001/api/candidates",
+        "http://localhost:5001/api/candidates",
         data,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -715,10 +717,31 @@ const Employee = () => {
 
         <div className="form-card">
           <div className="card-header">
-            <h2 className="card-title">Add New Candidate</h2>
-            <button className="close-button">
-              <X size={20} />
-            </button>
+            <div className="header-content">
+              <div className="header-left">
+                <div className="header-icon">
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <div className="header-text">
+                  <h2 className="card-title">Add New Employee</h2>
+                  <p className="card-subtitle">Create a new employee profile</p>
+                </div>
+              </div>
+              <button className="close-button">
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           <div className="form-content">
@@ -756,40 +779,6 @@ const Employee = () => {
                 Employees and Interns through this form.
               </div>
             )}
-
-            {/* Server Status Info */}
-            {/* <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                border: "1px solid #dee2e6",
-                borderRadius: "4px",
-                padding: "12px",
-                marginBottom: "20px",
-                fontSize: "14px",
-              }}
-            >
-              <strong>🔧 Troubleshooting Tips:</strong>
-              <ul
-                style={{
-                  marginLeft: "20px",
-                  marginTop: "8px",
-                  marginBottom: "0",
-                }}
-              >
-                <li>
-                  If you get "timeout" errors, the backend server might be slow
-                  or not running
-                </li>
-                <li>
-                  Ensure the backend server is running on{" "}
-                  <code>http://localhost:5001</code>
-                </li>
-                <li>
-                  Check that MongoDB is connected properly for the backend
-                </li>
-                <li>Large file uploads may take longer - please be patient</li>
-              </ul>
-            </div> */}
 
             <form onSubmit={handleSave}>
               {/* Upload Photo Section */}

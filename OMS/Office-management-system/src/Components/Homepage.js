@@ -18,6 +18,7 @@ const NewDashboard = () => {
   useEffect(() => {
     // Fetch recent leave applications for dashboard
     axios.get("http://localhost:5001/api/leave/recent")
+    axios.get("http://localhost:5001/api/leave/recent")
       .then(res => setRecentLeaves(res.data))
       .catch(() => setRecentLeaves([]));
     const fetchUserData = async () => {
@@ -26,6 +27,7 @@ const NewDashboard = () => {
 
       try {
         const response = await fetch("http://localhost:5001/users/me", {
+        // const response = await fetch("http://localhost:5001/users/me", {
           method: "GET",
           credentials: "include",
           headers: {
@@ -60,6 +62,7 @@ const NewDashboard = () => {
 
         // Use GetData for all users (backend will handle HR Manager permissions)
         const apiUrl = "http://localhost:5001/GetData";
+        // const apiUrl = "http://localhost:5001/GetData";
 
         const response = await axios.post(
           apiUrl,

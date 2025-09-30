@@ -26,6 +26,14 @@ const Attendance = () => {
   const [lastRegistrationCheck, setLastRegistrationCheck] = useState(null);
   const [currentTimeInfo, setCurrentTimeInfo] = useState(null); // New state for time validation
   const [timeValidationStatus, setTimeValidationStatus] = useState(null); // New state for attendance validation
+  const [showAttendanceHistory, setShowAttendanceHistory] = useState(false); // State to show/hide attendance history
+  const [newAttendanceAdded, setNewAttendanceAdded] = useState(false); // State to highlight new attendance
+  const [attendanceStats, setAttendanceStats] = useState(null); // State for attendance statistics
+  const [selectedPeriod, setSelectedPeriod] = useState("monthly"); // Period selection state
+  const [customDateRange, setCustomDateRange] = useState({
+    startDate: "",
+    endDate: "",
+  }); // Custom date range state
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const { user, isAuthenticated } = useAuth();
@@ -39,6 +47,7 @@ const Attendance = () => {
       checkMongoDBConnection();
       fetchCurrentTimeInfo();
       fetchTimeValidationStatus();
+      fetchAttendanceStats();
     }
   }, [user, isAuthenticated]);
 
@@ -68,7 +77,7 @@ const Attendance = () => {
 
     try {
       const response = await axios.get(
-        `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
+        `http://localhost:5002/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -119,7 +128,11 @@ const Attendance = () => {
 
       console.log("MongoDB connection status:", response.data);
 
-      if (response.data && response.data.database === "connected") {
+      if (
+        response.data &&
+        response.data.database &&
+        response.data.database.status === "connected"
+      ) {
         console.log("✅ MongoDB database is connected and ready");
       } else {
         console.log("⚠️ MongoDB database connection uncertain");
@@ -144,9 +157,8 @@ const Attendance = () => {
       date: currentTime.toDateString(),
       time: currentTime.toLocaleTimeString(),
 
-      // Employee information
+      // Employee information (server will get employeeId from auth token)
       employeeName: user.name,
-      employeeId: user.id || user._id || null,
       employeeEmail: user.email || null,
       employeeRole: user.role || null,
 
@@ -220,6 +232,7 @@ const Attendance = () => {
     try {
       const response = await axios.get(
         "http://localhost:5001/api/attendance/today",
+
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -263,27 +276,40 @@ const Attendance = () => {
     if (!user?.name) return;
 
     try {
-      const response = await axios.get(
-        `http://localhost:5001/api/attendance/validate-time?attendanceType=${attendanceType}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const url = `http://localhost:5001/api/attendance/validate-time?attendanceType=${attendanceType}`;
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        // include cookies if your backend uses cookie-based sessions
+        withCredentials: true,
+      });
       if (response.data) {
         setTimeValidationStatus(response.data);
       }
     } catch (error) {
-      console.log("Could not fetch time validation status:", error);
+      // Handle unauthorized specifically
+      if (error?.response?.status === 401) {
+        console.warn(
+          "Time validation fetch returned 401 - unauthorized",
+          error.response.data
+        );
+        setError(
+          "❌ Unauthorized. Your session may have expired. Please login again."
+        );
+        // Optional: clear token and redirect to login if you have a route
+        // localStorage.removeItem('token');
+        // window.location.href = '/login';
+      } else {
+        console.log("Could not fetch time validation status:", error);
+      }
     }
   };
 
   const fetchRegisteredUsers = async () => {
     try {
       const response = await axios.get(
-        `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
-        `http://146.190.165.62:5002/api/registered-users?t=${Date.now()}`,
+        `http://localhost:5002/api/registered-users?t=${Date.now()}`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -354,6 +380,74 @@ const Attendance = () => {
       setLastRegistrationCheck(new Date().toISOString());
     } catch (error) {
       // Silently fail for registered users fetch
+    }
+  };
+
+  // Fetch attendance statistics
+  const fetchAttendanceStats = async (
+    period = selectedPeriod,
+    customRange = null
+  ) => {
+    try {
+      let url = "http://localhost:5001/api/attendance/stats";
+      const params = new URLSearchParams();
+
+      // Set parameters based on selected period
+      switch (period) {
+        case "daily":
+          params.append("days", "1");
+          break;
+        case "weekly":
+          params.append("days", "7");
+          break;
+        case "monthly":
+          params.append("months", "1");
+          break;
+        case "yearly":
+          params.append("months", "12");
+          break;
+        case "custom":
+          if (customRange && customRange.startDate && customRange.endDate) {
+            params.append("startDate", customRange.startDate);
+            params.append("endDate", customRange.endDate);
+          } else {
+            params.append("months", "3"); // Default fallback
+          }
+          break;
+        default:
+          params.append("months", "1");
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.data && response.data.stats) {
+        setAttendanceStats(response.data.stats);
+      }
+    } catch (error) {
+      console.log("Could not fetch attendance statistics:", error);
+    }
+  };
+
+  // Handle period change
+  const handlePeriodChange = (period) => {
+    setSelectedPeriod(period);
+    if (period !== "custom") {
+      fetchAttendanceStats(period);
+    }
+  };
+
+  // Handle custom date range change
+  const handleCustomDateRange = () => {
+    if (customDateRange.startDate && customDateRange.endDate) {
+      fetchAttendanceStats("custom", customDateRange);
     }
   };
 
@@ -521,7 +615,7 @@ const Attendance = () => {
     try {
       // First verify user is registered in face recognition system
       const registeredResponse = await axios.get(
-        "http://146.190.165.62:5002/api/registered-users"
+        "http://localhost:5002/api/registered-users"
       );
       const userRegistered = registeredResponse.data.registered_users?.find(
         (regUser) => regUser.name.toLowerCase() === user.name.toLowerCase()
@@ -552,8 +646,7 @@ const Attendance = () => {
       }
 
       const response = await axios.post(
-        "http://146.190.165.62:5002/api/mark-attendance",
-        "http://146.190.165.62:5002/api/mark-attendance",
+        "http://localhost:5002/api/mark-attendance",
         {
           image: imageData,
         },
@@ -612,9 +705,15 @@ const Attendance = () => {
           const attendanceData = createAttendanceData(response.data);
 
           console.log("Saving attendance to MongoDB:", attendanceData);
+          console.log("User object available:", user);
+          console.log(
+            "Token from localStorage:",
+            localStorage.getItem("token")
+          );
 
           const mongoResponse = await axios.post(
             "http://localhost:5001/api/attendance/mark",
+
             {
               ...attendanceData,
               attendance_type: attendanceType, // Add attendance type
@@ -628,14 +727,22 @@ const Attendance = () => {
           );
 
           console.log("✅ MongoDB save successful:", mongoResponse.data);
+
+          // Set flags to show attendance history and highlight new record
+          setNewAttendanceAdded(true);
+          setShowAttendanceHistory(true);
+
           fetchAttendanceHistory();
           fetchTodayAttendance(); // Refresh today's attendance
           fetchTimeValidationStatus(); // Refresh validation status
 
+          // Scroll to attendance history section
+          scrollToAttendanceHistory();
+
           // Show success message with time validation and working hours
           let successMessage = `\n💾 ${
             attendanceType === "check_in" ? "Check-in" : "Check-out"
-          } saved to database!`;
+          } saved to database!\n📊 Check your attendance history below!`;
 
           // Add time validation information
           if (mongoResponse.data.timeValidation) {
@@ -664,12 +771,22 @@ const Attendance = () => {
           setAttendanceResult((prev) => prev + successMessage);
         } catch (omsError) {
           console.error("❌ MongoDB save error:", omsError);
+          console.error("❌ Error response data:", omsError.response?.data);
+          console.error("❌ Error status:", omsError.response?.status);
+          console.error("❌ User data being sent:", {
+            userId: user._id || user.userId || user.id,
+            userName: user.name,
+            userRole: user.role,
+          });
+
           // Show warning if MongoDB save fails but don't prevent attendance
           setAttendanceResult(
             (prev) =>
               prev +
               `\n⚠️ Warning: Could not save to MongoDB database. Please contact IT support.\nError: ${
-                omsError.response?.data?.message || omsError.message
+                omsError.response?.data?.message ||
+                omsError.response?.data?.error ||
+                omsError.message
               }`
           );
         }
@@ -679,6 +796,7 @@ const Attendance = () => {
           setCaptured(false);
           setImageData(null);
           setAttendanceResult("");
+          setNewAttendanceAdded(false); // Clear the new attendance flag
         }, 8000);
       } else {
         setError(
@@ -746,6 +864,7 @@ const Attendance = () => {
 
                 const mongoResponse = await axios.post(
                   "http://localhost:5001/api/attendance/mark",
+
                   {
                     ...attendanceData,
                     attendance_type: attendanceType, // Add attendance type
@@ -895,6 +1014,19 @@ const Attendance = () => {
     return new Date(timestamp).toLocaleString();
   };
 
+  // Function to scroll to attendance history section
+  const scrollToAttendanceHistory = () => {
+    setTimeout(() => {
+      const historyElement = document.querySelector(".attendance-history");
+      if (historyElement) {
+        historyElement.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 1000); // Delay to allow success message to show first
+  };
+
   return (
     <div className="attendance-container">
       <div className="attendance-header">
@@ -903,6 +1035,283 @@ const Attendance = () => {
         </h2>
         <p>Mark your attendance using facial recognition technology</p>
       </div>
+
+      {/* User Profile Section */}
+      {user && (
+        <div className="user-profile-section">
+          <div className="user-profile-header">
+            <h3>👤 User Profile</h3>
+          </div>
+          <div className="user-profile-grid">
+            <div className="user-basic-info">
+              <div className="user-avatar">
+                <div className="avatar-circle">
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
+                </div>
+              </div>
+              <div className="user-details">
+                <div className="user-name">{user.name}</div>
+                <div className="user-role">
+                  {user.role} {user.subRole && `- ${user.subRole}`}
+                </div>
+                <div className="user-email">{user.email}</div>
+                <div className="user-id">ID: {user.userId || user._id}</div>
+              </div>
+            </div>
+
+            {/* Today's Attendance Summary */}
+            <div className="today-summary">
+              <h4>📊 Today's Summary</h4>
+              {todayAttendance ? (
+                <div className="summary-grid">
+                  <div className="summary-item">
+                    <span className="summary-label">Check-in:</span>
+                    <span className="summary-value">
+                      {todayAttendance.hasCheckIn
+                        ? `✅ ${new Date(
+                            todayAttendance.checkInRecord?.timestamp
+                          ).toLocaleTimeString()}`
+                        : "❌ Not marked"}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Check-out:</span>
+                    <span className="summary-value">
+                      {todayAttendance.hasCheckOut
+                        ? `✅ ${new Date(
+                            todayAttendance.checkOutRecord?.timestamp
+                          ).toLocaleTimeString()}`
+                        : "❌ Not marked"}
+                    </span>
+                  </div>
+                  {workingHours && (
+                    <div className="summary-item">
+                      <span className="summary-label">Working Hours:</span>
+                      <span className="summary-value">
+                        ⏰ {workingHours.hours}h {workingHours.minutes}m
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="no-attendance-today">
+                  <p>No attendance marked for today</p>
+                </div>
+              )}
+            </div>
+
+            {/* Face Registration Status */}
+            <div className="face-registration-status">
+              <h4>👤 Face Registration</h4>
+              {registeredUsers.length > 0 ? (
+                (() => {
+                  const userRegistered = registeredUsers.find(
+                    (regUser) =>
+                      regUser.name.toLowerCase() === user.name.toLowerCase()
+                  );
+                  return (
+                    <div className="registration-info">
+                      {userRegistered ? (
+                        <>
+                          <div className="registration-success">
+                            ✅ Face Registered
+                          </div>
+                          <div className="encoding-count">
+                            📸 {userRegistered.encoding_count || 0} photos
+                            stored
+                          </div>
+                          <div className="registration-quality">
+                            {userRegistered.encoding_count >= 5
+                              ? "🟢 High Quality"
+                              : "🟡 Needs more photos"}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="registration-missing">
+                          ❌ Face not registered
+                          <br />
+                          <small>Contact admin to register your face</small>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
+                <div className="registration-loading">
+                  🔄 Checking registration status...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance Statistics Section */}
+      {user && attendanceStats && (
+        <div className="attendance-stats-section">
+          <div className="stats-header">
+            <h3>📊 Attendance Statistics</h3>
+
+            {/* Period Selection Controls */}
+            <div className="period-selector">
+              <div className="period-buttons">
+                <button
+                  className={`period-btn ${
+                    selectedPeriod === "daily" ? "active" : ""
+                  }`}
+                  onClick={() => handlePeriodChange("daily")}
+                >
+                  📅 Daily
+                </button>
+                <button
+                  className={`period-btn ${
+                    selectedPeriod === "weekly" ? "active" : ""
+                  }`}
+                  onClick={() => handlePeriodChange("weekly")}
+                >
+                  📊 Weekly
+                </button>
+                <button
+                  className={`period-btn ${
+                    selectedPeriod === "monthly" ? "active" : ""
+                  }`}
+                  onClick={() => handlePeriodChange("monthly")}
+                >
+                  📈 Monthly
+                </button>
+                <button
+                  className={`period-btn ${
+                    selectedPeriod === "yearly" ? "active" : ""
+                  }`}
+                  onClick={() => handlePeriodChange("yearly")}
+                >
+                  📆 Yearly
+                </button>
+                <button
+                  className={`period-btn ${
+                    selectedPeriod === "custom" ? "active" : ""
+                  }`}
+                  onClick={() => handlePeriodChange("custom")}
+                >
+                  🔧 Custom
+                </button>
+              </div>
+
+              {/* Custom Date Range Inputs */}
+              {selectedPeriod === "custom" && (
+                <div className="custom-date-range">
+                  <div className="date-input-group">
+                    <label>From:</label>
+                    <input
+                      type="date"
+                      value={customDateRange.startDate}
+                      onChange={(e) =>
+                        setCustomDateRange((prev) => ({
+                          ...prev,
+                          startDate: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="date-input-group">
+                    <label>To:</label>
+                    <input
+                      type="date"
+                      value={customDateRange.endDate}
+                      onChange={(e) =>
+                        setCustomDateRange((prev) => ({
+                          ...prev,
+                          endDate: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <button
+                    className="apply-custom-btn"
+                    onClick={handleCustomDateRange}
+                    disabled={
+                      !customDateRange.startDate || !customDateRange.endDate
+                    }
+                  >
+                    📊 Apply Range
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">📅</div>
+              <div className="stat-content">
+                <div className="stat-title">Present Days</div>
+                <div className="stat-value">
+                  {attendanceStats.presentDays || 0}
+                </div>
+                <div className="stat-subtitle">
+                  Out of {attendanceStats.totalDays || 0} working days
+                </div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">⏰</div>
+              <div className="stat-content">
+                <div className="stat-title">Average Hours</div>
+                <div className="stat-value">
+                  {attendanceStats.averageHours || 0}h
+                </div>
+                <div className="stat-subtitle">Per Day</div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">🎯</div>
+              <div className="stat-content">
+                <div className="stat-title">Attendance Rate</div>
+                <div className="stat-value">
+                  {attendanceStats.attendanceRate || 0}%
+                </div>
+                <div className="stat-subtitle">
+                  {selectedPeriod === "daily"
+                    ? "Today"
+                    : selectedPeriod === "weekly"
+                    ? "This Week"
+                    : selectedPeriod === "monthly"
+                    ? "This Month"
+                    : selectedPeriod === "yearly"
+                    ? "This Year"
+                    : "Selected Period"}
+                </div>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">⚡</div>
+              <div className="stat-content">
+                <div className="stat-title">Face Recognition</div>
+                <div className="stat-value">
+                  {attendanceStats.faceRecognitionUsage || 0}%
+                </div>
+                <div className="stat-subtitle">Usage Rate</div>
+              </div>
+            </div>
+          </div>
+
+          {attendanceStats.totalWorkingHours && (
+            <div className="attendance-trend">
+              <h4>� Work Summary</h4>
+              <div className="trend-info">
+                <span className="trend-indicator stable">📊</span>
+                <span className="trend-text">
+                  Total working hours: {attendanceStats.totalWorkingHours}h (
+                  {attendanceStats.period?.startDate} to{" "}
+                  {attendanceStats.period?.endDate})
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* User Loading State */}
       {!user?.name && (
@@ -1447,29 +1856,6 @@ const Attendance = () => {
                 </button>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Attendance History */}
-        <div className="attendance-history">
-          <h3>
-            <Clock size={24} /> Recent Attendance
-          </h3>
-          {attendanceHistory.length > 0 ? (
-            <div className="history-list">
-              {attendanceHistory.slice(0, 5).map((record, index) => (
-                <div key={index} className="history-item">
-                  <div className="history-time">
-                    {formatTime(record.timestamp)}
-                  </div>
-                  <div className="history-method">
-                    {record.method || "Manual"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="no-history">No attendance records found</p>
           )}
         </div>
 

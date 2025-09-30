@@ -7,6 +7,19 @@ import Register from "./Components/LogSign/Register";
 import { useAuth } from "./Components/AuthProvider/AuthContext";
 import ProtectedRoute from "./Components/ProtectedRoute";
 import AdminPanel from "./Components/AdminPanel/AdminPanel";
+import Meeting from "./Components/Meeting";
+
+// Demo component for testing MeetingRoom
+const MeetingDemo = () => {
+  return (
+    <div>
+      <h1 style={{ textAlign: "center", margin: "20px 0" }}>
+        🚀 My Meeting Section
+      </h1>
+      <Meeting roomName="MyCafeMeetRoom" userName="Aditya" />
+    </div>
+  );
+};
 
 const App = () => {
   const { isAuthenticated, user } = useAuth();
@@ -121,6 +134,9 @@ const App = () => {
             />
           }
         />
+
+        {/* Meeting Demo Route - for testing Jitsi integration */}
+        <Route path="/meeting-demo" element={<MeetingDemo />} />
 
         {/* Redirect to the correct page if authenticated */}
         <Route

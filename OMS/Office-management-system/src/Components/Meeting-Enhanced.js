@@ -29,7 +29,7 @@ const MeetingEnhanced = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://146.190.165.62:5001/api/meetings/upcoming",
+        "http://localhost:5001/api/meetings/upcoming",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

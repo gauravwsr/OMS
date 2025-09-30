@@ -51,6 +51,28 @@ const ViewDetails = () => {
     document.body.removeChild(link);
   };
 
+  // Download the ID card as an image by capturing the .profile-cardd element
+  const handleDownloadCard = async () => {
+    try {
+      const el = document.querySelector(".profile-cardd");
+      if (!el) return;
+      // dynamic import so this works even if html2canvas isn't already bundled
+      const module = await import("html2canvas");
+      const html2canvas = module.default || module;
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true });
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      const name = (candidate.fullName || "id_card").replace(/\s+/g, "_");
+      link.download = `${name}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Failed to download ID card:", err);
+    }
+  };
+
   const handleGoBack = () => {
     navigate("/");
   };
@@ -67,49 +89,93 @@ const ViewDetails = () => {
         <h2 className="title">Candidate Profile</h2>
       </div>
 
-      {/* Profile Card */}
+      {/* Professional ID Card - Single Section with All Information */}
       <div className="profile-cardd">
-        <img
-          src={candidate.photoUrl}
-          alt={candidate.fullName}
-          className="profile-img"
-        />
-        <h3 className="name">{candidate.fullName}</h3>
-        <p className="role">{candidate.role}</p>
+        {/* Company Header */}
+        <div className="company-header">
+          <img
+            src="/images/TARS_Black.png"
+            alt="TARS Technologies Logo"
+            className="company-logo-img"
+          />
+        </div>
 
-        {/* CV Download Button */}
+        {/* Profile Section */}
+        <div className="profile-section">
+          <img
+            src={
+              candidate.photoPath
+                ? `http://localhost:5001/uploads/photos/${candidate.photoPath}`
+                : `https://api.dicebear.com/8.x/avataaars/svg?seed=${candidate.fullName}`
+            }
+            alt={candidate.fullName}
+            className="profile-img"
+          />
+          <h3 className="name">{candidate.fullName}</h3>
+          <p className="role">{candidate.subRole || candidate.role}</p>
+        </div>
+
+        {/* Contact Information */}
+        <div className="contact-info">
+          <div className="contact-item phone">{candidate.phoneNo || "N/A"}</div>
+          <div className="contact-item email">
+            {candidate.email ? candidate.email : "N/A"}
+          </div>
+          <div className="contact-item id">
+            #{candidate.candidateId || "032024065"}
+          </div>
+          <div className="website">www.tars.co.in</div>
+        </div>
+
+        {/* ID Card Frame at Bottom */}
+        <div className="card-frame">
+          <img
+            src="/images/frame.png"
+            alt="ID Card Frame"
+            className="frame-img"
+          />
+        </div>
+      </div>
+
+      {/* Additional Details Card */}
+      <div className="details-card">
+        <h3 className="details-title">Additional Information</h3>
+        <div className="additional-details">
+          <div className="detail-item">
+            <strong>Department:</strong> {candidate.role || "N/A"}
+          </div>
+          <div className="detail-item">
+            <strong>Qualification:</strong> {candidate.qualification || "N/A"}
+          </div>
+          <div className="detail-item">
+            <strong>Birth Date:</strong>{" "}
+            {candidate.birthDate
+              ? new Date(candidate.birthDate).toLocaleDateString()
+              : "N/A"}
+          </div>
+          <div className="detail-item">
+            <strong>Address:</strong> {candidate.address || "N/A"}
+          </div>
+          <div className="detail-item">
+            <strong>Country:</strong> {candidate.country || "N/A"}
+          </div>
+          <div className="detail-item">
+            <strong>Emergency Contact:</strong> {candidate.emergencyNo || "N/A"}
+          </div>
+        </div>
+      </div>
+
+      {/* Download Actions */}
+      <div className="download-actions">
         <button className="cv-button" onClick={handleDownload}>
           <FaDownload className="icon" />
           <span>Download CV</span>
         </button>
-      </div>
 
-      {/* Details Section */}
-      <div className="details-card">
-        <p>
-          <strong>Phone No.</strong> - {candidate.phoneNo || "N/A"}
-        </p>
-        <p>
-          <strong>Department</strong> - {candidate.role || "N/A"}
-        </p>
-        <p>
-          <strong>Employee Role</strong> - {candidate.subRole || "N/A"}
-        </p>
-        <p>
-          <strong>Qualification</strong> - {candidate.qualification || "N/A"}
-        </p>
-        <p>
-          <strong>Birth Date</strong> - {candidate.birthDate || "N/A"}
-        </p>
-        <p>
-          <strong>Address</strong> - {candidate.address || "N/A"}
-        </p>
-        <p>
-          <strong>Country</strong> - {candidate.country || "N/A"}
-        </p>
-        <p>
-          <strong>Emergency Contact</strong> - {candidate.emergencyNo || "N/A"}
-        </p>
+        <button className="download-card-button" onClick={handleDownloadCard}>
+          <FaDownload className="icon" />
+          <span>Download ID Card</span>
+        </button>
       </div>
     </div>
   );

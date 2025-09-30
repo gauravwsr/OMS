@@ -7,7 +7,7 @@ async function testEmailEndpoint() {
     
     // Test without authentication first (should return 401)
     try {
-      const response = await axios.post('http://146.190.165.62:5001/api/emails/configure', {
+      const response = await axios.post('http://localhost:5001/api/emails/configure', {
         smtpEmail: 'test@example.com',
         smtpPassword: 'test123',
         testOnly: true
@@ -26,7 +26,7 @@ async function testEmailEndpoint() {
 
     // Test health endpoint
     try {
-      const healthResponse = await axios.get('http://146.190.165.62:5001/api/health');
+      const healthResponse = await axios.get('http://localhost:5001/api/health');
       console.log('✅ Health check successful:', healthResponse.data.status);
     } catch (error) {
       if (error.response) {

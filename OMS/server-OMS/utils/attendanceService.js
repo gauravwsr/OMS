@@ -666,6 +666,14 @@ class AttendanceService {
   // Create attendance record with working hours calculation
   static async createAttendanceRecordWithWorkingHours(attendanceData) {
     try {
+      console.log(
+        "🔍 Received attendanceData in createAttendanceRecordWithWorkingHours:",
+        {
+          metadata: attendanceData.metadata,
+          timeValidation: attendanceData.metadata?.timeValidation,
+        }
+      );
+
       // Get user details to populate required fields
       const User = require("../models/userModel");
       const user = await User.findById(attendanceData.userId);
@@ -937,6 +945,15 @@ class AttendanceService {
           timezone: "Asia/Kolkata",
         },
       };
+
+      console.log("🔍 Face recognition attendance data being created:", {
+        timeValidation: attendanceValidation,
+        metadata: {
+          timeValidation: attendanceValidation,
+          isHalfDay: isHalfDay,
+          timezone: "Asia/Kolkata",
+        },
+      });
 
       return await this.createAttendanceRecordWithWorkingHours(attendanceData);
     } catch (error) {

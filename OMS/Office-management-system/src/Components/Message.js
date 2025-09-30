@@ -9,10 +9,11 @@ const Message = () => {
     // Fetch data from Express
 <<<<<<< HEAD
     axios
-      .get(localhost:5001/api/message")
+      .get("http://localhost:5001/api/message")
       .then((response) => setMessage(response.data.message))
       .catch((error) => console.error("Error:", error));
 =======
+    axios.get('http://localhost:5001/api/message')
     axios.get('http://localhost:5001/api/message')
       .then(response => setMessage(response.data.message))
       .catch(error => console.error('Error:', error));

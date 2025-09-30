@@ -6,6 +6,7 @@ const ClickTracker = () => {
     const handleClick = async (event) => {
       try {
         await fetch(localhost:5001/api/mouse-clicks", {
+        await fetch("http://localhost:5001/api/mouse-clicks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ x: event.clientX, y: event.clientY }),
@@ -19,6 +20,7 @@ const ClickTracker = () => {
         const handleClick = async (event) => {
             try {
                 await fetch(localhost:5001/api/mouse-clicks", {
+                await fetch("http://localhost:5001/api/mouse-clicks", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ x: event.clientX, y: event.clientY }),

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import "./Inbox.css";
 
 const DraftSection = ({ drafts: propDrafts }) => {
@@ -19,51 +19,53 @@ const DraftSection = ({ drafts: propDrafts }) => {
 
   const handleDraftClick = (draft) => {
     // Navigate to email details page with draft data
-    navigate('email-details', { state: { email: draft, isDraft: true } });
+    navigate("email-details", { state: { email: draft, isDraft: true } });
   };
 
   const handleEditDraft = (draft) => {
     // Navigate to compose page with draft data for editing
-    navigate('send-email', { state: { draftData: draft } });
+    navigate("send-email", { state: { draftData: draft } });
   };
 
   const fetchDrafts = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      console.log('🔄 Fetching drafts...');
-      
+      console.log("🔄 Fetching drafts...");
+
       // Check if user has a token, if not use test endpoint
-      const token = localStorage.getItem('token');
-      const endpoint = token ? '/api/emails/drafts' : '/api/emails/test-drafts';
-      const headers = token ? {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      } : {
-        'Content-Type': 'application/json'
-      };
-      
+      const token = localStorage.getItem("token");
+      const endpoint = token ? "/api/emails/drafts" : "/api/emails/test-drafts";
+      const headers = token
+        ? {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          }
+        : {
+            "Content-Type": "application/json",
+          };
+
       const response = await fetch(`http://localhost:5001${endpoint}`, {
-        method: 'GET',
-        headers: headers
+        method: "GET",
+        headers: headers,
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         const fetchedDrafts = data.emails || data || [];
         console.log(`📝 Found ${fetchedDrafts.length} drafts:`, fetchedDrafts);
         setDrafts(fetchedDrafts);
         setError(null);
       } else {
-        console.error('Failed to fetch drafts:', data.message);
-        setError(data.message || 'Failed to fetch drafts');
+        console.error("Failed to fetch drafts:", data.message);
+        setError(data.message || "Failed to fetch drafts");
         setDrafts([]);
       }
     } catch (error) {
-      console.error('Error fetching drafts:', error);
-      setError('Failed to load drafts. Please check your connection.');
+      console.error("Error fetching drafts:", error);
+      setError("Failed to load drafts. Please check your connection.");
       setDrafts([]);
     } finally {
       setLoading(false);
@@ -79,25 +81,18 @@ const DraftSection = ({ drafts: propDrafts }) => {
     setLoading(true);
 
     try {
-      console.log('📤 Sending draft email:', { to: draft.to, subject: draft.subject });
-      
-      // Check if user has a token, if not use test endpoint
-      const token = localStorage.getItem('token');
-      const endpoint = token ? '/api/emails/send' : '/api/emails/test-send';
-      const headers = token ? {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      } : {
-        'Content-Type': 'application/json'
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       };
 
-      const response = await fetch(`http://localhost:5001${endpoint}`, {
+      const response = await fetch("http://localhost:5001/api/emails/send", {
         method: "POST",
         headers: headers,
         body: JSON.stringify({
           to: draft.to,
-          cc: draft.cc || '',
-          bcc: draft.bcc || '',
+          cc: draft.cc || "",
+          bcc: draft.bcc || "",
           subject: draft.subject,
           body: draft.body,
         }),
@@ -106,11 +101,26 @@ const DraftSection = ({ drafts: propDrafts }) => {
       const data = await response.json();
       if (response.ok && data.success) {
         alert("✅ Email sent successfully!");
-        console.log('Email sent, now deleting draft...');
-        
+        console.log("Email sent, now deleting draft...");
+
         // Delete the draft after successful send
-        await deleteDraft(draft._id);
-        
+        try {
+          await fetch(
+            `http://localhost:5001/api/emails/delete-draft/${draft._id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          // Remove the draft from the list
+          setDrafts(drafts.filter((d) => d._id !== draft._id));
+        } catch (deleteError) {
+          console.error("Error deleting draft:", deleteError);
+          // Still remove from UI even if delete fails
+          setDrafts(drafts.filter((d) => d._id !== draft._id));
+        }
       } else {
         alert(`❌ Failed to send email: ${data.message}`);
       }
@@ -124,14 +134,18 @@ const DraftSection = ({ drafts: propDrafts }) => {
 
   const deleteDraft = async (draftId) => {
     try {
-      console.log('🗑️ Deleting draft:', draftId);
-      
+      console.log("🗑️ Deleting draft:", draftId);
+
       // Check if user has a token, if not use test endpoint
-      const token = localStorage.getItem('token');
-      const endpoint = token ? `/api/emails/delete-draft/${draftId}` : `/api/emails/test-delete-draft/${draftId}`;
-      const headers = token ? {
-        'Authorization': `Bearer ${token}`
-      } : {};
+      const token = localStorage.getItem("token");
+      const endpoint = token
+        ? `/api/emails/delete-draft/${draftId}`
+        : `/api/emails/test-delete-draft/${draftId}`;
+      const headers = token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {};
 
       const response = await fetch(`http://localhost:5001${endpoint}`, {
         method: "DELETE",
@@ -139,18 +153,18 @@ const DraftSection = ({ drafts: propDrafts }) => {
       });
 
       if (response.ok) {
-        console.log('✅ Draft deleted successfully');
+        console.log("✅ Draft deleted successfully");
         // Remove the draft from the list
-        setDrafts(prev => prev.filter((d) => d._id !== draftId));
+        setDrafts((prev) => prev.filter((d) => d._id !== draftId));
       } else {
-        console.warn('⚠️ Failed to delete draft from server, removing from UI');
+        console.warn("⚠️ Failed to delete draft from server, removing from UI");
         // Still remove from UI even if delete fails
-        setDrafts(prev => prev.filter((d) => d._id !== draftId));
+        setDrafts((prev) => prev.filter((d) => d._id !== draftId));
       }
     } catch (error) {
       console.error("Error deleting draft:", error);
       // Still remove from UI even if delete fails
-      setDrafts(prev => prev.filter((d) => d._id !== draftId));
+      setDrafts((prev) => prev.filter((d) => d._id !== draftId));
     }
   };
 
@@ -161,12 +175,12 @@ const DraftSection = ({ drafts: propDrafts }) => {
         <div className="column-content">Subject</div>
         <div className="column-time">
           Date
-          <button 
-            className="refresh-button" 
+          <button
+            className="refresh-button"
             onClick={fetchDrafts}
             disabled={loading}
           >
-            {loading ? '🔄' : '↻'} Refresh
+            {loading ? "🔄" : "↻"} Refresh
           </button>
         </div>
       </div>
@@ -182,26 +196,51 @@ const DraftSection = ({ drafts: propDrafts }) => {
         </div>
       ) : drafts.length > 0 ? (
         drafts.map((draft, index) => (
-          <div key={draft._id || draft.id || `draft-${index}`} className="email-row draft-row" onClick={() => handleDraftClick(draft)} style={{cursor: 'pointer'}}>
+          <div
+            key={draft._id || draft.id || `draft-${index}`}
+            className="email-row draft-row"
+            onClick={() => handleDraftClick(draft)}
+            style={{ cursor: "pointer" }}
+          >
             <div className="email-name">
               <label className="email-label draft-label">
                 📝 {draft.to || "No recipient"}
-                {draft.cc && <span style={{fontSize: '11px', color: '#666'}}> (CC: {draft.cc})</span>}
+                {draft.cc && (
+                  <span style={{ fontSize: "11px", color: "#666" }}>
+                    {" "}
+                    (CC: {draft.cc})
+                  </span>
+                )}
               </label>
             </div>
             <div className="email-content">
               {draft.subject || "(No subject)"}
               {draft.body && (
-                <div style={{fontSize: '11px', color: '#666', marginTop: '2px'}}>
-                  {draft.body.length > 50 ? `${draft.body.substring(0, 50)}...` : draft.body}
+                <div
+                  style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}
+                >
+                  {draft.body.length > 50
+                    ? `${draft.body.substring(0, 50)}...`
+                    : draft.body}
                 </div>
               )}
               {draft.attachments && draft.attachments.length > 0 && (
-                <div style={{fontSize: '11px', color: '#007bff', marginTop: '2px'}}>
-                  📎 {draft.attachments.length} attachment{draft.attachments.length > 1 ? 's' : ''}
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "#007bff",
+                    marginTop: "2px",
+                  }}
+                >
+                  📎 {draft.attachments.length} attachment
+                  {draft.attachments.length > 1 ? "s" : ""}
                   {draft.attachments.length <= 3 && (
-                    <span style={{color: '#666', marginLeft: '5px'}}>
-                      ({draft.attachments.map(att => att.originalname || att.filename).join(', ')})
+                    <span style={{ color: "#666", marginLeft: "5px" }}>
+                      (
+                      {draft.attachments
+                        .map((att) => att.originalname || att.filename)
+                        .join(", ")}
+                      )
                     </span>
                   )}
                 </div>
@@ -211,16 +250,16 @@ const DraftSection = ({ drafts: propDrafts }) => {
               <span className="email-time">
                 {draft.date && !isNaN(new Date(draft.date))
                   ? new Date(draft.date).toLocaleString([], {
-                      month: 'short',
-                      day: 'numeric',
+                      month: "short",
+                      day: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                     })
                   : "No date"}
               </span>
               <div className="draft-actions">
-                <button 
-                  className="edit-button" 
+                <button
+                  className="edit-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEditDraft(draft);
@@ -229,8 +268,8 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 >
                   ✏️ Edit
                 </button>
-                <button 
-                  className="send-button" 
+                <button
+                  className="send-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     sendMail(draft);
@@ -239,8 +278,8 @@ const DraftSection = ({ drafts: propDrafts }) => {
                 >
                   📤 Send
                 </button>
-                <button 
-                  className="delete-button" 
+                <button
+                  className="delete-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     deleteDraft(draft._id);
@@ -255,7 +294,7 @@ const DraftSection = ({ drafts: propDrafts }) => {
         ))
       ) : (
         <div className="no-emails-message">
-          📝 No drafts available. 
+          📝 No drafts available.
           <button onClick={fetchDrafts} className="refresh-button">
             🔄 Refresh
           </button>

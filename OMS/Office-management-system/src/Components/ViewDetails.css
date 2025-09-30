@@ -1,12 +1,12 @@
-/* General Styles */
+/* Professional ID Card Style - Exact Match */
 .containerr {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: linear-gradient(to bottom right, #93c5fd, #dbeafe);
-  padding: 2rem;
-  font-family: "Arial", sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e0e7ff 100%);
+  padding: 40px 20px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   margin-left: 300px;
   box-sizing: border-box;
 }
@@ -14,65 +14,195 @@
 /* Header */
 .header {
   width: 100%;
-  max-width: 800px;
+  max-width: 400px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 0;
-  margin-bottom: 1rem;
+  gap: 20px;
+  padding: 20px 0;
+  margin-bottom: 30px;
 }
 
 .back-icon {
-  font-size: 1.5rem;
+  font-size: 24px;
   cursor: pointer;
-  color: #1e3a8a;
-  transition: transform 0.2s;
-}
-
-.back-icon:hover {
-  transform: scale(1.1);
+  color: #374151;
+  transition: none;
+  padding: 12px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 4px 15px rgba(55, 65, 81, 0.1);
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1e3a8a;
+  font-size: 28px;
+  font-weight: 800;
+  color: #374151;
   margin: 0;
 }
 
-/* Profile Card */
+/* TARS ID Card - Smaller Size Like Real Card */
 .profile-cardd {
+  width: 300px;
+  height: 480px;
   background: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  width: 100%;
-  max-width: 400px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 0;
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 30px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid #374151;
+}
+
+/* Top black border like the physical card */
+.profile-cardd::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: #1f2937;
+  border-radius: 25px 25px 0 0;
+}
+
+/* Company Logo Section */
+.company-header {
+  padding: 25px 20px 15px;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.company-logo-img {
+  max-width: 150px;
+  max-height: 40px;
+  object-fit: contain;
+  filter: brightness(0) saturate(100%);
+}
+
+/* Profile Photo Circle - Smaller for Compact Card */
+.profile-section {
+  padding: 10px 20px 5px;
+  position: relative;
+  z-index: 3;
 }
 
 .profile-img {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  border: 4px solid #1e40af;
+  border: 6px solid #1f2937;
   object-fit: cover;
-  margin: 0 auto 1rem;
+  margin: 0 auto 15px;
+  box-shadow: 0 0 0 4px #e5e7eb, 0 8px 20px rgba(0, 0, 0, 0.25);
+  position: relative;
+  z-index: 4;
+  display: block;
 }
 
+/* Employee Name */
 .name {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 0.5rem 0;
-  color: #1e3a8a;
+  font-size: 20px;
+  font-weight: 900;
+  margin: 10px 0 5px;
+  color: #1f2937;
+  letter-spacing: 0.5px;
+  font-family: "Arial Black", sans-serif;
 }
 
+/* Job Title */
 .role {
-  color: #3b82f6;
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin-bottom: 1rem;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  letter-spacing: 0.5px;
+}
+
+/* Contact Information Section */
+.contact-info {
+  padding: 0 20px 20px;
+  text-align: center;
+  color: #1f2937;
+}
+
+.contact-item {
+  margin: 6px 0;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.contact-item.phone {
+  font-size: 16px;
+  font-weight: 900;
+  margin: 10px 0;
+  letter-spacing: 0.5px;
+}
+
+.contact-item.email {
+  font-size: 13px;
+  margin: 8px 0;
+  letter-spacing: 0.3px;
+}
+
+.contact-item.id {
+  font-size: 13px;
+  margin: 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.website {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #1f2937;
+  position: relative;
+  padding-top: 14px; /* space for the short line */
+  display: inline-block; /* so the pseudo-element can be centered above */
+}
+
+.website::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px; /* adjust this to make the line shorter/longer */
+  height: 2px;
+  background: #374151;
+  border-radius: 2px;
+}
+
+/* Additional Details Section - Compact */
+.additional-details {
+  margin: 10px 0;
+  padding: 8px 0;
+  border-top: 1px solid #374151;
+  border-bottom: 1px solid #374151;
+}
+
+.detail-item {
+  margin: 4px 0;
+  font-size: 10px;
+  color: #1f2937;
+  font-weight: 600;
+  text-align: left;
+  padding: 2px 0;
+}
+
+.detail-item strong {
+  color: #1f2937;
+  font-weight: 800;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-block;
+  min-width: 70px;
 }
 
 /* CV Download Button */
@@ -80,50 +210,75 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #3b82f6;
+  background: #374151;
   color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 1rem;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.3s;
-  gap: 0.5rem;
-}
-
-.cv-button:hover {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Details Section */
-.details-card {
-  background: white;
+  padding: 14px 28px;
   border-radius: 15px;
-  padding: 1.5rem;
+  cursor: pointer;
+  margin-top: 25px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: none;
+  gap: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 20px rgba(55, 65, 81, 0.3);
+}
+
+.cv-button .icon {
+  font-size: 16px;
+}
+
+/* Download Actions Group */
+.download-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  margin-bottom: 30px;
+}
+
+.download-card-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2563eb;
+  color: white;
+  padding: 14px 22px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  transition: none;
+  gap: 10px;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+}
+
+.download-card-button .icon {
+  font-size: 16px;
+}
+
+/* ID Card Frame at Bottom - Blue Pattern */
+.card-frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22em;
+  height: 90px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 5;
+}
+
+.frame-img {
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.details-card p {
-  margin: 0.75rem 0;
-  font-size: 1rem;
-  color: #1e3a8a;
-  text-align: left;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.details-card p:last-child {
-  border-bottom: none;
-}
-
-.details-card strong {
-  color: #1e40af;
+  height: 120%;
+  object-fit: cover;
+  border-radius: 0 0 20px 20px;
 }
 
 /* Responsive Design */
@@ -136,41 +291,215 @@
 @media (max-width: 768px) {
   .containerr {
     margin-left: 0;
-    padding: 1rem;
+    padding: 20px 15px;
   }
 
   .header {
-    padding: 0.5rem 0;
+    padding: 15px 0;
+    max-width: 100%;
   }
 
-  .profile-cardd,
-  .details-card {
-    max-width: 100%;
-    padding: 1.5rem;
+  .profile-cardd {
+    width: 280px;
+    height: 420px;
+  }
+
+  .company-logo-img {
+    max-width: 130px;
+    max-height: 35px;
   }
 
   .profile-img {
     width: 100px;
     height: 100px;
   }
+
+  .name {
+    font-size: 24px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
 }
 
 @media (max-width: 480px) {
+  .containerr {
+    padding: 15px 10px;
+  }
+
+  .profile-cardd {
+    width: 300px;
+    height: 600px;
+  }
+
+  .company-logo-img {
+    max-width: 160px;
+    max-height: 45px;
+  }
+
   .profile-img {
-    width: 80px;
-    height: 80px;
+    width: 140px;
+    height: 140px;
   }
 
   .name {
-    font-size: 1.3rem;
+    font-size: 22px;
   }
 
   .role {
-    font-size: 1rem;
+    font-size: 14px;
+  }
+
+  .contact-item.phone {
+    font-size: 18px;
   }
 
   .cv-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 12px 24px;
+    font-size: 12px;
   }
+
+  .card-frame {
+    height: 60px;
+  }
+}
+
+/* Mobile responsive styles for smaller cards */
+@media (max-width: 480px) {
+  .profile-cardd {
+    width: 260px;
+    height: 380px;
+    padding: 12px;
+  }
+
+  .company-header {
+    height: 40px;
+    padding: 8px 12px;
+  }
+
+  .company-logo {
+    height: 24px;
+    width: 24px;
+  }
+
+  .company-name {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .profile-photo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .name {
+    font-size: 16px;
+  }
+
+  .role {
+    font-size: 10px;
+  }
+
+  .contact-item {
+    margin: 4px 0;
+    font-size: 9px;
+  }
+
+  .contact-item.phone {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .additional-info {
+    margin-top: 8px;
+  }
+
+  .info-item {
+    margin: 3px 0;
+    font-size: 8px;
+  }
+
+  .cv-button {
+    padding: 8px 16px;
+    font-size: 9px;
+    margin-top: 8px;
+  }
+
+  .card-frame {
+    height: 45px;
+  }
+}
+
+/* Additional Details Card - Separate Card */
+.details-card {
+  width: 300px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), 0 5px 15px rgba(0, 0, 0, 0.05);
+  padding: 25px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.details-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 20px 0;
+  text-align: center;
+  border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 10px;
+}
+
+.additional-details {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #374151;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-item strong {
+  color: #1f2937;
+  font-weight: 600;
+  min-width: 120px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* CV Download Button - Now Standalone */
+.cv-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #374151;
+  color: white;
+  padding: 16px 32px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  transition: none;
+  gap: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 8px 25px rgba(55, 65, 81, 0.3);
+  margin-bottom: 30px;
+}
+
+.cv-button .icon {
+  font-size: 18px;
 }

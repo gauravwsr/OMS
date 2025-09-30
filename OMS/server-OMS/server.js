@@ -1,10 +1,11 @@
-require("dotenv").config(); // Load environment variables
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const http = require("http");
 const path = require("path");
+const { Server } = require("socket.io");
 
 // Set default JWT secret if not in environment
 if (!process.env.JWT_SECRET) {
@@ -62,10 +63,14 @@ app.set("io", chatSocket.getIO());
 
 // CORS request logging middleware for debugging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} request for ${req.url} from origin ${req.headers.origin}`);
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Request body:', req.body);
-    console.log('Content-Type:', req.headers['content-type']);
+  console.log(
+    `${new Date().toISOString()} - ${req.method} request for ${
+      req.url
+    } from origin ${req.headers.origin}`
+  );
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Request body:", req.body);
+    console.log("Content-Type:", req.headers["content-type"]);
   }
   next();
 });
@@ -74,40 +79,37 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
-      "http://localhost:3001", 
       "http://134.199.170.166:3000",
+      "http://localhost:3000",
+      "http://localhost:3001",
       "http://146.190.165.62:5002",
+      "http://localhost:5002",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Length", "X-Requested-With", "Access-Control-Allow-Origin"],
+    exposedHeaders: [
+      "Content-Length",
+      "X-Requested-With",
+      "Access-Control-Allow-Origin",
+    ],
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
   })
 );
 
-// Additional CORS headers for extra security
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin);
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  next();
-});
+// ...existing code...
 
-// Pre-flight requests handling
-app.options("*", cors());
+// ...existing code...
 
 // Apply body parsing middleware BEFORE routes
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Additional middleware to log parsed body for debugging
 app.use((req, res, next) => {
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Parsed request body:', req.body);
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Parsed request body:", req.body);
   }
   next();
 });
@@ -128,6 +130,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/emails", emailRoutes);
+app.use("/api", userRoutes);
 app.use("/users", userRoutes);
 app.use(userRoutes);
 app.use("/tasks", taskRoutes);
@@ -159,6 +162,8 @@ app.use("/api/employee", employeeTaskRoutes);
 app.use("/api/certificates", certificateRoutes);
 app.use("/api/completions", completionRoutes);
 app.use("/api/offers", offerRoutes);
+app.use("/api", noteRoutes);
+app.use("/api/charge-handovers", chargeHandoverRoutes);
 
 // Uncomment these routes if needed
 // app.use("/api", trackingRoutes);
@@ -207,29 +212,33 @@ process.on("unhandledRejection", (reason, promise) => {
 
 const port = process.env.PORT || 5000;
 
-server.listen(port, '0.0.0.0', (err) => {
+server.listen(port, "0.0.0.0", (err) => {
   if (err) {
-    console.error('❌ Failed to start server:', err);
+    console.error("❌ Failed to start server:", err);
     process.exit(1);
   }
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(
     `✅ CORS enabled for origins: ${JSON.stringify([
-      "http://http://134.199.170.166:3000",
+      "http://134.199.170.166:3000",
+      "http://localhost:3000",
       "http://localhost:3001",
       "http://146.190.165.62:5002",
+      "http://localhost:5002",
     ])}`
   );
   console.log(`📝 API endpoints ready at http://localhost:${port}/api/`);
-  
+
   // Verify server is actually listening
   setTimeout(() => {
-    const http = require('http');
-    http.get(`http://localhost:${port}/api/health`, (res) => {
-      console.log('✅ Server health check passed');
-    }).on('error', (err) => {
-      console.error('❌ Server health check failed:', err.message);
-    });
+    const http = require("http");
+    http
+      .get(`http://localhost:${port}/api/health`, (res) => {
+        console.log("✅ Server health check passed");
+      })
+      .on("error", (err) => {
+        console.error("❌ Server health check failed:", err.message);
+      });
   }, 1000);
 });
 

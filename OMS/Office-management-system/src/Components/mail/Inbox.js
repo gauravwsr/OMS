@@ -41,16 +41,13 @@ const Inbox = () => {
     }
     
     try {
-      const response = await fetch(
-        "http://localhost:5001/api/emails/check-config",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+      const response = await fetch('http://localhost:5001/api/emails/check-config', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      );
+    });
 
       const data = await response.json();
       if (response.ok && data.configured) {
@@ -127,20 +124,14 @@ const Inbox = () => {
     setLoading(true);
     setError(null);
 
-    const token = localStorage.getItem("token");
-    let url = "";
-    let useAuth = true;
-    
-    if (activeTab === "inbox") {
-      url = token ? "http://localhost:5001/api/emails/inbox" : "http://localhost:5001/api/emails/inbox";
-    } else if (activeTab === "sent") {
-      // Use test endpoint if no token available
-      url = token ? "http://localhost:5001/api/emails/sent" : "http://localhost:5001/api/emails/test-sent";
-      useAuth = !!token;
-    } else if (activeTab === "drafts") {
-      // Use test endpoint if no token available
-      url = token ? "http://localhost:5001/api/emails/drafts" : "http://localhost:5001/api/emails/test-drafts";
-      useAuth = !!token;
+    const token = localStorage.getItem('token');
+    let url = '';
+    if (activeTab === 'inbox') {
+      url = 'http://localhost:5001/api/emails/inbox';
+    } else if (activeTab === 'sent') {
+      url = 'http://localhost:5001/api/emails/sent';
+    } else if (activeTab === 'drafts') {
+      url = 'http://localhost:5001/api/emails/drafts';
     }
 
     try {

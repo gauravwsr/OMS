@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 // Test configuration
-const BASE_URL = 'http://146.190.165.62:5001/api/emails';
+const BASE_URL = 'http://localhost:5001/api/emails';
 const TEST_TOKEN = 'your-jwt-token-here'; // Replace with actual token
 
 async function testEmailEndpoints() {

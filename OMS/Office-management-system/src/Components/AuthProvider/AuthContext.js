@@ -54,10 +54,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("http://localhost:5001/users/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "http://localhost:5001/users/login",
+        {
+          email,
+          password,
+        }
+      );
 
       if (response.data && response.data.token) {
         message.success("Login successful!");
@@ -96,14 +99,17 @@ export const AuthProvider = ({ children }) => {
     additionalData = {}
   ) => {
     try {
-      const response = await axios.post("http://localhost:5001/users/signup", {
-        name,
-        email,
-        password,
-        role,
-        subRole,
-        ...additionalData, // Spread additional form data
-      });
+      const response = await axios.post(
+        "http://localhost:5001/users/signup",
+        {
+          name,
+          email,
+          password,
+          role,
+          subRole,
+          ...additionalData, // Spread additional form data
+        }
+      );
 
       if (response.status === 201) {
         message.success("Signup successful! Redirecting to login page...");
@@ -144,6 +150,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.put(
         "http://localhost:5001/users/updateRole",
+        "http://localhost:5001/users/updateRole",
         {
           userId: user.email,
           newRole,
@@ -164,6 +171,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(
         "http://localhost:5001/users/check-super-admin"
+        // "http://localhost:5001/users/check-super-admin"
       );
       return response.data.exists;
     } catch (error) {
@@ -176,6 +184,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(
         "http://localhost:5001/users/available-super-admin-subroles"
+        // "http://localhost:5001/users/available-super-admin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -188,6 +197,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.get(
         "http://localhost:5001/users/superadmin-subroles"
+        // "http://localhost:5001/users/superadmin-subroles"
       );
       return response.data;
     } catch (error) {
@@ -207,6 +217,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(
         "http://localhost:5001/users/add-superadmin-subrole",
+        
         {
           subRole,
         },
@@ -226,6 +237,7 @@ export const AuthProvider = ({ children }) => {
   const deleteSuperAdminSubRole = async (subRole) => {
     try {
       const response = await axios.delete(
+        `http://localhost:5001/users/delete-superadmin-subrole/${subRole}`,
         `http://localhost:5001/users/delete-superadmin-subrole/${subRole}`,
         {
           headers: {
@@ -251,6 +263,7 @@ export const AuthProvider = ({ children }) => {
 
       const response = await axios.get(
         "http://localhost:5001/api/notifications",
+        
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -279,6 +292,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await axios.patch(
         `http://localhost:5001/api/notifications/${notificationId}/read`,
+        `http://localhost:5001/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -302,6 +316,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(
         "http://localhost:5001/api/notifications",
+        
         notificationData,
         {
           headers: {
@@ -319,6 +334,7 @@ export const AuthProvider = ({ children }) => {
   const clearAllNotifications = async () => {
     try {
       await axios.delete("http://localhost:5001/api/notifications/clear", {
+      // await axios.delete("http://localhost:5001/api/notifications/clear", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
