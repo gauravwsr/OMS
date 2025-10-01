@@ -8,10 +8,18 @@ const getLeaveAnalytics = async (req, res) => {
     // Build query based on filters
     let query = {};
     if (startDate && endDate) {
-      query.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
-      };
+      // Find leaves that overlap with the selected date range
+      query.$or = [
+        // Leave starts within the range
+        { "leaveDates.start": { $gte: new Date(startDate), $lte: new Date(endDate) } },
+        // Leave ends within the range
+        { "leaveDates.end": { $gte: new Date(startDate), $lte: new Date(endDate) } },
+        // Leave spans the entire range
+        { 
+          "leaveDates.start": { $lte: new Date(startDate) },
+          "leaveDates.end": { $gte: new Date(endDate) }
+        }
+      ];
     }
     if (employeeId && employeeId !== "all") {
       query.userId = employeeId;

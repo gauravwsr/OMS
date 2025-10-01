@@ -1817,6 +1817,7 @@
   /* border: 2.0px ; */
   letter-spacing: 0.5px;
   min-width: 180px;
+  flex-direction: row;
   /* transition: transform 0.2s, box-shadow 0.2s; */
 }
 /* .quick-stat:hover {

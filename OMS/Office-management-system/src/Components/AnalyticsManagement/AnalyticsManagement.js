@@ -47,12 +47,12 @@ const AnalyticsManagement = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:5001/api/users/all-users",
+        "http://localhost:5001/api/all-users",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setEmployees(response.data.filter((user) => user.role === "Employee"));
+      setEmployees(response.data.data.filter((user) => user.role === "Employee"));
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
