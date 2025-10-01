@@ -106,7 +106,7 @@ const ViewDetails = () => {
             src={
               candidate.photoPath
                 ? `http://localhost:5001/uploads/photos/${candidate.photoPath}`
-                : `https://api.dicebear.com/8.x/avataaars/svg?seed=${candidate.fullName}`
+                : `https://api.dicebear.com/8.x/initials/svg?seed=${candidate.fullName}&backgroundColor=2563eb&color=ffffff&fontSize=40&fontWeight=600`
             }
             alt={candidate.fullName}
             className="profile-img"
